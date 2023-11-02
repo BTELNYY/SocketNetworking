@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketNetworking
+namespace SocketNetworking.Packets
 {
-    public class Class1
+    public class Packet
     {
+        public const int MaxPacketSize = ushort.MaxValue;
     }
 }
