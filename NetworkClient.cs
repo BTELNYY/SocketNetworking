@@ -1,4 +1,4 @@
-﻿using SocketNetworking.Packets;
+﻿using SocketNetworking.PacketSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketNetworking.Packets
+namespace SocketNetworking.PacketSystem
 {
     public class PacketWriter
     {
@@ -20,13 +20,24 @@ namespace SocketNetworking.Packets
         {
             get
             {
-                return (byte[])_workingSetData.Clone();
+                return _workingSetData;
             }
         }
 
         private byte[] _workingSetData = new byte[] { };
 
         public PacketWriter() { }
+
+        public void Write<T>(IPacketSerializable serializable)
+        {
+            byte[] data = serializable.Serialize();
+            _workingSetData.AppendAll(data);
+        }
+
+        public void Write(byte[] data)
+        {
+            _workingSetData.AppendAll(data);
+        }
 
         public void WriteLong(long data)
         {
@@ -81,6 +92,12 @@ namespace SocketNetworking.Packets
             byte[] bytes = Encoding.Unicode.GetBytes(data);
             WriteInt(bytes.Length);
             _workingSetData.AppendAll(bytes);
+        }
+
+        public void WriteBool(bool data)
+        {
+            byte[] result = BitConverter.GetBytes(data);
+            _workingSetData.AppendAll(result);
         }
     }
 }

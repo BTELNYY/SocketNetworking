@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketNetworking.Packets
+namespace SocketNetworking.PacketSystem
 {
     /// <summary>
     /// Provides Packet reading capablities by reading elements of the byte array.
@@ -30,20 +30,24 @@ namespace SocketNetworking.Packets
             _workingSetData = RawData;
         }
 
-        /// <summary>
-        /// Try to read a generic type from the packet. DO NOT USE STRUCTS OR CLASSES.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns>
-        /// A generic conversion of what you need.
-        /// </returns>
-        public T Read<T>()
+        public void Remove(int length)
         {
-            int sizeToRemove = typeof(T).SizeOf();
-            byte[] selected = _workingSetData.Take(sizeToRemove).ToArray();
-            T result = (T)Convert.ChangeType(selected, typeof(T));
-            _workingSetData.RemoveFromStart(sizeToRemove);
-            return result;
+            _workingSetData.RemoveFromStart(length);
+        }
+
+        public byte[] Read(int length)
+        {
+            byte[] data = _workingSetData.Take(length).ToArray();
+            _workingSetData.RemoveFromStart(length);
+            return data;
+        }
+
+        public T Read<T>() where T : IPacketSerializable
+        {
+            IPacketSerializable serializable = (IPacketSerializable)Activator.CreateInstance(typeof(T));
+            int bytesUsed = serializable.Deserialize(_workingSetData);
+            _workingSetData.RemoveFromStart(bytesUsed);
+            return (T)serializable;
         }
 
         public ulong ReadULong()
@@ -115,6 +119,14 @@ namespace SocketNetworking.Packets
             int lenghtOfString = ReadInt();
             string result = Encoding.UTF8.GetString(_workingSetData, 0, lenghtOfString);
             _workingSetData.RemoveFromStart(lenghtOfString);
+            return result;
+        }
+
+        public bool ReadBool()
+        {
+            int sizeToRemove = sizeof(bool);
+            bool result = BitConverter.ToBoolean(_workingSetData, 0);
+            _workingSetData.RemoveFromStart(sizeToRemove);
             return result;
         }
     }
