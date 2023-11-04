@@ -12,6 +12,8 @@ using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Exceptions;
 using System.Runtime.InteropServices;
 using System.Net;
+using System.Diagnostics;
+using System.Security.Policy;
 
 namespace SocketNetworking
 {
@@ -121,6 +123,16 @@ namespace SocketNetworking
                     return true;
                 }
                 return _clientActive;
+            }
+        }
+
+        private ConnectionState _connectionState = ConnectionState.Disconnected;
+
+        public ConnectionState CurrentConnectionState
+        {
+            get
+            {
+                return _connectionState;
             }
         }
 
@@ -312,9 +324,14 @@ namespace SocketNetworking
                 Log.Error("Can't start client, already started.");
                 return;
             }
+            if(_clientThread != null)
+            {
+                _clientThread.Abort();
+            }
             _clientThread = new Thread(ClientStartThread);
             _clientThread.Start();
             _clientActive = true;
+            _shuttingDown = false;
         }
 
         /// <summary>
@@ -374,7 +391,90 @@ namespace SocketNetworking
         /// </summary>
         private void HandleRemoteClient(PacketHeader header, byte[] data)
         {
-            List<INetworkObject> objects = RemoteObjects.Where(x => x.NetworkID == header.NetworkIDTarget).ToList();
+            switch (header.Type)
+            {
+                case PacketType.CustomPacket:
+                    TriggerPacketListenerCheck(header, data, RemoteObjects);
+                    break;
+                case PacketType.ConnectionStateUpdate:
+                    ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
+                    connectionUpdatePacket.Deserialize(data);
+                    if (connectionUpdatePacket.State == ConnectionState.Disconnected)
+                    {
+                        //ruh roh
+                        Log.Error($"Disconnecting {ClientID} for " + connectionUpdatePacket.Reason);
+                        StopClient();
+                    }
+                    if (connectionUpdatePacket.State == ConnectionState.Handshake)
+                    {
+                        _connectionState = ConnectionState.Handshake;
+                    }
+                    if (connectionUpdatePacket.State == ConnectionState.Connected)
+                    {
+                        _connectionState = ConnectionState.Connected;
+                    }
+                    break;
+                default:
+                    Log.Error("Packet is not handled!");
+                    break;
+            }
+        }
+
+
+        /// <summary>
+        /// Only called on the client.
+        /// </summary>
+        private void HandleLocalClient(PacketHeader header, byte[] data)
+        {
+            switch (header.Type)
+            {
+                case PacketType.CustomPacket:
+                    TriggerPacketListenerCheck(header, data, RemoteObjects);
+                    break;
+                case PacketType.ServerData:
+                    ServerDataPacket packet = new ServerDataPacket();
+                    packet.Deserialize(data);
+                    _clientId = packet.YourClientID;
+                    break;
+                case PacketType.ConnectionStateUpdate:
+                    ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
+                    connectionUpdatePacket.Deserialize(data);
+                    if(connectionUpdatePacket.State == ConnectionState.Disconnected)
+                    {
+                        //ruh roh
+                        Log.Error("Disconnected: " + connectionUpdatePacket.Reason);
+                        StopClient();
+                    }
+                    if(connectionUpdatePacket.State == ConnectionState.Handshake)
+                    {
+                        _connectionState = ConnectionState.Handshake;
+                    }
+                    if(connectionUpdatePacket.State == ConnectionState.Connected)
+                    {
+                        _connectionState = ConnectionState.Connected;
+                    }
+                    break;
+                default:
+                    Log.Error("Packet is not handled!");
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Exposed method to allow force updating of <see cref="INetworkObject"/>s
+        /// </summary>
+        /// <param name="header">
+        /// The <see cref="PacketHeader"/> of the packet you wish to trigger a send of.
+        /// </param>
+        /// <param name="data">
+        /// A <see cref="byte[]"/> of the data of that packet. Note that it is the full data, do not trim out the header.
+        /// </param>
+        /// <param name="objects">
+        /// List of <see cref="INetworkObject"/>s you wish to update the packets
+        /// </param>
+        public void TriggerPacketListenerCheck(PacketHeader header, byte[] data, List<INetworkObject> objects)
+        {
+            objects = objects.Where(x => x.NetworkID == header.NetworkIDTarget).ToList();
             if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
             {
                 Log.Error("Unknown Custom packet. ID: " + header.CustomPacketID);
@@ -422,57 +522,6 @@ namespace SocketNetworking
 
 
         /// <summary>
-        /// Only called on the client.
-        /// </summary>
-        private void HandleLocalClient(PacketHeader header, byte[] data)
-        {
-            List<INetworkObject> objects = LocalObjects.Where(x => x.NetworkID == header.NetworkIDTarget).ToList();
-            if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
-            {
-                Log.Error("Unknown Custom packet. ID: " + header.CustomPacketID);
-                return;
-            }
-            Type packetType = AdditionalPacketTypes[header.CustomPacketID];
-            Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);
-            packet.Deserialize(data);
-            List<MethodInfo> methods = new List<MethodInfo>();
-            //This may look not very effecient, but you arent checking EVERY possible object, only the ones which match the TargetID.
-            //The other way I could do this is by making a nested dictionary hell hole, but I dont want to do that.
-            foreach(INetworkObject netObj in objects)
-            {
-                Type typeOfObject = netObj.GetType();
-                MethodInfo[] allPacketListeners = typeOfObject.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(x => x.GetCustomAttribute(typeof(PacketListener)) != null).ToArray();
-                List<MethodInfo> validMethods = new List<MethodInfo>();
-                foreach (MethodInfo method in allPacketListeners)
-                {
-                    PacketListener listener = (PacketListener)method.GetCustomAttribute(typeof(PacketListener));
-                    if (listener.DefinedType != packetType)
-                    {
-                        continue;
-                    }
-                    if (listener.DefinedDirection == PacketDirection.Any)
-                    {
-                        validMethods.Add(method);
-                        continue;
-                    }
-                    if (listener.DefinedDirection == PacketDirection.Client && CurrnetClientLocation != ClientLocation.Remote)
-                    {
-                        continue;
-                    }
-                    if (listener.DefinedDirection == PacketDirection.Server && CurrnetClientLocation != ClientLocation.Local)
-                    {
-                        continue;
-                    }
-                    validMethods.Add(method);
-                }
-                foreach(MethodInfo method in validMethods)
-                {
-                    method.Invoke(netObj, new object[] { packet });
-                }
-            }
-        }
-
-        /// <summary>
         /// Sends any <see cref="Packet"/> down the network stream to whatever is connected on the other side. Note that this method doesn't check who it is sending it to, instead sending it to the current stream.
         /// </summary>
         /// <param name="packet">
@@ -491,6 +540,64 @@ namespace SocketNetworking
                 serverStream.Write(packetBytes, 0, packetBytes.Length);
                 serverStream.Flush();
             }
+        }
+
+        /// <summary>
+        /// Overwrites the NetworkTarget of the given packet to the ID from <see cref="INetworkObject"/>
+        /// </summary>
+        /// <param name="packet">
+        /// Packet to overwrite
+        /// </param>
+        /// <param name="sender">
+        /// ID to write
+        /// </param>
+        public void Send(Packet packet, INetworkObject sender)
+        {
+            packet.NetowrkIDTarget = sender.NetworkID;
+            Send(packet);
+        }
+
+        /// <summary>
+        /// Send a disconnect message to the server and destroy our side of the client.
+        /// </summary>
+        /// <param name="message">
+        /// A <see cref="string"/> which shows what message to use to send to the client.
+        /// </param>
+        public void Disconnect(string message)
+        {
+            ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
+            connectionUpdatePacket.State = ConnectionState.Disconnected;
+            connectionUpdatePacket.Reason = message;
+            if(CurrnetClientLocation == ClientLocation.Remote)
+            {
+                Log.Error($"Disconnecting Client {ClientID} for " + message);
+                StopClient();
+            }
+            if(CurrnetClientLocation == ClientLocation.Local)
+            {
+                Log.Error("Disconnecting from server. Reason: " + message);
+                StopClient();
+            }
+            Send(connectionUpdatePacket);
+        }
+
+        /// <summary>
+        /// Stops the client, removing the Thread and closing the socket
+        /// </summary>
+        public void StopClient()
+        {
+            _connectionState = ConnectionState.Disconnected;
+            if(CurrnetClientLocation == ClientLocation.Remote)
+            {
+                NetworkServer.Clients.Remove(ClientID);
+                RemoteObjects.Clear();
+                LocalObjects.Clear();
+                AdditionalPacketTypes.Clear();
+            }
+            _shuttingDown = true;
+            _clientThread.Abort();
+            _clientThread = null;
+            _tcpClient = null;
         }
     }
 }

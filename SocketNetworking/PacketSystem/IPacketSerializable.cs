@@ -8,8 +8,6 @@ namespace SocketNetworking.PacketSystem
 {
     public interface IPacketSerializable
     {
-        Array ContainedArray { get; }
-
         /// <summary>
         /// Return the length of the current instance of this object in bytes.
         /// </summary>

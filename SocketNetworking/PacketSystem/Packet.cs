@@ -83,7 +83,7 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// The NetworkID of the object which this packet is being sent to. -1 Means all objects.
         /// </summary>
-        public int NetowrkIDTarget { get; private set; } = -1;
+        public int NetowrkIDTarget { get; set; } = -1;
 
         /// <summary>
         /// Function called to serialize packets. Ensure you get the return type of this function becuase you'll need to add on to that array. creating a new array will cause issues.
@@ -129,6 +129,16 @@ namespace SocketNetworking.PacketSystem
         ClientData,
         ServerData,
         CustomPacket,
+    }
+    
+    /// <summary>
+    /// The current state of the handshake. Disconnect = Either not connected at all or just got disconnected. Handshake = Client-Server still agreeing on protocol and version. Connected = System connected.
+    /// </summary>
+    public enum ConnectionState
+    {
+        Disconnected,
+        Handshake,
+        Connected,
     }
 
     /// <summary>
