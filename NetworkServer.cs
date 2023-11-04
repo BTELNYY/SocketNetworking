@@ -72,12 +72,9 @@ namespace SocketNetworking
             Log.Info("Server starting...");
             TcpListener serverSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), 8888);
             TcpClient clientSocket = default;
-            int counter = 0;
-
             serverSocket.Start();
-            Console.WriteLine("Server Started");
-
-            counter = 0;
+            Log.Info("Socket Started.");
+            int counter = 0;
             while (true)
             {
                 if (_isShuttingDown)

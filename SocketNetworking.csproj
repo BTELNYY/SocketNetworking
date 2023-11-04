@@ -41,19 +41,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\PacketDefinitionAttribute.cs" />
+    <Compile Include="Attributes\PacketListener.cs" />
+    <Compile Include="Exceptions\CustomPacketCollisionException.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="NetworkClient.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="NetworkServer.cs" />
+    <Compile Include="Exceptions\InvalidNetworkDataException.cs" />
+    <Compile Include="PacketSystem\INetworkObject.cs" />
     <Compile Include="PacketSystem\IPacketSerializable.cs" />
+    <Compile Include="PacketSystem\Packets\CustomPacket.cs" />
     <Compile Include="PacketSystem\PacketWriter.cs" />
     <Compile Include="PacketSystem\PacketReader.cs" />
     <Compile Include="PacketSystem\Packet.cs" />
     <Compile Include="PacketSystem\TypeWrappers\SerializableArray.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="PacketSystem\Packets\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

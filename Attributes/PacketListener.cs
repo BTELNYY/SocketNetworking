@@ -1,0 +1,61 @@
+﻿using SocketNetworking.PacketSystem.Packets;
+using System;
+using System.CodeDom;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SocketNetworking.Attributes
+{
+    [AttributeUsage(AttributeTargets.Method)]
+    public class PacketListener : Attribute
+    {
+        private Type _type;
+
+        /// <summary>
+        /// The type of the packet you are waiting for. Note that it must be registered and valid.
+        /// </summary>
+        public Type DefinedType
+        {
+            get
+            {
+                return _type;
+            }
+        }
+
+        private PacketDirection _direction;
+
+        /// <summary>
+        /// From where are you accepting packets from. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only
+        /// </summary>
+        public PacketDirection DefinedDirection
+        {
+            get
+            {
+                return _direction;
+            }
+        }
+
+        /// <summary>
+        /// Defines a packet listener. this method attribute should be used in conjunction with <see cref="SocketNetworking.PacketSystem.INetworkObject"/> to create network objects, methods with this attribute should always have one paramater which is the packet they are looking for.
+        /// </summary>
+        /// <param name="type">
+        /// The type of the packet you are waiting for. Note that it must be registered and valid.
+        /// </param>
+        /// <param name="direction">
+        /// From where are you accepting packets from. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only
+        /// </param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public PacketListener(Type type, PacketDirection direction = PacketDirection.Any) 
+        {
+            if (type.IsSubclassOf(typeof(CustomPacket)) || type.GetCustomAttribute(typeof(PacketDefinition)) == null)
+            {
+                throw new InvalidOperationException("The type provided isn't a valid Custom Packet.");
+            }
+            _type = type;
+            _direction = direction;
+        }
+    }
+}
