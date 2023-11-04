@@ -41,8 +41,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\PacketDefinitionAttribute.cs" />
+    <Compile Include="Attributes\PacketDefinition.cs" />
     <Compile Include="Attributes\PacketListener.cs" />
+    <Compile Include="Enums.cs" />
     <Compile Include="Exceptions\CustomPacketCollisionException.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="NetworkClient.cs" />
@@ -51,6 +52,7 @@
     <Compile Include="Exceptions\InvalidNetworkDataException.cs" />
     <Compile Include="PacketSystem\INetworkObject.cs" />
     <Compile Include="PacketSystem\IPacketSerializable.cs" />
+    <Compile Include="PacketSystem\Packets\ServerDataPacket.cs" />
     <Compile Include="PacketSystem\Packets\CustomPacket.cs" />
     <Compile Include="PacketSystem\PacketWriter.cs" />
     <Compile Include="PacketSystem\PacketReader.cs" />
