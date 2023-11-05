@@ -30,6 +30,40 @@ namespace SocketNetworking
             }
         }
 
+        private static ProtocolConfiguration _serverConfig = new ProtocolConfiguration();
+
+        public static ProtocolConfiguration ServerConfiguration
+        {
+            get
+            {
+                return _serverConfig;
+            }
+            set
+            {
+                if (ServerStarted)
+                {
+                    Log.Error("Can't change server network configuration is the server is running. Stop it first.");
+                    return;
+                }
+                _serverConfig = value;
+            }
+        }
+
+        /// <summary>
+        /// How long should the server wait for the client to complete the handshake?
+        /// </summary>
+        public static float HandshakeTime = 10f;
+
+        /// <summary>
+        /// The server password, this will never be sent accross the network.
+        /// </summary>
+        public static string ServerPassword = "default";
+
+        /// <summary>
+        /// Should the server check for client passwords?
+        /// </summary>
+        public static bool UseServerPassword = false;
+
         public static Thread ServerThread;
 
         private static NetworkServer _serverInstance;
@@ -67,10 +101,24 @@ namespace SocketNetworking
             ServerThread.Start();
         }
 
+        public static void StopServer()
+        {
+            if (!ServerStarted)
+            {
+                Log.Error("Server already stopped.");
+            }
+            foreach(NetworkClient client in Clients.Values)
+            {
+                client.Disconnect("Server shutting down");
+            }
+            Clients.Clear();
+            ServerThread.Abort();
+        }
+
         private void ServerStartThread()
         {
             Log.Info("Server starting...");
-            TcpListener serverSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), 8888);
+            TcpListener serverSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), 7777);
             TcpClient clientSocket = default;
             serverSocket.Start();
             Log.Info("Socket Started.");
@@ -87,6 +135,14 @@ namespace SocketNetworking
                 Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
                 NetworkClient client = new NetworkClient(counter, clientSocket);
                 Clients.Add(counter, client);
+                CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
+                {
+                    if(x.CurrentConnectionState != PacketSystem.ConnectionState.Connected)
+                    {
+                        x.Disconnect("Failed to handshake in time.");
+                    }
+                }, client, HandshakeTime);
+                callback.Start();
             }
             Log.Info("Shutting down!");
             serverSocket.Stop();

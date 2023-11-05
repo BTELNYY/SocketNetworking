@@ -12,8 +12,14 @@ namespace SocketNetworking.PacketSystem
     /// </summary>
     public class PacketReader
     {
+        /// <summary>
+        /// Represents the original untouched data fed into the class. This data is not changed by any method.
+        /// </summary>
         public byte[] RawData { get; private set; }
 
+        /// <summary>
+        /// Amount of bytes that are unread
+        /// </summary>
         public int DataLength
         {
             get
@@ -23,6 +29,18 @@ namespace SocketNetworking.PacketSystem
         }
 
         private byte[] _workingSetData = new byte[] { };
+
+        /// <summary>
+        /// Represents how many bytes have been removed from the working set compared to the original data, or how many bytes you have read from the array.
+        /// </summary>
+        public int ReadBytes
+        {
+            get
+            {
+                return RawData.Length - _workingSetData.Length;
+            }
+        }
+
 
         public PacketReader(byte[] data)
         {

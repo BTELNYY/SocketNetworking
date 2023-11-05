@@ -15,13 +15,13 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public int YourClientID { get; private set; } = 0;
 
-        public string Version { get; private set; } = "NotSet";
+        public ProtocolConfiguration Configuration { get; private set; } = new ProtocolConfiguration();
 
         public override PacketWriter Serialize()
         {
             PacketWriter writer = base.Serialize();
             writer.WriteInt(YourClientID);
-            writer.WriteString(Version);
+            writer.Write<ProtocolConfiguration>(Configuration);
             return writer;
         }
 
@@ -29,7 +29,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             PacketReader reader = base.Deserialize(data);
             YourClientID = reader.ReadInt();
-            Version = reader.ReadString();
+            Configuration = reader.Read<ProtocolConfiguration>();
             return reader;
         }
     }

@@ -19,6 +19,15 @@ namespace SocketNetworking
 {
     public class NetworkClient
     {
+        /// <summary>
+        /// Called on both Remote and Local clients when the connection has succeeded and the Socket is ready to use.
+        /// </summary>
+        public Action ClientConnected;
+        /// <summary>
+        /// Called on both Remote and Local Clients when the connection state changes.
+        /// </summary>
+        public Action<ConnectionState> ConnectionStateUpdated;
+
         private int _clientId = 0;
 
         /// <summary>
@@ -128,15 +137,41 @@ namespace SocketNetworking
 
         private ConnectionState _connectionState = ConnectionState.Disconnected;
 
+        /// <summary>
+        /// The <see cref="ConnectionState"/> of the current client. Can only be set by clients which have the <see cref="ClientLocation.Remote"/> <see cref="CurrnetClientLocation"/>
+        /// </summary>
         public ConnectionState CurrentConnectionState
         {
             get
             {
                 return _connectionState;
             }
+            set
+            {
+                if(CurrnetClientLocation != ClientLocation.Remote)
+                {
+                    Log.Error("Local client tried changing state of connection, only servers can do so.");
+                    return;
+                }
+                ConnectionUpdatePacket updatePacket = new ConnectionUpdatePacket();
+                updatePacket.State = value;
+                updatePacket.Reason = "Setter in remote.";
+                Send(updatePacket);
+                _connectionState = value;
+            }
         }
 
         private bool _clientActive = false;
+
+        private string _clientPassword = "DefaultPassword";
+
+        public string PasswordHash
+        {
+            get
+            {
+                return _clientPassword.GetStringHash();
+            }
+        }
 
         private Thread _clientThread;
 
@@ -163,6 +198,30 @@ namespace SocketNetworking
                 return _clientLocation;
             }
         }
+
+
+        private ProtocolConfiguration _clientConfiguration = new ProtocolConfiguration();
+
+        /// <summary>
+        /// Represents expected protocol and version from server. Note that the set statement will fail is the client is connected to a server.
+        /// </summary>
+        public ProtocolConfiguration ClientConfiguration
+        {
+            get
+            {
+                return _clientConfiguration;
+            }
+            set
+            {
+                if (IsConnected)
+                {
+                    Log.Error("Can't update NetworkConfiguration while client is connected.");
+                    return;
+                }
+                _clientConfiguration = value;
+            }
+        }
+
 
         private Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
 
@@ -272,6 +331,47 @@ namespace SocketNetworking
         public NetworkClient()
         {
             _clientLocation = ClientLocation.Local;
+            ClientConnected += OnLocalClientConnected;
+        }
+
+        /// <summary>
+        /// Used when creating a <see cref="NetworkClient"/> object on the server. Do not call this on the local client.
+        /// </summary>
+        /// <param name="clientId">
+        /// Given ClientID
+        /// </param>
+        /// <param name="socket">
+        /// The <see cref="System.Net.Sockets.TcpClient"/> object which handles data transport.
+        /// </param>
+        public NetworkClient(int clientId, TcpClient socket)
+        {
+            _clientId = clientId;
+            _tcpClient = socket;
+            _clientLocation = ClientLocation.Remote;
+            ClientConnected += OnRemoteClientConnected;
+            ClientConnected?.Invoke();
+            _clientThread = new Thread(ClientStartThread);
+            _clientThread.Start();
+        }
+
+
+        void OnLocalClientConnected()
+        {
+            if(CurrnetClientLocation != ClientLocation.Local)
+            {
+                return;
+            }
+            ClientDataPacket dataPacket = new ClientDataPacket(_clientPassword);
+            Send(dataPacket);
+        }
+
+        void OnRemoteClientConnected()
+        {
+            if(CurrnetClientLocation != ClientLocation.Remote)
+            {
+                return;
+            }
+            CurrentConnectionState = ConnectionState.Handshake;
         }
 
         /// <summary>
@@ -283,10 +383,13 @@ namespace SocketNetworking
         /// <param name="port">
         /// An <see cref="int"/> representation of the port
         /// </param>
+        /// <param name="password">
+        /// A <see cref="string"/> representing the password. Note that it will be hashed when sending to the server.
+        /// </param>
         /// <returns>
         /// A <see cref="bool"/> indicating connection success. Note this only returns the status of the socket connection, not of the full connection action. E.g. you can still fail to connect if the server refuses to accept the client.
         /// </returns>
-        public bool Connect(string hostname, int port)
+        public bool Connect(string hostname, int port, string password)
         {
             if(CurrnetClientLocation == ClientLocation.Remote)
             {
@@ -308,6 +411,7 @@ namespace SocketNetworking
                 Log.Error($"Failed to connect: \n {ex}");
                 return false;
             }
+            _clientPassword = password;
             StartClient();
             return true;
         }
@@ -332,25 +436,10 @@ namespace SocketNetworking
             _clientThread.Start();
             _clientActive = true;
             _shuttingDown = false;
+            ClientConnected?.Invoke();
         }
 
-        /// <summary>
-        /// Used when creating a <see cref="NetworkClient"/> object on the server. Do not call this on the client.
-        /// </summary>
-        /// <param name="clientId">
-        /// Given ClientID
-        /// </param>
-        /// <param name="socket">
-        /// The <see cref="System.Net.Sockets.TcpClient"/> object which handles data transport.
-        /// </param>
-        public NetworkClient(int clientId, TcpClient socket)
-        {
-            _clientId = clientId;
-            _tcpClient = socket;
-            _clientLocation = ClientLocation.Remote;
-            _clientThread = new Thread(ClientStartThread);
-            _clientThread.Start();
-        }
+
 
         private void ClientStartThread()
         {
@@ -414,6 +503,21 @@ namespace SocketNetworking
                         _connectionState = ConnectionState.Connected;
                     }
                     break;
+                case PacketType.ClientData:
+                    ClientDataPacket clientDataPacket = new ClientDataPacket();
+                    clientDataPacket.Deserialize(data);
+                    if(clientDataPacket.Configuration.Protocol != NetworkServer.ServerConfiguration.Protocol || clientDataPacket.Configuration.Version != NetworkServer.ServerConfiguration.Version)
+                    {
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration} Got: {clientDataPacket.Configuration}");
+                        break;
+                    }
+                    if((clientDataPacket.PasswordHash != NetworkServer.ServerPassword.GetStringHash()) && NetworkServer.UseServerPassword)
+                    {
+                        Disconnect("Incorrect Server Password");
+                        break;
+                    }
+                    CurrentConnectionState = ConnectionState.Connected;
+                    break;
                 default:
                     Log.Error("Packet is not handled!");
                     break;
@@ -432,9 +536,14 @@ namespace SocketNetworking
                     TriggerPacketListenerCheck(header, data, RemoteObjects);
                     break;
                 case PacketType.ServerData:
-                    ServerDataPacket packet = new ServerDataPacket();
-                    packet.Deserialize(data);
-                    _clientId = packet.YourClientID;
+                    ServerDataPacket serverDataPacket = new ServerDataPacket();
+                    serverDataPacket.Deserialize(data);
+                    _clientId = serverDataPacket.YourClientID;
+                    if (serverDataPacket.Configuration.Protocol != ClientConfiguration.Protocol || serverDataPacket.Configuration.Version != ClientConfiguration.Version)
+                    {
+                        Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
+                        break;
+                    }
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
@@ -568,7 +677,8 @@ namespace SocketNetworking
             ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
             connectionUpdatePacket.State = ConnectionState.Disconnected;
             connectionUpdatePacket.Reason = message;
-            if(CurrnetClientLocation == ClientLocation.Remote)
+            Send(connectionUpdatePacket);
+            if (CurrnetClientLocation == ClientLocation.Remote)
             {
                 Log.Error($"Disconnecting Client {ClientID} for " + message);
                 StopClient();
@@ -578,7 +688,6 @@ namespace SocketNetworking
                 Log.Error("Disconnecting from server. Reason: " + message);
                 StopClient();
             }
-            Send(connectionUpdatePacket);
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
+using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
@@ -68,6 +69,35 @@ namespace SocketNetworking
             il.Emit(OpCodes.Sizeof, type);
             il.Emit(OpCodes.Ret);
             return (int)dm.Invoke(null, null);
+        }
+
+        public static int SerializedSize(this string str)
+        {
+            return Encoding.UTF8.GetBytes(str).Length;
+        }
+
+        /// <summary>
+        /// Hashes the given <see cref="string"/>.
+        /// </summary>
+        /// <param name="inputString">
+        /// The string to hash
+        /// </param>
+        /// <returns>
+        /// The hashed <see cref="string"/>
+        /// </returns>
+        public static string GetStringHash(this string inputString)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in GetHash(inputString))
+                sb.Append(b.ToString("X2"));
+
+            return sb.ToString();
+        }
+
+        public static byte[] GetHash(string inputString)
+        {
+            using (HashAlgorithm algorithm = SHA256.Create())
+                return algorithm.ComputeHash(Encoding.UTF8.GetBytes(inputString));
         }
     }
 }
