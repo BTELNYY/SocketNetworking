@@ -9,7 +9,7 @@ namespace SocketNetworking.PacketSystem
 {
     public class Packet
     {
-        public const int MaxPacketSize = 4096;
+        public const int MaxPacketSize = 8192;
 
         public static readonly Type[] SupportedTypes =
         {
@@ -23,6 +23,8 @@ namespace SocketNetworking.PacketSystem
             typeof(float),
             typeof(double),
             typeof(bool),
+            typeof(byte),
+            typeof(sbyte),
             typeof(IPacketSerializable),
         };
 
@@ -42,6 +44,8 @@ namespace SocketNetworking.PacketSystem
             if (value is float f ) { return BitConverter.GetBytes(f); }
             if (value is double d ) { return BitConverter.GetBytes(d); }
             if (value is bool b) { return BitConverter.GetBytes(b); }
+            if (value is byte by) { return BitConverter.GetBytes(by); }
+            if (value is sbyte sby) { return BitConverter.GetBytes(sby); }
             if (value is string st)
             {
                 PacketWriter writer = new PacketWriter();
@@ -63,6 +67,7 @@ namespace SocketNetworking.PacketSystem
         public static PacketHeader ReadPacketHeader(byte[] data)
         {
             PacketReader reader = new PacketReader(data);
+            int size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadInt();
             int networkTarget = reader.ReadInt();
             int customPacketID = 0;
@@ -70,10 +75,13 @@ namespace SocketNetworking.PacketSystem
             {
                 customPacketID = reader.ReadInt();
             }
-            return new PacketHeader(type, networkTarget, customPacketID);
+            return new PacketHeader(type, networkTarget, customPacketID, size);
         }
 
-
+        /// <summary>
+        /// This is unreliable. Do not use this to calculate any size.
+        /// </summary>
+        public int Size = 0;
 
         /// <summary>
         /// PacketType used to determine if the library should look for Listeners or handle internally.
@@ -83,7 +91,7 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// The NetworkID of the object which this packet is being sent to. -1 Means all objects.
         /// </summary>
-        public int NetowrkIDTarget { get; set; } = -1;
+        public int NetowrkIDTarget  = -1;
 
         /// <summary>
         /// Function called to serialize packets. Ensure you get the return type of this function becuase you'll need to add on to that array. creating a new array will cause issues.
@@ -108,6 +116,8 @@ namespace SocketNetworking.PacketSystem
         public virtual PacketReader Deserialize(byte[] data)
         {
             PacketReader reader = new PacketReader(data);
+            //Very cursed, must read first in so that the desil doesn't fail next line.
+            Size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadInt();
             if(type != Type)
             {
@@ -146,22 +156,25 @@ namespace SocketNetworking.PacketSystem
     /// </summary>
     public struct PacketHeader
     {
+        public int Size;
         public PacketType Type;
         public int NetworkIDTarget;
         public int CustomPacketID;
 
-        public PacketHeader(PacketType type, int networkIDTarget, int customPacketID)
+        public PacketHeader(PacketType type, int networkIDTarget, int customPacketID, int size)
         {
             Type = type;
             NetworkIDTarget = networkIDTarget;
             CustomPacketID = customPacketID;
+            Size = size;
         }
 
-        public PacketHeader(PacketType type, int networkIDTarget)
+        public PacketHeader(PacketType type, int networkIDTarget, int size)
         {
             Type = type;
             NetworkIDTarget = networkIDTarget;
             CustomPacketID = 0;
+            Size = size;
         }
     }
 }

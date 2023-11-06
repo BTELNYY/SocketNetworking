@@ -112,8 +112,8 @@ namespace SocketNetworking
                 }
                 ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
                 readyStateUpdatePacket.Ready = value;
-                _ready = value;
                 Send(readyStateUpdatePacket);
+                _ready = value;
             }
         }
 
@@ -375,6 +375,9 @@ namespace SocketNetworking
         {
             Log.Info($"Client thread started, ID {ClientID}");
             _tcpClient.NoDelay = true;
+            int waitingSize = 0;
+            byte[] prevPacketFragment = { };
+            byte[] buffer = new byte[Packet.MaxPacketSize];
             while (true)
             {
                 if (_shuttingDown)
@@ -396,10 +399,25 @@ namespace SocketNetworking
                     //Log.Debug("Nothing to read on stream");
                     continue;
                 }
-                byte[] buffer = new byte[Packet.MaxPacketSize];
+                Log.Debug(TcpClient.ReceiveBufferSize.ToString());
                 int count = NetworkStream.Read(buffer, 0, Packet.MaxPacketSize);
+                Log.Debug($"Read {count} bytes from buffer!");
                 PacketHeader header = Packet.ReadPacketHeader(buffer);
-                Log.Debug($"Inbound Packet Info, Size: {count}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
+                bool skipSizeCheck = false;
+                if(count == waitingSize)
+                {
+                    Log.Debug("Got other packet section!");
+                    prevPacketFragment = prevPacketFragment.Concat(buffer).ToArray();
+                    skipSizeCheck = true;
+                }
+                if(header.Size > count && !skipSizeCheck)
+                {
+                    Log.Debug("Packet was broken up into sections, awaiting next section.");
+                    waitingSize = header.Size - count;
+                    prevPacketFragment = buffer;
+                    continue;
+                }
+                Log.Debug($"Inbound Packet Info, Size: {count}, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
                 if (CurrnetClientLocation == ClientLocation.Remote)
                 {
                     HandleRemoteClient(header, buffer);
@@ -408,6 +426,7 @@ namespace SocketNetworking
                 {
                     HandleLocalClient(header, buffer);
                 }
+                buffer = new byte[Packet.MaxPacketSize];
             }
             Log.Info("Shutting down client, Closing socket.");
             _tcpClient.Close();
@@ -546,12 +565,16 @@ namespace SocketNetworking
                 Log.Info("Sending packet. Type: " + packet.Type.ToString());
                 NetworkStream serverStream = NetworkStream;
                 byte[] packetBytes = packet.Serialize().Data;
+                PacketWriter writer = new PacketWriter();
+                writer.WriteInt(packetBytes.Length);
+                writer.Write(packetBytes);
+                byte[] fullBytes = writer.Data;
                 if(packetBytes.Length > Packet.MaxPacketSize)
                 {
                     Log.Error("Packet too large!");
                     return;
                 }
-                serverStream.Write(packetBytes, 0, packetBytes.Length);
+                serverStream.Write(fullBytes, 0, fullBytes.Length);
             }
         }
 
