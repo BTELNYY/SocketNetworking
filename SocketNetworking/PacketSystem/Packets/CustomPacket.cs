@@ -13,19 +13,15 @@ namespace SocketNetworking.PacketSystem.Packets
     {
         public sealed override PacketType Type => PacketType.CustomPacket;
 
-        public virtual int CustomPacketID { get; set; } = 0;
-
         public override PacketWriter Serialize()
         {
             PacketWriter writer = base.Serialize();
-            writer.WriteInt(CustomPacketID);
             return writer;
         }
 
         public override PacketReader Deserialize(byte[] data)
         {
             PacketReader reader = base.Deserialize(data);
-            CustomPacketID = reader.ReadInt();
             return reader;
         }
     }

@@ -70,11 +70,7 @@ namespace SocketNetworking.PacketSystem
             int size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadInt();
             int networkTarget = reader.ReadInt();
-            int customPacketID = 0;
-            if(type == PacketType.CustomPacket)
-            {
-                customPacketID = reader.ReadInt();
-            }
+            int customPacketID = reader.ReadInt();
             return new PacketHeader(type, networkTarget, customPacketID, size);
         }
 
@@ -94,6 +90,11 @@ namespace SocketNetworking.PacketSystem
         public int NetowrkIDTarget  = -1;
 
         /// <summary>
+        /// This will only be a value greater then 0 if <see cref="Type"/> is <see cref="PacketType.CustomPacket"/>
+        /// </summary>
+        public int CustomPacketID = -1;
+
+        /// <summary>
         /// Function called to serialize packets. Ensure you get the return type of this function becuase you'll need to add on to that array. creating a new array will cause issues.
         /// </summary>
         /// <returns>
@@ -104,6 +105,7 @@ namespace SocketNetworking.PacketSystem
             PacketWriter writer = new PacketWriter();
             writer.WriteInt((int)Type);
             writer.WriteInt(NetowrkIDTarget);
+            writer.WriteInt(CustomPacketID);
             return writer;
         }
 
@@ -124,6 +126,7 @@ namespace SocketNetworking.PacketSystem
                 throw new InvalidNetworkDataException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
             }
             NetowrkIDTarget = reader.ReadInt();
+            CustomPacketID = reader.ReadInt();
             return reader;
         }
     }
