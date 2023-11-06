@@ -48,8 +48,8 @@ namespace SocketNetworking
         public int GetLength()
         {
             int count = sizeof(int) * 2;
-            count += _version.SerializedSize();
             count += _protocol.SerializedSize();
+            count += _version.SerializedSize();
             return count;
         }
 
@@ -64,8 +64,8 @@ namespace SocketNetworking
         public int Deserialize(byte[] data)
         {
             PacketReader reader = new PacketReader(data);
-            _version = reader.ReadString();
             _protocol = reader.ReadString();
+            _version = reader.ReadString();
             return reader.ReadBytes;
         }
     }

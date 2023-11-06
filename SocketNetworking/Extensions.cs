@@ -31,13 +31,14 @@ namespace SocketNetworking
         /// </exception>
         public static T[] RemoveFromStart<T>(this T[] array, int amount)
         {
+            //Log.Debug("Old Size: " + array.Length);
             if (array.Length < amount)
             {
                 throw new ArgumentOutOfRangeException("amount", "Amount is out of range for specified array.");
             }
             List<T> newArray = array.ToList();
             newArray.RemoveRange(0, amount);
-            array = newArray.ToArray();
+            //Log.Debug("New size: " + newArray.ToArray().Length + " Should have removed: " + amount);
             return newArray.ToArray();
         }
 

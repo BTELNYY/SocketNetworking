@@ -64,6 +64,21 @@ namespace SocketNetworking
         /// </summary>
         public static bool UseServerPassword = false;
 
+        /// <summary>
+        /// What port should the server start on?
+        /// </summary>
+        public static int Port = 7777;
+
+        /// <summary>
+        /// What IP should the server bind to?
+        /// </summary>
+        public static string BindIP = "127.0.0.1";
+
+        /// <summary>
+        /// Should the server Auto-Ready Clients when the the <see cref="NetworkClient.CurrentConnectionState"/> becomes <see cref="PacketSystem.ConnectionState.Connected"/>?
+        /// </summary>
+        public static bool DefaultReady = true;
+
         public static Thread ServerThread;
 
         private static NetworkServer _serverInstance;
@@ -118,10 +133,10 @@ namespace SocketNetworking
         private void ServerStartThread()
         {
             Log.Info("Server starting...");
-            TcpListener serverSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), 7777);
-            TcpClient clientSocket = default;
+            TcpListener serverSocket = new TcpListener(IPAddress.Parse(BindIP), Port);
             serverSocket.Start();
             Log.Info("Socket Started.");
+            Log.Info($"Listening on {BindIP}:{Port}");
             int counter = 0;
             while (true)
             {
@@ -130,13 +145,18 @@ namespace SocketNetworking
                     break;
                 }
                 counter += 1;
-                clientSocket = serverSocket.AcceptTcpClient();
-                IPEndPoint remoteIpEndPoint = clientSocket.Client.RemoteEndPoint as IPEndPoint;
+                TcpClient socket = serverSocket.AcceptTcpClient();
+                socket.NoDelay = true;
+                IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                 Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
-                NetworkClient client = new NetworkClient(counter, clientSocket);
+                NetworkClient client = new NetworkClient(counter, socket);
                 Clients.Add(counter, client);
                 CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                 {
+                    if(x == null)
+                    {
+                        return;
+                    }
                     if(x.CurrentConnectionState != PacketSystem.ConnectionState.Connected)
                     {
                         x.Disconnect("Failed to handshake in time.");

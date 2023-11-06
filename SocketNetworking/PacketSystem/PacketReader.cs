@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -56,7 +57,7 @@ namespace SocketNetworking.PacketSystem
         public byte[] Read(int length)
         {
             byte[] data = _workingSetData.Take(length).ToArray();
-            _workingSetData.RemoveFromStart(length);
+            _workingSetData = _workingSetData.RemoveFromStart(length);
             return data;
         }
 
@@ -64,15 +65,28 @@ namespace SocketNetworking.PacketSystem
         {
             IPacketSerializable serializable = (IPacketSerializable)Activator.CreateInstance(typeof(T));
             int bytesUsed = serializable.Deserialize(_workingSetData);
-            _workingSetData.RemoveFromStart(bytesUsed);
+            _workingSetData = _workingSetData.RemoveFromStart(bytesUsed);
             return (T)serializable;
+        }
+
+        public byte ReadByte()
+        {
+            byte result = _workingSetData[0];
+            _workingSetData = _workingSetData.RemoveFromStart(1);
+            return result;
+        }
+
+        public sbyte ReadSByte()
+        {
+            sbyte result = Convert.ToSByte(ReadByte());
+            return result;
         }
 
         public ulong ReadULong()
         {
             int sizeToRemove = sizeof(ulong);
             ulong result = BitConverter.ToUInt64(_workingSetData, 0);
-            _workingSetData.RemoveFromStart(sizeToRemove);
+            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
             return result;
         }
 
@@ -80,7 +94,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(uint);
             uint result = BitConverter.ToUInt32(_workingSetData, 0);
-            _workingSetData.RemoveFromStart(sizeToRemove);
+            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
             return result;
         }
 
@@ -88,7 +102,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(ushort);
             ushort result = BitConverter.ToUInt16(_workingSetData, 0);
-            _workingSetData.RemoveFromStart(sizeToRemove);
+            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
             return result;
         }
 
@@ -96,7 +110,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(long);
             long result = BitConverter.ToInt64(_workingSetData, 0);
-            _workingSetData.RemoveFromStart(sizeToRemove);
+            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
             return result;
         }
 
@@ -104,7 +118,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(int);
             int result = BitConverter.ToInt32(_workingSetData, 0);
-            _workingSetData.RemoveFromStart(sizeToRemove);
+            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
             return result;
         }
 
@@ -112,7 +126,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(short);
             short result = BitConverter.ToInt16(_workingSetData, 0);
-            _workingSetData.RemoveFromStart(sizeToRemove);
+            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
             return result;
         }
 
@@ -120,7 +134,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(float);
             float result = BitConverter.ToSingle(_workingSetData, 0);
-            _workingSetData.RemoveFromStart(sizeToRemove);
+            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
             return result;
         }
 
@@ -128,7 +142,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(double);
             double result = BitConverter.ToDouble(_workingSetData, 0);
-            _workingSetData.RemoveFromStart(sizeToRemove);
+            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
             return result;
         }
 
@@ -136,7 +150,7 @@ namespace SocketNetworking.PacketSystem
         {
             int lenghtOfString = ReadInt();
             string result = Encoding.UTF8.GetString(_workingSetData, 0, lenghtOfString);
-            _workingSetData.RemoveFromStart(lenghtOfString);
+            _workingSetData = _workingSetData.RemoveFromStart(lenghtOfString);
             return result;
         }
 
@@ -144,7 +158,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(bool);
             bool result = BitConverter.ToBoolean(_workingSetData, 0);
-            _workingSetData.RemoveFromStart(sizeToRemove);
+            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
             return result;
         }
     }

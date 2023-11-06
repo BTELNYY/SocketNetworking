@@ -4,16 +4,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{AB97887E-EF11-4CE3-83B6-7E91456CF035}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SocketNetworking</RootNamespace>
-    <AssemblyName>SocketNetworking</AssemblyName>
+    <ProjectGuid>{F8CBB59A-172D-4BF6-BCE7-9D53154F61B3}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SocketNetworking.ExampleServer</RootNamespace>
+    <AssemblyName>SocketNetworking.ExampleServer</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,6 +24,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -41,31 +43,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\PacketDefinition.cs" />
-    <Compile Include="Attributes\PacketListener.cs" />
-    <Compile Include="CallbackTimer.cs" />
-    <Compile Include="NetworkManager.cs" />
-    <Compile Include="PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
-    <Compile Include="PacketSystem\Packets\ClientDataPacket.cs" />
-    <Compile Include="ProtocolConfiguration.cs" />
-    <Compile Include="Enums.cs" />
-    <Compile Include="Exceptions\CustomPacketCollisionException.cs" />
-    <Compile Include="Extensions.cs" />
-    <Compile Include="NetworkClient.cs" />
-    <Compile Include="Log.cs" />
-    <Compile Include="NetworkServer.cs" />
-    <Compile Include="Exceptions\InvalidNetworkDataException.cs" />
-    <Compile Include="PacketSystem\INetworkObject.cs" />
-    <Compile Include="PacketSystem\IPacketSerializable.cs" />
-    <Compile Include="PacketSystem\Packets\ConnectionUpdatePacket.cs" />
-    <Compile Include="PacketSystem\Packets\ServerDataPacket.cs" />
-    <Compile Include="PacketSystem\Packets\CustomPacket.cs" />
-    <Compile Include="PacketSystem\PacketWriter.cs" />
-    <Compile Include="PacketSystem\PacketReader.cs" />
-    <Compile Include="PacketSystem\Packet.cs" />
-    <Compile Include="PacketSystem\TypeWrappers\SerializableArray.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SocketNetworking\SocketNetworking.csproj">
+      <Project>{ab97887e-ef11-4ce3-83b6-7e91456cf035}</Project>
+      <Name>SocketNetworking</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

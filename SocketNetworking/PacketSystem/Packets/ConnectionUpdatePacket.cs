@@ -12,9 +12,9 @@ namespace SocketNetworking.PacketSystem.Packets
     {
         public sealed override PacketType Type => PacketType.ConnectionStateUpdate;
 
-        public ConnectionState State { get; set; } = ConnectionState.Disconnected;
+        public ConnectionState State  = ConnectionState.Disconnected;
 
-        public string Reason { get; set; } = "No comment";
+        public string Reason  = "No comment";
 
         public override PacketReader Deserialize(byte[] data)
         {

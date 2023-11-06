@@ -31,73 +31,84 @@ namespace SocketNetworking.PacketSystem
         public void Write<T>(IPacketSerializable serializable)
         {
             byte[] data = serializable.Serialize();
-            _workingSetData.AppendAll(data);
+            _workingSetData = _workingSetData.Concat(data).ToArray();
         }
 
         public void Write(byte[] data)
         {
-            _workingSetData.AppendAll(data);
+            _workingSetData = _workingSetData.Concat(data).ToArray();
+        }
+
+        public void WriteByte(byte data)
+        {
+            _workingSetData = _workingSetData.Append(data).ToArray();
+        }
+
+        public void WriteSByte(sbyte data)
+        {
+            byte written = Convert.ToByte(data);
+            _workingSetData = _workingSetData.Append(written).ToArray();
         }
 
         public void WriteLong(long data)
         {
             byte[] result = BitConverter.GetBytes(data);
-            _workingSetData.AppendAll(result);
+            _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteInt(int data)
         {
             byte[] result = BitConverter.GetBytes(data);
-            _workingSetData.AppendAll(result);
+            _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteShort(short data)
         {
             byte[] result = BitConverter.GetBytes(data);
-            _workingSetData.AppendAll(result);
+            _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteULong(ulong data)
         {
             byte[] result = BitConverter.GetBytes(data);
-            _workingSetData.AppendAll(result);
+            _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteUInt(uint data)
         {
             byte[] result = BitConverter.GetBytes(data);
-            _workingSetData.AppendAll(result);
+            _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteUShort(ushort data)
         {
             byte[] result = BitConverter.GetBytes(data);
-            _workingSetData.AppendAll(result);
+            _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteFloat(float data)
         {
             byte[] result = BitConverter.GetBytes(data);
-            _workingSetData.AppendAll(result);
+            _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteDouble(double data)
         {
             byte[] result = BitConverter.GetBytes(data);
-            _workingSetData.AppendAll(result);
+            _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteString(string data)
         {
-            byte[] bytes = Encoding.Unicode.GetBytes(data);
+            byte[] bytes = Encoding.UTF8.GetBytes(data);
             WriteInt(bytes.Length);
-            _workingSetData.AppendAll(bytes);
+            _workingSetData = _workingSetData.Concat(bytes).ToArray();
         }
 
         public void WriteBool(bool data)
         {
             byte[] result = BitConverter.GetBytes(data);
-            _workingSetData.AppendAll(result);
+            _workingSetData = _workingSetData.Concat(result).ToArray();
         }
     }
 }

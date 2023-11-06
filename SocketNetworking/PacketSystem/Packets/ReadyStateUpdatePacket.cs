@@ -3,29 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Attributes;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
-    /// <summary>
-    /// Base class for all custom packets, it is the only class accepted by library. Your CustomPacketID value must be unique per class.
-    /// </summary>
-    public class CustomPacket : Packet
+    [PacketDefinition]
+    public sealed class ReadyStateUpdatePacket : Packet
     {
-        public sealed override PacketType Type => PacketType.CustomPacket;
+        public sealed override PacketType Type => PacketType.ReadyStateUpdate;
 
-        public virtual int CustomPacketID { get; set; } = 0;
+        public bool Ready = false;
 
         public override PacketWriter Serialize()
         {
             PacketWriter writer = base.Serialize();
-            writer.WriteInt(CustomPacketID);
+            writer.WriteBool(Ready);
             return writer;
         }
 
         public override PacketReader Deserialize(byte[] data)
         {
             PacketReader reader = base.Deserialize(data);
-            CustomPacketID = reader.ReadInt();
+            Ready = reader.ReadBool();
             return reader;
         }
     }

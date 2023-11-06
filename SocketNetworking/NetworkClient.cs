@@ -90,6 +90,33 @@ namespace SocketNetworking
             }
         }
 
+        private bool _ready = false;
+
+        public bool Ready
+        {
+            get
+            {
+                return _ready;
+            }
+            set
+            {
+                if(CurrnetClientLocation != ClientLocation.Remote)
+                {
+                    Log.Warning("Local Client tired modifying its own ready state.");
+                    return;
+                }
+                if(!IsConnected || CurrentConnectionState != ConnectionState.Connected) 
+                {
+                    Log.Warning("Can't change ready state becuase the socket is not connected or the handshake isn't done.");
+                    return;
+                }
+                ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
+                readyStateUpdatePacket.Ready = value;
+                _ready = value;
+                Send(readyStateUpdatePacket);
+            }
+        }
+
         /// <summary>
         /// The <see cref="System.Net.Sockets.TcpClient"/>s <see cref="System.Net.Sockets.NetworkStream"/>
         /// </summary>
@@ -223,106 +250,6 @@ namespace SocketNetworking
         }
 
 
-        private Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
-
-        /// <summary>
-        /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your netowrk objects.
-        /// </summary>
-        /// <param name="assmebly">
-        /// The <see cref="Assembly"/> which to scan.
-        /// </param>
-        /// <exception cref="CustomPacketCollisionException">
-        /// Thrown when 2 or more packets collide by attempting to register themselves on the same PacketID.
-        /// </exception>
-        public void ImportCustomPackets(Assembly assmebly)
-        {
-            List<Type> types = assmebly.GetTypes().Where(x => x.IsSubclassOf(typeof(CustomPacket))).ToList();
-            types = types.Where(x => x.GetCustomAttribute(typeof(PacketDefinition)) != null).ToList();
-            foreach(Type type in types)
-            {
-                CustomPacket packet = (CustomPacket)Activator.CreateInstance(type);
-                int customPacketId = packet.CustomPacketID;
-                if (AdditionalPacketTypes.ContainsKey(customPacketId))
-                {
-                    throw new CustomPacketCollisionException(customPacketId, AdditionalPacketTypes[customPacketId], type);
-                }
-                Log.Info($"Adding custom packet with ID {customPacketId} and name {type.Name}");
-                AdditionalPacketTypes.Add(customPacketId, type);
-            }
-        }
-
-        /// <summary>
-        /// Adds a list of custom packets to the additional packets dictionary. Note that all packets provided must be instances and they must all have the <see cref="PacketDefinition"/> attribute.
-        /// </summary>
-        /// <param name="packets">
-        /// List of <see cref="CustomPacket"/>s to add.
-        /// </param>
-        /// <exception cref="CustomPacketCollisionException"></exception>
-        public void ImportCustomPackets(List<CustomPacket> packets)
-        {
-            foreach(CustomPacket packet in packets)
-            {
-                if(packet.GetType().GetCustomAttribute(typeof(PacketDefinition)) == null) 
-                {
-                    Log.Warning($"Custom packet {packet.GetType().Name} does not implement attribute {nameof(PacketDefinition)} it will be ignored.");
-                    continue;
-                }
-                if (AdditionalPacketTypes.ContainsKey(packet.CustomPacketID))
-                {
-                    throw new CustomPacketCollisionException(packet.CustomPacketID, AdditionalPacketTypes[packet.CustomPacketID], packet.GetType());
-                }
-                Log.Info($"Adding custom packet with ID {packet.CustomPacketID} and name {packet.GetType().Name}");
-                AdditionalPacketTypes.Add(packet.CustomPacketID, packet.GetType());
-            }
-        }
-
-        /// <summary>
-        /// Adds packets from type list to the additional packets dictionary. Note that all packets must inherit from <see cref="CustomPacket"/> and have the <see cref="PacketDefinition"/> attribute.
-        /// </summary>
-        /// <param name="importedTypes">
-        /// List of <see cref="Type"/>s which meet criteria (Inherit from <see cref="CustomPacket"/> and have the <see cref="PacketDefinition"/> attribute) to add.
-        /// </param>
-        /// <exception cref="CustomPacketCollisionException"></exception>
-        public void ImportCustomPackets(List<Type> importedTypes)
-        {
-            List<Type> types = importedTypes.Where(x => x.IsSubclassOf(typeof(CustomPacket))).ToList();
-            types = types.Where(x => x.GetCustomAttribute(typeof(PacketDefinition)) != null).ToList();
-            foreach (Type type in types)
-            {
-                CustomPacket packet = (CustomPacket)Activator.CreateInstance(type);
-                int customPacketId = packet.CustomPacketID;
-                if (AdditionalPacketTypes.ContainsKey(customPacketId))
-                {
-                    throw new CustomPacketCollisionException(customPacketId, AdditionalPacketTypes[customPacketId], type);
-                }
-                Log.Info($"Adding custom packet with ID {customPacketId} and name {type.Name}");
-                AdditionalPacketTypes.Add(customPacketId, type);
-            }
-        }
-
-
-        private List<INetworkObject> RemoteObjects = new List<INetworkObject>();
-
-        private List<INetworkObject> LocalObjects = new List<INetworkObject>();
-
-        /// <summary>
-        /// Adds a <see cref="INetworkObject"/> to the list of objects which we check the methods of for the <see cref="PacketListener"/> attribute. This automatically checks for location of the client, remote or local and adds it as needed.
-        /// </summary>
-        /// <param name="networkObject">
-        /// An instance of the a class which implements the <see cref="INetworkObject"/> interface
-        /// </param>
-        public void AddNetworkObject(INetworkObject networkObject)
-        {
-            if(CurrnetClientLocation == ClientLocation.Local)
-            {
-                LocalObjects.Add(networkObject);
-            }
-            if(CurrnetClientLocation == ClientLocation.Remote)
-            {
-                RemoteObjects.Add(networkObject);
-            }
-        }
-
         private bool _shuttingDown = false;
 
         /// <summary>
@@ -347,6 +274,7 @@ namespace SocketNetworking
         {
             _clientId = clientId;
             _tcpClient = socket;
+            _tcpClient.NoDelay = true;
             _clientLocation = ClientLocation.Remote;
             ClientConnected += OnRemoteClientConnected;
             ClientConnected?.Invoke();
@@ -402,6 +330,7 @@ namespace SocketNetworking
                 return false;
             }
             _tcpClient = new TcpClient();
+            _tcpClient.NoDelay = true;
             try
             {
                 _tcpClient.Connect(hostname, port);
@@ -428,14 +357,15 @@ namespace SocketNetworking
                 Log.Error("Can't start client, already started.");
                 return;
             }
-            if(_clientThread != null)
+            Log.Info("Starting client!");
+            if (_clientThread != null)
             {
                 _clientThread.Abort();
             }
             _clientThread = new Thread(ClientStartThread);
-            _clientThread.Start();
             _clientActive = true;
             _shuttingDown = false;
+            _clientThread.Start();
             ClientConnected?.Invoke();
         }
 
@@ -444,24 +374,32 @@ namespace SocketNetworking
         private void ClientStartThread()
         {
             Log.Info($"Client thread started, ID {ClientID}");
+            _tcpClient.NoDelay = true;
             while (true)
             {
                 if (_shuttingDown)
                 {
+                    Log.Info("Shutting down loop");
                     break;
                 }
                 if (!IsConnected)
                 {
+                    Log.Debug("Not connected!");
                     continue;
                 }
                 if(TcpClient.ReceiveBufferSize == 0)
                 {
                     continue;
                 }
-                byte[] buffer = new byte[TcpClient.ReceiveBufferSize];
-                int count = NetworkStream.Read(buffer, 0, TcpClient.ReceiveBufferSize);
-                Log.Debug($"Reading Incoming Packet. Size: {count}");
+                if (!NetworkStream.DataAvailable)
+                {
+                    //Log.Debug("Nothing to read on stream");
+                    continue;
+                }
+                byte[] buffer = new byte[Packet.MaxPacketSize];
+                int count = NetworkStream.Read(buffer, 0, Packet.MaxPacketSize);
                 PacketHeader header = Packet.ReadPacketHeader(buffer);
+                Log.Debug($"Inbound Packet Info, Size: {count}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
                 if (CurrnetClientLocation == ClientLocation.Remote)
                 {
                     HandleRemoteClient(header, buffer);
@@ -483,7 +421,7 @@ namespace SocketNetworking
             switch (header.Type)
             {
                 case PacketType.CustomPacket:
-                    TriggerPacketListenerCheck(header, data, RemoteObjects);
+                    NetworkManager.TriggerPacketListeners(header, data, CurrnetClientLocation);
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
@@ -506,9 +444,14 @@ namespace SocketNetworking
                 case PacketType.ClientData:
                     ClientDataPacket clientDataPacket = new ClientDataPacket();
                     clientDataPacket.Deserialize(data);
-                    if(clientDataPacket.Configuration.Protocol != NetworkServer.ServerConfiguration.Protocol || clientDataPacket.Configuration.Version != NetworkServer.ServerConfiguration.Version)
+                    if(clientDataPacket.Configuration.Protocol != NetworkServer.ServerConfiguration.Protocol)
                     {
-                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration} Got: {clientDataPacket.Configuration}");
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Protocol} Got: {clientDataPacket.Configuration.Protocol}");
+                        break;
+                    }
+                    if(clientDataPacket.Configuration.Version != NetworkServer.ServerConfiguration.Version)
+                    {
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
                         break;
                     }
                     if((clientDataPacket.PasswordHash != NetworkServer.ServerPassword.GetStringHash()) && NetworkServer.UseServerPassword)
@@ -516,7 +459,15 @@ namespace SocketNetworking
                         Disconnect("Incorrect Server Password");
                         break;
                     }
+                    ServerDataPacket serverDataPacket = new ServerDataPacket();
+                    serverDataPacket.YourClientID = _clientId;
+                    serverDataPacket.Configuration = NetworkServer.ServerConfiguration;
+                    Send(serverDataPacket);
                     CurrentConnectionState = ConnectionState.Connected;
+                    if (NetworkServer.DefaultReady)
+                    {
+                        Ready = true;
+                    }
                     break;
                 default:
                     Log.Error("Packet is not handled!");
@@ -533,12 +484,19 @@ namespace SocketNetworking
             switch (header.Type)
             {
                 case PacketType.CustomPacket:
-                    TriggerPacketListenerCheck(header, data, RemoteObjects);
+                    NetworkManager.TriggerPacketListeners(header, data, CurrnetClientLocation);
+                    break;
+                case PacketType.ReadyStateUpdate:
+                    ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
+                    readyStateUpdatePacket.Deserialize(data);
+                    _ready = readyStateUpdatePacket.Ready;
+                    Log.Info("New Client Ready State: " + _ready.ToString());
                     break;
                 case PacketType.ServerData:
                     ServerDataPacket serverDataPacket = new ServerDataPacket();
                     serverDataPacket.Deserialize(data);
                     _clientId = serverDataPacket.YourClientID;
+                    Log.Info("New Client ID: " + _clientId.ToString());
                     if (serverDataPacket.Configuration.Protocol != ClientConfiguration.Protocol || serverDataPacket.Configuration.Version != ClientConfiguration.Version)
                     {
                         Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
@@ -548,6 +506,7 @@ namespace SocketNetworking
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
                     connectionUpdatePacket.Deserialize(data);
+                    Log.Info("New connection state: " + connectionUpdatePacket.State.ToString());
                     if(connectionUpdatePacket.State == ConnectionState.Disconnected)
                     {
                         //ruh roh
@@ -570,67 +529,6 @@ namespace SocketNetworking
         }
 
         /// <summary>
-        /// Exposed method to allow force updating of <see cref="INetworkObject"/>s
-        /// </summary>
-        /// <param name="header">
-        /// The <see cref="PacketHeader"/> of the packet you wish to trigger a send of.
-        /// </param>
-        /// <param name="data">
-        /// A <see cref="byte[]"/> of the data of that packet. Note that it is the full data, do not trim out the header.
-        /// </param>
-        /// <param name="objects">
-        /// List of <see cref="INetworkObject"/>s you wish to update the packets
-        /// </param>
-        public void TriggerPacketListenerCheck(PacketHeader header, byte[] data, List<INetworkObject> objects)
-        {
-            objects = objects.Where(x => x.NetworkID == header.NetworkIDTarget).ToList();
-            if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
-            {
-                Log.Error("Unknown Custom packet. ID: " + header.CustomPacketID);
-                return;
-            }
-            Type packetType = AdditionalPacketTypes[header.CustomPacketID];
-            Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);
-            packet.Deserialize(data);
-            List<MethodInfo> methods = new List<MethodInfo>();
-            //This may look not very effecient, but you arent checking EVERY possible object, only the ones which match the TargetID.
-            //The other way I could do this is by making a nested dictionary hell hole, but I dont want to do that.
-            foreach (INetworkObject netObj in objects)
-            {
-                Type typeOfObject = netObj.GetType();
-                MethodInfo[] allPacketListeners = typeOfObject.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(x => x.GetCustomAttribute(typeof(PacketListener)) != null).ToArray();
-                List<MethodInfo> validMethods = new List<MethodInfo>();
-                foreach (MethodInfo method in allPacketListeners)
-                {
-                    PacketListener listener = (PacketListener)method.GetCustomAttribute(typeof(PacketListener));
-                    if (listener.DefinedType != packetType)
-                    {
-                        continue;
-                    }
-                    if (listener.DefinedDirection == PacketDirection.Any)
-                    {
-                        validMethods.Add(method);
-                        continue;
-                    }
-                    if (listener.DefinedDirection == PacketDirection.Client && CurrnetClientLocation != ClientLocation.Remote)
-                    {
-                        continue;
-                    }
-                    if (listener.DefinedDirection == PacketDirection.Server && CurrnetClientLocation != ClientLocation.Local)
-                    {
-                        continue;
-                    }
-                    validMethods.Add(method);
-                }
-                foreach (MethodInfo method in validMethods)
-                {
-                    method.Invoke(netObj, new object[] { packet });
-                }
-            }
-        }
-
-
-        /// <summary>
         /// Sends any <see cref="Packet"/> down the network stream to whatever is connected on the other side. Note that this method doesn't check who it is sending it to, instead sending it to the current stream.
         /// </summary>
         /// <param name="packet">
@@ -641,13 +539,19 @@ namespace SocketNetworking
             if (!IsConnected)
             {
                 Log.Warning("Can't Send packet, not connected!");
+                return;
             }
             else
             {
+                Log.Info("Sending packet. Type: " + packet.Type.ToString());
                 NetworkStream serverStream = NetworkStream;
                 byte[] packetBytes = packet.Serialize().Data;
+                if(packetBytes.Length > Packet.MaxPacketSize)
+                {
+                    Log.Error("Packet too large!");
+                    return;
+                }
                 serverStream.Write(packetBytes, 0, packetBytes.Length);
-                serverStream.Flush();
             }
         }
 
@@ -680,12 +584,12 @@ namespace SocketNetworking
             Send(connectionUpdatePacket);
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
-                Log.Error($"Disconnecting Client {ClientID} for " + message);
+                Log.Info($"Disconnecting Client {ClientID} for " + message);
                 StopClient();
             }
             if(CurrnetClientLocation == ClientLocation.Local)
             {
-                Log.Error("Disconnecting from server. Reason: " + message);
+                Log.Info("Disconnecting from server. Reason: " + message);
                 StopClient();
             }
         }
@@ -699,9 +603,6 @@ namespace SocketNetworking
             if(CurrnetClientLocation == ClientLocation.Remote)
             {
                 NetworkServer.Clients.Remove(ClientID);
-                RemoteObjects.Clear();
-                LocalObjects.Clear();
-                AdditionalPacketTypes.Clear();
             }
             _shuttingDown = true;
             _clientThread.Abort();

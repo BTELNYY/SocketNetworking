@@ -9,7 +9,7 @@ namespace SocketNetworking.PacketSystem
 {
     public class Packet
     {
-        public const int MaxPacketSize = ushort.MaxValue;
+        public const int MaxPacketSize = 4096;
 
         public static readonly Type[] SupportedTypes =
         {
@@ -124,7 +124,7 @@ namespace SocketNetworking.PacketSystem
     public enum PacketType 
     {
         None,
-        Error,
+        ReadyStateUpdate,
         ConnectionStateUpdate,
         ClientData,
         ServerData,

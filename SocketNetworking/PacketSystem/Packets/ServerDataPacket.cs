@@ -13,9 +13,9 @@ namespace SocketNetworking.PacketSystem.Packets
     {
         public sealed override PacketType Type => PacketType.ServerData;
 
-        public int YourClientID { get; private set; } = 0;
+        public int YourClientID = 0;
 
-        public ProtocolConfiguration Configuration { get; private set; } = new ProtocolConfiguration();
+        public ProtocolConfiguration Configuration  = new ProtocolConfiguration();
 
         public override PacketWriter Serialize()
         {
