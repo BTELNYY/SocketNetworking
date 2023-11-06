@@ -274,7 +274,7 @@ namespace SocketNetworking
         {
             _clientId = clientId;
             _tcpClient = socket;
-            _tcpClient.NoDelay = true;
+            //_tcpClient.NoDelay = true;
             _clientLocation = ClientLocation.Remote;
             ClientConnected += OnRemoteClientConnected;
             ClientConnected?.Invoke();
@@ -330,7 +330,7 @@ namespace SocketNetworking
                 return false;
             }
             _tcpClient = new TcpClient();
-            _tcpClient.NoDelay = true;
+            //_tcpClient.NoDelay = true;
             try
             {
                 _tcpClient.Connect(hostname, port);
@@ -374,12 +374,14 @@ namespace SocketNetworking
         private void ClientStartThread()
         {
             Log.Info($"Client thread started, ID {ClientID}");
-            _tcpClient.NoDelay = true;
-            int waitingSize = 0;
-            byte[] prevPacketFragment = { };
-            byte[] buffer = new byte[Packet.MaxPacketSize];
+            _tcpClient.NoDelay = false;
+            //int waitingSize = 0;
+            //byte[] prevPacketFragment = { };
+            byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
+            int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined. 
             while (true)
             {
+                Packet: // this is for breaking a nested loop further down. thanks C#
                 if (_shuttingDown)
                 {
                     Log.Info("Shutting down loop");
@@ -387,46 +389,81 @@ namespace SocketNetworking
                 }
                 if (!IsConnected)
                 {
-                    Log.Debug("Not connected!");
-                    continue;
+                    Log.Debug("Disconnected!");
+                    StopClient();
+                    return;
                 }
-                if(TcpClient.ReceiveBufferSize == 0)
+                /*if(TcpClient.ReceiveBufferSize == 0)
                 {
                     continue;
-                }
-                if (!NetworkStream.DataAvailable)
+                }*/
+                /*if (!NetworkStream.DataAvailable)
                 {
                     //Log.Debug("Nothing to read on stream");
                     continue;
-                }
-                Log.Debug(TcpClient.ReceiveBufferSize.ToString());
-                int count = NetworkStream.Read(buffer, 0, Packet.MaxPacketSize);
-                Log.Debug($"Read {count} bytes from buffer!");
-                PacketHeader header = Packet.ReadPacketHeader(buffer);
-                bool skipSizeCheck = false;
-                if(count == waitingSize)
+                }*/
+                //Log.Debug(TcpClient.ReceiveBufferSize.ToString());
+                if (fillSize < sizeof(int))
                 {
-                    Log.Debug("Got other packet section!");
-                    prevPacketFragment = prevPacketFragment.Concat(buffer).ToArray();
-                    skipSizeCheck = true;
-                }
-                if(header.Size > count && !skipSizeCheck)
-                {
-                    Log.Debug("Packet was broken up into sections, awaiting next section.");
-                    waitingSize = header.Size - count;
-                    prevPacketFragment = buffer;
+                    // we dont have enough data to read the length data
+                    Log.Debug($"Trying to read bytes to get length (we need at least 4 we have {fillSize})!");
+                    int count;
+                    try
+                    {
+                        count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                    fillSize += count;
+                    Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
                     continue;
                 }
-                Log.Debug($"Inbound Packet Info, Size: {count}, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
+
+                int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
+                fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
+                // read the rest of the whole packet
+                while (fillSize < bodySize)
+                {
+                    Log.Debug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
+                    if (fillSize == buffer.Length) 
+                    {
+                        // The buffer is too full, and we are fucked (oh shit)
+                        Log.Error("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size)");
+                        throw new Exception("We are fucked!");
+                    }
+                    int count;
+                    try
+                    {
+                        count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
+                    }
+                    catch
+                    {
+                        goto Packet;
+                    }
+                    fillSize += count;
+                    Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
+                }
+                
+                
+                // we now know we have enough bytes to read at least one whole packet;
+                byte[] fullPacket = ShiftOut(ref buffer,  bodySize + sizeof(int));
+                fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
+                Log.Debug($"Read full packet with size: {fullPacket.Length}");
+                PacketHeader header = Packet.ReadPacketHeader(fullPacket);
+                Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
                 if (CurrnetClientLocation == ClientLocation.Remote)
                 {
-                    HandleRemoteClient(header, buffer);
+                    HandleRemoteClient(header, fullPacket);
                 }
                 if(CurrnetClientLocation == ClientLocation.Local)
                 {
-                    HandleLocalClient(header, buffer);
+                    HandleLocalClient(header, fullPacket);
                 }
-                buffer = new byte[Packet.MaxPacketSize];
+                
+                
+                // any leftover data in the buffer is recycled for the next iteration 
             }
             Log.Info("Shutting down client, Closing socket.");
             _tcpClient.Close();
@@ -495,6 +532,19 @@ namespace SocketNetworking
         }
 
 
+        private static byte[] ShiftOut(ref byte[] input, int count)
+        {
+            byte[] output = new byte[count];
+            // copy the first N elements to output
+            Buffer.BlockCopy(input, 0, output, 0, count); 
+            // copy the back of the array forward (removing the elements we copied to output)
+            // ie with count 2: [1, 2, 3, 4] -> [3, 4, 3, 4]
+            // we dont update the end of the array to fill with zeros, because we dont need to (we just call it undefined behavior)
+            Buffer.BlockCopy(input, count, input, 0, count); 
+            
+            return output;
+        }  
+        
         /// <summary>
         /// Only called on the client.
         /// </summary>
@@ -574,6 +624,7 @@ namespace SocketNetworking
                     Log.Error("Packet too large!");
                     return;
                 }
+
                 serverStream.Write(fullBytes, 0, fullBytes.Length);
             }
         }
