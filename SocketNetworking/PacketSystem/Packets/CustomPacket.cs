@@ -13,15 +13,15 @@ namespace SocketNetworking.PacketSystem.Packets
     {
         public sealed override PacketType Type => PacketType.CustomPacket;
 
-        public override PacketWriter Serialize()
+        public override ByteWriter Serialize()
         {
-            PacketWriter writer = base.Serialize();
+            ByteWriter writer = base.Serialize();
             return writer;
         }
 
-        public override PacketReader Deserialize(byte[] data)
+        public override ByteReader Deserialize(byte[] data)
         {
-            PacketReader reader = base.Deserialize(data);
+            ByteReader reader = base.Deserialize(data);
             return reader;
         }
     }

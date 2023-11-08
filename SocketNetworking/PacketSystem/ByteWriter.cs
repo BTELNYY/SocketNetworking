@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.PacketSystem
 {
-    public class PacketWriter
+    public class ByteWriter
     {
         public int DataLength
         {
@@ -26,7 +26,7 @@ namespace SocketNetworking.PacketSystem
 
         private byte[] _workingSetData = new byte[] { };
 
-        public PacketWriter() { }
+        public ByteWriter() { }
 
         public void Write<T>(IPacketSerializable serializable)
         {

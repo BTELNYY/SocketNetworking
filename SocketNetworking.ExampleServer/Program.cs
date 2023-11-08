@@ -12,7 +12,15 @@ namespace SocketNetworking.ExampleServer
         public static void Main(string[] args)
         {
             Log.OnLog += HandleNetworkLog;
+            NetworkServer.ClientType = typeof(TestClient);
             NetworkServer.StartServer();
+            NetworkServer.ClientConnected += OnClientConnected;
+        }
+
+        private static void OnClientConnected(int id)
+        {
+            TestClient client = (TestClient)NetworkServer.GetClient(id);
+            Log.Info(client.Value.ToString());
         }
 
         private static void HandleNetworkLog(LogData data)

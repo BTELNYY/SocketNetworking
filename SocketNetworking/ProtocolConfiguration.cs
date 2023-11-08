@@ -55,7 +55,7 @@ namespace SocketNetworking
 
         public byte[] Serialize()
         {
-            PacketWriter writer = new PacketWriter();
+            ByteWriter writer = new ByteWriter();
             writer.WriteString(_protocol);
             writer.WriteString(_version);
             return writer.Data;
@@ -63,7 +63,7 @@ namespace SocketNetworking
 
         public int Deserialize(byte[] data)
         {
-            PacketReader reader = new PacketReader(data);
+            ByteReader reader = new ByteReader(data);
             _protocol = reader.ReadString();
             _version = reader.ReadString();
             return reader.ReadBytes;

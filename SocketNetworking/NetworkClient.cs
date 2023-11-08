@@ -19,6 +19,7 @@ namespace SocketNetworking
 {
     public class NetworkClient
     {
+        #region Per Client (Non-Static) Events
         /// <summary>
         /// Called on both Remote and Local clients when the connection has succeeded and the Socket is ready to use.
         /// </summary>
@@ -27,6 +28,17 @@ namespace SocketNetworking
         /// Called on both Remote and Local Clients when the connection state changes.
         /// </summary>
         public Action<ConnectionState> ConnectionStateUpdated;
+
+        /// <summary>
+        /// Called when the state of the <see cref="NetworkClient.Ready"/> variable changes. First variable is the old state, and the second is the new state. This event is fired on both Local and Remote clients.
+        /// </summary>
+        public Action<bool, bool> ReadyStateChanged;
+
+        /// <summary>
+        /// Called on Local and Remote clients when a full packet is read.
+        /// </summary>
+        public Action<PacketHeader, byte[]> PacketRead;
+        #endregion
 
         private int _clientId = 0;
 
@@ -100,20 +112,19 @@ namespace SocketNetworking
             }
             set
             {
-                if(CurrnetClientLocation != ClientLocation.Remote)
-                {
-                    Log.Warning("Local Client tired modifying its own ready state.");
-                    return;
-                }
                 if(!IsConnected || CurrentConnectionState != ConnectionState.Connected) 
                 {
                     Log.Warning("Can't change ready state becuase the socket is not connected or the handshake isn't done.");
                     return;
                 }
+                if(CurrnetClientLocation == ClientLocation.Remote) 
+                {
+                    _ready = value;
+                    ReadyStateChanged?.Invoke(!_ready, _ready);
+                }
                 ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
                 readyStateUpdatePacket.Ready = value;
                 Send(readyStateUpdatePacket);
-                _ready = value;
             }
         }
 
@@ -253,16 +264,7 @@ namespace SocketNetworking
         private bool _shuttingDown = false;
 
         /// <summary>
-        /// Local Client start, at this point we will listen for packets coming from the server.
-        /// </summary>
-        public NetworkClient()
-        {
-            _clientLocation = ClientLocation.Local;
-            ClientConnected += OnLocalClientConnected;
-        }
-
-        /// <summary>
-        /// Used when creating a <see cref="NetworkClient"/> object on the server. Do not call this on the local client.
+        /// Used when initializing a <see cref="NetworkClient"/> object on the server. Do not call this on the local client.
         /// </summary>
         /// <param name="clientId">
         /// Given ClientID
@@ -270,7 +272,7 @@ namespace SocketNetworking
         /// <param name="socket">
         /// The <see cref="System.Net.Sockets.TcpClient"/> object which handles data transport.
         /// </param>
-        public NetworkClient(int clientId, TcpClient socket)
+        public void InitRemoteClient(int clientId, TcpClient socket)
         {
             _clientId = clientId;
             _tcpClient = socket;
@@ -282,6 +284,14 @@ namespace SocketNetworking
             _clientThread.Start();
         }
 
+        /// <summary>
+        /// Should be called locally to initialize the client, switching it from just being created to being ready to be used.
+        /// </summary>
+        public void InitLocalClient()
+        {
+            _clientLocation = ClientLocation.Local;
+            ClientConnected += OnLocalClientConnected;
+        }
 
         void OnLocalClientConnected()
         {
@@ -453,6 +463,7 @@ namespace SocketNetworking
                 Log.Debug($"Read full packet with size: {fullPacket.Length}");
                 PacketHeader header = Packet.ReadPacketHeader(fullPacket);
                 Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
+                PacketRead?.Invoke(header, fullPacket);
                 if (CurrnetClientLocation == ClientLocation.Remote)
                 {
                     HandleRemoteClient(header, fullPacket);
@@ -495,6 +506,14 @@ namespace SocketNetworking
                     if (connectionUpdatePacket.State == ConnectionState.Connected)
                     {
                         _connectionState = ConnectionState.Connected;
+                    }
+                    break;
+                case PacketType.ReadyStateUpdate:
+                    ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
+                    readyStateUpdatePacket.Deserialize(data);
+                    if (NetworkServer.AllowClientSelfReady)
+                    {
+                        Ready = readyStateUpdatePacket.Ready;
                     }
                     break;
                 case PacketType.ClientData:
@@ -559,6 +578,7 @@ namespace SocketNetworking
                     ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
                     readyStateUpdatePacket.Deserialize(data);
                     _ready = readyStateUpdatePacket.Ready;
+                    ReadyStateChanged?.Invoke(!_ready, _ready);
                     Log.Info("New Client Ready State: " + _ready.ToString());
                     break;
                 case PacketType.ServerData:
@@ -615,7 +635,7 @@ namespace SocketNetworking
                 Log.Info("Sending packet. Type: " + packet.Type.ToString());
                 NetworkStream serverStream = NetworkStream;
                 byte[] packetBytes = packet.Serialize().Data;
-                PacketWriter writer = new PacketWriter();
+                ByteWriter writer = new ByteWriter();
                 writer.WriteInt(packetBytes.Length);
                 writer.Write(packetBytes);
                 byte[] fullBytes = writer.Data;
@@ -676,7 +696,7 @@ namespace SocketNetworking
             _connectionState = ConnectionState.Disconnected;
             if(CurrnetClientLocation == ClientLocation.Remote)
             {
-                NetworkServer.Clients.Remove(ClientID);
+                NetworkServer.RemoveClient(ClientID);
             }
             _shuttingDown = true;
             _clientThread.Abort();

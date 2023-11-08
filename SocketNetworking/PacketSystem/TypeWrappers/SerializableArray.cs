@@ -36,7 +36,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             int usedBytes = 0;
             int length = BitConverter.ToInt32(data, 0);
             byte[] arrayData = data.Take(length).ToArray();
-            PacketReader reader = new PacketReader(arrayData);
+            ByteReader reader = new ByteReader(arrayData);
             int lengthConfirmed = reader.ReadInt();
             usedBytes += 4;
             while (reader.DataLength > 0)
@@ -66,61 +66,61 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             }
             if(TType == typeof(string))
             {
-                PacketReader reader = new PacketReader(data);
+                ByteReader reader = new ByteReader(data);
                 string str = reader.ReadString();
                 _array.Append((T)Convert.ChangeType(str, TType));
             }
             if (TType == typeof(bool))
             {
-                PacketReader reader = new PacketReader(data);
+                ByteReader reader = new ByteReader(data);
                 bool value = reader.ReadBool();
                 _array.Append((T)Convert.ChangeType(value, TType));
             }
             if (TType == typeof(short))
             {
-                PacketReader reader = new PacketReader(data);
+                ByteReader reader = new ByteReader(data);
                 short value = reader.ReadShort();
                 _array.Append((T)Convert.ChangeType(value, TType));
             }
             if (TType == typeof(int))
             {
-                PacketReader reader = new PacketReader(data);
+                ByteReader reader = new ByteReader(data);
                 int value = reader.ReadInt();
                 _array.Append((T)Convert.ChangeType(value, TType));
             }
             if (TType == typeof(long))
             {
-                PacketReader reader = new PacketReader(data);
+                ByteReader reader = new ByteReader(data);
                 long value = reader.ReadLong();
                 _array.Append((T)Convert.ChangeType(value, TType));
             }
             if (TType == typeof(ushort))
             {
-                PacketReader reader = new PacketReader(data);
+                ByteReader reader = new ByteReader(data);
                 ushort value = reader.ReadUShort();
                 _array.Append((T)Convert.ChangeType(value, TType));
             }
             if (TType == typeof(uint))
             {
-                PacketReader reader = new PacketReader(data);
+                ByteReader reader = new ByteReader(data);
                 uint value = reader.ReadUInt();
                 _array.Append((T)Convert.ChangeType(value, TType));
             }
             if(TType == typeof(ulong))
             {
-                PacketReader reader = new PacketReader(data);
+                ByteReader reader = new ByteReader(data);
                 ulong value = reader.ReadULong();
                 _array.Append((T)Convert.ChangeType(value, TType));
             }
             if(TType == typeof(float))
             {
-                PacketReader reader = new PacketReader(data);
+                ByteReader reader = new ByteReader(data);
                 float value = reader.ReadFloat();
                 _array.Append((T)Convert.ChangeType(value, TType));
             }
             if(TType == typeof(double))
             {
-                PacketReader reader = new PacketReader(data);
+                ByteReader reader = new ByteReader(data);
                 double value = reader.ReadDouble();
                 _array.Append((T)Convert.ChangeType(value, TType));
             }
@@ -154,7 +154,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
 
         public byte[] Serialize()
         {
-            PacketWriter writer = new PacketWriter();
+            ByteWriter writer = new ByteWriter();
             writer.WriteInt(GetLength());
             foreach(T element in _array)
             {

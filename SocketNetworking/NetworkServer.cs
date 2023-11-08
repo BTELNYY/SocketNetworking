@@ -11,6 +11,10 @@ namespace SocketNetworking
 {
     public class NetworkServer
     {
+        public static Action ServerReady;
+        public static Action<int> ClientConnected;
+
+
         private static ServerState _serverState = ServerState.NotStarted;
 
         public static ServerState CurrentServerState 
@@ -79,6 +83,16 @@ namespace SocketNetworking
         /// </summary>
         public static bool DefaultReady = true;
 
+        /// <summary>
+        /// What type should network clients be created in? Note that the type must inherit from <see cref="NetworkClient"/>. This type should not have any class constructors.
+        /// </summary>
+        public static Type ClientType = typeof(NetworkClient);
+
+        /// <summary>
+        /// Should clients be able to set themselves as ready using <see cref="SocketNetworking.PacketSystem.Packets.ReadyStateUpdatePacket"/>?
+        /// </summary>
+        public static bool AllowClientSelfReady = true;
+
         public static Thread ServerThread;
 
         private static NetworkServer _serverInstance;
@@ -101,7 +115,7 @@ namespace SocketNetworking
 
         private bool _isShuttingDown = false;
 
-        public static Dictionary<int, NetworkClient> Clients = new Dictionary<int, NetworkClient>();
+        private static Dictionary<int, NetworkClient> Clients = new Dictionary<int, NetworkClient>();
 
         public static void StartServer()
         {
@@ -110,10 +124,62 @@ namespace SocketNetworking
                 Log.Error("Server already started!");
                 return;
             }
+            if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
+            {
+                Log.Error("Can't start server: ClientType is not correct.");
+                return;
+            }
             NetworkServer server = new NetworkServer();
             _serverInstance = server;
             ServerThread = new Thread(server.ServerStartThread);
             ServerThread.Start();
+        }
+
+        protected static void AddClient(NetworkClient client, int clientId)
+        {
+            if (Clients.ContainsKey(clientId))
+            {
+                Log.Error("Something really got fucked up!");
+                //we throw becuase the whole server will die if we cant add the client.
+                throw new InvalidOperationException("Client ID to add already taken!");
+            }
+            else
+            {
+                //cursed...
+                NetworkClient cursedClient = (NetworkClient)Convert.ChangeType(client, ClientType);
+                Clients.Add(clientId, cursedClient);
+            }
+        }
+
+        public static void RemoveClient(int clientId)
+        {
+            if (Clients.ContainsKey(clientId))
+            {
+                Clients.Remove(clientId);
+            }
+            else
+            {
+                Log.Warning("Can't remove client: ID not found.");
+            }
+        }
+
+        /// <summary>
+        /// This method will return a client if possible. Or <see cref="null"/>
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>
+        /// A type casted instance of <see cref="NetworkClient"/>. You can always get your client type by casting it again.
+        /// </returns>
+        public static NetworkClient GetClient(int id)
+        {
+            if (Clients.ContainsKey(id))
+            {
+                return Clients[id];
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public static void StopServer()
@@ -138,19 +204,20 @@ namespace SocketNetworking
             Log.Info("Socket Started.");
             Log.Info($"Listening on {BindIP}:{Port}");
             int counter = 0;
+            ServerReady?.Invoke();
             while (true)
             {
                 if (_isShuttingDown)
                 {
                     break;
                 }
-                counter += 1;
                 TcpClient socket = serverSocket.AcceptTcpClient();
                 socket.NoDelay = true;
                 IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                 Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
-                NetworkClient client = new NetworkClient(counter, socket);
-                Clients.Add(counter, client);
+                NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
+                client.InitRemoteClient(counter, socket);
+                AddClient(client, counter);
                 CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                 {
                     if(x == null)
@@ -163,6 +230,8 @@ namespace SocketNetworking
                     }
                 }, client, HandshakeTime);
                 callback.Start();
+                ClientConnected?.Invoke(counter);
+                counter++;
             }
             Log.Info("Shutting down!");
             serverSocket.Stop();

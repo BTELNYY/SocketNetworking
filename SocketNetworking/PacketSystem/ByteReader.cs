@@ -11,7 +11,7 @@ namespace SocketNetworking.PacketSystem
     /// <summary>
     /// Provides Packet reading capablities by reading elements of the byte array.
     /// </summary>
-    public class PacketReader
+    public class ByteReader
     {
         /// <summary>
         /// Represents the original untouched data fed into the class. This data is not changed by any method.
@@ -43,7 +43,7 @@ namespace SocketNetworking.PacketSystem
         }
 
 
-        public PacketReader(byte[] data)
+        public ByteReader(byte[] data)
         {
             RawData = data;
             _workingSetData = RawData;

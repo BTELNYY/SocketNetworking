@@ -14,16 +14,16 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public bool Ready = false;
 
-        public override PacketWriter Serialize()
+        public override ByteWriter Serialize()
         {
-            PacketWriter writer = base.Serialize();
+            ByteWriter writer = base.Serialize();
             writer.WriteBool(Ready);
             return writer;
         }
 
-        public override PacketReader Deserialize(byte[] data)
+        public override ByteReader Deserialize(byte[] data)
         {
-            PacketReader reader = base.Deserialize(data);
+            ByteReader reader = base.Deserialize(data);
             Ready = reader.ReadBool();
             return reader;
         }

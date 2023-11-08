@@ -8,6 +8,14 @@ namespace SocketNetworking.PacketSystem
 {
     public interface INetworkObject
     {
+        /// <summary>
+        /// The network ID of the object. This should be the same on the client and server.
+        /// </summary>
         int NetworkID { get; }
+
+        /// <summary>
+        /// If this is false, the object is never updated.
+        /// </summary>
+        bool IsActive { get; }
     }
 }

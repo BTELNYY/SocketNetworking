@@ -17,17 +17,17 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public ProtocolConfiguration Configuration  = new ProtocolConfiguration();
 
-        public override PacketWriter Serialize()
+        public override ByteWriter Serialize()
         {
-            PacketWriter writer = base.Serialize();
+            ByteWriter writer = base.Serialize();
             writer.WriteInt(YourClientID);
             writer.Write<ProtocolConfiguration>(Configuration);
             return writer;
         }
 
-        public override PacketReader Deserialize(byte[] data)
+        public override ByteReader Deserialize(byte[] data)
         {
-            PacketReader reader = base.Deserialize(data);
+            ByteReader reader = base.Deserialize(data);
             YourClientID = reader.ReadInt();
             Configuration = reader.Read<ProtocolConfiguration>();
             return reader;

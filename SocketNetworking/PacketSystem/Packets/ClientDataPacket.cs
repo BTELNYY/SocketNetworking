@@ -26,17 +26,17 @@ namespace SocketNetworking.PacketSystem.Packets
 
         }
 
-        public override PacketReader Deserialize(byte[] data)
+        public override ByteReader Deserialize(byte[] data)
         {
-            PacketReader reader = base.Deserialize(data);
+            ByteReader reader = base.Deserialize(data);
             PasswordHash = reader.ReadString();
             Configuration = reader.Read<ProtocolConfiguration>();
             return reader;
         }
 
-        public override PacketWriter Serialize()
+        public override ByteWriter Serialize()
         {
-            PacketWriter writer = base.Serialize();
+            ByteWriter writer = base.Serialize();
             writer.WriteString(PasswordHash);
             writer.Write<ProtocolConfiguration>(Configuration);
             return writer;

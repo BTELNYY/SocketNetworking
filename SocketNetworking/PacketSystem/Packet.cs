@@ -9,7 +9,15 @@ namespace SocketNetworking.PacketSystem
 {
     public class Packet
     {
-        public const int MaxPacketSize = 8192;
+        public static int MaxPacketSize
+        {
+            get
+            {
+                return _maxPacketSize;
+            }
+        }
+
+        private static int _maxPacketSize = short.MaxValue;
 
         public static readonly Type[] SupportedTypes =
         {
@@ -48,7 +56,7 @@ namespace SocketNetworking.PacketSystem
             if (value is sbyte sby) { return BitConverter.GetBytes(sby); }
             if (value is string st)
             {
-                PacketWriter writer = new PacketWriter();
+                ByteWriter writer = new ByteWriter();
                 writer.WriteString(st);
                 return writer.Data;
             }
@@ -66,7 +74,7 @@ namespace SocketNetworking.PacketSystem
         /// </returns>
         public static PacketHeader ReadPacketHeader(byte[] data)
         {
-            PacketReader reader = new PacketReader(data);
+            ByteReader reader = new ByteReader(data);
             int size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadInt();
             int networkTarget = reader.ReadInt();
@@ -98,11 +106,11 @@ namespace SocketNetworking.PacketSystem
         /// Function called to serialize packets. Ensure you get the return type of this function becuase you'll need to add on to that array. creating a new array will cause issues.
         /// </summary>
         /// <returns>
-        /// A <see cref="PacketWriter"/> which represents the packet being written, it is suggested you use this as your writer when creating subclasses.
+        /// A <see cref="ByteWriter"/> which represents the packet being written, it is suggested you use this as your writer when creating subclasses.
         /// </returns>
-        public virtual PacketWriter Serialize()
+        public virtual ByteWriter Serialize()
         {
-            PacketWriter writer = new PacketWriter();
+            ByteWriter writer = new ByteWriter();
             writer.WriteInt((int)Type);
             writer.WriteInt(NetowrkIDTarget);
             writer.WriteInt(CustomPacketID);
@@ -113,11 +121,11 @@ namespace SocketNetworking.PacketSystem
         /// Deserialize the packet, always call the base function at the top of your override. Do not create new PacketReaders, use the one provided instead.
         /// </summary>
         /// <returns>
-        /// The current <see cref="PacketReader"/> instance
+        /// The current <see cref="ByteReader"/> instance
         /// </returns>
-        public virtual PacketReader Deserialize(byte[] data)
+        public virtual ByteReader Deserialize(byte[] data)
         {
-            PacketReader reader = new PacketReader(data);
+            ByteReader reader = new ByteReader(data);
             //Very cursed, must read first in so that the desil doesn't fail next line.
             Size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadInt();
@@ -178,6 +186,30 @@ namespace SocketNetworking.PacketSystem
             NetworkIDTarget = networkIDTarget;
             CustomPacketID = 0;
             Size = size;
+        }
+
+        /// <summary>
+        /// Gets a <see cref="PacketHeader"/> using at minimum 16 bytes of data.
+        /// </summary>
+        /// <param name="data">
+        /// A 16 <see cref="byte"/> long array to use to fetch the packet header.
+        /// </param>
+        /// <returns>
+        /// The completed <see cref="PacketHeader"/>
+        /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public static PacketHeader GetHeader(byte[] data)
+        {
+            if(data.Length < 17)
+            {
+                throw new ArgumentOutOfRangeException("data", "Data must be at least 16 bytes long!");
+            }
+            ByteReader reader = new ByteReader(data);
+            int size = reader.ReadInt();
+            PacketType type = (PacketType)reader.ReadInt();
+            int networkTarget = reader.ReadInt();
+            int customPacketID = reader.ReadInt();
+            return new PacketHeader(type, networkTarget, customPacketID, size);
         }
     }
 }
