@@ -11,11 +11,11 @@ namespace SocketNetworking
 {
     public class NetworkServer
     {
-        public static Action ServerReady;
-        public static Action<int> ClientConnected;
+        public static event Action ServerReady;
+        public static event Action<int> ClientConnected;
+        public static event Action<int> ClientDisconnected;
 
-
-        private static ServerState _serverState = ServerState.NotStarted;
+        private static readonly ServerState _serverState = ServerState.NotStarted;
 
         public static ServerState CurrentServerState 
         { 
@@ -76,10 +76,10 @@ namespace SocketNetworking
         /// <summary>
         /// What IP should the server bind to?
         /// </summary>
-        public static string BindIP = "127.0.0.1";
+        public static string BindIP = "0.0.0.0";
 
         /// <summary>
-        /// Should the server Auto-Ready Clients when the the <see cref="NetworkClient.CurrentConnectionState"/> becomes <see cref="PacketSystem.ConnectionState.Connected"/>?
+        /// Should the server Auto-Ready Clients when the the <see cref="NetworkClient.CurrentConnectionState"/> becomes <see cref="ConnectionState.Connected"/>?
         /// </summary>
         public static bool DefaultReady = true;
 
@@ -113,9 +113,9 @@ namespace SocketNetworking
             }
         }
 
-        private bool _isShuttingDown = false;
+        private readonly bool _isShuttingDown = false;
 
-        private static Dictionary<int, NetworkClient> Clients = new Dictionary<int, NetworkClient>();
+        private static readonly Dictionary<int, NetworkClient> Clients = new Dictionary<int, NetworkClient>();
 
         public static void StartServer()
         {
@@ -156,6 +156,7 @@ namespace SocketNetworking
             if (Clients.ContainsKey(clientId))
             {
                 Clients.Remove(clientId);
+                ClientDisconnected.Invoke(clientId);
             }
             else
             {
@@ -224,7 +225,7 @@ namespace SocketNetworking
                     {
                         return;
                     }
-                    if(x.CurrentConnectionState != PacketSystem.ConnectionState.Connected)
+                    if(x.CurrentConnectionState != ConnectionState.Connected)
                     {
                         x.Disconnect("Failed to handshake in time.");
                     }

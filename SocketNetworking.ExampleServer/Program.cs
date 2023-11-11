@@ -11,6 +11,7 @@ namespace SocketNetworking.ExampleServer
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine(args.ToString());
             Log.OnLog += HandleNetworkLog;
             NetworkServer.ClientType = typeof(TestClient);
             NetworkServer.StartServer();

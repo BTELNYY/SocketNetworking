@@ -6,14 +6,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocketNetworking
 {
     public static class NetworkManager
     {
-        private static Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
+        private static readonly Type[] AcceptedMethodArugments = new Type[]
+        {
+            typeof(CustomPacket),
+            typeof(NetworkClient),
+        };
+
+        private static readonly Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
 
         /// <summary>
         /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your netowrk objects.
@@ -91,7 +95,7 @@ namespace SocketNetworking
         }
 
 
-        private static Dictionary<INetworkObject, NetworkObjectData> NetworkObjects = new Dictionary<INetworkObject, NetworkObjectData>();
+        private static readonly Dictionary<INetworkObject, NetworkObjectData> NetworkObjects = new Dictionary<INetworkObject, NetworkObjectData>();
 
 
         /// <summary>
@@ -153,10 +157,32 @@ namespace SocketNetworking
             Dictionary<Type, List<PacketListenerData>> result = new Dictionary<Type, List<PacketListenerData>>();
             foreach(MethodInfo method in allPacketListeners)
             {
+                if(method.GetGenericArguments().Length < AcceptedMethodArugments.Length)
+                {
+                    Log.Warning("Method " + method.Name + " was ignored becuase it doesn't have the proper amount of arguments.");
+                    continue;
+                }
+                bool methodArgsFailed = false;
+                for (int i = 0; i < AcceptedMethodArugments.Length; i++)
+                {
+                    Type methodType = method.GetGenericArguments()[i];
+                    Type acceptedType = AcceptedMethodArugments[i];
+                    if(!methodType.IsSubclassOf(acceptedType))
+                    {
+                        Log.Warning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
+                        methodArgsFailed = true;
+                    }
+                }
+                if(methodArgsFailed == true)
+                {
+                    continue;
+                }
                 PacketListener attribute = method.GetCustomAttribute<PacketListener>();
-                PacketListenerData data = new PacketListenerData();
-                data.Attribute = attribute;
-                data.AttachedMethod = method;
+                PacketListenerData data = new PacketListenerData
+                {
+                    Attribute = attribute,
+                    AttachedMethod = method
+                };
                 if (result.ContainsKey(attribute.DefinedType))
                 {
                     result[attribute.DefinedType].Add(data);
@@ -166,9 +192,11 @@ namespace SocketNetworking
                     result.Add(attribute.DefinedType, new List<PacketListenerData> { data });
                 }
             }
-            NetworkObjectData networkObjectData = new NetworkObjectData();
-            networkObjectData.Listeners = result;
-            networkObjectData.TargetObject = target;
+            NetworkObjectData networkObjectData = new NetworkObjectData
+            {
+                Listeners = result,
+                TargetObject = target
+            };
             return networkObjectData;
         }
 
@@ -182,11 +210,12 @@ namespace SocketNetworking
         /// <param name="data">
         /// A <see cref="byte[]"/> of the data of that packet. Note that it is the full data, do not trim out the header.
         /// </param>
-        /// <param name="clientLocation">
-        /// From where is this method being called? 
+        /// <param name="runningClient">
+        /// A reference to a <see cref="NetworkClient"/> which ran this method.
         /// </param>
-        public static void TriggerPacketListeners(PacketHeader header, byte[] data, ClientLocation clientLocation)
+        public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
         {
+            ClientLocation clientLocation = runningClient.CurrnetClientLocation;
             if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
             {
                 Log.Error("Unknown Custom packet. ID: " + header.CustomPacketID);
@@ -207,17 +236,17 @@ namespace SocketNetworking
                 {
                     if(packetListener.Attribute.DefinedDirection == PacketDirection.Any)
                     {
-                        packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket });
+                        packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
                     if(packetListener.Attribute.DefinedDirection == PacketDirection.Client && clientLocation == ClientLocation.Local)
                     {
-                        packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket });
+                        packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
                     if (packetListener.Attribute.DefinedDirection == PacketDirection.Server && clientLocation == ClientLocation.Remote)
                     {
-                        packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket });
+                        packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
                 }

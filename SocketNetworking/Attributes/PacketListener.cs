@@ -6,13 +6,17 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.PacketSystem;
 
 namespace SocketNetworking.Attributes
 {
+    /// <summary>
+    /// This attribute should be applied to all methods on <see cref="INetworkObject"/> objects which should listen for Packets. Note that the method should take specific arguments, the library will print a warning if it ignores the method becuase it has inproper arguments. 
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class PacketListener : Attribute
     {
-        private Type _type;
+        private readonly Type _type;
 
         /// <summary>
         /// The type of the packet you are waiting for. Note that it must be registered and valid.
@@ -25,7 +29,7 @@ namespace SocketNetworking.Attributes
             }
         }
 
-        private PacketDirection _direction;
+        private readonly PacketDirection _direction;
 
         /// <summary>
         /// From where are you accepting packets from. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only
@@ -42,7 +46,7 @@ namespace SocketNetworking.Attributes
         /// Defines a packet listener. this method attribute should be used in conjunction with <see cref="SocketNetworking.PacketSystem.INetworkObject"/> to create network objects, methods with this attribute should always have one paramater which is the packet they are looking for.
         /// </summary>
         /// <param name="type">
-        /// The type of the packet you are waiting for. Note that it must be registered and valid.
+        /// The type of the packet you are waiting for. Note that it must be registered and inherit from <see cref="CustomPacket"/> as well as use the <see cref="PacketDefinition"/> attribute.
         /// </param>
         /// <param name="direction">
         /// From where are you accepting packets from. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only

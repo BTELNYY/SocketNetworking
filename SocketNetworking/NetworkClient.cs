@@ -23,21 +23,35 @@ namespace SocketNetworking
         /// <summary>
         /// Called on both Remote and Local clients when the connection has succeeded and the Socket is ready to use.
         /// </summary>
-        public Action ClientConnected;
+        public event Action ClientConnected;
+
+        /// <summary>
+        /// Called on the both Remote and Local clients when the connection stops. Note that Remote Clients will be destroyed.
+        /// </summary>
+        public event Action ClientDisconnected;
+
         /// <summary>
         /// Called on both Remote and Local Clients when the connection state changes.
         /// </summary>
-        public Action<ConnectionState> ConnectionStateUpdated;
+        public event Action<ConnectionState> ConnectionStateUpdated;
 
         /// <summary>
         /// Called when the state of the <see cref="NetworkClient.Ready"/> variable changes. First variable is the old state, and the second is the new state. This event is fired on both Local and Remote clients.
         /// </summary>
-        public Action<bool, bool> ReadyStateChanged;
+        public event Action<bool, bool> ReadyStateChanged;
 
         /// <summary>
         /// Called on Local and Remote clients when a full packet is read.
         /// </summary>
-        public Action<PacketHeader, byte[]> PacketRead;
+        public event Action<PacketHeader, byte[]> PacketRead;
+        #endregion
+
+        #region Static Events
+
+        public static event Action<NetworkClient> ClientReadyStateChanged;
+
+        public static event Action<NetworkClient> ClientConnectionStateChanged;
+
         #endregion
 
         private int _clientId = 0;
@@ -121,9 +135,12 @@ namespace SocketNetworking
                 {
                     _ready = value;
                     ReadyStateChanged?.Invoke(!_ready, _ready);
+                    ClientReadyStateChanged.Invoke(this);
                 }
-                ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
-                readyStateUpdatePacket.Ready = value;
+                ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket
+                {
+                    Ready = value
+                };
                 Send(readyStateUpdatePacket);
             }
         }
@@ -191,11 +208,14 @@ namespace SocketNetworking
                     Log.Error("Local client tried changing state of connection, only servers can do so.");
                     return;
                 }
-                ConnectionUpdatePacket updatePacket = new ConnectionUpdatePacket();
-                updatePacket.State = value;
-                updatePacket.Reason = "Setter in remote.";
+                ConnectionUpdatePacket updatePacket = new ConnectionUpdatePacket
+                {
+                    State = value,
+                    Reason = "Setter in remote."
+                };
                 Send(updatePacket);
                 _connectionState = value;
+                ClientConnectionStateChanged.Invoke(this);
             }
         }
 
@@ -368,10 +388,7 @@ namespace SocketNetworking
                 return;
             }
             Log.Info("Starting client!");
-            if (_clientThread != null)
-            {
-                _clientThread.Abort();
-            }
+            _clientThread?.Abort();
             _clientThread = new Thread(ClientStartThread);
             _clientActive = true;
             _shuttingDown = false;
@@ -488,7 +505,7 @@ namespace SocketNetworking
             switch (header.Type)
             {
                 case PacketType.CustomPacket:
-                    NetworkManager.TriggerPacketListeners(header, data, CurrnetClientLocation);
+                    NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
@@ -534,9 +551,11 @@ namespace SocketNetworking
                         Disconnect("Incorrect Server Password");
                         break;
                     }
-                    ServerDataPacket serverDataPacket = new ServerDataPacket();
-                    serverDataPacket.YourClientID = _clientId;
-                    serverDataPacket.Configuration = NetworkServer.ServerConfiguration;
+                    ServerDataPacket serverDataPacket = new ServerDataPacket
+                    {
+                        YourClientID = _clientId,
+                        Configuration = NetworkServer.ServerConfiguration
+                    };
                     Send(serverDataPacket);
                     CurrentConnectionState = ConnectionState.Connected;
                     if (NetworkServer.DefaultReady)
@@ -572,13 +591,14 @@ namespace SocketNetworking
             switch (header.Type)
             {
                 case PacketType.CustomPacket:
-                    NetworkManager.TriggerPacketListeners(header, data, CurrnetClientLocation);
+                    NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
                 case PacketType.ReadyStateUpdate:
                     ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
                     readyStateUpdatePacket.Deserialize(data);
                     _ready = readyStateUpdatePacket.Ready;
                     ReadyStateChanged?.Invoke(!_ready, _ready);
+                    ClientReadyStateChanged.Invoke(this);
                     Log.Info("New Client Ready State: " + _ready.ToString());
                     break;
                 case PacketType.ServerData:
@@ -610,6 +630,7 @@ namespace SocketNetworking
                     {
                         _connectionState = ConnectionState.Connected;
                     }
+                    ClientConnectionStateChanged.Invoke(this);
                     break;
                 default:
                     Log.Error("Packet is not handled!");
@@ -672,10 +693,13 @@ namespace SocketNetworking
         /// </param>
         public void Disconnect(string message)
         {
-            ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
-            connectionUpdatePacket.State = ConnectionState.Disconnected;
-            connectionUpdatePacket.Reason = message;
+            ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
+            {
+                State = ConnectionState.Disconnected,
+                Reason = message
+            };
             Send(connectionUpdatePacket);
+            ClientDisconnected.Invoke();
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
                 Log.Info($"Disconnecting Client {ClientID} for " + message);
@@ -703,5 +727,15 @@ namespace SocketNetworking
             _clientThread = null;
             _tcpClient = null;
         }
+    }
+
+    /// <summary>
+    /// The current state of the handshake. Disconnect = Either not connected at all or just got disconnected. Handshake = Client-Server still agreeing on protocol and version. Connected = System connected.
+    /// </summary>
+    public enum ConnectionState
+    {
+        Disconnected,
+        Handshake,
+        Connected,
     }
 }

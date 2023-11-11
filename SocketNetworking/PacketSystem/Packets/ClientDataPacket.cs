@@ -7,7 +7,6 @@ using SocketNetworking.Attributes;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
-    [PacketDefinition]
     public sealed class ClientDataPacket : Packet
     {
         public sealed override PacketType Type => PacketType.ClientData;

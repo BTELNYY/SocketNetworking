@@ -17,7 +17,7 @@ namespace SocketNetworking.PacketSystem
             }
         }
 
-        private static int _maxPacketSize = short.MaxValue;
+        private static readonly int _maxPacketSize = short.MaxValue;
 
         public static readonly Type[] SupportedTypes =
         {
@@ -152,16 +152,6 @@ namespace SocketNetworking.PacketSystem
         CustomPacket,
     }
     
-    /// <summary>
-    /// The current state of the handshake. Disconnect = Either not connected at all or just got disconnected. Handshake = Client-Server still agreeing on protocol and version. Connected = System connected.
-    /// </summary>
-    public enum ConnectionState
-    {
-        Disconnected,
-        Handshake,
-        Connected,
-    }
-
     /// <summary>
     /// Represents the first fields of a packet in a nicer way, to get this from a raw <see cref="byte[]"/> use <see cref="Packet.ReadPacketHeader(byte[])"/>
     /// </summary>
