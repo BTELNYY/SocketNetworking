@@ -8,7 +8,7 @@ namespace SocketNetworking
 {
     public static class Log
     {
-        public static Action<LogData> OnLog;
+        public static event Action<LogData> OnLog;
 
         public static void Debug(string message)
         {

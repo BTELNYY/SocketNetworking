@@ -6,6 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using SocketNetworking.PacketSystem;
 
 namespace SocketNetworking
 {
@@ -237,6 +238,59 @@ namespace SocketNetworking
             Log.Info("Shutting down!");
             serverSocket.Stop();
         }
+
+        /// <summary>
+        /// Sends a <see cref="Packet"/> to all connected clients.
+        /// </summary>
+        /// <param name="packet">
+        /// The <see cref="Packet"/> to send.
+        /// </param>
+        /// <param name="toReadyOnly">
+        /// if this is true, only send to <see cref="NetworkClient.Ready"/> clients, otherwise send to everyone.
+        /// </param>
+        public static void SendToAll(Packet packet, bool toReadyOnly = false)
+        {
+            if (toReadyOnly)
+            {
+                SendToReady(packet);
+                return;
+            }
+            foreach(NetworkClient client in Clients.Values)
+            {
+                client.Send(packet);
+            }
+        }
+
+
+        /// <summary>
+        /// Disconnects all clients who aren't ready.
+        /// </summary>
+        /// <param name="reason">
+        /// The Disconnect reason.
+        /// </param>
+        public static void DisconnectNotReady(string reason = "Failed to ready in time.")
+        {
+            List<NetworkClient> readyClients = Clients.Values.Where(x => !x.Ready).ToList();
+            foreach (NetworkClient client in readyClients)
+            {
+                client.Disconnect(reason);
+            }
+        }
+
+        /// <summary>
+        /// Sends a <see cref="Packet"/> to all ready clients
+        /// </summary>
+        /// <param name="packet">
+        /// The <see cref="Packet"/> to send.
+        /// </param>
+        public static void SendToReady(Packet packet)
+        {
+            List<NetworkClient> readyClients = Clients.Values.Where(x => x.Ready).ToList();
+            foreach(NetworkClient client in readyClients)
+            {
+                client.Send(packet);
+            }
+        }   
     }
 
     public enum ServerState 
