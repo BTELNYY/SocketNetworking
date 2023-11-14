@@ -47,6 +47,7 @@
     <Compile Include="NetworkManager.cs" />
     <Compile Include="PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
     <Compile Include="PacketSystem\Packets\ClientDataPacket.cs" />
+    <Compile Include="PacketSystem\TypeWrappers\SerializableDictionary.cs" />
     <Compile Include="ProtocolConfiguration.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Exceptions\CustomPacketCollisionException.cs" />
@@ -63,7 +64,7 @@
     <Compile Include="PacketSystem\ByteWriter.cs" />
     <Compile Include="PacketSystem\ByteReader.cs" />
     <Compile Include="PacketSystem\Packet.cs" />
-    <Compile Include="PacketSystem\TypeWrappers\SerializableArray.cs" />
+    <Compile Include="PacketSystem\TypeWrappers\SerializableLIst.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

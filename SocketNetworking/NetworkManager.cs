@@ -109,6 +109,11 @@ namespace SocketNetworking
         /// </returns>
         public static bool AddNetworkObject(INetworkObject networkObject)
         {
+            if(networkObject.NetworkID == 0)
+            {
+                Log.Error($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
+                return false;
+            }
             if (NetworkObjects.ContainsKey(networkObject))
             {
                 Log.Warning("Tried to add network object that already exists.");
@@ -133,6 +138,11 @@ namespace SocketNetworking
         /// </returns>
         public static bool RemoveNetworkObject(INetworkObject networkObject)
         {
+            if (networkObject.NetworkID == 0)
+            {
+                Log.Error($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
+                return false;
+            }
             if (!NetworkObjects.ContainsKey(networkObject))
             {
                 Log.Warning("Tried to remove NetworObject that doesn't exist.");
@@ -155,6 +165,15 @@ namespace SocketNetworking
             Type typeOfObject = target.GetType();
             MethodInfo[] allPacketListeners = typeOfObject.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(x => x.GetCustomAttribute(typeof(PacketListener)) != null).ToArray();
             Dictionary<Type, List<PacketListenerData>> result = new Dictionary<Type, List<PacketListenerData>>();
+            if(target.NetworkID == 0)
+            {
+                Log.Error($"Network Object {target.GetType().Name} was ignored becuase NetworkTargetID 0 is reserved.");
+                return new NetworkObjectData()
+                {
+                    Listeners = new Dictionary<Type, List<PacketListenerData>>(),
+                    TargetObject = target
+                };
+            }
             foreach(MethodInfo method in allPacketListeners)
             {
                 if(method.GetParameters().Length < AcceptedMethodArugments.Length)
@@ -216,16 +235,46 @@ namespace SocketNetworking
         public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
         {
             ClientLocation clientLocation = runningClient.CurrnetClientLocation;
+            Type packetType = AdditionalPacketTypes[header.CustomPacketID];
+            Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);
+            packet.Deserialize(data);
+            object changedPacket = Convert.ChangeType(packet, packetType);
+            if (header.NetworkIDTarget == 0)
+            {
+                MethodInfo[] clientMethods = runningClient.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(x => x.GetCustomAttribute<PacketListener>() != null).ToArray();
+                foreach(MethodInfo method in clientMethods)
+                {
+                    PacketListener listener = method.GetCustomAttribute<PacketListener>();
+                    PacketDirection packetDirection = listener.DefinedDirection;
+                    Type listenerType = listener.DefinedType;
+                    if(packetType != listenerType)
+                    {
+                        continue;
+                    }
+                    if (packetDirection == PacketDirection.Any)
+                    {
+                        method.Invoke(runningClient, new object[] { changedPacket, runningClient });
+                        continue;
+                    }
+                    if (packetDirection == PacketDirection.Client && clientLocation == ClientLocation.Local)
+                    {
+                        method.Invoke(runningClient, new object[] { changedPacket, runningClient });
+                        continue;
+                    }
+                    if (packetDirection == PacketDirection.Server && clientLocation == ClientLocation.Remote)
+                    {
+                        method.Invoke(runningClient, new object[] { changedPacket, runningClient });
+                        continue;
+                    }
+                }
+                return;
+            }
             if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
             {
                 Log.Error("Unknown Custom packet. ID: " + header.CustomPacketID);
                 return;
             }
             List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == header.NetworkIDTarget && x.IsActive).ToList();
-            Type packetType = AdditionalPacketTypes[header.CustomPacketID];
-            Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);
-            packet.Deserialize(data);
-            object changedPacket = Convert.ChangeType(packet, packetType);
             //This may look not very effecient, but you arent checking EVERY possible object, only the ones which match the TargetID.
             //The other way I could do this is by making a nested dictionary hell hole, but I dont want to do that.
             foreach (INetworkObject netObj in objects)

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32.SafeHandles;
 using System;
 using System.CodeDom;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
@@ -9,27 +10,53 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.PacketSystem.TypeWrappers
 {
-    public class SerializableArray<T> : IPacketSerializable
+    public class SerializableLIst<T> : IPacketSerializable, IList<T>
     {
-        private T[] _array;
+        private List<T> _internalList;
 
         private Type TType;
 
-        public SerializableArray(T[] values)
+        public SerializableLIst(T[] values)
         {
             if (!Packet.SupportedTypes.Contains(typeof(T)))
             {
                 throw new ArgumentException("Array type is not supported, use one of the supported types instead.", "values");
             }
-            _array = values;
+            _internalList = new List<T>();
             TType = typeof(T);
         }
 
-        public Array ContainedArray => _array;
+        public SerializableLIst()
+        {
+            if (!Packet.SupportedTypes.Contains(typeof(T)))
+            {
+                throw new ArgumentException("Array type is not supported, use one of the supported types instead.", "values");
+            }
+            _internalList = new List<T>();
+            TType = typeof(T);
+        }
+
+        public List<T> ContainedArray => _internalList;
+
+        public int Count => ContainedArray.Count;
+
+        public bool IsReadOnly => false;
+
+        public T this[int index] 
+        { 
+            get
+            {
+                return _internalList[index];
+            }
+            set
+            {
+                _internalList[index] = value;
+            }
+        }
 
         public int Deserialize(byte[] data)
         {
-            if(_array != null || _array.Length > 0)
+            if(_internalList != null || _internalList.Count > 0)
             {
                 throw new InvalidOperationException("The array must be empty in order to deserialize.");
             }
@@ -53,76 +80,76 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
 
         private void DeserializeAndAdd(byte[] data)
         {
-            if (_array == null)
+            if (_internalList == null)
             {
-                _array = new T[] { };
+                _internalList = new List<T>();
             }
             if (TType == typeof(IPacketSerializable))
             {
                 T obj = (T)Activator.CreateInstance(TType);
                 IPacketSerializable serializable = (IPacketSerializable)obj;
                 serializable.Deserialize(data);
-                _array.Append((T)serializable);
+                _internalList.Append((T)serializable);
             }
             if(TType == typeof(string))
             {
                 ByteReader reader = new ByteReader(data);
                 string str = reader.ReadString();
-                _array.Append((T)Convert.ChangeType(str, TType));
+                _internalList.Append((T)Convert.ChangeType(str, TType));
             }
             if (TType == typeof(bool))
             {
                 ByteReader reader = new ByteReader(data);
                 bool value = reader.ReadBool();
-                _array.Append((T)Convert.ChangeType(value, TType));
+                _internalList.Append((T)Convert.ChangeType(value, TType));
             }
             if (TType == typeof(short))
             {
                 ByteReader reader = new ByteReader(data);
                 short value = reader.ReadShort();
-                _array.Append((T)Convert.ChangeType(value, TType));
+                _internalList.Append((T)Convert.ChangeType(value, TType));
             }
             if (TType == typeof(int))
             {
                 ByteReader reader = new ByteReader(data);
                 int value = reader.ReadInt();
-                _array.Append((T)Convert.ChangeType(value, TType));
+                _internalList.Append((T)Convert.ChangeType(value, TType));
             }
             if (TType == typeof(long))
             {
                 ByteReader reader = new ByteReader(data);
                 long value = reader.ReadLong();
-                _array.Append((T)Convert.ChangeType(value, TType));
+                _internalList.Append((T)Convert.ChangeType(value, TType));
             }
             if (TType == typeof(ushort))
             {
                 ByteReader reader = new ByteReader(data);
                 ushort value = reader.ReadUShort();
-                _array.Append((T)Convert.ChangeType(value, TType));
+                _internalList.Append((T)Convert.ChangeType(value, TType));
             }
             if (TType == typeof(uint))
             {
                 ByteReader reader = new ByteReader(data);
                 uint value = reader.ReadUInt();
-                _array.Append((T)Convert.ChangeType(value, TType));
+                _internalList.Append((T)Convert.ChangeType(value, TType));
             }
             if(TType == typeof(ulong))
             {
                 ByteReader reader = new ByteReader(data);
                 ulong value = reader.ReadULong();
-                _array.Append((T)Convert.ChangeType(value, TType));
+                _internalList.Append((T)Convert.ChangeType(value, TType));
             }
             if(TType == typeof(float))
             {
                 ByteReader reader = new ByteReader(data);
                 float value = reader.ReadFloat();
-                _array.Append((T)Convert.ChangeType(value, TType));
+                _internalList.Append((T)Convert.ChangeType(value, TType));
             }
             if(TType == typeof(double))
             {
                 ByteReader reader = new ByteReader(data);
                 double value = reader.ReadDouble();
-                _array.Append((T)Convert.ChangeType(value, TType));
+                _internalList.Append((T)Convert.ChangeType(value, TType));
             }
         }
 
@@ -132,11 +159,11 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             //Length, Elements
             //Each element gets a length value attached to it.
             int size = sizeof(int);
-            if (_array.Length == 0)
+            if (_internalList.Count == 0)
             {
                 return size;
             }
-            foreach(T element in _array)
+            foreach(T element in _internalList)
             {
                 size += sizeof(int);
                 if(element.GetType().GetInterfaces().Contains(typeof(IPacketSerializable))) 
@@ -156,7 +183,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteInt(GetLength());
-            foreach(T element in _array)
+            foreach(T element in _internalList)
             {
                 //Dont need to worry about type safety as we check in constructor
                 byte[] finalBytes = Packet.SerializeSupportedType(element);
@@ -165,6 +192,56 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
                 writer.Write(finalBytes);
             }
             return writer.Data;
+        }
+
+        public int IndexOf(T item)
+        {
+            return _internalList.IndexOf(item);
+        }
+
+        public void Insert(int index, T item)
+        {
+            _internalList.Insert(index, item);
+        }
+
+        public void RemoveAt(int index)
+        {
+            _internalList.RemoveAt(index);
+        }
+
+        public void Add(T item)
+        {
+            _internalList.Add(item);
+        }
+
+        public void Clear()
+        {
+            _internalList.Clear();
+        }
+
+        public bool Contains(T item)
+        {
+            return _internalList.Contains(item);
+        }
+
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            _internalList.CopyTo(array, arrayIndex);
+        }
+
+        public bool Remove(T item)
+        {
+            return _internalList.Remove(item);
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return _internalList.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return _internalList.GetEnumerator();
         }
     }
 }

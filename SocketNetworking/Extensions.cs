@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Text;
@@ -65,11 +66,7 @@ namespace SocketNetworking
 
         public static int SizeOf(this Type type)
         {
-            var dm = new DynamicMethod("SizeOfType", typeof(int), new Type[] { });
-            ILGenerator il = dm.GetILGenerator();
-            il.Emit(OpCodes.Sizeof, type);
-            il.Emit(OpCodes.Ret);
-            return (int)dm.Invoke(null, null);
+            return Marshal.SizeOf(type);
         }
 
         public static int SerializedSize(this string str)
