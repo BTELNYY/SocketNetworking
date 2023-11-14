@@ -17,5 +17,11 @@ namespace SocketNetworking.PacketSystem
         /// If this is false, the object is never updated.
         /// </summary>
         bool IsActive { get; }
+
+        void OnAdded(NetworkClient client);
+
+        void OnReady(NetworkClient client);
+
+        void OnDisconnected(NetworkClient client);
     }
 }

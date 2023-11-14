@@ -95,12 +95,12 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// The NetworkID of the object which this packet is being sent to. -1 Means all objects.
         /// </summary>
-        public int NetowrkIDTarget  = -1;
+        public int NetowrkIDTarget = -1;
 
         /// <summary>
         /// This will only be a value greater then 0 if <see cref="Type"/> is <see cref="PacketType.CustomPacket"/>
         /// </summary>
-        public int CustomPacketID = -1;
+        public virtual int CustomPacketID { get; private set; } = -1;
 
         /// <summary>
         /// Function called to serialize packets. Ensure you get the return type of this function becuase you'll need to add on to that array. creating a new array will cause issues.

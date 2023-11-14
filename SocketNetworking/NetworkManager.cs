@@ -157,7 +157,7 @@ namespace SocketNetworking
             Dictionary<Type, List<PacketListenerData>> result = new Dictionary<Type, List<PacketListenerData>>();
             foreach(MethodInfo method in allPacketListeners)
             {
-                if(method.GetGenericArguments().Length < AcceptedMethodArugments.Length)
+                if(method.GetParameters().Length < AcceptedMethodArugments.Length)
                 {
                     Log.Warning("Method " + method.Name + " was ignored becuase it doesn't have the proper amount of arguments.");
                     continue;
@@ -165,7 +165,7 @@ namespace SocketNetworking
                 bool methodArgsFailed = false;
                 for (int i = 0; i < AcceptedMethodArugments.Length; i++)
                 {
-                    Type methodType = method.GetGenericArguments()[i];
+                    Type methodType = method.GetParameters()[i].ParameterType;
                     Type acceptedType = AcceptedMethodArugments[i];
                     if(!methodType.IsSubclassOf(acceptedType))
                     {
