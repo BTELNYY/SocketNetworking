@@ -46,8 +46,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Components\NetworkBehavior.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TypeWrappers\SerializableQuaternion.cs" />
+    <Compile Include="TypeWrappers\SerializableVector2.cs" />
     <Compile Include="TypeWrappers\SerializableVector3.cs" />
   </ItemGroup>
   <ItemGroup>

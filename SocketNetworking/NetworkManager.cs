@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Remoting.Messaging;
 
 namespace SocketNetworking
 {
@@ -94,9 +95,63 @@ namespace SocketNetworking
             }
         }
 
-
         private static readonly Dictionary<INetworkObject, NetworkObjectData> NetworkObjects = new Dictionary<INetworkObject, NetworkObjectData>();
 
+        public static void SendReadyPulse(NetworkClient sender, bool isReady)
+        {
+            foreach(INetworkObject @object in NetworkObjects.Keys)
+            {
+                @object.OnReady(sender, isReady);
+            }
+        }
+
+        public static void SendObjectCreationCompletePulse(NetworkClient client, int netID)
+        {
+            foreach(INetworkObject networkObject in NetworkObjects.Keys.Where(x => x.NetworkID == netID))
+            {
+                networkObject.OnObjectCreationComplete(client);
+            }
+        }
+
+        public static void SendObjectDestroyedPulse(NetworkClient client, int netID)
+        {
+            foreach (INetworkObject networkObject in NetworkObjects.Keys.Where(x => x.NetworkID == netID))
+            {
+                networkObject.OnObjectDestroyed(client);
+            }
+        }
+
+        public static void SendAddedPulse(INetworkObject addedObject)
+        {
+            foreach (INetworkObject networkObject in NetworkObjects.Keys.Where(x => x.NetworkID == addedObject.NetworkID))
+            {
+                networkObject.OnAdded(addedObject);
+            }
+        }
+
+        public static void SendRemovedPulse(INetworkObject removedObject)
+        {
+            foreach (INetworkObject networkObject in NetworkObjects.Keys.Where(x => x.NetworkID == removedObject.NetworkID))
+            {
+                networkObject.OnRemoved(removedObject);
+            }
+        }
+
+        public static void SendDisconnectedPulse(NetworkClient networkClient)
+        {
+            foreach (INetworkObject @object in NetworkObjects.Keys)
+            {
+                @object.OnDisconnected(networkClient);
+            }
+        }
+
+        public static void SendUpdateNetIDPulse(NetworkClient client, int oldID, int newID)
+        {
+            foreach(INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == oldID))
+            {
+                @object.OnObjectUpdateID(client, newID);
+            }
+        }
 
         /// <summary>
         /// Adds a <see cref="INetworkObject"/> to the list of objects which we check the methods of for the <see cref="PacketListener"/> attribute. This will add it to the list of all objects. 
@@ -123,6 +178,7 @@ namespace SocketNetworking
             {
                 NetworkObjectData data = GetNetworkObjectData(networkObject);
                 NetworkObjects.Add(networkObject, data);
+                SendAddedPulse(networkObject);
                 return true;
             }
         }
@@ -151,8 +207,30 @@ namespace SocketNetworking
             else
             {
                 NetworkObjects.Remove(networkObject);
+                SendRemovedPulse(networkObject);
                 return true;
             }
+        }
+
+        /// <summary>
+        /// Removes any <see cref="INetworkObject"/> which match the ID.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>
+        /// How many objects are removed.
+        /// </returns>
+        public static int RemoveAllNetworkObjectsByID(int id)
+        {
+            List<INetworkObject> networkObjects = NetworkObjects.Keys.Where(x => x.NetworkID == id).ToList();
+            int removed = 0;
+            foreach(INetworkObject netObj in networkObjects)
+            {
+                if (RemoveNetworkObject(netObj))
+                {
+                    removed++;
+                }
+            }
+            return removed;
         }
 
         /// <summary>

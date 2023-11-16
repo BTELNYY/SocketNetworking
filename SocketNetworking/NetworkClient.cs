@@ -137,6 +137,7 @@ namespace SocketNetworking
                     _ready = value;
                     ReadyStateChanged?.Invoke(!_ready, _ready);
                     ClientReadyStateChanged.Invoke(this);
+                    NetworkManager.SendReadyPulse(this, Ready);
                 }
                 ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket
                 {
@@ -436,6 +437,22 @@ namespace SocketNetworking
         {
             switch (header.Type)
             {
+                case PacketType.NetworkObjectUpdate:
+                    NetworkObjectUpdatePacket networkObjectUpdatePacket = new NetworkObjectUpdatePacket();
+                    networkObjectUpdatePacket.Deserialize(data);
+                    switch (networkObjectUpdatePacket.UpdateState)
+                    {
+                        case NetworkObjectUpdateState.ClientObjectCreated:
+                            NetworkManager.SendObjectCreationCompletePulse(this, networkObjectUpdatePacket.NetowrkIDTarget);
+                            break;
+                        case NetworkObjectUpdateState.ObjectNetIDUpdated:
+                            NetworkManager.SendUpdateNetIDPulse(this, networkObjectUpdatePacket.NetowrkIDTarget, networkObjectUpdatePacket.NewNetworkID);
+                            break;
+                        case NetworkObjectUpdateState.ObjectDestroyed:
+                            NetworkManager.SendObjectDestroyedPulse(this, networkObjectUpdatePacket.NetowrkIDTarget);
+                            break;
+                    }
+                    break;
                 case PacketType.CustomPacket:
                     NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
@@ -508,6 +525,22 @@ namespace SocketNetworking
         {
             switch (header.Type)
             {
+                case PacketType.NetworkObjectUpdate:
+                    NetworkObjectUpdatePacket networkObjectUpdatePacket = new NetworkObjectUpdatePacket();
+                    networkObjectUpdatePacket.Deserialize(data);
+                    switch (networkObjectUpdatePacket.UpdateState)
+                    {
+                        case NetworkObjectUpdateState.ClientObjectCreated:
+                            NetworkManager.SendObjectCreationCompletePulse(this, networkObjectUpdatePacket.NetowrkIDTarget);
+                            break;
+                        case NetworkObjectUpdateState.ObjectNetIDUpdated:
+                            NetworkManager.SendUpdateNetIDPulse(this, networkObjectUpdatePacket.NetowrkIDTarget, networkObjectUpdatePacket.NewNetworkID);
+                            break;
+                        case NetworkObjectUpdateState.ObjectDestroyed:
+                            NetworkManager.SendObjectDestroyedPulse(this, networkObjectUpdatePacket.NetowrkIDTarget);
+                            break;
+                    }
+                    break;
                 case PacketType.CustomPacket:
                     NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
@@ -517,6 +550,7 @@ namespace SocketNetworking
                     _ready = readyStateUpdatePacket.Ready;
                     ReadyStateChanged?.Invoke(!_ready, _ready);
                     ClientReadyStateChanged.Invoke(this);
+                    NetworkManager.SendReadyPulse(this, Ready);
                     Log.Info("New Client Ready State: " + _ready.ToString());
                     break;
                 case PacketType.ServerData:
@@ -749,6 +783,7 @@ namespace SocketNetworking
         /// </summary>
         public void StopClient()
         {
+            NetworkManager.SendDisconnectedPulse(this);
             _connectionState = ConnectionState.Disconnected;
             if(CurrnetClientLocation == ClientLocation.Remote)
             {

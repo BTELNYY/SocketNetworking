@@ -150,6 +150,7 @@ namespace SocketNetworking.PacketSystem
         ClientData,
         ServerData,
         CustomPacket,
+        NetworkObjectUpdate,
     }
     
     /// <summary>
