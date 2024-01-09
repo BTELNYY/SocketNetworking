@@ -35,6 +35,14 @@ namespace SocketNetworking
             }
         }
 
+        public static bool Active
+        {
+            get
+            {
+                return CurrentServerState == ServerState.Ready;
+            }
+        }
+
         private static ProtocolConfiguration _serverConfig = new ProtocolConfiguration();
 
         public static ProtocolConfiguration ServerConfiguration

@@ -20,6 +20,20 @@ namespace SocketNetworking
 {
     public class NetworkClient
     {
+
+        /// <summary>
+        /// Forcefully remove client on destruction
+        /// </summary>
+        ~NetworkClient() 
+        {
+            ClientDestroyed.Invoke(ClientID);
+            if (Clients.Contains(this))
+            {
+                Clients.Remove(this);
+            }
+        }
+
+
         #region Per Client (Non-Static) Events
         /// <summary>
         /// Called on both Remote and Local clients when the connection has succeeded and the Socket is ready to use.
@@ -53,7 +67,12 @@ namespace SocketNetworking
 
         public static event Action<NetworkClient> ClientConnectionStateChanged;
 
+        public static event Action<int> ClientDestroyed;
+
         #endregion
+
+       public readonly static HashSet<NetworkClient> Clients = new HashSet<NetworkClient>();
+
 
         private int _clientId = 0;
 
@@ -414,6 +433,7 @@ namespace SocketNetworking
             _packetReaderThread.Start();
             _packetSenderThread.Start();
             ClientConnected?.Invoke();
+            Clients.Add(this);
         }
 
 
@@ -795,6 +815,10 @@ namespace SocketNetworking
             _packetReaderThread = null;
             _packetSenderThread = null;
             _tcpClient = null;
+            if (Clients.Contains(this))
+            {
+                Clients.Remove(this);
+            }
         }
     }
 

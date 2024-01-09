@@ -8,9 +8,20 @@ using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.TypeWrappers
 {
-    internal class SerializableQuaternion : IPacketSerializable
+    public class SerializableQuaternion : IPacketSerializable
     {
         public Quaternion Quaternion;
+
+
+        public SerializableQuaternion()
+        {
+            Quaternion = new Quaternion();
+        }
+
+        public SerializableQuaternion(Quaternion quaternion)
+        {
+            Quaternion = quaternion;
+        }
 
         public int Deserialize(byte[] data)
         {

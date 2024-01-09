@@ -12,6 +12,16 @@ namespace SocketNetworking.UnityEngine.TypeWrappers
     {
         public Vector3 Vector;
 
+        public SerializableVector3()
+        {
+            Vector = new Vector3();
+        }
+
+        public SerializableVector3(Vector3 vector)
+        {
+            Vector = vector;
+        }
+
         public int Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);

@@ -153,6 +153,24 @@ namespace SocketNetworking
             }
         }
 
+
+        /// <summary>
+        /// Returns the next available unused NetworkID
+        /// </summary>
+        /// <returns>
+        /// The Network ID which hasn't been used before.
+        /// </returns>
+        public static int GetNextNetworkID()
+        {
+            List<int> ids = NetworkObjects.Keys.Select(x => x.NetworkID).ToList();
+            if(ids.Count == 0)
+            {
+                return 1;
+            }
+            int id = ids.Where(x => !ids.Contains(x + 1)).First();
+            return id;
+        }
+
         /// <summary>
         /// Adds a <see cref="INetworkObject"/> to the list of objects which we check the methods of for the <see cref="PacketListener"/> attribute. This will add it to the list of all objects. 
         /// </summary>
