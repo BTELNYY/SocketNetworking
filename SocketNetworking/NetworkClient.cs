@@ -26,7 +26,7 @@ namespace SocketNetworking
         /// </summary>
         ~NetworkClient() 
         {
-            ClientDestroyed.Invoke(ClientID);
+            ClientDestroyed?.Invoke(ClientID);
             if (Clients.Contains(this))
             {
                 Clients.Remove(this);
@@ -648,6 +648,7 @@ namespace SocketNetworking
                 }
                 try
                 {
+                    Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                     serverStream.Write(fullBytes, 0, fullBytes.Length);
                 }
                 catch (Exception ex)
@@ -757,6 +758,7 @@ namespace SocketNetworking
             Log.Info("Shutting down client, Closing socket.");
             _tcpClient.Close();
         }
+
         /// <summary>
         /// Sends any <see cref="Packet"/> down the network stream to whatever is connected on the other side. Note that this method doesn't check who it is sending it to, instead sending it to the current stream.
         /// </summary>

@@ -39,6 +39,12 @@ namespace SocketNetworking.PacketSystem
             _workingSetData = _workingSetData.Concat(data).ToArray();
         }
 
+        public void WriteByteArray(byte[] data)
+        {
+            WriteInt(data.Length);
+            _workingSetData = _workingSetData.Concat(data).ToArray();
+        }
+
         public void WriteByte(byte data)
         {
             _workingSetData = _workingSetData.Append(data).ToArray();

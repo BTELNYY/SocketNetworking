@@ -61,6 +61,12 @@ namespace SocketNetworking.PacketSystem
             return data;
         }
 
+        public byte[] ReadByteArray()
+        {
+            int length = ReadInt();
+            return Read(length);
+        }
+
         public T Read<T>() where T : IPacketSerializable
         {
             IPacketSerializable serializable = (IPacketSerializable)Activator.CreateInstance(typeof(T));

@@ -107,5 +107,23 @@ namespace SocketNetworking.UnityEngine
             writer.WriteFloat(value.z);
             writer.WriteFloat(value.w);
         }
+
+        public static Color ReadColor(this ByteReader reader)
+        {
+            float r = reader.ReadFloat();
+            float g = reader.ReadFloat();
+            float b = reader.ReadFloat();
+            float a = reader.ReadFloat();
+            Color result = new Color(r, g, b, a);
+            return result;
+        }
+
+        public static void WriteColor(this ByteWriter writer, Color value)
+        {
+            writer.WriteFloat(value.r);
+            writer.WriteFloat(value.g);
+            writer.WriteFloat(value.b);
+            writer.WriteFloat(value.a);
+        }
     }
 }

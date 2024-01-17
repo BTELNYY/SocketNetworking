@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.Compression;
+using System.IO;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
@@ -7,6 +9,7 @@ using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace SocketNetworking
 {
@@ -96,6 +99,33 @@ namespace SocketNetworking
         {
             using (HashAlgorithm algorithm = SHA256.Create())
                 return algorithm.ComputeHash(Encoding.UTF8.GetBytes(inputString));
+        }
+
+        public static byte[] Compress(this byte[] bytes)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var gzipStream = new GZipStream(memoryStream, CompressionLevel.Optimal))
+                {
+                    gzipStream.Write(bytes, 0, bytes.Length);
+                }
+                return memoryStream.ToArray();
+            }
+        }
+
+        public static byte[] Decompress(this byte[] bytes)
+        {
+            using (var memoryStream = new MemoryStream(bytes))
+            {
+                using (var outputStream = new MemoryStream())
+                {
+                    using (var decompressStream = new GZipStream(memoryStream, CompressionMode.Decompress))
+                    {
+                        decompressStream.CopyTo(outputStream);
+                    }
+                    return outputStream.ToArray();
+                }
+            }
         }
     }
 }

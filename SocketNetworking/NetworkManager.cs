@@ -351,7 +351,6 @@ namespace SocketNetworking
         /// </param>
         public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
         {
-            Log.Info(runningClient.GetType().FullName);
             ClientLocation clientLocation = runningClient.CurrnetClientLocation;
             Type packetType = AdditionalPacketTypes[header.CustomPacketID];
             Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);
@@ -374,12 +373,12 @@ namespace SocketNetworking
                         method.Invoke(runningClient, new object[] { changedPacket, runningClient });
                         continue;
                     }
-                    if (packetDirection == PacketDirection.Client && clientLocation == ClientLocation.Local)
+                    if (packetDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
                     {
                         method.Invoke(runningClient, new object[] { changedPacket, runningClient });
                         continue;
                     }
-                    if (packetDirection == PacketDirection.Server && clientLocation == ClientLocation.Remote)
+                    if (packetDirection == PacketDirection.Server && clientLocation == ClientLocation.Local)
                     {
                         method.Invoke(runningClient, new object[] { changedPacket, runningClient });
                         continue;
@@ -406,12 +405,12 @@ namespace SocketNetworking
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
-                    if(packetListener.Attribute.DefinedDirection == PacketDirection.Client && clientLocation == ClientLocation.Local)
+                    if(packetListener.Attribute.DefinedDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
                     {
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
-                    if (packetListener.Attribute.DefinedDirection == PacketDirection.Server && clientLocation == ClientLocation.Remote)
+                    if (packetListener.Attribute.DefinedDirection == PacketDirection.Server && clientLocation == ClientLocation.Local)
                     {
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
