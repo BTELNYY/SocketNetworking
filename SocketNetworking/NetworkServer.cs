@@ -15,6 +15,9 @@ namespace SocketNetworking
         public static event Action ServerReady;
         public static event Action<int> ClientConnected;
         public static event Action<int> ClientDisconnected;
+        public static event Action ServerStarted;
+        public static event Action ServerStopped;
+
 
         private static readonly ServerState _serverState = ServerState.NotStarted;
 
@@ -26,12 +29,20 @@ namespace SocketNetworking
             }
         } 
 
-        public static bool ServerStarted
+        public static bool HasServerStarted
         {
             get
             {
                 List<ServerState> states = new List<ServerState>() { ServerState.Ready, ServerState.Started, ServerState.NotReady };
                 return states.Contains(CurrentServerState);
+            }
+        }
+
+        public static bool HasClients
+        {
+            get
+            {
+                return Clients.Count > 0;
             }
         }
 
@@ -53,7 +64,7 @@ namespace SocketNetworking
             }
             set
             {
-                if (ServerStarted)
+                if (HasServerStarted)
                 {
                     Log.Error("Can't change server network configuration is the server is running. Stop it first.");
                     return;
@@ -61,6 +72,21 @@ namespace SocketNetworking
                 _serverConfig = value;
             }
         }
+
+        /// <summary>
+        /// Should the server accept the connection, then instantly disconnect the client with a message?
+        /// </summary>
+        public static bool AutoDisconnectClients = false;
+
+        /// <summary>
+        /// Message to auto disconnect clients with
+        /// </summary>
+        public static string AutoDisconnectMessage = "Server is not ready!";
+
+        /// <summary>
+        /// Should the server be currently accepting connections? if this is set to false, the server will not reply to socket requests.
+        /// </summary>
+        public static bool ShouldAcceptConnections = true;
 
         /// <summary>
         /// How long should the server wait for the client to complete the handshake?
@@ -128,20 +154,21 @@ namespace SocketNetworking
 
         public static void StartServer()
         {
-            if(ServerStarted)
+            if(HasServerStarted)
             {
                 Log.Error("Server already started!");
                 return;
             }
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
             {
-                Log.Error("Can't start server: ClientType is not correct.");
+                Log.Error("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
                 return;
             }
             NetworkServer server = new NetworkServer();
             _serverInstance = server;
             ServerThread = new Thread(server.ServerStartThread);
             ServerThread.Start();
+            ServerStarted?.Invoke();
         }
 
         protected static void AddClient(NetworkClient client, int clientId)
@@ -194,7 +221,7 @@ namespace SocketNetworking
 
         public static void StopServer()
         {
-            if (!ServerStarted)
+            if (!HasServerStarted)
             {
                 Log.Error("Server already stopped.");
             }
@@ -204,6 +231,7 @@ namespace SocketNetworking
             }
             Clients.Clear();
             ServerThread.Abort();
+            ServerStopped?.Invoke();
         }
 
         private void ServerStartThread()
@@ -220,6 +248,14 @@ namespace SocketNetworking
                 if (_isShuttingDown)
                 {
                     break;
+                }
+                if (!serverSocket.Pending())
+                {
+                    continue;
+                }
+                if(!ShouldAcceptConnections)
+                {
+                    continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();
                 socket.NoDelay = true;

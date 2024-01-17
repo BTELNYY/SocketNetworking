@@ -4,6 +4,7 @@ using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
@@ -201,6 +202,26 @@ namespace SocketNetworking
             }
         }
 
+        public static bool ModifyNetworkID(INetworkObject networkObject)
+        {
+            if (networkObject.NetworkID == 0)
+            {
+                Log.Error($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
+                return false;
+            }
+            if (!NetworkObjects.ContainsKey(networkObject))
+            {
+                Log.Warning("Tried to modify network object that does not exist.");
+                return false;
+            }
+            else
+            {
+                NetworkObjectData data = GetNetworkObjectData(networkObject);
+                NetworkObjects[networkObject] = data;
+                return true;
+            }
+        }
+
         /// <summary>
         /// Removes a <see cref="INetworkObject"/> from the list of registered objects.
         /// </summary>
@@ -330,6 +351,7 @@ namespace SocketNetworking
         /// </param>
         public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
         {
+            Log.Info(runningClient.GetType().FullName);
             ClientLocation clientLocation = runningClient.CurrnetClientLocation;
             Type packetType = AdditionalPacketTypes[header.CustomPacketID];
             Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);

@@ -19,10 +19,7 @@ namespace SocketNetworking.UnityEngine.Components
         public void SetNetID(int id)
         {
             _netId = id;
-            if(enabled)
-            {
-                RegisterListener();
-            }
+            NetworkManager.ModifyNetworkID(this);
         }
 
         public bool IsActive => IsActive;
@@ -65,6 +62,33 @@ namespace SocketNetworking.UnityEngine.Components
         public virtual void RegisterListener()
         {
             NetworkManager.AddNetworkObject(this);
+        }
+
+        public virtual void OnServerStarted()
+        {
+
+        }
+
+        public virtual void OnServerReady()
+        {
+
+        }
+
+        public virtual void OnServerStopped()
+        {
+
+        }
+
+        void Awake()
+        {
+            NetworkServer.ServerReady += OnServerReady;
+            NetworkServer.ServerStopped += OnServerStopped;
+            NetworkServer.ServerStarted += OnServerStarted;
+        }
+
+        void Start()
+        {
+            RegisterListener();
         }
     }
 }

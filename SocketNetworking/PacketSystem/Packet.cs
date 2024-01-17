@@ -17,7 +17,7 @@ namespace SocketNetworking.PacketSystem
             }
         }
 
-        private static readonly int _maxPacketSize = short.MaxValue;
+        private static readonly int _maxPacketSize = ushort.MaxValue;
 
         public static readonly Type[] SupportedTypes =
         {

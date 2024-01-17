@@ -51,6 +51,11 @@ namespace SocketNetworking
         public event Action<ConnectionState> ConnectionStateUpdated;
 
         /// <summary>
+        /// Called on server and clients when an error is raised.
+        /// </summary>
+        public event Action<NetworkErrorData> ConnectionError;
+
+        /// <summary>
         /// Called when the state of the <see cref="NetworkClient.Ready"/> variable changes. First variable is the old state, and the second is the new state. This event is fired on both Local and Remote clients.
         /// </summary>
         public event Action<bool, bool> ReadyStateChanged;
@@ -155,7 +160,7 @@ namespace SocketNetworking
                 {
                     _ready = value;
                     ReadyStateChanged?.Invoke(!_ready, _ready);
-                    ClientReadyStateChanged.Invoke(this);
+                    ClientReadyStateChanged?.Invoke(this);
                     NetworkManager.SendReadyPulse(this, Ready);
                 }
                 ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket
@@ -236,7 +241,7 @@ namespace SocketNetworking
                 };
                 Send(updatePacket);
                 _connectionState = value;
-                ClientConnectionStateChanged.Invoke(this);
+                ClientConnectionStateChanged?.Invoke(this);
             }
         }
 
@@ -403,6 +408,8 @@ namespace SocketNetworking
             }
             catch(Exception ex)
             {
+                NetworkErrorData networkErrorData = new NetworkErrorData("Connection Failed: " + ex.ToString(), false);
+                ConnectionError?.Invoke(networkErrorData);
                 Log.Error($"Failed to connect: \n {ex}");
                 return false;
             }
@@ -446,7 +453,6 @@ namespace SocketNetworking
             // ie with count 2: [1, 2, 3, 4] -> [3, 4, 3, 4]
             // we dont update the end of the array to fill with zeros, because we dont need to (we just call it undefined behavior)
             Buffer.BlockCopy(input, count, input, 0, count);
-
             return output;
         }
 
@@ -482,6 +488,8 @@ namespace SocketNetworking
                     if (connectionUpdatePacket.State == ConnectionState.Disconnected)
                     {
                         //ruh roh
+                        NetworkErrorData errorData = new NetworkErrorData("Disconnected by local client. Reason: " + connectionUpdatePacket.Reason, false);
+                        ConnectionError?.Invoke(errorData);
                         Log.Error($"Disconnecting {ClientID} for " + connectionUpdatePacket.Reason);
                         StopClient();
                     }
@@ -493,6 +501,8 @@ namespace SocketNetworking
                     {
                         _connectionState = ConnectionState.Connected;
                     }
+                    ClientConnectionStateChanged?.Invoke(this);
+                    ConnectionStateUpdated?.Invoke(_connectionState);
                     break;
                 case PacketType.ReadyStateUpdate:
                     ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
@@ -569,7 +579,7 @@ namespace SocketNetworking
                     readyStateUpdatePacket.Deserialize(data);
                     _ready = readyStateUpdatePacket.Ready;
                     ReadyStateChanged?.Invoke(!_ready, _ready);
-                    ClientReadyStateChanged.Invoke(this);
+                    ClientReadyStateChanged?.Invoke(this);
                     NetworkManager.SendReadyPulse(this, Ready);
                     Log.Info("New Client Ready State: " + _ready.ToString());
                     break;
@@ -591,6 +601,8 @@ namespace SocketNetworking
                     if(connectionUpdatePacket.State == ConnectionState.Disconnected)
                     {
                         //ruh roh
+                        NetworkErrorData errorData = new NetworkErrorData("Disconnected by remote client. Reason: " + connectionUpdatePacket.Reason, false);
+                        ConnectionError?.Invoke(errorData);
                         Log.Error("Disconnected: " + connectionUpdatePacket.Reason);
                         StopClient();
                     }
@@ -602,7 +614,8 @@ namespace SocketNetworking
                     {
                         _connectionState = ConnectionState.Connected;
                     }
-                    ClientConnectionStateChanged.Invoke(this);
+                    ClientConnectionStateChanged?.Invoke(this);
+                    ConnectionStateUpdated?.Invoke(_connectionState);
                     break;
                 default:
                     Log.Error("Packet is not handled!");
@@ -616,25 +629,32 @@ namespace SocketNetworking
         {
             while (true)
             {
-                if(_toSendPackets.IsEmpty)
+                if (_toSendPackets.IsEmpty)
                 {
                     continue;
                 }
-                foreach(Packet packet in _toSendPackets)
+                _toSendPackets.TryDequeue(out Packet packet);
+                Log.Info("Sending packet. Type: " + packet.Type.ToString());
+                NetworkStream serverStream = NetworkStream;
+                byte[] packetBytes = packet.Serialize().Data;
+                ByteWriter writer = new ByteWriter();
+                writer.WriteInt(packetBytes.Length);
+                writer.Write(packetBytes);
+                byte[] fullBytes = writer.Data;
+                if (packetBytes.Length > Packet.MaxPacketSize)
                 {
-                    Log.Info("Sending packet. Type: " + packet.Type.ToString());
-                    NetworkStream serverStream = NetworkStream;
-                    byte[] packetBytes = packet.Serialize().Data;
-                    ByteWriter writer = new ByteWriter();
-                    writer.WriteInt(packetBytes.Length);
-                    writer.Write(packetBytes);
-                    byte[] fullBytes = writer.Data;
-                    if (packetBytes.Length > Packet.MaxPacketSize)
-                    {
-                        Log.Error("Packet too large!");
-                        return;
-                    }
+                    Log.Error("Packet too large!");
+                    return;
+                }
+                try
+                {
                     serverStream.Write(fullBytes, 0, fullBytes.Length);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                    ConnectionError?.Invoke(networkErrorData);
                 }
             }
         }
@@ -772,10 +792,10 @@ namespace SocketNetworking
         }
 
         /// <summary>
-        /// Send a disconnect message to the server and destroy our side of the client.
+        /// Send a disconnect message to the other party and kill local client
         /// </summary>
         /// <param name="message">
-        /// A <see cref="string"/> which shows what message to use to send to the client.
+        /// A <see cref="string"/> which to send as a message to the other party.
         /// </param>
         public void Disconnect(string message)
         {
@@ -785,7 +805,9 @@ namespace SocketNetworking
                 Reason = message
             };
             Send(connectionUpdatePacket);
-            ClientDisconnected.Invoke();
+            NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
+            ConnectionError?.Invoke(errorData);
+            ClientDisconnected?.Invoke();
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
                 Log.Info($"Disconnecting Client {ClientID} for " + message);
@@ -830,5 +852,17 @@ namespace SocketNetworking
         Disconnected,
         Handshake,
         Connected,
+    }
+
+    public struct NetworkErrorData
+    {
+        public string Error { get; private set; } 
+        public bool IsConnected { get; private set; }
+
+        public NetworkErrorData(string error, bool isConnected)
+        {
+            Error = error;
+            IsConnected = isConnected;
+        }
     }
 }
