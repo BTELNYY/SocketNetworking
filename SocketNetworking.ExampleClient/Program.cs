@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking;
+using SocketNetworking.ExampleSharedData;
 
 namespace SocketNetworking.ExampleClient
 {
@@ -12,6 +13,7 @@ namespace SocketNetworking.ExampleClient
         public static void Main(string[] args)
         {
             Log.OnLog += HandleNetworkLog;
+            NetworkManager.ImportCustomPackets(new List<Type>() { typeof(ExampleCustomPacket)});
             TestClient client = new TestClient();
             client.InitLocalClient();
             client.Connect("127.0.0.1", 7777, "DefaultPassword");

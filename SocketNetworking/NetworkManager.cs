@@ -358,18 +358,26 @@ namespace SocketNetworking
             object changedPacket = Convert.ChangeType(packet, packetType);
             if (header.NetworkIDTarget == 0)
             {
-                MethodInfo[] clientMethods = runningClient.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(x => x.GetCustomAttribute<PacketListener>() != null).ToArray();
+                Log.Debug("Handle Client-Client communication!");
+                MethodInfo[] clientMethods = runningClient.GetType().GetMethods().ToArray();
                 foreach(MethodInfo method in clientMethods)
-                {
+                { 
                     PacketListener listener = method.GetCustomAttribute<PacketListener>();
+                    if(listener == null)
+                    {
+                        continue;
+                    }
                     PacketDirection packetDirection = listener.DefinedDirection;
                     Type listenerType = listener.DefinedType;
                     if(packetType != listenerType)
                     {
+                        Log.Debug("Type dont match!");
                         continue;
                     }
+                    Log.Debug("Checking packet direction");
+                    Log.Debug("Direction of client: " + clientLocation + " Listener direction: " + packetDirection);
                     if (packetDirection == PacketDirection.Any)
-                    {
+                    { 
                         method.Invoke(runningClient, new object[] { changedPacket, runningClient });
                         continue;
                     }

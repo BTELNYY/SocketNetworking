@@ -4,17 +4,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{604C49D0-F0D5-4CA4-A627-5B47DF2D76A3}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>SocketNetworking.ExampleClient</RootNamespace>
-    <AssemblyName>SocketNetworking.ExampleClient</AssemblyName>
+    <ProjectGuid>{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SocketNetworking.ExampleSharedData</RootNamespace>
+    <AssemblyName>SocketNetworking.ExampleSharedData</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -24,7 +24,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -43,18 +42,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TestClient.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="ExampleCustomPacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SocketNetworking.ExampleSharedData\SocketNetworking.ExampleSharedData.csproj">
-      <Project>{8d731ee2-ae7e-48a8-9a26-8f370d9fa1a2}</Project>
-      <Name>SocketNetworking.ExampleSharedData</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SocketNetworking\SocketNetworking.csproj">
       <Project>{ab97887e-ef11-4ce3-83b6-7e91456cf035}</Project>
       <Name>SocketNetworking</Name>

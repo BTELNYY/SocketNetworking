@@ -461,6 +461,7 @@ namespace SocketNetworking
         /// </summary>
         private void HandleRemoteClient(PacketHeader header, byte[] data)
         {
+            Log.Debug(header.Type.ToString());
             switch (header.Type)
             {
                 case PacketType.NetworkObjectUpdate:

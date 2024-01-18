@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking;
+using SocketNetworking.ExampleSharedData;
 
 namespace SocketNetworking.ExampleServer
 {
@@ -12,6 +13,7 @@ namespace SocketNetworking.ExampleServer
         public static void Main(string[] args)
         {
             Console.WriteLine(args.ToString());
+            NetworkManager.ImportCustomPackets(new List<Type>() { typeof(ExampleCustomPacket) });
             Log.OnLog += HandleNetworkLog;
             NetworkServer.ClientType = typeof(TestClient);
             NetworkServer.StartServer();
