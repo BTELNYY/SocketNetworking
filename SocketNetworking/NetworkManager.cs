@@ -169,6 +169,10 @@ namespace SocketNetworking
                 return 1;
             }
             int id = ids.Where(x => !ids.Contains(x + 1)).First();
+            if(id == 0)
+            {
+                return 1;
+            }
             return id;
         }
 
@@ -377,17 +381,20 @@ namespace SocketNetworking
                     Log.Debug("Checking packet direction");
                     Log.Debug("Direction of client: " + clientLocation + " Listener direction: " + packetDirection);
                     if (packetDirection == PacketDirection.Any)
-                    { 
+                    {
+                        Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, new object[] { changedPacket, runningClient });
                         continue;
                     }
                     if (packetDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
                     {
+                        Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, new object[] { changedPacket, runningClient });
                         continue;
                     }
                     if (packetDirection == PacketDirection.Server && clientLocation == ClientLocation.Local)
                     {
+                        Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, new object[] { changedPacket, runningClient });
                         continue;
                     }
