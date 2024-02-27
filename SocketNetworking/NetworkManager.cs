@@ -156,6 +156,20 @@ namespace SocketNetworking
 
 
         /// <summary>
+        /// Determines if the given <see cref="INetworkObject"/> is registered.
+        /// </summary>
+        /// <param name="networkObject">
+        /// The <see cref="INetworkObject"/> to check for.
+        /// </param>
+        /// <returns>
+        /// <see cref="true"/> if network object is registered, <see cref="false"/> if it isn't.
+        /// </returns>
+        public static bool IsRegistered(INetworkObject networkObject)
+        {
+            return NetworkObjects.ContainsKey(networkObject);
+        }
+
+        /// <summary>
         /// Returns the next available unused NetworkID
         /// </summary>
         /// <returns>

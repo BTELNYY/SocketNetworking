@@ -19,7 +19,14 @@ namespace SocketNetworking.UnityEngine.Components
         public void SetNetID(int id)
         {
             _netId = id;
-            NetworkManager.ModifyNetworkID(this);
+            if (NetworkManager.IsRegistered(this))
+            {
+                NetworkManager.ModifyNetworkID(this);
+            }
+            else
+            {
+                RegisterListener();
+            }
         }
 
         public bool IsActive => IsActive;
@@ -61,6 +68,14 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void RegisterListener()
         {
+            if(NetworkID == -1)
+            {
+                return;
+            }
+            if(NetworkManager.IsRegistered(this))
+            {
+                return;
+            }
             NetworkManager.AddNetworkObject(this);
         }
 
