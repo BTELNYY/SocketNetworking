@@ -22,6 +22,48 @@ namespace SocketNetworking
         private static readonly Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
 
         /// <summary>
+        /// Determines where the current application is running. 
+        /// </summary>
+        public static ClientLocation WhereAmI
+        {
+            get
+            {
+                if(NetworkServer.Active)
+                {
+                    if (NetworkClient.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() == 0)
+                    {
+                        return ClientLocation.Remote;
+                    }
+                    if (NetworkClient.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() != 0)
+                    {
+                        return ClientLocation.Unknown;
+                    }
+                }
+                else
+                {
+                    if(NetworkClient.Clients.Any(x => x.CurrnetClientLocation == ClientLocation.Remote))
+                    {
+                        Log.Error("There are active remote clients even though the server is closed, these clients will now be terminated.");
+                        foreach(var x in NetworkClient.Clients)
+                        {
+                            if(x.CurrnetClientLocation == ClientLocation.Local)
+                            {
+                                continue;
+                            }
+                            x.StopClient();
+                        }
+                    }
+                    if (NetworkClient.Clients.Any())
+                    {
+                        return ClientLocation.Local;
+                    }
+                }
+                return ClientLocation.Unknown;
+            }
+        }
+
+
+        /// <summary>
         /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your netowrk objects.
         /// </summary>
         /// <param name="assmebly">

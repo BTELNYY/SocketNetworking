@@ -7,12 +7,13 @@ using System.Threading.Tasks;
 namespace SocketNetworking
 {
     /// <summary>
-    /// Location of the client, if its currently on the Server or Local machine
+    /// Location of the client. Local means on the local machine ("client") and remote means on the remote machine ("server"). Unknown is used when the connection isn't active or the location can't be determined.
     /// </summary>
     public enum ClientLocation
     {
         Local,
-        Remote
+        Remote,
+        Unknown
     }
 
     /// <summary>

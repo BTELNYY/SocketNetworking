@@ -33,6 +33,11 @@ namespace SocketNetworking
             }
         }
 
+        public NetworkClient()
+        {
+            ClientCreated?.Invoke(this);
+        }
+
 
         #region Per Client (Non-Static) Events
         /// <summary>
@@ -72,11 +77,19 @@ namespace SocketNetworking
 
         public static event Action<NetworkClient> ClientConnectionStateChanged;
 
+        /// <summary>
+        /// Called when a network client is destroyed, gives the clients ID.
+        /// </summary>
         public static event Action<int> ClientDestroyed;
+
+        /// <summary>
+        /// Called when a client is created, gives the <see cref="NetworkClient"/> that was created.
+        /// </summary>
+        public static event Action<NetworkClient> ClientCreated;
 
         #endregion
 
-       public readonly static HashSet<NetworkClient> Clients = new HashSet<NetworkClient>();
+        public readonly static HashSet<NetworkClient> Clients = new HashSet<NetworkClient>();
 
 
         private int _clientId = 0;
@@ -179,6 +192,24 @@ namespace SocketNetworking
             get
             {
                 return TcpClient.GetStream();
+            }
+        }
+
+        private bool _manualPacketHandle = false;
+
+        /// <summary>
+        /// If true, the library will not handle packets automatically instead queueing them, you must call <see cref="NetworkClient.HandleNextPacket"/> to handle the next packet.
+        /// </summary>
+        public bool ManualPacketHandle
+        {
+            get { return _manualPacketHandle; } 
+            set 
+            {
+                if(CurrentConnectionState == ConnectionState.Handshake)
+                {
+                    Log.Warning("Changing Packet read mode while the handshake has not yet finished, this may cause issues!");
+                }
+                _manualPacketHandle = value;
             }
         }
 
@@ -721,7 +752,7 @@ namespace SocketNetworking
                     {
                         // The buffer is too full, and we are fucked (oh shit)
                         Log.Error("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size)");
-                        throw new Exception("We are fucked!");
+                        throw new InvalidOperationException("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size)");
                     }
                     int count;
                     try
@@ -744,20 +775,62 @@ namespace SocketNetworking
                 PacketHeader header = Packet.ReadPacketHeader(fullPacket);
                 Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
                 PacketRead?.Invoke(header, fullPacket);
-                if (CurrnetClientLocation == ClientLocation.Remote)
+                if (ManualPacketHandle)
                 {
-                    HandleRemoteClient(header, fullPacket);
+                    ReadPacketInfo packetInfo = new ReadPacketInfo()
+                    {
+                        Header = header,
+                        Data = fullPacket
+                    };
+                    _toReadPackets.Enqueue(packetInfo);
                 }
-                if (CurrnetClientLocation == ClientLocation.Local)
+                else
                 {
-                    HandleLocalClient(header, fullPacket);
+                    HandlePacket(header, fullPacket);
                 }
-
-
                 // any leftover data in the buffer is recycled for the next iteration 
             }
             Log.Info("Shutting down client, Closing socket.");
             _tcpClient.Close();
+        }
+
+        ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
+
+        /// <summary>
+        /// Returns the amount of <see cref="Packet"/>s left to read, this is always zero if <see cref="NetworkClient.ManualPacketHandle"/> is false
+        /// </summary>
+        public int PacketsLeftToRead
+        {
+            get
+            {
+                return _toReadPackets.Count;
+            }
+        }
+
+        struct ReadPacketInfo
+        {
+            public PacketHeader Header;
+            public byte[] Data;
+        }
+
+        public void HandleNextPacket()
+        {
+            if(_toReadPackets.TryDequeue(out ReadPacketInfo result))
+            {
+                HandlePacket(result.Header, result.Data);
+            }
+        }
+
+        void HandlePacket(PacketHeader header, byte[] fullPacket)
+        {
+            if (CurrnetClientLocation == ClientLocation.Remote)
+            {
+                HandleRemoteClient(header, fullPacket);
+            }
+            if (CurrnetClientLocation == ClientLocation.Local)
+            {
+                HandleLocalClient(header, fullPacket);
+            }
         }
 
         /// <summary>
