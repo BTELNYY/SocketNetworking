@@ -305,6 +305,31 @@ namespace SocketNetworking
             }
         }
 
+        /// <summary>
+        /// Sends a <see cref="Packet"/> to all connected clients.
+        /// </summary>
+        /// <param name="packet">
+        /// The <see cref="Packet"/> to send.
+        /// </param>
+        /// <param name="toReadyOnly">
+        /// if this is true, only send to <see cref="NetworkClient.Ready"/> clients, otherwise send to everyone.
+        /// </param>
+        /// <param name="target">
+        /// The <see cref="INetworkObject"/> which is the target.
+        /// </param>
+        public static void SendToAll(Packet packet, INetworkObject target, bool toReadyOnly = false)
+        {
+            if (toReadyOnly)
+            {
+                SendToReady(packet);
+                return;
+            }
+            foreach (NetworkClient client in Clients.Values)
+            {
+                client.Send(packet, target);
+            }
+        }
+
 
         /// <summary>
         /// Disconnects all clients who aren't ready.
@@ -334,7 +359,25 @@ namespace SocketNetworking
             {
                 client.Send(packet);
             }
-        }   
+        }
+
+        /// <summary>
+        /// Sends a <see cref="Packet"/> to all ready clients
+        /// </summary>
+        /// <param name="packet">
+        /// The <see cref="Packet"/> to send.
+        /// </param>
+        /// <param name="target">
+        /// The <see cref="INetworkObject"/> which is the target.
+        /// </param>
+        public static void SendToReady(Packet packet, INetworkObject target)
+        {
+            List<NetworkClient> readyClients = Clients.Values.Where(x => x.Ready).ToList();
+            foreach (NetworkClient client in readyClients)
+            {
+                client.Send(packet, target);
+            }
+        }
     }
 
     public enum ServerState 
