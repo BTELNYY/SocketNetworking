@@ -93,9 +93,9 @@ namespace SocketNetworking.PacketSystem
         public virtual PacketType Type { get; } = PacketType.None;
 
         /// <summary>
-        /// The NetworkID of the object which this packet is being sent to. -1 Means all objects.
+        /// The NetworkID of the object which this packet is being sent to. 0 Means only sent to the other clients class.
         /// </summary>
-        public int NetowrkIDTarget = -1;
+        public int NetowrkIDTarget = 0;
 
         /// <summary>
         /// This will only be a value greater then 0 if <see cref="Type"/> is <see cref="PacketType.CustomPacket"/>

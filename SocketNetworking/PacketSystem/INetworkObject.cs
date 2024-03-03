@@ -20,7 +20,7 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// If this is false, the object is never updated.
         /// </summary>
-        bool IsActive { get; }
+        bool IsEnabled { get; }
 
         /// <summary>
         /// This is called on the server and client when the object is added to the list of currently updated network objects.
@@ -56,7 +56,7 @@ namespace SocketNetworking.PacketSystem
         /// </summary>
         /// <param name="client"></param>
         /// <param name="newNetID"></param>
-        void OnObjectUpdateID(NetworkClient client, int newNetID);
+        void OnObjectUpdateNetworkIDSynced(NetworkClient client, int newNetID);
 
         /// <summary>
         /// Called on the Client and Server when the object has been spawned.

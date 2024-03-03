@@ -492,7 +492,6 @@ namespace SocketNetworking
         /// </summary>
         private void HandleRemoteClient(PacketHeader header, byte[] data)
         {
-            Log.Debug(header.Type.ToString());
             switch (header.Type)
             {
                 case PacketType.NetworkObjectUpdate:
@@ -670,9 +669,16 @@ namespace SocketNetworking
                 NetworkStream serverStream = NetworkStream;
                 byte[] packetBytes = packet.Serialize().Data;
                 ByteWriter writer = new ByteWriter();
+                Log.Debug("Packet Length to encode: " +  packetBytes.Length.ToString());
                 writer.WriteInt(packetBytes.Length);
                 writer.Write(packetBytes);
                 byte[] fullBytes = writer.Data;
+                string s = "";
+                foreach(byte b in fullBytes)
+                {
+                    s += b.ToString();
+                }
+                Log.Debug("Packet Raw: " + s);
                 if (packetBytes.Length > Packet.MaxPacketSize)
                 {
                     Log.Error("Packet too large!");
@@ -699,7 +705,7 @@ namespace SocketNetworking
             //int waitingSize = 0;
             //byte[] prevPacketFragment = { };
             byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
-            int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined. 
+            int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined.
             while (true)
             {
             Packet: // this is for breaking a nested loop further down. thanks C#
@@ -741,8 +747,8 @@ namespace SocketNetworking
                     Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
                     continue;
                 }
-
                 int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
+                Log.Debug("Packet Body Size: " +  bodySize);
                 fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
                 // read the rest of the whole packet
                 while (fillSize < bodySize)
@@ -770,11 +776,19 @@ namespace SocketNetworking
 
                 // we now know we have enough bytes to read at least one whole packet;
                 byte[] fullPacket = ShiftOut(ref buffer, bodySize + sizeof(int));
-                fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
+                if((fillSize -= bodySize) < 0)
+                {
+                    fillSize = 0;
+                }
+                //fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
                 Log.Debug($"Read full packet with size: {fullPacket.Length}");
                 PacketHeader header = Packet.ReadPacketHeader(fullPacket);
                 Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
                 PacketRead?.Invoke(header, fullPacket);
+                if(header.Size + 4 < fullPacket.Length)
+                {
+                    Log.Warning("Header size is less then the actual packet length!");
+                }
                 if (ManualPacketHandle)
                 {
                     ReadPacketInfo packetInfo = new ReadPacketInfo()

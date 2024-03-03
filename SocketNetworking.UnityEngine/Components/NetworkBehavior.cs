@@ -12,13 +12,14 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkBehavior : MonoBehaviour, INetworkObject
     {
-        public int NetworkID => _netId;
+        public virtual int NetworkID => _netId;
 
         private int _netId = -1;
 
-        public void SetNetID(int id)
+        public void SetNetworkID(int id)
         {
             _netId = id;
+            OnObjectUpdateNetworkIDLocal(id);
             if (NetworkManager.IsRegistered(this))
             {
                 NetworkManager.ModifyNetworkID(this);
@@ -29,7 +30,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        public bool IsActive => IsActive;
+        public bool IsEnabled => base.enabled;
 
         public virtual void OnAdded(INetworkObject addedObject)
         {
@@ -56,9 +57,23 @@ namespace SocketNetworking.UnityEngine.Components
             
         }
 
-        public virtual void OnObjectUpdateID(NetworkClient client, int newNetID)
+        /// <summary>
+        /// Called when the network changes a NetworkID.
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="newNetID"></param>
+        public virtual void OnObjectUpdateNetworkIDSynced(NetworkClient client, int newNetID)
         {
             
+        }
+        
+        /// <summary>
+        /// Called when <see cref="SetNetworkID(int)"/> is called.
+        /// </summary>
+        /// <param name="newNetID"></param>
+        public virtual void OnObjectUpdateNetworkIDLocal(int newNetID)
+        {
+
         }
 
         public virtual void OnObjectCreationComplete(NetworkClient client)

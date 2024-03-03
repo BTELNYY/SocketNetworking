@@ -11,6 +11,13 @@ namespace SocketNetworking.PacketSystem.Packets
     /// </summary>
     public class CustomPacket : Packet
     {
+        public CustomPacket() { }
+
+        public CustomPacket(INetworkObject sender) 
+        {
+            NetowrkIDTarget = sender.NetworkID;
+        }
+
         public sealed override PacketType Type => PacketType.CustomPacket;
 
         public override ByteWriter Serialize()

@@ -11,7 +11,7 @@ using System.Runtime.Remoting.Messaging;
 
 namespace SocketNetworking
 {
-    public static class NetworkManager
+    public class NetworkManager
     {
         private static readonly Type[] AcceptedMethodArugments = new Type[]
         {
@@ -192,7 +192,7 @@ namespace SocketNetworking
         {
             foreach(INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == oldID))
             {
-                @object.OnObjectUpdateID(client, newID);
+                @object.OnObjectUpdateNetworkIDSynced(client, newID);
             }
         }
 
@@ -379,6 +379,7 @@ namespace SocketNetworking
                     Attribute = attribute,
                     AttachedMethod = method
                 };
+                Log.Debug($"Add method: {method.Name}, Listens for: {attribute.DefinedType.Name}, From Direction: {attribute.DefinedDirection}");
                 if (result.ContainsKey(attribute.DefinedType))
                 {
                     result[attribute.DefinedType].Add(data);
@@ -412,6 +413,11 @@ namespace SocketNetworking
         public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
         {
             ClientLocation clientLocation = runningClient.CurrnetClientLocation;
+            if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
+            {
+                Log.Error("Unknown Custom packet. ID: " + header.CustomPacketID);
+                return;
+            }
             Type packetType = AdditionalPacketTypes[header.CustomPacketID];
             Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);
             packet.Deserialize(data);
@@ -431,44 +437,53 @@ namespace SocketNetworking
                     Type listenerType = listener.DefinedType;
                     if(packetType != listenerType)
                     {
-                        Log.Debug("Type dont match!");
+                        //Log.Debug("Type dont match!");
                         continue;
                     }
-                    Log.Debug("Checking packet direction");
-                    Log.Debug("Direction of client: " + clientLocation + " Listener direction: " + packetDirection);
+                    //Log.Debug("Checking packet direction");
+                    //Log.Debug("Direction of client: " + clientLocation + " Listener direction: " + packetDirection);
                     if (packetDirection == PacketDirection.Any)
                     {
-                        Log.Debug("Invoking " + method.Name);
+                        //Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, new object[] { changedPacket, runningClient });
                         continue;
                     }
                     if (packetDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
                     {
-                        Log.Debug("Invoking " + method.Name);
+                        //Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, new object[] { changedPacket, runningClient });
                         continue;
                     }
                     if (packetDirection == PacketDirection.Server && clientLocation == ClientLocation.Local)
                     {
-                        Log.Debug("Invoking " + method.Name);
+                        //Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, new object[] { changedPacket, runningClient });
                         continue;
                     }
                 }
                 return;
             }
-            if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
+            List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == header.NetworkIDTarget && x.IsEnabled).ToList();
+            if(objects.Count == 0)
             {
-                Log.Error("Unknown Custom packet. ID: " + header.CustomPacketID);
+                Log.Warning("Target NetworkID revealed no active objects registered!");
                 return;
             }
-            List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == header.NetworkIDTarget && x.IsActive).ToList();
             //This may look not very effecient, but you arent checking EVERY possible object, only the ones which match the TargetID.
             //The other way I could do this is by making a nested dictionary hell hole, but I dont want to do that.
             foreach (INetworkObject netObj in objects)
             {
-                Type typeOfObject = netObj.GetType();
+                if (!NetworkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count == 1)
+                {
+                    Log.Warning($"Can't find any listeners for packet type: {packetType.Name} in object type: {netObj.GetType().Name}, it is also the only object for this NetworkID that is enabled.");
+                    return;
+                }
+                else if(!NetworkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count > 1)
+                {
+                    continue;
+                }
                 List<PacketListenerData> packetListeners = NetworkObjects[netObj].Listeners[packetType];
+                Log.Debug($"Packet listeners for type {netObj.GetType().Name}: {packetListeners.Count}");
                 foreach(PacketListenerData packetListener in packetListeners)
                 {
                     if(packetListener.Attribute.DefinedDirection == PacketDirection.Any)
