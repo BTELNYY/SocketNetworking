@@ -420,7 +420,11 @@ namespace SocketNetworking
             }
             Type packetType = AdditionalPacketTypes[header.CustomPacketID];
             Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);
-            packet.Deserialize(data);
+            ByteReader reader = packet.Deserialize(data);
+            if(reader.ReadBytes < header.Size)
+            {
+                Log.Warning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read.");
+            }
             object changedPacket = Convert.ChangeType(packet, packetType);
             if (header.NetworkIDTarget == 0)
             {

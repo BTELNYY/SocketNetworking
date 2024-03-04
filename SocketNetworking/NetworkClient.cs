@@ -15,6 +15,7 @@ using System.Net;
 using System.Diagnostics;
 using System.Security.Policy;
 using System.Collections.Concurrent;
+using System.Web;
 
 namespace SocketNetworking
 {
@@ -197,6 +198,8 @@ namespace SocketNetworking
 
         private bool _manualPacketHandle = false;
 
+        private bool _manualPacketSend = false;
+
         /// <summary>
         /// If true, the library will not handle packets automatically instead queueing them, you must call <see cref="NetworkClient.HandleNextPacket"/> to handle the next packet.
         /// </summary>
@@ -210,6 +213,25 @@ namespace SocketNetworking
                     Log.Warning("Changing Packet read mode while the handshake has not yet finished, this may cause issues!");
                 }
                 _manualPacketHandle = value;
+            }
+        }
+
+        /// <summary>
+        /// Prevents the library from automatically sending packets, instead waiting for a call to <see cref="NetworkClient.SendNextPacket()"/>
+        /// </summary>
+        public bool ManualPacketSend
+        {
+            get
+            {
+                return _manualPacketSend;
+            }
+            set
+            {
+                if(CurrentConnectionState == ConnectionState.Handshake)
+                {
+                    Log.Warning("Changing Packet write mode while in handshake, things may break!");
+                }
+                _manualPacketSend = value;
             }
         }
 
@@ -470,6 +492,8 @@ namespace SocketNetworking
             _shuttingDown = false;
             _packetReaderThread.Start();
             _packetSenderThread.Start();
+            _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
+            _toSendPackets = new ConcurrentQueue<Packet>();
             ClientConnected?.Invoke();
             Clients.Add(this);
         }
@@ -654,47 +678,56 @@ namespace SocketNetworking
             }
         }
 
-        private readonly ConcurrentQueue<Packet> _toSendPackets = new ConcurrentQueue<Packet>();
+        private ConcurrentQueue<Packet> _toSendPackets = new ConcurrentQueue<Packet>();
 
         void PacketSenderThreadMethod()
         {
             while (true)
             {
-                if (_toSendPackets.IsEmpty)
+                if (_manualPacketSend)
                 {
                     continue;
                 }
-                _toSendPackets.TryDequeue(out Packet packet);
-                Log.Info("Sending packet. Type: " + packet.Type.ToString());
-                NetworkStream serverStream = NetworkStream;
-                byte[] packetBytes = packet.Serialize().Data;
-                ByteWriter writer = new ByteWriter();
-                Log.Debug("Packet Length to encode: " +  packetBytes.Length.ToString());
-                writer.WriteInt(packetBytes.Length);
-                writer.Write(packetBytes);
-                byte[] fullBytes = writer.Data;
-                string s = "";
-                foreach(byte b in fullBytes)
-                {
-                    s += b.ToString();
-                }
-                Log.Debug("Packet Raw: " + s);
-                if (packetBytes.Length > Packet.MaxPacketSize)
-                {
-                    Log.Error("Packet too large!");
-                    return;
-                }
-                try
-                {
-                    Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
-                    serverStream.Write(fullBytes, 0, fullBytes.Length);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
-                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
-                    ConnectionError?.Invoke(networkErrorData);
-                }
+                SendNextPacket();
+            }
+        }
+
+        public void SendNextPacket()
+        {
+            if (_toSendPackets.IsEmpty)
+            {
+                return;
+            }
+            _toSendPackets.TryDequeue(out Packet packet);
+            Log.Info("Sending packet. Type: " + packet.Type.ToString());
+            NetworkStream serverStream = NetworkStream;
+            byte[] packetBytes = packet.Serialize().Data;
+            ByteWriter writer = new ByteWriter();
+            Log.Debug("Packet Length to encode: " + packetBytes.Length.ToString());
+            writer.WriteInt(packetBytes.Length);
+            writer.Write(packetBytes);
+            byte[] fullBytes = writer.Data;
+            string s = string.Empty;
+            for (int i = 0; i < fullBytes.Length; i++)
+            {
+                s += Convert.ToString(fullBytes[i], 2).PadLeft(8, '0') + " ";
+            }
+            Log.Debug("Packet Raw: " + s);
+            if (packetBytes.Length > Packet.MaxPacketSize)
+            {
+                Log.Error("Packet too large!");
+                return;
+            }
+            try
+            {
+                Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                serverStream.Write(fullBytes, 0, fullBytes.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                ConnectionError?.Invoke(networkErrorData);
             }
         }
 
@@ -751,6 +784,16 @@ namespace SocketNetworking
                 Log.Debug("Packet Body Size: " +  bodySize);
                 fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
                 // read the rest of the whole packet
+                if(bodySize > Packet.MaxPacketSize)
+                {
+                    CurrentConnectionState = ConnectionState.Disconnected;
+                    string s = string.Empty;
+                    for(int i = 0; i < buffer.Length; i++)
+                    {
+                        s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
+                    }
+                    Log.Error("Body Size is corrupted! Raw: " + s);
+                }
                 while (fillSize < bodySize)
                 {
                     Log.Debug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
@@ -818,6 +861,17 @@ namespace SocketNetworking
             get
             {
                 return _toReadPackets.Count;
+            }
+        }
+
+        /// <summary>
+        /// Returns the amount of Packets left to send.
+        /// </summary>
+        public int PacketsLeftToSend
+        {
+            get
+            {
+                return _toSendPackets.Count;
             }
         }
 
