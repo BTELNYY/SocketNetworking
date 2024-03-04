@@ -767,13 +767,18 @@ namespace SocketNetworking
                 {
                     // we dont have enough data to read the length data
                     Log.Debug($"Trying to read bytes to get length (we need at least 4 we have {fillSize})!");
-                    int count;
+                    int count = 0;
                     try
                     {
+                        if (buffer[fillSize + 1] != 0) 
+                        {
+                            Log.Warning("Overwriting data!");
+                        }
                         count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
                     }
-                    catch
+                    catch(Exception ex)
                     {
+                        Log.Error(ex.ToString());
                         continue;
                     }
                     fillSize += count;
@@ -808,15 +813,14 @@ namespace SocketNetworking
                     {
                         count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
                     }
-                    catch
+                    catch(Exception ex)
                     {
+                        Log.Error(ex.ToString());
                         goto Packet;
                     }
                     fillSize += count;
                     Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
                 }
-
-
                 // we now know we have enough bytes to read at least one whole packet;
                 byte[] fullPacket = ShiftOut(ref buffer, bodySize + sizeof(int));
                 if((fillSize -= bodySize) < 0)
