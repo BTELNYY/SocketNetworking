@@ -70,12 +70,28 @@ namespace SocketNetworking
         /// Called on Local and Remote clients when a full packet is read.
         /// </summary>
         public event Action<PacketHeader, byte[]> PacketRead;
+
+        /// <summary>
+        /// Called when a packet is ready to handle, this event is never called if <see cref="NetworkClient.ManualPacketHandle"/> is set to false
+        /// </summary>
+        public event Action<PacketHeader, byte[]> PacketReadyToHandle;
+
+        /// <summary>
+        /// Called when a packet is ready to send, this event is never called if <see cref="NetworkClient.ManualPacketSend"/> is set to false.
+        /// </summary>
+        public event Action<Packet> PacketReadyToSend;
         #endregion
 
         #region Static Events
 
+        /// <summary>
+        /// Called when any clients <see cref="Ready"/> state changes
+        /// </summary>
         public static event Action<NetworkClient> ClientReadyStateChanged;
 
+        /// <summary>
+        /// Called when any clients <see cref="CurrentConnectionState"/> is changed
+        /// </summary>
         public static event Action<NetworkClient> ClientConnectionStateChanged;
 
         /// <summary>
@@ -195,6 +211,28 @@ namespace SocketNetworking
                 return TcpClient.GetStream();
             }
         }
+
+        private bool _tcpNoDelay = false;
+
+        /// <summary>
+        /// Sets if the TCP Socket should wait for more packets before sending.
+        /// </summary>
+        public bool TCPNoDelay
+        {
+            get
+            {
+                return _tcpNoDelay;
+            }
+            set
+            {
+                if(TcpClient != null)
+                {
+                    TcpClient.NoDelay = value;
+                }
+                _tcpNoDelay = value;
+            }
+        }
+
 
         private bool _manualPacketHandle = false;
 
@@ -388,6 +426,7 @@ namespace SocketNetworking
         {
             _clientId = clientId;
             _tcpClient = socket;
+            _tcpClient.NoDelay = TCPNoDelay;
             //_tcpClient.NoDelay = true;
             _clientLocation = ClientLocation.Remote;
             ClientConnected += OnRemoteClientConnected;
@@ -454,7 +493,7 @@ namespace SocketNetworking
                 return false;
             }
             _tcpClient = new TcpClient();
-            //_tcpClient.NoDelay = true;
+            _tcpClient.NoDelay = TCPNoDelay;
             try
             {
                 _tcpClient.Connect(hostname, port);
@@ -673,7 +712,7 @@ namespace SocketNetworking
                     ConnectionStateUpdated?.Invoke(_connectionState);
                     break;
                 default:
-                    Log.Error("Packet is not handled!");
+                    Log.Error($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
                     break;
             }
         }
@@ -688,53 +727,67 @@ namespace SocketNetworking
                 {
                     continue;
                 }
-                SendNextPacket();
+                SendNextPacketInternal();
             }
         }
 
-        public void SendNextPacket()
+        object streamLock = new object();
+
+        internal void SendNextPacketInternal()
         {
             if (_toSendPackets.IsEmpty)
             {
                 return;
             }
-            _toSendPackets.TryDequeue(out Packet packet);
-            Log.Info("Sending packet. Type: " + packet.Type.ToString());
-            NetworkStream serverStream = NetworkStream;
-            byte[] packetBytes = packet.Serialize().Data;
-            ByteWriter writer = new ByteWriter();
-            Log.Debug("Packet Length to encode: " + packetBytes.Length.ToString());
-            writer.WriteInt(packetBytes.Length);
-            writer.Write(packetBytes);
-            byte[] fullBytes = writer.Data;
-            string s = string.Empty;
-            for (int i = 0; i < fullBytes.Length; i++)
+            lock (streamLock)
             {
-                s += Convert.ToString(fullBytes[i], 2).PadLeft(8, '0') + " ";
+                _toSendPackets.TryDequeue(out Packet packet);
+                NetworkStream serverStream = NetworkStream;
+                byte[] packetBytes = packet.Serialize().Data;
+                ByteWriter writer = new ByteWriter();
+                writer.WriteInt(packetBytes.Length);
+                writer.Write(packetBytes);
+                int written = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(writer.Data, 0));
+                if (written > packetBytes.Length + 4)
+                {
+                    Log.Error($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}");
+                    return;
+                }
+                byte[] fullBytes = writer.Data;
+                if (packetBytes.Length > Packet.MaxPacketSize)
+                {
+                    Log.Error("Packet too large!");
+                    return;
+                }
+                try
+                {
+                    //Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    serverStream.Write(fullBytes, 0, fullBytes.Length);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                    ConnectionError?.Invoke(networkErrorData);
+                }
             }
-            Log.Debug("Packet Raw: " + s);
-            if (packetBytes.Length > Packet.MaxPacketSize)
+        }
+
+        /// <summary>
+        /// Sends the next <see cref="Packet"/> from the send queue. If <see cref="ManualPacketSend"/> is false, this method does nothing.
+        /// </summary>
+        public void SendNextPacket()
+        {
+            if(!ManualPacketSend)
             {
-                Log.Error("Packet too large!");
                 return;
             }
-            try
-            {
-                Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
-                serverStream.Write(fullBytes, 0, fullBytes.Length);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
-                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
-                ConnectionError?.Invoke(networkErrorData);
-            }
+            SendNextPacketInternal();
         }
 
         void PacketReaderThreadMethod()
         {
             Log.Info($"Client thread started, ID {ClientID}");
-            _tcpClient.NoDelay = false;
             //int waitingSize = 0;
             //byte[] prevPacketFragment = { };
             byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
@@ -766,15 +819,20 @@ namespace SocketNetworking
                 if (fillSize < sizeof(int))
                 {
                     // we dont have enough data to read the length data
-                    Log.Debug($"Trying to read bytes to get length (we need at least 4 we have {fillSize})!");
+                    //Log.Debug($"Trying to read bytes to get length (we need at least 4 we have {fillSize})!");
                     int count = 0;
                     try
                     {
-                        if (buffer[fillSize + 1] != 0) 
+                        int tempFillSize = fillSize;
+                        if (TCPNoDelay)
                         {
-                            Log.Warning("Overwriting data!");
+                            count = NetworkStream.Read(buffer, 0, buffer.Length - fillSize);
                         }
-                        count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
+                        else
+                        {
+                            count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
+                        }
+                        //count = NetworkStream.Read(tempBuffer, 0, buffer.Length - fillSize);
                     }
                     catch(Exception ex)
                     {
@@ -782,11 +840,17 @@ namespace SocketNetworking
                         continue;
                     }
                     fillSize += count;
-                    Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
+                    //Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
                     continue;
                 }
                 int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
-                Log.Debug("Packet Body Size: " +  bodySize);
+                bodySize = IPAddress.NetworkToHostOrder(bodySize);
+                if (bodySize == 0)
+                {
+                    Log.Warning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
+                    fillSize = 0;
+                    continue;
+                }
                 fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
                 // read the rest of the whole packet
                 if(bodySize > Packet.MaxPacketSize)
@@ -801,12 +865,13 @@ namespace SocketNetworking
                 }
                 while (fillSize < bodySize)
                 {
-                    Log.Debug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
+                    //Log.Debug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
                     if (fillSize == buffer.Length)
                     {
                         // The buffer is too full, and we are fucked (oh shit)
-                        Log.Error("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size)");
-                        throw new InvalidOperationException("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size)");
+                        Log.Error("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
+                        Disconnect("Illegal Packet Size");
+                        break;
                     }
                     int count;
                     try
@@ -819,7 +884,6 @@ namespace SocketNetworking
                         goto Packet;
                     }
                     fillSize += count;
-                    Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
                 }
                 // we now know we have enough bytes to read at least one whole packet;
                 byte[] fullPacket = ShiftOut(ref buffer, bodySize + sizeof(int));
@@ -828,13 +892,17 @@ namespace SocketNetworking
                     fillSize = 0;
                 }
                 //fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
-                Log.Debug($"Read full packet with size: {fullPacket.Length}");
+                //Log.Debug($"Read full packet with size: {fullPacket.Length}");
                 PacketHeader header = Packet.ReadPacketHeader(fullPacket);
-                Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
+                if(NetworkManager.GetCustomPacketByID(header.CustomPacketID) == null)
+                {
+                    Log.Warning($"Got a packet with a Custom Packet ID that does not exist, either not registered or corrupt. Custom Packet ID: {header.CustomPacketID}, Target: {header.NetworkIDTarget}");
+                }
+                //Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
                 PacketRead?.Invoke(header, fullPacket);
                 if(header.Size + 4 < fullPacket.Length)
                 {
-                    Log.Warning("Header size is less then the actual packet length!");
+                    Log.Warning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
                 }
                 if (ManualPacketHandle)
                 {
@@ -844,12 +912,19 @@ namespace SocketNetworking
                         Data = fullPacket
                     };
                     _toReadPackets.Enqueue(packetInfo);
+                    PacketReadyToHandle?.Invoke(packetInfo.Header, packetInfo.Data);
                 }
                 else
                 {
                     HandlePacket(header, fullPacket);
                 }
                 // any leftover data in the buffer is recycled for the next iteration 
+                //unless we don't do a delay, becuase there is no point in keeping the buffer.
+                if (TCPNoDelay)
+                {
+                    buffer = new byte[Packet.MaxPacketSize];
+                    fillSize = 0;
+                }
             }
             Log.Info("Shutting down client, Closing socket.");
             _tcpClient.Close();
@@ -885,8 +960,15 @@ namespace SocketNetworking
             public byte[] Data;
         }
 
+        /// <summary>
+        /// Handles the next <see cref="Packet"/> from the read queue. This method does nothing if <see cref="ManualPacketHandle"/> is false
+        /// </summary>
         public void HandleNextPacket()
         {
+            if (!ManualPacketHandle)
+            {
+                return;
+            }
             if(_toReadPackets.TryDequeue(out ReadPacketInfo result))
             {
                 HandlePacket(result.Header, result.Data);
@@ -916,11 +998,16 @@ namespace SocketNetworking
             if (!IsConnected)
             {
                 Log.Warning("Can't Send packet, not connected!");
+                ConnectionError?.Invoke(new NetworkErrorData("Tried to send packets while not connected.", IsConnected));
                 return;
             }
             else
             {
                 _toSendPackets.Enqueue(packet);
+                if (ManualPacketSend)
+                {
+                    PacketReadyToSend?.Invoke(packet);
+                }
             }
         }
 
@@ -966,6 +1053,14 @@ namespace SocketNetworking
                 Log.Info("Disconnecting from server. Reason: " + message);
                 StopClient();
             }
+        }
+
+        /// <summary>
+        /// Disconnects the connection with the reason "Disconnected"
+        /// </summary>
+        public void Disconnect()
+        {
+            Disconnect("Disconnected");
         }
 
         /// <summary>

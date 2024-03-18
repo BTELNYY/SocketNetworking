@@ -127,5 +127,24 @@ namespace SocketNetworking
                 }
             }
         }
+
+        /// <summary>
+        /// Converts the byte array into its binary form
+        /// </summary>
+        /// <param name="bytes">
+        /// The Byte array to convert
+        /// </param>
+        /// <returns>
+        /// The String representation of the byte array in binary.
+        /// </returns>
+        public static string ConvertToBinary(this byte[] bytes)
+        {
+            string s = string.Empty;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                s += Convert.ToString(bytes[i], 2).PadLeft(8, '0') + " ";
+            }
+            return s;
+        }
     }
 }

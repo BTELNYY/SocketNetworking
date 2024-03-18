@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -58,37 +59,37 @@ namespace SocketNetworking.PacketSystem
 
         public void WriteLong(long data)
         {
-            byte[] result = BitConverter.GetBytes(data);
+            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
             _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteInt(int data)
         {
-            byte[] result = BitConverter.GetBytes(data);
+            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
             _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteShort(short data)
         {
-            byte[] result = BitConverter.GetBytes(data);
+            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
             _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteULong(ulong data)
         {
-            byte[] result = BitConverter.GetBytes(data);
+            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((long)data));
             _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteUInt(uint data)
         {
-            byte[] result = BitConverter.GetBytes(data);
+            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((int)data));
             _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
         public void WriteUShort(ushort data)
         {
-            byte[] result = BitConverter.GetBytes(data);
+            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)data));
             _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 

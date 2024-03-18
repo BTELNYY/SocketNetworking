@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Runtime.Serialization;
 using System.Security.Policy;
 using System.Text;
@@ -93,7 +94,7 @@ namespace SocketNetworking.PacketSystem
             int sizeToRemove = sizeof(ulong);
             ulong result = BitConverter.ToUInt64(_workingSetData, 0);
             _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
-            return result;
+            return (ulong)IPAddress.NetworkToHostOrder((long)result);
         }
 
         public uint ReadUInt()
@@ -101,7 +102,7 @@ namespace SocketNetworking.PacketSystem
             int sizeToRemove = sizeof(uint);
             uint result = BitConverter.ToUInt32(_workingSetData, 0);
             _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
-            return result;
+            return (uint)IPAddress.NetworkToHostOrder((int)result);
         }
 
         public ushort ReadUShort()
@@ -109,7 +110,7 @@ namespace SocketNetworking.PacketSystem
             int sizeToRemove = sizeof(ushort);
             ushort result = BitConverter.ToUInt16(_workingSetData, 0);
             _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
-            return result;
+            return (ushort)IPAddress.NetworkToHostOrder((short)result);
         }
 
         public long ReadLong()
@@ -117,7 +118,7 @@ namespace SocketNetworking.PacketSystem
             int sizeToRemove = sizeof(long);
             long result = BitConverter.ToInt64(_workingSetData, 0);
             _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
-            return result;
+            return IPAddress.NetworkToHostOrder(result);
         }
 
         public int ReadInt()
@@ -125,7 +126,7 @@ namespace SocketNetworking.PacketSystem
             int sizeToRemove = sizeof(int);
             int result = BitConverter.ToInt32(_workingSetData, 0);
             _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
-            return result;
+            return IPAddress.NetworkToHostOrder(result);
         }
 
         public short ReadShort()
@@ -133,7 +134,7 @@ namespace SocketNetworking.PacketSystem
             int sizeToRemove = sizeof(short);
             short result = BitConverter.ToInt16(_workingSetData, 0);
             _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
-            return result;
+            return IPAddress.NetworkToHostOrder(result);
         }
 
         public float ReadFloat()

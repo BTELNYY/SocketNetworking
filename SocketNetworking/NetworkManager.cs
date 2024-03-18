@@ -138,6 +138,28 @@ namespace SocketNetworking
             }
         }
 
+        /// <summary>
+        /// Gets the type of the custom packet based on the ID
+        /// </summary>
+        /// <param name="id">
+        /// The <see cref="int"/> ID of the custom Packet
+        /// </param>
+        /// <returns>
+        /// The Custom Packets <see cref="Type"/> or <see cref="null"/> if the ID is unused.
+        /// </returns>
+        public static Type GetCustomPacketByID(int id)
+        {
+            if (AdditionalPacketTypes.ContainsKey(id))
+            {
+                return AdditionalPacketTypes[id];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
         private static readonly Dictionary<INetworkObject, NetworkObjectData> NetworkObjects = new Dictionary<INetworkObject, NetworkObjectData>();
 
         public static void SendReadyPulse(NetworkClient sender, bool isReady)
@@ -379,7 +401,7 @@ namespace SocketNetworking
                     Attribute = attribute,
                     AttachedMethod = method
                 };
-                Log.Debug($"Add method: {method.Name}, Listens for: {attribute.DefinedType.Name}, From Direction: {attribute.DefinedDirection}");
+                //Log.Debug($"Add method: {method.Name}, Listens for: {attribute.DefinedType.Name}, From Direction: {attribute.DefinedDirection}");
                 if (result.ContainsKey(attribute.DefinedType))
                 {
                     result[attribute.DefinedType].Add(data);
@@ -428,7 +450,7 @@ namespace SocketNetworking
             object changedPacket = Convert.ChangeType(packet, packetType);
             if (header.NetworkIDTarget == 0)
             {
-                Log.Debug("Handle Client-Client communication!");
+                //Log.Debug("Handle Client-Client communication!");
                 MethodInfo[] clientMethods = runningClient.GetType().GetMethods().ToArray();
                 foreach(MethodInfo method in clientMethods)
                 { 
@@ -487,7 +509,7 @@ namespace SocketNetworking
                     continue;
                 }
                 List<PacketListenerData> packetListeners = NetworkObjects[netObj].Listeners[packetType];
-                Log.Debug($"Packet listeners for type {netObj.GetType().Name}: {packetListeners.Count}");
+                //Log.Debug($"Packet listeners for type {netObj.GetType().Name}: {packetListeners.Count}");
                 foreach(PacketListenerData packetListener in packetListeners)
                 {
                     if(packetListener.Attribute.DefinedDirection == PacketDirection.Any)
