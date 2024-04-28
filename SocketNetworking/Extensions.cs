@@ -146,5 +146,21 @@ namespace SocketNetworking
             }
             return s;
         }
+
+        //I mean, AI is getting *better* but your O(1) time means jack shit becuase we have linear time now since you just iterate.
+        public static int GetFirstEmptySlot(this IEnumerable<int> ints)
+        {
+            // Convert the list to a HashSet for O(1) lookup time.
+            HashSet<int> set = new HashSet<int>(ints);
+
+            int i = 1;
+            // Iterate from 1 upward to find the first "free" spot.
+            while (set.Contains(i))
+            {
+                i++;
+            }
+
+            return i; // Return the first "free" spot.
+        }
     }
 }

@@ -7,7 +7,7 @@ namespace SocketNetworking.ExampleSharedData
     [PacketDefinition]
     public class ExampleCustomPacket : CustomPacket
     {
-        public override int CustomPacketID => 0;
+        public override int CustomPacketID => NetworkManager.GetAutoPacketID(this);
 
         public string Data { get; set; } = "DataTest!";
 

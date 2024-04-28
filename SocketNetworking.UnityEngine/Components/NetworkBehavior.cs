@@ -16,6 +16,12 @@ namespace SocketNetworking.UnityEngine.Components
 
         private int _netId = -1;
 
+        /// <summary>
+        /// Sets the objects <see cref="NetworkID"/>.
+        /// </summary>
+        /// <param name="id">
+        /// The new ID to set the <see cref="NetworkID"/> to.
+        /// </param>
         public void SetNetworkID(int id)
         {
             _netId = id;
@@ -81,6 +87,9 @@ namespace SocketNetworking.UnityEngine.Components
             
         }
 
+        /// <summary>
+        /// Ensures the current script is registered as a packet listener.
+        /// </summary>
         public virtual void RegisterListener()
         {
             if(NetworkID == -1)

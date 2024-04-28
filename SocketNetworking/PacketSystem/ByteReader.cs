@@ -30,6 +30,13 @@ namespace SocketNetworking.PacketSystem
             }
         }
 
+        public bool IsEmpty 
+        { 
+            get
+            {
+                return _workingSetData.Length == 0;
+            } 
+        }
         private byte[] _workingSetData = new byte[] { };
 
         /// <summary>

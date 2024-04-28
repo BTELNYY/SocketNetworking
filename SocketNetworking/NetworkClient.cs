@@ -627,7 +627,8 @@ namespace SocketNetworking
                     ServerDataPacket serverDataPacket = new ServerDataPacket
                     {
                         YourClientID = _clientId,
-                        Configuration = NetworkServer.ServerConfiguration
+                        Configuration = NetworkServer.ServerConfiguration,
+                        CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized
                     };
                     Send(serverDataPacket);
                     CurrentConnectionState = ConnectionState.Connected;
@@ -637,7 +638,8 @@ namespace SocketNetworking
                     }
                     break;
                 default:
-                    Log.Error("Packet is not handled!");
+                    Log.Error($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
+                    Disconnect("Client Sent an Unknown packet with PacketID " + header.Type.ToString());
                     break;
             }
         }
@@ -687,6 +689,44 @@ namespace SocketNetworking
                         Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
                         break;
                     }
+                    Dictionary<int, string> NewPacketPairs = serverDataPacket.CustomPacketAutoPairs;
+                    List<Type> homelessPackets = new List<Type>();
+                    foreach(int i in NewPacketPairs.Keys)
+                    {
+                        Type t = Type.GetType(NewPacketPairs[i]);
+                        if(t == null)
+                        {
+                            Log.Error($"Can't find packet with fullname {NewPacketPairs[i]}, this will cause more errors later!");
+                            continue;
+                        }
+                        if (NetworkManager.AdditionalPacketTypes.ContainsKey(i))
+                        {
+                            if (!NetworkManager.IsDynamicAllocatedPacket(t))
+                            {
+                                Log.Error("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
+                                continue;
+                            }
+                            if (homelessPackets.Contains(t))
+                            {
+                                homelessPackets.Remove(t);
+                            }
+                            else
+                            {
+                                homelessPackets.Add(NetworkManager.AdditionalPacketTypes[i]);
+                            }
+                            NetworkManager.AdditionalPacketTypes[i] = t;
+                        }
+                        else
+                        {
+                            NetworkManager.AdditionalPacketTypes.Add(i, t);
+                        }
+                    }
+                    string built = "\n";
+                    foreach(int i in NetworkManager.AdditionalPacketTypes.Keys)
+                    {
+                        built += $"ID: {i}, Fullname: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
+                    }
+                    Log.Info("Finished re-writing dynamic packets: " + built);
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
@@ -713,6 +753,7 @@ namespace SocketNetworking
                     break;
                 default:
                     Log.Error($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
+                    Disconnect("Server Sent an Unknown packet with PacketID " + header.Type.ToString());
                     break;
             }
         }
@@ -894,7 +935,7 @@ namespace SocketNetworking
                 //fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
                 //Log.Debug($"Read full packet with size: {fullPacket.Length}");
                 PacketHeader header = Packet.ReadPacketHeader(fullPacket);
-                if(NetworkManager.GetCustomPacketByID(header.CustomPacketID) == null)
+                if(header.Type == PacketType.CustomPacket && NetworkManager.GetCustomPacketByID(header.CustomPacketID) == null)
                 {
                     Log.Warning($"Got a packet with a Custom Packet ID that does not exist, either not registered or corrupt. Custom Packet ID: {header.CustomPacketID}, Target: {header.NetworkIDTarget}");
                 }

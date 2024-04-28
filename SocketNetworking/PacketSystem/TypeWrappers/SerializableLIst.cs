@@ -56,20 +56,26 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
 
         public int Deserialize(byte[] data)
         {
-            if(_internalList != null || _internalList.Count > 0)
+            if(_internalList.Count > 0)
             {
                 throw new InvalidOperationException("The array must be empty in order to deserialize.");
             }
             int usedBytes = 0;
-            int length = BitConverter.ToInt32(data, 0);
-            byte[] arrayData = data.Take(length).ToArray();
-            ByteReader reader = new ByteReader(arrayData);
-            int lengthConfirmed = reader.ReadInt();
+            ByteReader reader = new ByteReader(data);
+            if (reader.IsEmpty)
+            {
+                return usedBytes;
+            }
+            int length = reader.ReadInt();
             usedBytes += 4;
             while (reader.DataLength > 0)
             {
                 int currentChunkLength = reader.ReadInt();
                 usedBytes += 4;
+                if (currentChunkLength == 0)
+                {
+                    break;
+                }
                 byte[] readBytes = reader.Read(currentChunkLength);
                 DeserializeAndAdd(readBytes);
                 reader.Remove(currentChunkLength);
@@ -161,7 +167,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             int size = sizeof(int);
             if (_internalList.Count == 0)
             {
-                return size;
+                return 0;
             }
             foreach(T element in _internalList)
             {

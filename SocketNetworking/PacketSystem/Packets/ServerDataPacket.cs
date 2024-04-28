@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Attributes;
+using SocketNetworking.PacketSystem.TypeWrappers;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
@@ -14,13 +15,17 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public int YourClientID = 0;
 
-        public ProtocolConfiguration Configuration  = new ProtocolConfiguration();
+        public ProtocolConfiguration Configuration = new ProtocolConfiguration();
+
+        public Dictionary<int, string> CustomPacketAutoPairs = new Dictionary<int, string>();
 
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
             writer.WriteInt(YourClientID);
             writer.Write<ProtocolConfiguration>(Configuration);
+            SerializableDictionary<int, string> dict = new SerializableDictionary<int, string>(CustomPacketAutoPairs);
+            writer.Write<SerializableDictionary<string, int>>(dict);
             return writer;
         }
 
@@ -29,6 +34,7 @@ namespace SocketNetworking.PacketSystem.Packets
             ByteReader reader = base.Deserialize(data);
             YourClientID = reader.ReadInt();
             Configuration = reader.Read<ProtocolConfiguration>();
+            CustomPacketAutoPairs = reader.Read<SerializableDictionary<int, string>>().ContainedDict;
             return reader;
         }
     }

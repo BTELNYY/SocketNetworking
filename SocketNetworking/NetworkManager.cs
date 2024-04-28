@@ -13,13 +13,55 @@ namespace SocketNetworking
 {
     public class NetworkManager
     {
-        private static readonly Type[] AcceptedMethodArugments = new Type[]
+        public static readonly Type[] AcceptedMethodArugments = new Type[]
         {
             typeof(CustomPacket),
             typeof(NetworkClient),
         };
 
-        private static readonly Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
+        public static readonly Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
+
+        private static readonly Dictionary<Type, int> _packetCache = new Dictionary<Type, int>(); 
+
+        private static List<Type> _dynamicAllocatedPackets = new List<Type>();
+
+        public static bool IsDynamicAllocatedPacket(Type packetType)
+        {
+            return _packetCache.ContainsKey(packetType);
+        }
+
+        public static Dictionary<int, string> PacketPairsSerialized 
+        { 
+            get
+            {
+                Dictionary<int, string> dict = new Dictionary<int, string>();
+                foreach(int i in AdditionalPacketTypes.Keys)
+                {
+                    dict.Add(i, AdditionalPacketTypes[i].FullName);
+                }
+                return dict;
+            }
+         }
+
+        public static int GetAutoPacketID(CustomPacket packet)
+        {
+            if(_packetCache.ContainsKey(packet.GetType()))
+            {
+                return _packetCache[packet.GetType()];
+            }
+            else
+            {
+                int newId = AdditionalPacketTypes.Keys.GetFirstEmptySlot();
+                if (AdditionalPacketTypes.ContainsKey(newId) && AdditionalPacketTypes[newId] == packet.GetType())
+                {
+                    throw new CustomPacketCollisionException(newId, packet.GetType(), AdditionalPacketTypes[newId].GetType());
+                }
+                _packetCache.Add(packet.GetType(), newId);
+                _dynamicAllocatedPackets.Add(packet.GetType());
+                //AdditionalPacketTypes.Add(newId, packet.GetType());
+                return newId;
+            }
+        }
 
         /// <summary>
         /// Determines where the current application is running. 
@@ -246,11 +288,7 @@ namespace SocketNetworking
             {
                 return 1;
             }
-            int id = ids.Where(x => !ids.Contains(x + 1)).First();
-            if(id == 0)
-            {
-                return 1;
-            }
+            int id = ids.GetFirstEmptySlot();
             return id;
         }
 
@@ -530,8 +568,6 @@ namespace SocketNetworking
                 }
             }
         }
-
-
     }
 
     public struct NetworkObjectData
