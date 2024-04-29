@@ -106,6 +106,9 @@ namespace SocketNetworking
 
         #endregion
 
+        /// <summary>
+        /// Only has instances on the local client. Use <see cref="NetworkServer.ConnectedClients"/> for server side clients.
+        /// </summary>
         public readonly static HashSet<NetworkClient> Clients = new HashSet<NetworkClient>();
 
 
@@ -802,7 +805,8 @@ namespace SocketNetworking
                 }
                 try
                 {
-                    //Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    Thread.Sleep(1);
                     serverStream.Write(fullBytes, 0, fullBytes.Length);
                 }
                 catch (Exception ex)
@@ -939,7 +943,7 @@ namespace SocketNetworking
                 {
                     Log.Warning($"Got a packet with a Custom Packet ID that does not exist, either not registered or corrupt. Custom Packet ID: {header.CustomPacketID}, Target: {header.NetworkIDTarget}");
                 }
-                //Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
+                Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
                 PacketRead?.Invoke(header, fullPacket);
                 if(header.Size + 4 < fullPacket.Length)
                 {

@@ -11,6 +11,8 @@ namespace SocketNetworking.PacketSystem.Packets
     /// </summary>
     public class CustomPacket : Packet
     {
+        public override int CustomPacketID => NetworkManager.GetAutoPacketID(this);
+
         public CustomPacket() { }
 
         public CustomPacket(INetworkObject sender) 

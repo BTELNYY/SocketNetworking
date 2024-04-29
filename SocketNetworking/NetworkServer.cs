@@ -46,6 +46,14 @@ namespace SocketNetworking
             }
         }
 
+        public static List<NetworkClient> ConnectedClients
+        {
+            get
+            {
+                return Clients.Values.Where(x => x.IsConnected).ToList();
+            }
+        }
+
         public static bool Active
         {
             get

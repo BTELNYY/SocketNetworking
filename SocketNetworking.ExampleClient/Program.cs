@@ -13,7 +13,7 @@ namespace SocketNetworking.ExampleClient
         public static void Main(string[] args)
         {
             Log.OnLog += HandleNetworkLog;
-            NetworkManager.ImportCustomPackets(new List<Type>() { typeof(ExampleCustomPacket)});
+            NetworkManager.ImportCustomPackets(PacketUtils.GetAllPackets());
             TestClient client = new TestClient();
             client.InitLocalClient();
             client.Connect("127.0.0.1", 7777, "DefaultPassword");

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking;
 using SocketNetworking.ExampleSharedData;
@@ -12,18 +13,40 @@ namespace SocketNetworking.ExampleServer
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine(args.ToString());
-            NetworkManager.ImportCustomPackets(new List<Type>() { typeof(ExampleCustomPacket) });
             Log.OnLog += HandleNetworkLog;
+            NetworkManager.ImportCustomPackets(PacketUtils.GetAllPackets());
             NetworkServer.ClientType = typeof(TestClient);
             NetworkServer.StartServer();
             NetworkServer.ClientConnected += OnClientConnected;
+            Thread t = new Thread(SpamThread);
+            t.Start();
+        }
+
+        private static void SpamThread()
+        {
+            while (true)
+            {
+                Random r = new Random();
+                foreach (NetworkClient client in NetworkServer.ConnectedClients)
+                {
+                    if (client.IsConnected && client.Ready && client.CurrentConnectionState == ConnectionState.Connected)
+                    {
+                        SpamPacketTesting packet = new SpamPacketTesting()
+                        {
+                            ValueOne = (byte)r.Next(255),
+                            ValueTwo = r.Next(),
+                            ValueThree = (float)r.NextDouble(),
+                            ValueFour = Convert.ToBoolean(r.Next(2))
+                        };
+                        client.Send(packet);
+                    }
+                }
+            }
         }
 
         private static void OnClientConnected(int id)
         {
             TestClient client = (TestClient)NetworkServer.GetClient(id);
-            Log.Info(client.Value.ToString());
         }
 
         private static void HandleNetworkLog(LogData data)
