@@ -42,7 +42,7 @@ namespace SocketNetworking
         {
             get
             {
-                return Clients.Count > 0;
+                return _clients.Count > 0;
             }
         }
 
@@ -50,7 +50,16 @@ namespace SocketNetworking
         {
             get
             {
-                return Clients.Values.Where(x => x.IsConnected).ToList();
+                List<NetworkClient> clients = _clients.Values.ToList();
+                return clients.Where(x => x.IsConnected).ToList();
+            }
+        }
+
+        public static List<NetworkClient> Clients
+        {
+            get
+            {
+                return _clients.Values.ToList();
             }
         }
 
@@ -74,7 +83,7 @@ namespace SocketNetworking
             {
                 if (HasServerStarted)
                 {
-                    Log.Error("Can't change server network configuration is the server is running. Stop it first.");
+                    Log.GlobalError("Can't change server network configuration is the server is running. Stop it first.");
                     return;
                 }
                 _serverConfig = value;
@@ -146,7 +155,7 @@ namespace SocketNetworking
             {
                 if(_serverInstance == null)
                 {
-                    Log.Error("Tried to get stopped server.");
+                    Log.GlobalError("Tried to get stopped server.");
                     throw new InvalidOperationException("Attempted to access server instance when it isn't running.");
                 }
                 else
@@ -158,18 +167,18 @@ namespace SocketNetworking
 
         private readonly bool _isShuttingDown = false;
 
-        private static readonly Dictionary<int, NetworkClient> Clients = new Dictionary<int, NetworkClient>();
+        private static readonly Dictionary<int, NetworkClient> _clients = new Dictionary<int, NetworkClient>();
 
         public static void StartServer()
         {
             if(HasServerStarted)
             {
-                Log.Error("Server already started!");
+                Log.GlobalError("Server already started!");
                 return;
             }
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
             {
-                Log.Error("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
+                Log.GlobalError("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
                 return;
             }
             NetworkServer server = new NetworkServer();
@@ -181,9 +190,9 @@ namespace SocketNetworking
 
         protected static void AddClient(NetworkClient client, int clientId)
         {
-            if (Clients.ContainsKey(clientId))
+            if (_clients.ContainsKey(clientId))
             {
-                Log.Error("Something really got fucked up!");
+                Log.GlobalError("Something really got fucked up!");
                 //we throw becuase the whole server will die if we cant add the client.
                 throw new InvalidOperationException("Client ID to add already taken!");
             }
@@ -191,20 +200,20 @@ namespace SocketNetworking
             {
                 //cursed...
                 NetworkClient cursedClient = (NetworkClient)Convert.ChangeType(client, ClientType);
-                Clients.Add(clientId, cursedClient);
+                _clients.Add(clientId, cursedClient);
             }
         }
 
         public static void RemoveClient(int clientId)
         {
-            if (Clients.ContainsKey(clientId))
+            if (_clients.ContainsKey(clientId))
             {
-                Clients.Remove(clientId);
+                _clients.Remove(clientId);
                 ClientDisconnected.Invoke(clientId);
             }
             else
             {
-                Log.Warning("Can't remove client: ID not found.");
+                Log.GlobalWarning("Can't remove client: ID not found.");
             }
         }
 
@@ -217,9 +226,9 @@ namespace SocketNetworking
         /// </returns>
         public static NetworkClient GetClient(int id)
         {
-            if (Clients.ContainsKey(id))
+            if (_clients.ContainsKey(id))
             {
-                return Clients[id];
+                return _clients[id];
             }
             else
             {
@@ -231,24 +240,24 @@ namespace SocketNetworking
         {
             if (!HasServerStarted)
             {
-                Log.Error("Server already stopped.");
+                Log.GlobalError("Server already stopped.");
             }
-            foreach(NetworkClient client in Clients.Values)
+            foreach(NetworkClient client in _clients.Values)
             {
                 client.Disconnect("Server shutting down");
             }
-            Clients.Clear();
+            _clients.Clear();
             ServerThread.Abort();
             ServerStopped?.Invoke();
         }
 
         private void ServerStartThread()
         {
-            Log.Info("Server starting...");
+            Log.GlobalInfo("Server starting...");
             TcpListener serverSocket = new TcpListener(IPAddress.Parse(BindIP), Port);
             serverSocket.Start();
-            Log.Info("Socket Started.");
-            Log.Info($"Listening on {BindIP}:{Port}");
+            Log.GlobalInfo("Socket Started.");
+            Log.GlobalInfo($"Listening on {BindIP}:{Port}");
             int counter = 0;
             ServerReady?.Invoke();
             while (true)
@@ -268,7 +277,7 @@ namespace SocketNetworking
                 TcpClient socket = serverSocket.AcceptTcpClient();
                 socket.NoDelay = true;
                 IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
-                Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
+                Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
                 NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
                 client.InitRemoteClient(counter, socket);
                 AddClient(client, counter);
@@ -287,7 +296,7 @@ namespace SocketNetworking
                 ClientConnected?.Invoke(counter);
                 counter++;
             }
-            Log.Info("Shutting down!");
+            Log.GlobalInfo("Shutting down!");
             serverSocket.Stop();
         }
 
@@ -307,7 +316,7 @@ namespace SocketNetworking
                 SendToReady(packet);
                 return;
             }
-            foreach(NetworkClient client in Clients.Values)
+            foreach(NetworkClient client in _clients.Values)
             {
                 client.Send(packet);
             }
@@ -332,7 +341,7 @@ namespace SocketNetworking
                 SendToReady(packet);
                 return;
             }
-            foreach (NetworkClient client in Clients.Values)
+            foreach (NetworkClient client in _clients.Values)
             {
                 client.Send(packet, target);
             }
@@ -347,7 +356,7 @@ namespace SocketNetworking
         /// </param>
         public static void DisconnectNotReady(string reason = "Failed to ready in time.")
         {
-            List<NetworkClient> readyClients = Clients.Values.Where(x => !x.Ready).ToList();
+            List<NetworkClient> readyClients = _clients.Values.Where(x => !x.Ready).ToList();
             foreach (NetworkClient client in readyClients)
             {
                 client.Disconnect(reason);
@@ -362,7 +371,7 @@ namespace SocketNetworking
         /// </param>
         public static void SendToReady(Packet packet)
         {
-            List<NetworkClient> readyClients = Clients.Values.Where(x => x.Ready).ToList();
+            List<NetworkClient> readyClients = _clients.Values.Where(x => x.Ready).ToList();
             foreach(NetworkClient client in readyClients)
             {
                 client.Send(packet);
@@ -380,7 +389,7 @@ namespace SocketNetworking
         /// </param>
         public static void SendToReady(Packet packet, INetworkObject target)
         {
-            List<NetworkClient> readyClients = Clients.Values.Where(x => x.Ready).ToList();
+            List<NetworkClient> readyClients = _clients.Values.Where(x => x.Ready).ToList();
             foreach (NetworkClient client in readyClients)
             {
                 client.Send(packet, target);

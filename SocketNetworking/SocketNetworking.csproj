@@ -45,7 +45,6 @@
     <Compile Include="Attributes\PacketListener.cs" />
     <Compile Include="CallbackTimer.cs" />
     <Compile Include="NetworkManager.cs" />
-    <Compile Include="PacketSystem\Packets\NetworkObjectUpdatePacket.cs" />
     <Compile Include="PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
     <Compile Include="PacketSystem\Packets\ClientDataPacket.cs" />
     <Compile Include="PacketSystem\TypeWrappers\SerializableDictionary.cs" />

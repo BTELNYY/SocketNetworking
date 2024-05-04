@@ -29,6 +29,11 @@ namespace SocketNetworking.PacketSystem
 
         public ByteWriter() { }
 
+        ~ByteWriter()
+        {
+            _workingSetData = null;
+        }
+
         public void Write<T>(IPacketSerializable serializable)
         {
             byte[] data = serializable.Serialize();

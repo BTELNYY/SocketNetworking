@@ -31,13 +31,13 @@ namespace SocketNetworking.ExampleClient
         [PacketListener(typeof(ExampleCustomPacket), PacketDirection.Server)]
         public void OnExamplePacketGottenClient(ExampleCustomPacket packet, NetworkClient client)
         {
-            Log.Info("Gotten on SERVER listener! " + packet.Data);
+            Log.GlobalInfo("Gotten on SERVER listener! " + packet.Data);
         }
 
         [PacketListener(typeof(ExampleCustomPacket), PacketDirection.Server)]
         public void OnExamplePacketGotten(ExampleCustomPacket packet, NetworkClient client)
         {
-            Log.Info("Gotten on CLIENT listener! " + packet.Data);
+            Log.GlobalInfo("Gotten on CLIENT listener! " + packet.Data);
         }
     }
 }

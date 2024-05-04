@@ -57,6 +57,12 @@ namespace SocketNetworking.PacketSystem
             _workingSetData = RawData;
         }
 
+        ~ByteReader()
+        {
+            _workingSetData = null;
+            RawData = null;
+        }
+
         public void Remove(int length)
         {
             _workingSetData.RemoveFromStart(length);

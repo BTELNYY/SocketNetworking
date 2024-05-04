@@ -58,21 +58,6 @@ namespace SocketNetworking.UnityEngine.Components
             
         }
 
-        public virtual void OnObjectDestroyed(NetworkClient client)
-        {
-            
-        }
-
-        /// <summary>
-        /// Called when the network changes a NetworkID.
-        /// </summary>
-        /// <param name="client"></param>
-        /// <param name="newNetID"></param>
-        public virtual void OnObjectUpdateNetworkIDSynced(NetworkClient client, int newNetID)
-        {
-            
-        }
-        
         /// <summary>
         /// Called when <see cref="SetNetworkID(int)"/> is called.
         /// </summary>
@@ -82,7 +67,11 @@ namespace SocketNetworking.UnityEngine.Components
 
         }
 
-        public virtual void OnObjectCreationComplete(NetworkClient client)
+        /// <summary>
+        /// Called on the server when a client finishes creating the the prefab which is this object.
+        /// </summary>
+        /// <param name="client"></param>
+        public virtual void OnClientObjectCreated(UnityNetworkClient client)
         {
             
         }

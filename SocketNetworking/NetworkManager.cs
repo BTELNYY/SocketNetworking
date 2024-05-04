@@ -85,7 +85,7 @@ namespace SocketNetworking
                 {
                     if(NetworkClient.Clients.Any(x => x.CurrnetClientLocation == ClientLocation.Remote))
                     {
-                        Log.Error("There are active remote clients even though the server is closed, these clients will now be terminated.");
+                        Log.GlobalError("There are active remote clients even though the server is closed, these clients will now be terminated.");
                         foreach(var x in NetworkClient.Clients)
                         {
                             if(x.CurrnetClientLocation == ClientLocation.Local)
@@ -118,17 +118,7 @@ namespace SocketNetworking
         {
             List<Type> types = assmebly.GetTypes().Where(x => x.IsSubclassOf(typeof(CustomPacket))).ToList();
             types = types.Where(x => x.GetCustomAttribute(typeof(PacketDefinition)) != null).ToList();
-            foreach (Type type in types)
-            {
-                CustomPacket packet = (CustomPacket)Activator.CreateInstance(type);
-                int customPacketId = packet.CustomPacketID;
-                if (AdditionalPacketTypes.ContainsKey(customPacketId))
-                {
-                    throw new CustomPacketCollisionException(customPacketId, AdditionalPacketTypes[customPacketId], type);
-                }
-                Log.Info($"Adding custom packet with ID {customPacketId} and name {type.Name}");
-                AdditionalPacketTypes.Add(customPacketId, type);
-            }
+            ImportCustomPackets(types);
         }
 
         /// <summary>
@@ -144,14 +134,22 @@ namespace SocketNetworking
             {
                 if (packet.GetType().GetCustomAttribute(typeof(PacketDefinition)) == null)
                 {
-                    Log.Warning($"Custom packet {packet.GetType().Name} does not implement attribute {nameof(PacketDefinition)} it will be ignored.");
+                    Log.GlobalWarning($"Custom packet {packet.GetType().Name} does not implement attribute {nameof(PacketDefinition)} it will be ignored.");
                     continue;
                 }
                 if (AdditionalPacketTypes.ContainsKey(packet.CustomPacketID))
                 {
-                    throw new CustomPacketCollisionException(packet.CustomPacketID, AdditionalPacketTypes[packet.CustomPacketID], packet.GetType());
+                    if (AdditionalPacketTypes[packet.CustomPacketID].GetType() == packet.GetType())
+                    {
+                        Log.GlobalWarning("Trying to register a duplicate packet. Type: " + packet.GetType().FullName);
+                        return;
+                    }
+                    else
+                    {
+                        throw new CustomPacketCollisionException(packet.CustomPacketID, AdditionalPacketTypes[packet.CustomPacketID], packet.GetType());
+                    }
                 }
-                Log.Info($"Adding custom packet with ID {packet.CustomPacketID} and name {packet.GetType().Name}");
+                Log.GlobalInfo($"Adding custom packet with ID {packet.CustomPacketID} and name {packet.GetType().Name}");
                 AdditionalPacketTypes.Add(packet.CustomPacketID, packet.GetType());
             }
         }
@@ -173,9 +171,17 @@ namespace SocketNetworking
                 int customPacketId = packet.CustomPacketID;
                 if (AdditionalPacketTypes.ContainsKey(customPacketId))
                 {
-                    throw new CustomPacketCollisionException(customPacketId, AdditionalPacketTypes[customPacketId], type);
+                    if (AdditionalPacketTypes[customPacketId] == type)
+                    {
+                        Log.GlobalWarning("Trying to register a duplicate packet. Type: " + type.FullName);
+                        return;
+                    }
+                    else
+                    {
+                        throw new CustomPacketCollisionException(customPacketId, AdditionalPacketTypes[customPacketId], type);
+                    }
                 }
-                Log.Info($"Adding custom packet with ID {customPacketId} and name {type.Name}");
+                Log.GlobalInfo($"Adding custom packet with ID {customPacketId} and name {type.Name}");
                 AdditionalPacketTypes.Add(customPacketId, type);
             }
         }
@@ -204,27 +210,16 @@ namespace SocketNetworking
 
         private static readonly Dictionary<INetworkObject, NetworkObjectData> NetworkObjects = new Dictionary<INetworkObject, NetworkObjectData>();
 
+        public static List<INetworkObject> GetNetworkObjects()
+        {
+            return NetworkObjects.Keys.ToList();
+        }
+
         public static void SendReadyPulse(NetworkClient sender, bool isReady)
         {
             foreach(INetworkObject @object in NetworkObjects.Keys)
             {
                 @object.OnReady(sender, isReady);
-            }
-        }
-
-        public static void SendObjectCreationCompletePulse(NetworkClient client, int netID)
-        {
-            foreach(INetworkObject networkObject in NetworkObjects.Keys.Where(x => x.NetworkID == netID))
-            {
-                networkObject.OnObjectCreationComplete(client);
-            }
-        }
-
-        public static void SendObjectDestroyedPulse(NetworkClient client, int netID)
-        {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys.Where(x => x.NetworkID == netID))
-            {
-                networkObject.OnObjectDestroyed(client);
             }
         }
 
@@ -251,15 +246,6 @@ namespace SocketNetworking
                 @object.OnDisconnected(networkClient);
             }
         }
-
-        public static void SendUpdateNetIDPulse(NetworkClient client, int oldID, int newID)
-        {
-            foreach(INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == oldID))
-            {
-                @object.OnObjectUpdateNetworkIDSynced(client, newID);
-            }
-        }
-
 
         /// <summary>
         /// Determines if the given <see cref="INetworkObject"/> is registered.
@@ -305,12 +291,12 @@ namespace SocketNetworking
         {
             if(networkObject.NetworkID == 0)
             {
-                Log.Error($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
+                Log.GlobalError($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
                 return false;
             }
             if (NetworkObjects.ContainsKey(networkObject))
             {
-                Log.Warning("Tried to add network object that already exists.");
+                Log.GlobalWarning("Tried to add network object that already exists.");
                 return false;
             }
             else
@@ -326,12 +312,12 @@ namespace SocketNetworking
         {
             if (networkObject.NetworkID == 0)
             {
-                Log.Error($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
+                Log.GlobalError($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
                 return false;
             }
             if (!NetworkObjects.ContainsKey(networkObject))
             {
-                Log.Warning("Tried to modify network object that does not exist.");
+                Log.GlobalWarning("Tried to modify network object that does not exist.");
                 return false;
             }
             else
@@ -355,12 +341,12 @@ namespace SocketNetworking
         {
             if (networkObject.NetworkID == 0)
             {
-                Log.Error($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
+                Log.GlobalError($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
                 return false;
             }
             if (!NetworkObjects.ContainsKey(networkObject))
             {
-                Log.Warning("Tried to remove NetworObject that doesn't exist.");
+                Log.GlobalWarning("Tried to remove NetworObject that doesn't exist.");
                 return false;
             }
             else
@@ -404,7 +390,7 @@ namespace SocketNetworking
             Dictionary<Type, List<PacketListenerData>> result = new Dictionary<Type, List<PacketListenerData>>();
             if(target.NetworkID == 0)
             {
-                Log.Error($"Network Object {target.GetType().Name} was ignored becuase NetworkTargetID 0 is reserved.");
+                Log.GlobalError($"Network Object {target.GetType().Name} was ignored becuase NetworkTargetID 0 is reserved.");
                 return new NetworkObjectData()
                 {
                     Listeners = new Dictionary<Type, List<PacketListenerData>>(),
@@ -415,7 +401,7 @@ namespace SocketNetworking
             {
                 if(method.GetParameters().Length < AcceptedMethodArugments.Length)
                 {
-                    Log.Warning("Method " + method.Name + " was ignored becuase it doesn't have the proper amount of arguments.");
+                    Log.GlobalWarning("Method " + method.Name + " was ignored becuase it doesn't have the proper amount of arguments.");
                     continue;
                 }
                 bool methodArgsFailed = false;
@@ -425,7 +411,7 @@ namespace SocketNetworking
                     Type acceptedType = AcceptedMethodArugments[i];
                     if(!methodType.IsSubclassOf(acceptedType))
                     {
-                        Log.Warning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
+                        Log.GlobalWarning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
                         methodArgsFailed = true;
                     }
                 }
@@ -475,7 +461,7 @@ namespace SocketNetworking
             ClientLocation clientLocation = runningClient.CurrnetClientLocation;
             if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
             {
-                Log.Error("Unknown Custom packet. ID: " + header.CustomPacketID);
+                Log.GlobalError("Unknown Custom packet. ID: " + header.CustomPacketID);
                 return;
             }
             Type packetType = AdditionalPacketTypes[header.CustomPacketID];
@@ -483,7 +469,7 @@ namespace SocketNetworking
             ByteReader reader = packet.Deserialize(data);
             if(reader.ReadBytes < header.Size)
             {
-                Log.Warning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read.");
+                Log.GlobalWarning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read.");
             }
             object changedPacket = Convert.ChangeType(packet, packetType);
             if (header.NetworkIDTarget == 0)
@@ -530,7 +516,7 @@ namespace SocketNetworking
             List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == header.NetworkIDTarget && x.IsEnabled).ToList();
             if(objects.Count == 0)
             {
-                Log.Warning("Target NetworkID revealed no active objects registered!");
+                Log.GlobalWarning("Target NetworkID revealed no active objects registered!");
                 return;
             }
             //This may look not very effecient, but you arent checking EVERY possible object, only the ones which match the TargetID.
@@ -539,7 +525,7 @@ namespace SocketNetworking
             {
                 if (!NetworkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count == 1)
                 {
-                    Log.Warning($"Can't find any listeners for packet type: {packetType.Name} in object type: {netObj.GetType().Name}, it is also the only object for this NetworkID that is enabled.");
+                    Log.GlobalWarning($"Can't find any listeners for packet type: {packetType.Name} in object type: {netObj.GetType().Name}, it is also the only object for this NetworkID that is enabled.");
                     return;
                 }
                 else if(!NetworkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count > 1)

@@ -44,24 +44,5 @@ namespace SocketNetworking.PacketSystem
         /// </summary>
         /// <param name="client"></param>
         void OnDisconnected(NetworkClient client);
-
-        /// <summary>
-        /// Called on the Client and Server when the reciever gets a message to destroy the object.
-        /// </summary>
-        /// <param name="client"></param>
-        void OnObjectDestroyed(NetworkClient client);
-
-        /// <summary>
-        /// Called on the Client and Server when the reciever gets a message to chnage the NetworkID.
-        /// </summary>
-        /// <param name="client"></param>
-        /// <param name="newNetID"></param>
-        void OnObjectUpdateNetworkIDSynced(NetworkClient client, int newNetID);
-
-        /// <summary>
-        /// Called on the Client and Server when the object has been spawned.
-        /// </summary>
-        /// <param name="client"></param>
-        void OnObjectCreationComplete(NetworkClient client);
     }
 }

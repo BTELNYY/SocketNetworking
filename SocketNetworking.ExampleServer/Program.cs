@@ -26,6 +26,7 @@ namespace SocketNetworking.ExampleServer
         {
             while (true)
             {
+                Thread.Sleep(1);
                 Random r = new Random();
                 foreach (NetworkClient client in NetworkServer.ConnectedClients)
                 {

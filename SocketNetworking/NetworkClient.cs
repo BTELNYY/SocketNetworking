@@ -186,7 +186,7 @@ namespace SocketNetworking
             {
                 if(!IsConnected || CurrentConnectionState != ConnectionState.Connected) 
                 {
-                    Log.Warning("Can't change ready state becuase the socket is not connected or the handshake isn't done.");
+                    Log.GlobalWarning("Can't change ready state becuase the socket is not connected or the handshake isn't done.");
                     return;
                 }
                 if(CurrnetClientLocation == ClientLocation.Remote) 
@@ -251,7 +251,7 @@ namespace SocketNetworking
             {
                 if(CurrentConnectionState == ConnectionState.Handshake)
                 {
-                    Log.Warning("Changing Packet read mode while the handshake has not yet finished, this may cause issues!");
+                    Log.GlobalWarning("Changing Packet read mode while the handshake has not yet finished, this may cause issues!");
                 }
                 _manualPacketHandle = value;
             }
@@ -270,7 +270,7 @@ namespace SocketNetworking
             {
                 if(CurrentConnectionState == ConnectionState.Handshake)
                 {
-                    Log.Warning("Changing Packet write mode while in handshake, things may break!");
+                    Log.GlobalWarning("Changing Packet write mode while in handshake, things may break!");
                 }
                 _manualPacketSend = value;
             }
@@ -325,7 +325,7 @@ namespace SocketNetworking
             {
                 if(CurrnetClientLocation != ClientLocation.Remote)
                 {
-                    Log.Error("Local client tried changing state of connection, only servers can do so.");
+                    Log.GlobalError("Local client tried changing state of connection, only servers can do so.");
                     return;
                 }
                 ConnectionUpdatePacket updatePacket = new ConnectionUpdatePacket
@@ -406,7 +406,7 @@ namespace SocketNetworking
             {
                 if (IsConnected)
                 {
-                    Log.Error("Can't update NetworkConfiguration while client is connected.");
+                    Log.GlobalError("Can't update NetworkConfiguration while client is connected.");
                     return;
                 }
                 _clientConfiguration = value;
@@ -487,12 +487,12 @@ namespace SocketNetworking
         {
             if(CurrnetClientLocation == ClientLocation.Remote)
             {
-                Log.Error("Cannot connect to other servers from remote.");
+                Log.GlobalError("Cannot connect to other servers from remote.");
                 return false;
             }
             if (IsConnected)
             {
-                Log.Error("Can't connect: Already connected to a server.");
+                Log.GlobalError("Can't connect: Already connected to a server.");
                 return false;
             }
             _tcpClient = new TcpClient();
@@ -505,7 +505,7 @@ namespace SocketNetworking
             {
                 NetworkErrorData networkErrorData = new NetworkErrorData("Connection Failed: " + ex.ToString(), false);
                 ConnectionError?.Invoke(networkErrorData);
-                Log.Error($"Failed to connect: \n {ex}");
+                Log.GlobalError($"Failed to connect: \n {ex}");
                 return false;
             }
             _clientPassword = password;
@@ -517,15 +517,15 @@ namespace SocketNetworking
         {
             if(CurrnetClientLocation == ClientLocation.Remote)
             {
-                Log.Error("Can't start client on remote, started by constructor.");
+                Log.GlobalError("Can't start client on remote, started by constructor.");
                 return;
             }
             if (ClientStarted)
             {
-                Log.Error("Can't start client, already started.");
+                Log.GlobalError("Can't start client, already started.");
                 return;
             }
-            Log.Info("Starting client!");
+            Log.GlobalInfo("Starting client!");
             _packetReaderThread?.Abort();
             _packetReaderThread = new Thread(PacketReaderThreadMethod);
             _packetSenderThread?.Abort();
@@ -560,22 +560,6 @@ namespace SocketNetworking
         {
             switch (header.Type)
             {
-                case PacketType.NetworkObjectUpdate:
-                    NetworkObjectUpdatePacket networkObjectUpdatePacket = new NetworkObjectUpdatePacket();
-                    networkObjectUpdatePacket.Deserialize(data);
-                    switch (networkObjectUpdatePacket.UpdateState)
-                    {
-                        case NetworkObjectUpdateState.ClientObjectCreated:
-                            NetworkManager.SendObjectCreationCompletePulse(this, networkObjectUpdatePacket.NetowrkIDTarget);
-                            break;
-                        case NetworkObjectUpdateState.ObjectNetIDUpdated:
-                            NetworkManager.SendUpdateNetIDPulse(this, networkObjectUpdatePacket.NetowrkIDTarget, networkObjectUpdatePacket.NewNetworkID);
-                            break;
-                        case NetworkObjectUpdateState.ObjectDestroyed:
-                            NetworkManager.SendObjectDestroyedPulse(this, networkObjectUpdatePacket.NetowrkIDTarget);
-                            break;
-                    }
-                    break;
                 case PacketType.CustomPacket:
                     NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
@@ -587,7 +571,7 @@ namespace SocketNetworking
                         //ruh roh
                         NetworkErrorData errorData = new NetworkErrorData("Disconnected by local client. Reason: " + connectionUpdatePacket.Reason, false);
                         ConnectionError?.Invoke(errorData);
-                        Log.Error($"Disconnecting {ClientID} for " + connectionUpdatePacket.Reason);
+                        Log.GlobalError($"Disconnecting {ClientID} for " + connectionUpdatePacket.Reason);
                         StopClient();
                     }
                     if (connectionUpdatePacket.State == ConnectionState.Handshake)
@@ -641,7 +625,7 @@ namespace SocketNetworking
                     }
                     break;
                 default:
-                    Log.Error($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
+                    Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
                     Disconnect("Client Sent an Unknown packet with PacketID " + header.Type.ToString());
                     break;
             }
@@ -654,22 +638,6 @@ namespace SocketNetworking
         {
             switch (header.Type)
             {
-                case PacketType.NetworkObjectUpdate:
-                    NetworkObjectUpdatePacket networkObjectUpdatePacket = new NetworkObjectUpdatePacket();
-                    networkObjectUpdatePacket.Deserialize(data);
-                    switch (networkObjectUpdatePacket.UpdateState)
-                    {
-                        case NetworkObjectUpdateState.ClientObjectCreated:
-                            NetworkManager.SendObjectCreationCompletePulse(this, networkObjectUpdatePacket.NetowrkIDTarget);
-                            break;
-                        case NetworkObjectUpdateState.ObjectNetIDUpdated:
-                            NetworkManager.SendUpdateNetIDPulse(this, networkObjectUpdatePacket.NetowrkIDTarget, networkObjectUpdatePacket.NewNetworkID);
-                            break;
-                        case NetworkObjectUpdateState.ObjectDestroyed:
-                            NetworkManager.SendObjectDestroyedPulse(this, networkObjectUpdatePacket.NetowrkIDTarget);
-                            break;
-                    }
-                    break;
                 case PacketType.CustomPacket:
                     NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
@@ -680,13 +648,13 @@ namespace SocketNetworking
                     ReadyStateChanged?.Invoke(!_ready, _ready);
                     ClientReadyStateChanged?.Invoke(this);
                     NetworkManager.SendReadyPulse(this, Ready);
-                    Log.Info("New Client Ready State: " + _ready.ToString());
+                    Log.GlobalInfo("New Client Ready State: " + _ready.ToString());
                     break;
                 case PacketType.ServerData:
                     ServerDataPacket serverDataPacket = new ServerDataPacket();
                     serverDataPacket.Deserialize(data);
                     _clientId = serverDataPacket.YourClientID;
-                    Log.Info("New Client ID: " + _clientId.ToString());
+                    Log.GlobalInfo("New Client ID: " + _clientId.ToString());
                     if (serverDataPacket.Configuration.Protocol != ClientConfiguration.Protocol || serverDataPacket.Configuration.Version != ClientConfiguration.Version)
                     {
                         Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
@@ -699,14 +667,14 @@ namespace SocketNetworking
                         Type t = Type.GetType(NewPacketPairs[i]);
                         if(t == null)
                         {
-                            Log.Error($"Can't find packet with fullname {NewPacketPairs[i]}, this will cause more errors later!");
+                            Log.GlobalError($"Can't find packet with fullname {NewPacketPairs[i]}, this will cause more errors later!");
                             continue;
                         }
                         if (NetworkManager.AdditionalPacketTypes.ContainsKey(i))
                         {
                             if (!NetworkManager.IsDynamicAllocatedPacket(t))
                             {
-                                Log.Error("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
+                                Log.GlobalError("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
                                 continue;
                             }
                             if (homelessPackets.Contains(t))
@@ -729,18 +697,18 @@ namespace SocketNetworking
                     {
                         built += $"ID: {i}, Fullname: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
                     }
-                    Log.Info("Finished re-writing dynamic packets: " + built);
+                    Log.GlobalInfo("Finished re-writing dynamic packets: " + built);
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
                     connectionUpdatePacket.Deserialize(data);
-                    Log.Info("New connection state: " + connectionUpdatePacket.State.ToString());
+                    Log.GlobalInfo("New connection state: " + connectionUpdatePacket.State.ToString());
                     if(connectionUpdatePacket.State == ConnectionState.Disconnected)
                     {
                         //ruh roh
                         NetworkErrorData errorData = new NetworkErrorData("Disconnected by remote client. Reason: " + connectionUpdatePacket.Reason, false);
                         ConnectionError?.Invoke(errorData);
-                        Log.Error("Disconnected: " + connectionUpdatePacket.Reason);
+                        Log.GlobalError("Disconnected: " + connectionUpdatePacket.Reason);
                         StopClient();
                     }
                     if(connectionUpdatePacket.State == ConnectionState.Handshake)
@@ -755,7 +723,7 @@ namespace SocketNetworking
                     ConnectionStateUpdated?.Invoke(_connectionState);
                     break;
                 default:
-                    Log.Error($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
+                    Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
                     Disconnect("Server Sent an Unknown packet with PacketID " + header.Type.ToString());
                     break;
             }
@@ -794,24 +762,24 @@ namespace SocketNetworking
                 int written = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(writer.Data, 0));
                 if (written > packetBytes.Length + 4)
                 {
-                    Log.Error($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}");
+                    Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}");
                     return;
                 }
                 byte[] fullBytes = writer.Data;
                 if (packetBytes.Length > Packet.MaxPacketSize)
                 {
-                    Log.Error("Packet too large!");
+                    Log.GlobalError("Packet too large!");
                     return;
                 }
                 try
                 {
-                    Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                     Thread.Sleep(1);
                     serverStream.Write(fullBytes, 0, fullBytes.Length);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                    Log.GlobalError("Failed to send packet! Error:\n" + ex.ToString());
                     NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
                     ConnectionError?.Invoke(networkErrorData);
                 }
@@ -832,7 +800,7 @@ namespace SocketNetworking
 
         void PacketReaderThreadMethod()
         {
-            Log.Info($"Client thread started, ID {ClientID}");
+            Log.GlobalInfo($"Client thread started, ID {ClientID}");
             //int waitingSize = 0;
             //byte[] prevPacketFragment = { };
             byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
@@ -842,12 +810,12 @@ namespace SocketNetworking
             Packet: // this is for breaking a nested loop further down. thanks C#
                 if (_shuttingDown)
                 {
-                    Log.Info("Shutting down loop");
+                    Log.GlobalInfo("Shutting down loop");
                     break;
                 }
                 if (!IsConnected)
                 {
-                    Log.Debug("Disconnected!");
+                    Log.GlobalDebug("Disconnected!");
                     StopClient();
                     return;
                 }
@@ -881,7 +849,7 @@ namespace SocketNetworking
                     }
                     catch(Exception ex)
                     {
-                        Log.Error(ex.ToString());
+                        Log.GlobalError(ex.ToString());
                         continue;
                     }
                     fillSize += count;
@@ -892,7 +860,7 @@ namespace SocketNetworking
                 bodySize = IPAddress.NetworkToHostOrder(bodySize);
                 if (bodySize == 0)
                 {
-                    Log.Warning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
+                    Log.GlobalWarning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
                     fillSize = 0;
                     continue;
                 }
@@ -906,7 +874,7 @@ namespace SocketNetworking
                     {
                         s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
                     }
-                    Log.Error("Body Size is corrupted! Raw: " + s);
+                    Log.GlobalError("Body Size is corrupted! Raw: " + s);
                 }
                 while (fillSize < bodySize)
                 {
@@ -914,7 +882,7 @@ namespace SocketNetworking
                     if (fillSize == buffer.Length)
                     {
                         // The buffer is too full, and we are fucked (oh shit)
-                        Log.Error("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
+                        Log.GlobalError("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
                         Disconnect("Illegal Packet Size");
                         break;
                     }
@@ -925,7 +893,7 @@ namespace SocketNetworking
                     }
                     catch(Exception ex)
                     {
-                        Log.Error(ex.ToString());
+                        Log.GlobalError(ex.ToString());
                         goto Packet;
                     }
                     fillSize += count;
@@ -941,13 +909,13 @@ namespace SocketNetworking
                 PacketHeader header = Packet.ReadPacketHeader(fullPacket);
                 if(header.Type == PacketType.CustomPacket && NetworkManager.GetCustomPacketByID(header.CustomPacketID) == null)
                 {
-                    Log.Warning($"Got a packet with a Custom Packet ID that does not exist, either not registered or corrupt. Custom Packet ID: {header.CustomPacketID}, Target: {header.NetworkIDTarget}");
+                    Log.GlobalWarning($"Got a packet with a Custom Packet ID that does not exist, either not registered or corrupt. Custom Packet ID: {header.CustomPacketID}, Target: {header.NetworkIDTarget}");
                 }
-                Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
+                Log.GlobalDebug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
                 PacketRead?.Invoke(header, fullPacket);
                 if(header.Size + 4 < fullPacket.Length)
                 {
-                    Log.Warning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
+                    Log.GlobalWarning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
                 }
                 if (ManualPacketHandle)
                 {
@@ -971,7 +939,7 @@ namespace SocketNetworking
                     fillSize = 0;
                 }
             }
-            Log.Info("Shutting down client, Closing socket.");
+            Log.GlobalInfo("Shutting down client, Closing socket.");
             _tcpClient.Close();
         }
 
@@ -1042,7 +1010,7 @@ namespace SocketNetworking
         {
             if (!IsConnected)
             {
-                Log.Warning("Can't Send packet, not connected!");
+                Log.GlobalWarning("Can't Send packet, not connected!");
                 ConnectionError?.Invoke(new NetworkErrorData("Tried to send packets while not connected.", IsConnected));
                 return;
             }
@@ -1090,12 +1058,12 @@ namespace SocketNetworking
             ClientDisconnected?.Invoke();
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
-                Log.Info($"Disconnecting Client {ClientID} for " + message);
+                Log.GlobalInfo($"Disconnecting Client {ClientID} for " + message);
                 StopClient();
             }
             if(CurrnetClientLocation == ClientLocation.Local)
             {
-                Log.Info("Disconnecting from server. Reason: " + message);
+                Log.GlobalInfo("Disconnecting from server. Reason: " + message);
                 StopClient();
             }
         }

@@ -15,13 +15,13 @@ namespace SocketNetworking.ExampleServer
         [PacketListener(typeof(ExampleCustomPacket), PacketDirection.Server)]
         public void OnExamplePacketGottenClient(ExampleCustomPacket packet, NetworkClient client)
         {
-            Log.Info("Gotten on what should be the CLIENT! " + packet.Data);
+            Log.GlobalInfo("Gotten on what should be the CLIENT! " + packet.Data);
         }
 
         [PacketListener(typeof(ExampleCustomPacket), PacketDirection.Client)]
         public void OnExamplePacketGotten(ExampleCustomPacket packet, NetworkClient client)
         {
-            Log.Info("Gotten on what should be the SERVER! " + packet.Data);
+            Log.GlobalInfo("Gotten on what should be the SERVER! " + packet.Data);
         }
     }
 }
