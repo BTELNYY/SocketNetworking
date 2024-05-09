@@ -6,26 +6,106 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem.TypeWrappers;
+using System.Collections;
 
 namespace SocketNetworking
 {
     public class NetworkConvert
     {
-        public static ByteWriter Serialize<T>(T data)
+        public static SerializedData Serialize<T>(T data)
         {
             ByteWriter writer = new ByteWriter();
             Type dataType = typeof(T);
             SerializedData sData = new SerializedData();
             sData.Type = dataType;
-            return null;
+
+            if(data is IPacketSerializable serializable)
+            {
+                writer.Write<T>(serializable);
+                return sData;
+            }
+            if(dataType.IsAssignableFrom(typeof(IEnumerable)))
+            {
+                IEnumerable<object> values = (IEnumerable<object>) data;
+                SerializableList<object> list= new SerializableList<object>(values);
+                writer.Write<SerializableList<object>>(list);
+                return sData;
+            }
+
+            if(dataType == typeof(string))
+            {
+                string value = (string)Convert.ChangeType(data, typeof(string));
+                writer.WriteString(value);
+                return sData;
+            }
+            if(dataType == typeof(bool))
+            {
+                bool value = (bool)Convert.ChangeType(data, typeof(bool));
+                writer.WriteBool(value);
+                return sData;
+            }
+
+            if(dataType == typeof(byte))
+            {
+                byte value = (byte)Convert.ChangeType(data, typeof(byte));
+                writer.WriteByte(value);
+                return sData;
+            }
+            if(dataType == typeof(sbyte))
+            {
+                sbyte value = (sbyte)Convert.ChangeType(data, typeof(sbyte));
+                writer.WriteSByte(value);
+                return sData;
+            }
+
+            if(dataType == typeof(int))
+            {
+                int value = (int)Convert.ChangeType(data, typeof(int));
+                writer.WriteInt(value);
+                return sData;
+            }
+            if (dataType == typeof(uint))
+            {
+                uint value = (uint)Convert.ChangeType(data, typeof(uint));
+                writer.WriteUInt(value);
+                return sData;
+            }
+
+            if(dataType == typeof(long))
+            {
+                long value = (long)Convert.ChangeType(data, typeof(long));
+                writer.WriteLong(value);
+                return sData;
+            }
+            if (dataType == typeof(ulong))
+            {
+                ulong value = (ulong)Convert.ChangeType(data, typeof(ulong));
+                writer.WriteULong(value);
+                return sData;
+            }
+
+            if(dataType == typeof(float))
+            {
+                float value = (float)Convert.ChangeType(data, typeof(float));
+                writer.WriteFloat(value);
+                return sData;
+            }
+            if(dataType == typeof(double))
+            {
+                double value = (float)Convert.ChangeType(data, typeof(double));
+                writer.WriteDouble(value);
+                return sData;
+            }
+
+            return sData;
         }
         
-        public static T Deserialize<T>(Type t, byte[] data)
+        public static T DeserializeRaw<T>(byte[] data)
         {
             SerializedData sData = new SerializedData()
             {
                 Data = data,
-                Type = t,
+                Type = typeof(T),
             };
             return Deserialize<T>(sData, out int read);
         }

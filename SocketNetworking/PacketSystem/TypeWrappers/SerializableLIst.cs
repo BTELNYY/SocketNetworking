@@ -26,6 +26,16 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             TType = typeof(T);
         }
 
+        public SerializableList(IEnumerable<T> values)
+        {
+            if (!Packet.SupportedTypes.Contains(typeof(T)))
+            {
+                throw new ArgumentException("Array type is not supported, use one of the supported types instead.", "values");
+            }
+            _internalList = new List<T>();
+            TType = typeof(T);
+        }
+
         public SerializableList()
         {
             if (!Packet.SupportedTypes.Contains(typeof(T)))
@@ -90,7 +100,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             {
                 _internalList = new List<T>();
             }
-            _internalList.Append(NetworkConvert.Deserialize<T>(TType, data));
+            _internalList.Append(NetworkConvert.DeserializeRaw<T>(data));
         }
 
         public int GetLength()
