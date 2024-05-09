@@ -1120,5 +1120,10 @@ namespace SocketNetworking
             Error = error;
             IsConnected = isConnected;
         }
+
+        public override string ToString()
+        {
+            return "Is Connected: " + IsConnected + " Error: " + Error;
+        }
     }
 }
