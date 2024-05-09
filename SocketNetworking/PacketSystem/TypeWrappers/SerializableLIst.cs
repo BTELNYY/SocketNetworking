@@ -10,13 +10,13 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.PacketSystem.TypeWrappers
 {
-    public class SerializableLIst<T> : IPacketSerializable, IList<T>
+    public class SerializableList<T> : IPacketSerializable, IList<T>
     {
         private List<T> _internalList;
 
         private Type TType;
 
-        public SerializableLIst(T[] values)
+        public SerializableList(T[] values)
         {
             if (!Packet.SupportedTypes.Contains(typeof(T)))
             {
@@ -26,7 +26,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             TType = typeof(T);
         }
 
-        public SerializableLIst()
+        public SerializableList()
         {
             if (!Packet.SupportedTypes.Contains(typeof(T)))
             {
@@ -90,73 +90,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             {
                 _internalList = new List<T>();
             }
-            if (TType == typeof(IPacketSerializable))
-            {
-                T obj = (T)Activator.CreateInstance(TType);
-                IPacketSerializable serializable = (IPacketSerializable)obj;
-                serializable.Deserialize(data);
-                _internalList.Append((T)serializable);
-            }
-            if(TType == typeof(string))
-            {
-                ByteReader reader = new ByteReader(data);
-                string str = reader.ReadString();
-                _internalList.Append((T)Convert.ChangeType(str, TType));
-            }
-            if (TType == typeof(bool))
-            {
-                ByteReader reader = new ByteReader(data);
-                bool value = reader.ReadBool();
-                _internalList.Append((T)Convert.ChangeType(value, TType));
-            }
-            if (TType == typeof(short))
-            {
-                ByteReader reader = new ByteReader(data);
-                short value = reader.ReadShort();
-                _internalList.Append((T)Convert.ChangeType(value, TType));
-            }
-            if (TType == typeof(int))
-            {
-                ByteReader reader = new ByteReader(data);
-                int value = reader.ReadInt();
-                _internalList.Append((T)Convert.ChangeType(value, TType));
-            }
-            if (TType == typeof(long))
-            {
-                ByteReader reader = new ByteReader(data);
-                long value = reader.ReadLong();
-                _internalList.Append((T)Convert.ChangeType(value, TType));
-            }
-            if (TType == typeof(ushort))
-            {
-                ByteReader reader = new ByteReader(data);
-                ushort value = reader.ReadUShort();
-                _internalList.Append((T)Convert.ChangeType(value, TType));
-            }
-            if (TType == typeof(uint))
-            {
-                ByteReader reader = new ByteReader(data);
-                uint value = reader.ReadUInt();
-                _internalList.Append((T)Convert.ChangeType(value, TType));
-            }
-            if(TType == typeof(ulong))
-            {
-                ByteReader reader = new ByteReader(data);
-                ulong value = reader.ReadULong();
-                _internalList.Append((T)Convert.ChangeType(value, TType));
-            }
-            if(TType == typeof(float))
-            {
-                ByteReader reader = new ByteReader(data);
-                float value = reader.ReadFloat();
-                _internalList.Append((T)Convert.ChangeType(value, TType));
-            }
-            if(TType == typeof(double))
-            {
-                ByteReader reader = new ByteReader(data);
-                double value = reader.ReadDouble();
-                _internalList.Append((T)Convert.ChangeType(value, TType));
-            }
+            _internalList.Append(NetworkConvert.Deserialize<T>(TType, data));
         }
 
         public int GetLength()

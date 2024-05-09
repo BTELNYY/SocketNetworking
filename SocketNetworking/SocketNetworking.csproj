@@ -41,9 +41,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\NetworkSerializable.cs" />
     <Compile Include="Attributes\PacketDefinition.cs" />
     <Compile Include="Attributes\PacketListener.cs" />
     <Compile Include="CallbackTimer.cs" />
+    <Compile Include="Exceptions\NetworkDeserializationException.cs" />
+    <Compile Include="Exceptions\NetworkSerializationException.cs" />
+    <Compile Include="NetworkConvert.cs" />
     <Compile Include="NetworkManager.cs" />
     <Compile Include="PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
     <Compile Include="PacketSystem\Packets\ClientDataPacket.cs" />
@@ -64,7 +68,7 @@
     <Compile Include="PacketSystem\ByteWriter.cs" />
     <Compile Include="PacketSystem\ByteReader.cs" />
     <Compile Include="PacketSystem\Packet.cs" />
-    <Compile Include="PacketSystem\TypeWrappers\SerializableLIst.cs" />
+    <Compile Include="PacketSystem\TypeWrappers\SerializableList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

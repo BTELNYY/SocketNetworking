@@ -18,9 +18,9 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
     /// </typeparam>
     public class SerializableDictionary<TKey, TValue> : IPacketSerializable, IDictionary<TKey, TValue>
     {
-        private SerializableLIst<TKey> keys;
+        private SerializableList<TKey> keys;
 
-        private SerializableLIst<TValue> values;
+        private SerializableList<TValue> values;
 
         public Dictionary<TKey, TValue> ContainedDict
         {
@@ -37,11 +37,11 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
 
         public SerializableDictionary(Dictionary<TKey, TValue> keyValuePairs)
         {
-            keys = new SerializableLIst<TKey>(keyValuePairs.Keys.ToArray());
-            values = new SerializableLIst<TValue>(keyValuePairs.Values.ToArray());
+            keys = new SerializableList<TKey>(keyValuePairs.Keys.ToArray());
+            values = new SerializableList<TValue>(keyValuePairs.Values.ToArray());
         }
 
-        public SerializableDictionary(SerializableLIst<TKey> keys, SerializableLIst<TValue> values)
+        public SerializableDictionary(SerializableList<TKey> keys, SerializableList<TValue> values)
         {
             this.keys = keys;
             this.values = values;
@@ -49,8 +49,8 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
 
         public SerializableDictionary()
         {
-            keys = new SerializableLIst<TKey>();
-            values = new SerializableLIst<TValue>();
+            keys = new SerializableList<TKey>();
+            values = new SerializableList<TValue>();
         }
 
         public TValue this[TKey key] 
@@ -114,8 +114,8 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             int removeAmount = 0;
             ByteReader reader = new ByteReader(data);
             reader.ReadInt();
-            keys = reader.Read<SerializableLIst<TKey>>();
-            values = reader.Read<SerializableLIst<TValue>>();
+            keys = reader.Read<SerializableList<TKey>>();
+            values = reader.Read<SerializableList<TValue>>();
             removeAmount += reader.ReadBytes;
             return removeAmount;
         }
@@ -154,8 +154,8 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteInt(GetLength());
-            writer.Write<SerializableLIst<TKey>>(keys);
-            writer.Write<SerializableLIst<TValue>>(values);
+            writer.Write<SerializableList<TKey>>(keys);
+            writer.Write<SerializableList<TValue>>(values);
             return writer.Data;
         }
 
