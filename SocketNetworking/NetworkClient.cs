@@ -211,7 +211,10 @@ namespace SocketNetworking
         {
             get
             {
-                return TcpClient.GetStream();
+                if (IsConnected)
+                    return TcpClient.GetStream();
+                else 
+                    return null;
             }
         }
 

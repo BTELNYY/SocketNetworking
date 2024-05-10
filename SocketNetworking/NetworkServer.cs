@@ -208,8 +208,8 @@ namespace SocketNetworking
         {
             if (_clients.ContainsKey(clientId))
             {
-                _clients.Remove(clientId);
                 ClientDisconnected.Invoke(clientId);
+                _clients.Remove(clientId);
             }
             else
             {
