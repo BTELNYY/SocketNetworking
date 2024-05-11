@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace SocketNetworking.Attributes
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property)]
-    public class NetworkSerializable : Attribute
+    public class NetworkSerialized : Attribute
     {
 
     }

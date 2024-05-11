@@ -16,34 +16,38 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
 
         private Type TType;
 
-        public SerializableList(T[] values)
-        {
-            if (!Packet.SupportedTypes.Contains(typeof(T)))
-            {
-                throw new ArgumentException("Array type is not supported, use one of the supported types instead.", "values");
-            }
-            _internalList = new List<T>();
-            TType = typeof(T);
-        }
-
         public SerializableList(IEnumerable<T> values)
         {
-            if (!Packet.SupportedTypes.Contains(typeof(T)))
+            if(typeof(T) == typeof(object))
+            {
+                if(values.Count() != 0)
+                {
+                    TType = values.ElementAt(0).GetType();
+                }
+                else
+                {
+                    TType = typeof(T);
+                }
+            }
+            else
+            {
+                TType = typeof(T);
+            }
+            if (!NetworkConvert.SupportedTypes.Contains(TType))
             {
                 throw new ArgumentException("Array type is not supported, use one of the supported types instead.", "values");
             }
             _internalList = new List<T>();
-            TType = typeof(T);
         }
 
         public SerializableList()
         {
-            if (!Packet.SupportedTypes.Contains(typeof(T)))
+            TType = typeof(T);
+            if (!NetworkConvert.SupportedTypes.Contains(TType))
             {
                 throw new ArgumentException("Array type is not supported, use one of the supported types instead.", "values");
             }
             _internalList = new List<T>();
-            TType = typeof(T);
         }
 
         public List<T> ContainedArray => _internalList;
@@ -136,7 +140,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             foreach(T element in _internalList)
             {
                 //Dont need to worry about type safety as we check in constructor
-                byte[] finalBytes = Packet.SerializeSupportedType(element);
+                byte[] finalBytes = NetworkConvert.Serialize(element).Data;
                 int dataLength = finalBytes.Length;
                 writer.WriteInt(dataLength);
                 writer.Write(finalBytes);

@@ -1,5 +1,6 @@
 ﻿using SocketNetworking.Exceptions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,48 +20,9 @@ namespace SocketNetworking.PacketSystem
 
         private static readonly int _maxPacketSize = ushort.MaxValue;
 
-        public static readonly Type[] SupportedTypes =
-        {
-            typeof(string),
-            typeof(short),
-            typeof(int),
-            typeof(long),
-            typeof(ushort),
-            typeof(uint),
-            typeof(ulong),
-            typeof(float),
-            typeof(double),
-            typeof(bool),
-            typeof(byte),
-            typeof(sbyte),
-            typeof(IPacketSerializable),
-        };
-
         public static byte[] SerializeSupportedType(object value)
         {
-            if(!SupportedTypes.Contains(value.GetType())) 
-            {
-                throw new ArgumentException("Can't serialize an unsupported type.", "value");
-            }
-            if(value is IPacketSerializable serializable) { return serializable.Serialize(); }
-            if (value is long l) { return BitConverter.GetBytes(l); }
-            if (value is int i) { return BitConverter.GetBytes(i); }
-            if (value is short s) { return BitConverter.GetBytes(s); }
-            if (value is ulong ul ) { return BitConverter.GetBytes(ul); }
-            if (value is uint ui ) { return BitConverter.GetBytes(ui); }
-            if (value is ushort us ) { return BitConverter.GetBytes(us); }
-            if (value is float f ) { return BitConverter.GetBytes(f); }
-            if (value is double d ) { return BitConverter.GetBytes(d); }
-            if (value is bool b) { return BitConverter.GetBytes(b); }
-            if (value is byte by) { return BitConverter.GetBytes(by); }
-            if (value is sbyte sby) { return BitConverter.GetBytes(sby); }
-            if (value is string st)
-            {
-                ByteWriter writer = new ByteWriter();
-                writer.WriteString(st);
-                return writer.Data;
-            }
-            throw new NotImplementedException("No check caught type provided.");
+            return NetworkConvert.Serialize(value).Data;
         }
 
         /// <summary>

@@ -41,7 +41,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\NetworkSerializable.cs" />
+    <Compile Include="Attributes\NetworkNonSerialized.cs" />
+    <Compile Include="Attributes\NetworkSerialized.cs" />
     <Compile Include="Attributes\PacketDefinition.cs" />
     <Compile Include="Attributes\PacketListener.cs" />
     <Compile Include="CallbackTimer.cs" />
