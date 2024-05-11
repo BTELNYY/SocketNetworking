@@ -202,6 +202,13 @@ namespace SocketNetworking
         public static object Deserialize(SerializedData data, out int read)
         {
             ByteReader reader = new ByteReader(data.Data);
+
+            if (data.DataNull)
+            {
+                read = 0;
+                return null;
+            }
+
             if (data.Type.IsAssignableFrom(typeof(IPacketSerializable)))
             {
                 object obj = Activator.CreateInstance(data.Type);
