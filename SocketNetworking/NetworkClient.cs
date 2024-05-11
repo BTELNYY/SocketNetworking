@@ -777,8 +777,8 @@ namespace SocketNetworking
                 try
                 {
                     Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
-                    Thread.Sleep(1);
                     serverStream.Write(fullBytes, 0, fullBytes.Length);
+                    Thread.Sleep(1);
                 }
                 catch (Exception ex)
                 {
@@ -869,7 +869,7 @@ namespace SocketNetworking
                 }
                 fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
                 // read the rest of the whole packet
-                if(bodySize > Packet.MaxPacketSize)
+                if(bodySize > Packet.MaxPacketSize || bodySize < 0)
                 {
                     CurrentConnectionState = ConnectionState.Disconnected;
                     string s = string.Empty;
