@@ -33,9 +33,9 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             {
                 TType = typeof(T);
             }
-            if (!NetworkConvert.SupportedTypes.Contains(TType))
+            if (!NetworkConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)))
             {
-                throw new ArgumentException("Array type is not supported, use one of the supported types instead.", "values");
+                throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", "values");
             }
             _internalList = new List<T>();
         }
@@ -43,16 +43,21 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
         public SerializableList()
         {
             TType = typeof(T);
-            if (!NetworkConvert.SupportedTypes.Contains(TType))
+            if (!NetworkConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)))
             {
-                throw new ArgumentException("Array type is not supported, use one of the supported types instead.", "values");
+                throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", "values");
             }
             _internalList = new List<T>();
         }
 
-        public List<T> ContainedArray => _internalList;
+        public List<T> ContainedList => _internalList;
 
-        public int Count => ContainedArray.Count;
+        public void OverwriteContained(IEnumerable<T> values)
+        {
+            _internalList = values.ToList();
+        }
+
+        public int Count => ContainedList.Count;
 
         public bool IsReadOnly => false;
 
@@ -92,7 +97,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
                 }
                 byte[] readBytes = reader.Read(currentChunkLength);
                 DeserializeAndAdd(readBytes);
-                reader.Remove(currentChunkLength);
+                //reader.Remove(currentChunkLength);
                 usedBytes += currentChunkLength;
             }
             return usedBytes;
@@ -104,7 +109,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             {
                 _internalList = new List<T>();
             }
-            _internalList.Append(NetworkConvert.DeserializeRaw<T>(data));
+            _internalList.Add(NetworkConvert.DeserializeRaw<T>(data));
         }
 
         public int GetLength()
@@ -123,11 +128,11 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
                 if(element.GetType().GetInterfaces().Contains(typeof(IPacketSerializable))) 
                 {
                     IPacketSerializable serializable = (IPacketSerializable)element;
-                    size += serializable.GetLength();
+                    size += serializable.Serialize().Length;
                 }
                 else
                 {
-                    size += element.GetType().SizeOf();
+                    size += typeof(T).SizeOf();
                 }
             }
             return size;

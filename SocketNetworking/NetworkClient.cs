@@ -212,9 +212,10 @@ namespace SocketNetworking
             get
             {
                 if (IsConnected)
+                {
                     return TcpClient.GetStream();
-                else 
-                    return null;
+                }
+                return null;
             }
         }
 
@@ -339,6 +340,7 @@ namespace SocketNetworking
                 Send(updatePacket);
                 _connectionState = value;
                 ClientConnectionStateChanged?.Invoke(this);
+                ConnectionStateUpdated?.Invoke(value);
             }
         }
 
@@ -627,6 +629,16 @@ namespace SocketNetworking
                         Ready = true;
                     }
                     break;
+                case PacketType.NetworkInvocation:
+                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
+                    networkInvocationPacket.Deserialize(data);
+                    NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                    break;
+                case PacketType.NetworkInvocationResult:
+                    NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
+                    networkInvocationResultPacket.Deserialize(data);
+                    NetworkManager.Results.Add(networkInvocationResultPacket);
+                    break;
                 default:
                     Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
                     Disconnect("Client Sent an Unknown packet with PacketID " + header.Type.ToString());
@@ -724,6 +736,16 @@ namespace SocketNetworking
                     }
                     ClientConnectionStateChanged?.Invoke(this);
                     ConnectionStateUpdated?.Invoke(_connectionState);
+                    break;
+                case PacketType.NetworkInvocation:
+                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
+                    networkInvocationPacket.Deserialize(data);
+                    NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                    break;
+                case PacketType.NetworkInvocationResult:
+                    NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
+                    networkInvocationResultPacket.Deserialize(data);
+                    NetworkManager.Results.Add(networkInvocationResultPacket);
                     break;
                 default:
                     Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");

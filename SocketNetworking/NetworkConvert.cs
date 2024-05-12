@@ -47,13 +47,22 @@ namespace SocketNetworking
 
         public static SerializedData Serialize<T>(T data)
         {
-            SerializedData sData = Serialize(data);
+            SerializedData sData = Serialize((object)data);
             return sData;
         }
 
         public static SerializedData Serialize(object data)
         {
             ByteWriter writer = new ByteWriter();
+            if(data == null)
+            {
+                return new SerializedData()
+                {
+                    Type = typeof(void),
+                    DataNull = true,
+                    Data = new byte[] { },
+                };
+            }
             Type dataType = data.GetType();
             SerializedData sData = new SerializedData();
             sData.Type = dataType;
@@ -196,20 +205,20 @@ namespace SocketNetworking
                 Data = data,
                 Type = typeof(T),
             };
-            return Deserialize<T>(sData, out int read);
+            T output = Deserialize<T>(sData, out int read);
+            return output;
         }
 
         public static object Deserialize(SerializedData data, out int read)
         {
             ByteReader reader = new ByteReader(data.Data);
-
             if (data.DataNull)
             {
                 read = 0;
                 return null;
             }
 
-            if (data.Type.IsAssignableFrom(typeof(IPacketSerializable)))
+            if (data.Type.GetInterfaces().Contains(typeof(IPacketSerializable)))
             {
                 object obj = Activator.CreateInstance(data.Type);
                 IPacketSerializable serializable = (IPacketSerializable)obj;
@@ -296,8 +305,8 @@ namespace SocketNetworking
             }
 
             object newObject = Activator.CreateInstance(data.Type);
-            List<SerializedData> fieldData = reader.Read<SerializableList<SerializedData>>().ContainedArray;
-            List<SerializedData> propertyData = reader.Read<SerializableList<SerializedData>>().ContainedArray;
+            List<SerializedData> fieldData = reader.Read<SerializableList<SerializedData>>().ContainedList;
+            List<SerializedData> propertyData = reader.Read<SerializableList<SerializedData>>().ContainedList;
             int customReadBytes = 0;
             if (data.Type.GetCustomAttribute<NetworkSerialized>() != null)
             {
@@ -344,7 +353,8 @@ namespace SocketNetworking
                 throw new NetworkDeserializationException("Types provided do not match.");
             }
             read = 0;
-            return (T)Deserialize(data, out read);
+            T output = (T)Deserialize(data, out read);
+            return output;
         }
 
         public static T Deserialize<T>(byte[] data)

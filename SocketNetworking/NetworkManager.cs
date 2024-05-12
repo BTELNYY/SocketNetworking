@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
 
@@ -553,6 +554,101 @@ namespace SocketNetworking
                     }
                 }
             }
+        }
+
+        public static List<int> NetworkInvocations = new List<int>();
+
+        public static List<NetworkInvocationResultPacket> Results = new List<NetworkInvocationResultPacket>();
+
+        public static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient reciever)
+        {
+            Assembly assmebly = Assembly.Load(packet.TargetTypeAssmebly);
+            Type targetType = assmebly.GetType(packet.TargetType);
+            if(targetType == null)
+            {
+                throw new NetworkInvocationException($"Cannot find type: '{packet.TargetType}'.", new NullReferenceException());
+            }
+            object target = reciever;
+            if(packet.NetworkObjectTarget != 0)
+            {
+                target = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkObjectTarget && x.GetType() == targetType).First();
+            }
+            if(target == null)
+            {
+                throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.");
+            }
+            Type[] arguments = packet.Arguments.Select(x => Type.GetType(x.TypeFullName)).ToArray();
+            MethodInfo method = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToList().First();
+            if(method == null)
+            {
+                throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}'.", new NullReferenceException());
+            }
+            List<object> args = new List<object>();
+            foreach(SerializedData data in packet.Arguments)
+            {
+                object obj = NetworkConvert.Deserialize(data, out int read);
+                args.Add(obj);
+            }
+            object result = method.Invoke(target, args.ToArray());
+            NetworkInvocations.Remove(packet.NetworkObjectTarget);
+            NetworkInvocationResultPacket resultPacket = new NetworkInvocationResultPacket();
+            resultPacket.CallbackID = packet.CallbackID;
+            resultPacket.Result = NetworkConvert.Serialize(result);
+            reciever.Send(resultPacket);
+            return result;
+        }
+
+        public static object NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args)
+        {
+            if (target == null)
+            {
+                throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.", new ArgumentNullException("target"));
+            }
+            int targetID = 0;
+            if(target is INetworkObject networkObject)
+            {
+                targetID = networkObject.NetworkID;
+            }
+            if (!(target is NetworkClient client))
+            {
+                throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
+            }
+            Type targetType = target.GetType();
+            if (targetType == null)
+            {
+                throw new NetworkInvocationException($"Cannot find type: '{target.GetType()}'.", new NullReferenceException());
+            }
+            Type[] arguments = args.Select(x => x.GetType()).ToArray();
+            MethodInfo method = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToList().First();
+            //x.GetParameters().Select(y => y.ParameterType).ToHashSet() == arguments.ToHashSet()
+            if (method == null)
+            {
+                throw new NetworkInvocationException($"Cannot find method: '{methodName}'.", new NullReferenceException());
+            }
+            NetworkInvocationPacket packet = new NetworkInvocationPacket();
+            packet.TargetTypeAssmebly = Assembly.GetAssembly(targetType).GetName().FullName;
+            packet.NetworkObjectTarget = targetID;
+            packet.MethodName = methodName;
+            foreach(var arg in args)
+            {
+                SerializedData data = NetworkConvert.Serialize(arg);
+                packet.Arguments.Add(data);
+            }
+            packet.TargetType = targetType.FullName;
+            int callbackID = NetworkInvocations.GetFirstEmptySlot();
+            NetworkInvocations.Add(callbackID);
+            packet.CallbackID = callbackID;
+            sender.Send(packet);
+            if(method.ReturnType == typeof(void))
+            {
+                return null;
+            }
+            while(Results.Where(x => x.CallbackID == callbackID).Any())
+            {
+                NetworkInvocationResultPacket result = Results.Where(x => x.CallbackID != callbackID).FirstOrDefault();
+                return NetworkConvert.Deserialize(result.Result, out int read);
+            }
+            return null;
         }
     }
 

@@ -46,6 +46,7 @@
     <Compile Include="PacketUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpamPacketTesting.cs" />
+    <Compile Include="TestClient.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SocketNetworking\SocketNetworking.csproj">

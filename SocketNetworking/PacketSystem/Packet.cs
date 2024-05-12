@@ -111,6 +111,8 @@ namespace SocketNetworking.PacketSystem
         ConnectionStateUpdate,
         ClientData,
         ServerData,
+        NetworkInvocation,
+        NetworkInvocationResult,
         CustomPacket,
     }
     

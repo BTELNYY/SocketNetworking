@@ -18,20 +18,31 @@ namespace SocketNetworking.ExampleServer
             NetworkServer.ClientType = typeof(TestClient);
             NetworkServer.StartServer();
             NetworkServer.ClientConnected += OnClientConnected;
+            NetworkClient.ClientConnectionStateChanged += NetworkClient_ClientConnectionStateChanged;
             Thread t = new Thread(SpamThread);
             t.Start();
         }
 
+        private static void NetworkClient_ClientConnectionStateChanged(NetworkClient obj)
+        {
+            if (obj.CurrentConnectionState != ConnectionState.Connected) { return; }
+            Random r = new Random();
+            TestClient client = (TestClient)obj;
+            client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
+        }
+
         private static void SpamThread()
         {
+            Random r = new Random();
             while (true)
             {
-                Thread.Sleep(1);
-                Random r = new Random();
-                foreach (NetworkClient client in NetworkServer.ConnectedClients)
+                continue;
+                foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
-                    if (client.IsConnected && client.Ready && client.CurrentConnectionState == ConnectionState.Connected)
+                    if (c.IsConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)
                     {
+                        TestClient client2 = (TestClient)c;
+                        client2.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
                         SpamPacketTesting packet = new SpamPacketTesting()
                         {
                             ValueOne = (byte)r.Next(255),
@@ -39,7 +50,7 @@ namespace SocketNetworking.ExampleServer
                             ValueThree = (float)r.NextDouble(),
                             ValueFour = Convert.ToBoolean(r.Next(2))
                         };
-                        client.Send(packet);
+                        c.Send(packet);
                     }
                 }
             }

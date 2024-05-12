@@ -37,7 +37,7 @@ namespace SocketNetworking.PacketSystem
         public void Write<T>(IPacketSerializable serializable)
         {
             byte[] data = serializable.Serialize();
-            _workingSetData = _workingSetData.Concat(data).ToArray();
+            Write(data);
         }
 
         public void Write(byte[] data)

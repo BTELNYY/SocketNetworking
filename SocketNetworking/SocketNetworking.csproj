@@ -41,15 +41,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\NetworkInvocable.cs" />
     <Compile Include="Attributes\NetworkNonSerialized.cs" />
     <Compile Include="Attributes\NetworkSerialized.cs" />
     <Compile Include="Attributes\PacketDefinition.cs" />
     <Compile Include="Attributes\PacketListener.cs" />
     <Compile Include="CallbackTimer.cs" />
     <Compile Include="Exceptions\NetworkDeserializationException.cs" />
+    <Compile Include="Exceptions\NetworkInvocationException.cs" />
     <Compile Include="Exceptions\NetworkSerializationException.cs" />
     <Compile Include="NetworkConvert.cs" />
     <Compile Include="NetworkManager.cs" />
+    <Compile Include="PacketSystem\Packets\NetworkInvocationPacket.cs" />
+    <Compile Include="PacketSystem\Packets\NetworkInvocationResultPacket.cs" />
     <Compile Include="PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
     <Compile Include="PacketSystem\Packets\ClientDataPacket.cs" />
     <Compile Include="PacketSystem\TypeWrappers\SerializableDictionary.cs" />

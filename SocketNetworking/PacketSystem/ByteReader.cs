@@ -57,6 +57,17 @@ namespace SocketNetworking.PacketSystem
             _workingSetData = RawData;
         }
 
+        public ByteReader(byte[] data, bool showDebug)
+        {
+            RawData = data;
+            _workingSetData = RawData;
+            if (showDebug)
+            {
+                string result = Encoding.UTF8.GetString(data, 0, data.Length);
+                Log.GlobalDebug(result);
+            }
+        }
+
         ~ByteReader()
         {
             _workingSetData = null;
