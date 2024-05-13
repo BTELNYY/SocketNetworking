@@ -14,6 +14,10 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public SerializedData Result { get; set; } = new SerializedData();
 
+        public bool Success { get; set; } = true;
+
+        public string ErrorMessage { get; set; } = string.Empty;
+
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();

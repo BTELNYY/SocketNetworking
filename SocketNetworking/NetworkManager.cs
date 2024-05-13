@@ -578,8 +578,19 @@ namespace SocketNetworking
                 throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.");
             }
             Type[] arguments = packet.Arguments.Select(x => Type.GetType(x.TypeFullName)).ToArray();
-            MethodInfo method = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToList().First();
-            if(method == null)
+            MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToArray();
+            MethodInfo method = null;
+            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
+            foreach (MethodInfo m in methods)
+            {
+                string[] m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToArray();
+                if (m_args.ArraysEqual(expectedArgs))
+                {
+                    method = m;
+                    break;
+                }
+            }
+            if (method == null)
             {
                 throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}'.", new NullReferenceException());
             }
@@ -598,7 +609,7 @@ namespace SocketNetworking
             return result;
         }
 
-        public static object NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args)
+        public static T NetworkInvoke<T>(object target, NetworkClient sender, string methodName, object[] args)
         {
             if (target == null)
             {
@@ -619,7 +630,22 @@ namespace SocketNetworking
                 throw new NetworkInvocationException($"Cannot find type: '{target.GetType()}'.", new NullReferenceException());
             }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
-            MethodInfo method = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToList().First();
+            MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
+            MethodInfo method = null;
+            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
+            foreach (MethodInfo m in methods)
+            {
+                string[] m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToArray();
+                if (m_args.ArraysEqual(expectedArgs))
+                {
+                    method = m;
+                    break;
+                }
+            }
+            if (method.ReturnType != typeof(T))
+            {
+                throw new NetworkInvocationException("Cannot invoke method, return type is incorrect.", new InvalidCastException());
+            }
             //x.GetParameters().Select(y => y.ParameterType).ToHashSet() == arguments.ToHashSet()
             if (method == null)
             {
@@ -641,14 +667,64 @@ namespace SocketNetworking
             sender.Send(packet);
             if(method.ReturnType == typeof(void))
             {
-                return null;
+                return default;
             }
             while(Results.Where(x => x.CallbackID == callbackID).Any())
             {
                 NetworkInvocationResultPacket result = Results.Where(x => x.CallbackID != callbackID).FirstOrDefault();
-                return NetworkConvert.Deserialize(result.Result, out int read);
+                return (T)NetworkConvert.Deserialize(result.Result, out int read);
             }
-            return null;
+            return default;
+        }
+
+        public static void NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args)
+        {
+            if (target == null)
+            {
+                throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.", new ArgumentNullException("target"));
+            }
+            int targetID = 0;
+            if (target is INetworkObject networkObject)
+            {
+                targetID = networkObject.NetworkID;
+            }
+            if (!(target is NetworkClient client))
+            {
+                throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
+            }
+            Type targetType = target.GetType();
+            if (targetType == null)
+            {
+                throw new NetworkInvocationException($"Cannot find type: '{target.GetType()}'.", new NullReferenceException());
+            }
+            Type[] arguments = args.Select(x => x.GetType()).ToArray();
+            MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
+            MethodInfo method = null;
+            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
+            foreach (MethodInfo m in methods)
+            {
+                string[] m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToArray();
+                if (m_args.ArraysEqual(expectedArgs))
+                {
+                    method = m;
+                    break;
+                }
+            }
+            NetworkInvocationPacket packet = new NetworkInvocationPacket();
+            packet.TargetTypeAssmebly = Assembly.GetAssembly(targetType).GetName().FullName;
+            packet.NetworkObjectTarget = targetID;
+            packet.MethodName = methodName;
+            foreach (var arg in args)
+            {
+                SerializedData data = NetworkConvert.Serialize(arg);
+                packet.Arguments.Add(data);
+            }
+            packet.TargetType = targetType.FullName;
+            int callbackID = NetworkInvocations.GetFirstEmptySlot();
+            NetworkInvocations.Add(callbackID);
+            packet.CallbackID = callbackID;
+            sender.Send(packet);
+            return;
         }
     }
 
