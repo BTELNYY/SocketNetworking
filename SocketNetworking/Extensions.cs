@@ -100,6 +100,12 @@ namespace SocketNetworking
             return true;
         }
 
+        public static object LastEnum(this object obj)
+        {
+            var lastEnum = Enum.GetValues(obj.GetType()).Cast<object>().Max();
+            return lastEnum;
+        }
+
         public static int SizeOf(this Type type)
         {
             return Marshal.SizeOf(type);

@@ -18,11 +18,16 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public string ErrorMessage { get; set; } = string.Empty;
 
+        public bool IgnoreResult { get; set; } = false;
+
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
             writer.WriteInt(CallbackID);
             writer.Write<SerializedData>(Result);
+            writer.WriteBool(Success);
+            writer.WriteString(ErrorMessage);
+            writer.WriteBool(IgnoreResult);
             return writer;
         }
 
@@ -31,6 +36,9 @@ namespace SocketNetworking.PacketSystem.Packets
             ByteReader reader = base.Deserialize(data);
             CallbackID = reader.ReadInt();
             Result = reader.Read<SerializedData>();
+            Success = reader.ReadBool();
+            ErrorMessage = reader.ReadString();
+            IgnoreResult = reader.ReadBool();
             return reader;
         }
     }

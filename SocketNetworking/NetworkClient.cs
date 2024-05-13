@@ -637,7 +637,7 @@ namespace SocketNetworking
                 case PacketType.NetworkInvocationResult:
                     NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
-                    NetworkManager.Results.Add(networkInvocationResultPacket);
+                    NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
                     break;
                 default:
                     Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
@@ -745,7 +745,7 @@ namespace SocketNetworking
                 case PacketType.NetworkInvocationResult:
                     NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
-                    NetworkManager.Results.Add(networkInvocationResultPacket);
+                    NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
                     break;
                 default:
                     Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");

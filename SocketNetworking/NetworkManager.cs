@@ -22,7 +22,7 @@ namespace SocketNetworking
 
         public static readonly Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
 
-        private static readonly Dictionary<Type, int> _packetCache = new Dictionary<Type, int>(); 
+        private static readonly Dictionary<Type, int> _packetCache = new Dictionary<Type, int>();
 
         private static List<Type> _dynamicAllocatedPackets = new List<Type>();
 
@@ -31,22 +31,22 @@ namespace SocketNetworking
             return _packetCache.ContainsKey(packetType);
         }
 
-        public static Dictionary<int, string> PacketPairsSerialized 
-        { 
+        public static Dictionary<int, string> PacketPairsSerialized
+        {
             get
             {
                 Dictionary<int, string> dict = new Dictionary<int, string>();
-                foreach(int i in AdditionalPacketTypes.Keys)
+                foreach (int i in AdditionalPacketTypes.Keys)
                 {
                     dict.Add(i, AdditionalPacketTypes[i].FullName);
                 }
                 return dict;
             }
-         }
+        }
 
         public static int GetAutoPacketID(CustomPacket packet)
         {
-            if(_packetCache.ContainsKey(packet.GetType()))
+            if (_packetCache.ContainsKey(packet.GetType()))
             {
                 return _packetCache[packet.GetType()];
             }
@@ -71,7 +71,7 @@ namespace SocketNetworking
         {
             get
             {
-                if(NetworkServer.Active)
+                if (NetworkServer.Active)
                 {
                     if (NetworkClient.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() == 0)
                     {
@@ -84,12 +84,12 @@ namespace SocketNetworking
                 }
                 else
                 {
-                    if(NetworkClient.Clients.Any(x => x.CurrnetClientLocation == ClientLocation.Remote))
+                    if (NetworkClient.Clients.Any(x => x.CurrnetClientLocation == ClientLocation.Remote))
                     {
                         Log.GlobalError("There are active remote clients even though the server is closed, these clients will now be terminated.");
-                        foreach(var x in NetworkClient.Clients)
+                        foreach (var x in NetworkClient.Clients)
                         {
-                            if(x.CurrnetClientLocation == ClientLocation.Local)
+                            if (x.CurrnetClientLocation == ClientLocation.Local)
                             {
                                 continue;
                             }
@@ -218,7 +218,7 @@ namespace SocketNetworking
 
         public static void SendReadyPulse(NetworkClient sender, bool isReady)
         {
-            foreach(INetworkObject @object in NetworkObjects.Keys)
+            foreach (INetworkObject @object in NetworkObjects.Keys)
             {
                 @object.OnReady(sender, isReady);
             }
@@ -271,7 +271,7 @@ namespace SocketNetworking
         public static int GetNextNetworkID()
         {
             List<int> ids = NetworkObjects.Keys.Select(x => x.NetworkID).ToList();
-            if(ids.Count == 0)
+            if (ids.Count == 0)
             {
                 return 1;
             }
@@ -290,7 +290,7 @@ namespace SocketNetworking
         /// </returns>
         public static bool AddNetworkObject(INetworkObject networkObject)
         {
-            if(networkObject.NetworkID == 0)
+            if (networkObject.NetworkID == 0)
             {
                 Log.GlobalError($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
                 return false;
@@ -369,7 +369,7 @@ namespace SocketNetworking
         {
             List<INetworkObject> networkObjects = NetworkObjects.Keys.Where(x => x.NetworkID == id).ToList();
             int removed = 0;
-            foreach(INetworkObject netObj in networkObjects)
+            foreach (INetworkObject netObj in networkObjects)
             {
                 if (RemoveNetworkObject(netObj))
                 {
@@ -389,7 +389,7 @@ namespace SocketNetworking
             Type typeOfObject = target.GetType();
             MethodInfo[] allPacketListeners = typeOfObject.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(x => x.GetCustomAttribute(typeof(PacketListener)) != null).ToArray();
             Dictionary<Type, List<PacketListenerData>> result = new Dictionary<Type, List<PacketListenerData>>();
-            if(target.NetworkID == 0)
+            if (target.NetworkID == 0)
             {
                 Log.GlobalError($"Network Object {target.GetType().Name} was ignored becuase NetworkTargetID 0 is reserved.");
                 return new NetworkObjectData()
@@ -398,9 +398,9 @@ namespace SocketNetworking
                     TargetObject = target
                 };
             }
-            foreach(MethodInfo method in allPacketListeners)
+            foreach (MethodInfo method in allPacketListeners)
             {
-                if(method.GetParameters().Length < AcceptedMethodArugments.Length)
+                if (method.GetParameters().Length < AcceptedMethodArugments.Length)
                 {
                     Log.GlobalWarning("Method " + method.Name + " was ignored becuase it doesn't have the proper amount of arguments.");
                     continue;
@@ -410,13 +410,13 @@ namespace SocketNetworking
                 {
                     Type methodType = method.GetParameters()[i].ParameterType;
                     Type acceptedType = AcceptedMethodArugments[i];
-                    if(!methodType.IsSubclassOf(acceptedType))
+                    if (!methodType.IsSubclassOf(acceptedType))
                     {
                         Log.GlobalWarning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
                         methodArgsFailed = true;
                     }
                 }
-                if(methodArgsFailed == true)
+                if (methodArgsFailed == true)
                 {
                     continue;
                 }
@@ -468,7 +468,7 @@ namespace SocketNetworking
             Type packetType = AdditionalPacketTypes[header.CustomPacketID];
             Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);
             ByteReader reader = packet.Deserialize(data);
-            if(reader.ReadBytes < header.Size)
+            if (reader.ReadBytes < header.Size)
             {
                 Log.GlobalWarning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read.");
             }
@@ -477,16 +477,16 @@ namespace SocketNetworking
             {
                 //Log.Debug("Handle Client-Client communication!");
                 MethodInfo[] clientMethods = runningClient.GetType().GetMethods().ToArray();
-                foreach(MethodInfo method in clientMethods)
-                { 
+                foreach (MethodInfo method in clientMethods)
+                {
                     PacketListener listener = method.GetCustomAttribute<PacketListener>();
-                    if(listener == null)
+                    if (listener == null)
                     {
                         continue;
                     }
                     PacketDirection packetDirection = listener.DefinedDirection;
                     Type listenerType = listener.DefinedType;
-                    if(packetType != listenerType)
+                    if (packetType != listenerType)
                     {
                         //Log.Debug("Type dont match!");
                         continue;
@@ -515,7 +515,7 @@ namespace SocketNetworking
                 return;
             }
             List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == header.NetworkIDTarget && x.IsEnabled).ToList();
-            if(objects.Count == 0)
+            if (objects.Count == 0)
             {
                 Log.GlobalWarning("Target NetworkID revealed no active objects registered!");
                 return;
@@ -529,20 +529,20 @@ namespace SocketNetworking
                     Log.GlobalWarning($"Can't find any listeners for packet type: {packetType.Name} in object type: {netObj.GetType().Name}, it is also the only object for this NetworkID that is enabled.");
                     return;
                 }
-                else if(!NetworkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count > 1)
+                else if (!NetworkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count > 1)
                 {
                     continue;
                 }
                 List<PacketListenerData> packetListeners = NetworkObjects[netObj].Listeners[packetType];
                 //Log.Debug($"Packet listeners for type {netObj.GetType().Name}: {packetListeners.Count}");
-                foreach(PacketListenerData packetListener in packetListeners)
+                foreach (PacketListenerData packetListener in packetListeners)
                 {
-                    if(packetListener.Attribute.DefinedDirection == PacketDirection.Any)
+                    if (packetListener.Attribute.DefinedDirection == PacketDirection.Any)
                     {
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
-                    if(packetListener.Attribute.DefinedDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
+                    if (packetListener.Attribute.DefinedDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
                     {
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
@@ -556,24 +556,60 @@ namespace SocketNetworking
             }
         }
 
-        public static List<int> NetworkInvocations = new List<int>();
+        private static List<int> NetworkInvocations = new List<int>();
 
-        public static List<NetworkInvocationResultPacket> Results = new List<NetworkInvocationResultPacket>();
+        private static List<NetworkInvocationResultPacket> Results = new List<NetworkInvocationResultPacket>();
 
-        public static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient reciever)
+        public static event Action<NetworkInvocationResultPacket> OnNetworkInvocationResult;
+
+        public static bool IsReady(int callBack, out NetworkInvocationResultPacket packet)
+        {
+            if (Results.Where(x => x.CallbackID == callBack).Count() == 0)
+            {
+                packet = null;
+                return false;
+            }
+            else
+            {
+                packet = Results.Where(x => x.CallbackID == callBack).FirstOrDefault();
+                return true;
+            }
+        }
+
+        public static NetworkInvocationResultPacket ConsumeNetworkInvocationResult(int callback)
+        {
+            if (!IsReady(callback, out NetworkInvocationResultPacket packet))
+            {
+                Log.GlobalWarning("Attempted to get not ready network invocation result with callback ID: " + callback);
+                return null;
+            }
+            return packet;
+        }
+
+        internal static void NetworkInvoke(NetworkInvocationResultPacket packet, NetworkClient reciever)
+        {
+            if (packet.IgnoreResult)
+            {
+                return;
+            }
+            Results.Add(packet);
+            OnNetworkInvocationResult?.Invoke(packet);
+        }
+
+        internal static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient reciever)
         {
             Assembly assmebly = Assembly.Load(packet.TargetTypeAssmebly);
             Type targetType = assmebly.GetType(packet.TargetType);
-            if(targetType == null)
+            if (targetType == null)
             {
                 throw new NetworkInvocationException($"Cannot find type: '{packet.TargetType}'.", new NullReferenceException());
             }
             object target = reciever;
-            if(packet.NetworkObjectTarget != 0)
+            if (packet.NetworkObjectTarget != 0)
             {
                 target = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkObjectTarget && x.GetType() == targetType).First();
             }
-            if(target == null)
+            if (target == null)
             {
                 throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.");
             }
@@ -595,7 +631,7 @@ namespace SocketNetworking
                 throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}'.", new NullReferenceException());
             }
             List<object> args = new List<object>();
-            foreach(SerializedData data in packet.Arguments)
+            foreach (SerializedData data in packet.Arguments)
             {
                 object obj = NetworkConvert.Deserialize(data, out int read);
                 args.Add(obj);
@@ -605,79 +641,12 @@ namespace SocketNetworking
             NetworkInvocationResultPacket resultPacket = new NetworkInvocationResultPacket();
             resultPacket.CallbackID = packet.CallbackID;
             resultPacket.Result = NetworkConvert.Serialize(result);
+            resultPacket.IgnoreResult = packet.IgnoreResult;
             reciever.Send(resultPacket);
             return result;
         }
 
-        public static T NetworkInvoke<T>(object target, NetworkClient sender, string methodName, object[] args)
-        {
-            if (target == null)
-            {
-                throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.", new ArgumentNullException("target"));
-            }
-            int targetID = 0;
-            if(target is INetworkObject networkObject)
-            {
-                targetID = networkObject.NetworkID;
-            }
-            if (!(target is NetworkClient client))
-            {
-                throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
-            }
-            Type targetType = target.GetType();
-            if (targetType == null)
-            {
-                throw new NetworkInvocationException($"Cannot find type: '{target.GetType()}'.", new NullReferenceException());
-            }
-            Type[] arguments = args.Select(x => x.GetType()).ToArray();
-            MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
-            MethodInfo method = null;
-            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
-            foreach (MethodInfo m in methods)
-            {
-                string[] m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToArray();
-                if (m_args.ArraysEqual(expectedArgs))
-                {
-                    method = m;
-                    break;
-                }
-            }
-            if (method.ReturnType != typeof(T))
-            {
-                throw new NetworkInvocationException("Cannot invoke method, return type is incorrect.", new InvalidCastException());
-            }
-            //x.GetParameters().Select(y => y.ParameterType).ToHashSet() == arguments.ToHashSet()
-            if (method == null)
-            {
-                throw new NetworkInvocationException($"Cannot find method: '{methodName}'.", new NullReferenceException());
-            }
-            NetworkInvocationPacket packet = new NetworkInvocationPacket();
-            packet.TargetTypeAssmebly = Assembly.GetAssembly(targetType).GetName().FullName;
-            packet.NetworkObjectTarget = targetID;
-            packet.MethodName = methodName;
-            foreach(var arg in args)
-            {
-                SerializedData data = NetworkConvert.Serialize(arg);
-                packet.Arguments.Add(data);
-            }
-            packet.TargetType = targetType.FullName;
-            int callbackID = NetworkInvocations.GetFirstEmptySlot();
-            NetworkInvocations.Add(callbackID);
-            packet.CallbackID = callbackID;
-            sender.Send(packet);
-            if(method.ReturnType == typeof(void))
-            {
-                return default;
-            }
-            while(Results.Where(x => x.CallbackID == callbackID).Any())
-            {
-                NetworkInvocationResultPacket result = Results.Where(x => x.CallbackID != callbackID).FirstOrDefault();
-                return (T)NetworkConvert.Deserialize(result.Result, out int read);
-            }
-            return default;
-        }
-
-        public static void NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args)
+        public static int NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args, bool ignoreResult = false)
         {
             if (target == null)
             {
@@ -710,6 +679,11 @@ namespace SocketNetworking
                     break;
                 }
             }
+            //x.GetParameters().Select(y => y.ParameterType).ToHashSet() == arguments.ToHashSet()
+            if (method == null)
+            {
+                throw new NetworkInvocationException($"Cannot find method: '{methodName}'.", new NullReferenceException());
+            }
             NetworkInvocationPacket packet = new NetworkInvocationPacket();
             packet.TargetTypeAssmebly = Assembly.GetAssembly(targetType).GetName().FullName;
             packet.NetworkObjectTarget = targetID;
@@ -724,7 +698,7 @@ namespace SocketNetworking
             NetworkInvocations.Add(callbackID);
             packet.CallbackID = callbackID;
             sender.Send(packet);
-            return;
+            return callbackID;
         }
     }
 

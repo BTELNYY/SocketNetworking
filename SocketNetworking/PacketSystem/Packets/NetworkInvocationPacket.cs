@@ -21,6 +21,8 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public int CallbackID { get; set; } = 0;
 
+        public bool IgnoreResult { get; set; } = false;
+
         public List<SerializedData> Arguments { get; set; } = new List<SerializedData>();
 
         public override ByteWriter Serialize()
@@ -31,6 +33,7 @@ namespace SocketNetworking.PacketSystem.Packets
             writer.WriteString(MethodName);
             writer.WriteInt(NetworkObjectTarget);
             writer.WriteInt(CallbackID);
+            writer.WriteBool(IgnoreResult);
             SerializableList<SerializedData> list = new SerializableList<SerializedData>();
             list.OverwriteContained(Arguments);
             writer.Write<SerializableList<SerializedData>>(list);
@@ -45,6 +48,7 @@ namespace SocketNetworking.PacketSystem.Packets
             MethodName = reader.ReadString();
             NetworkObjectTarget = reader.ReadInt();
             CallbackID = reader.ReadInt();
+            IgnoreResult = reader.ReadBool();
             Arguments = reader.Read<SerializableList<SerializedData>>().ContainedList;
             return reader;
         }

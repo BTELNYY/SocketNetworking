@@ -15,6 +15,7 @@ using System.ComponentModel;
 using System.CodeDom;
 using System.Diagnostics.Eventing.Reader;
 using System.Xml.Linq;
+using System.Security.Cryptography;
 
 namespace SocketNetworking
 {
@@ -23,6 +24,7 @@ namespace SocketNetworking
         public static readonly Type[] SupportedTypes =
         {
             typeof(IEnumerable),
+            typeof(Enum),
 
             typeof(string),
             typeof(bool),
@@ -73,13 +75,22 @@ namespace SocketNetworking
                 sData.Data = writer.Data;
                 return sData;
             }
-            if (dataType.IsAssignableFrom(typeof(IEnumerable)))
+
+            if (dataType.GetInterfaces().Contains(typeof(IEnumerable)))
             {
                 IEnumerable<object> values = (IEnumerable<object>)data;
                 SerializableList<object> list = new SerializableList<object>(values);
                 writer.Write<SerializableList<object>>(list);
                 sData.Data = writer.Data;
                 return sData;
+            }
+
+            if (dataType.IsEnum)
+            {
+                Enum lastEnum = (Enum)data.LastEnum();
+                int value = (int)(object)lastEnum;
+                dataType = typeof(int);
+                data = Convert.ChangeType(data, typeof(int));
             }
 
             if (dataType == typeof(string))
@@ -224,6 +235,13 @@ namespace SocketNetworking
                 IPacketSerializable serializable = (IPacketSerializable)obj;
                 read = serializable.Deserialize(data.Data);
                 return serializable;
+            }
+
+            if (data.Type.IsEnum)
+            {
+                int value = reader.ReadInt();
+                read = reader.ReadBytes;
+                return Convert.ChangeType(value, data.Type);
             }
 
             if (data.Type == typeof(string))
