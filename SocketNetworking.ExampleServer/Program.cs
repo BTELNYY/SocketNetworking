@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -18,27 +19,24 @@ namespace SocketNetworking.ExampleServer
             NetworkServer.ClientType = typeof(TestClient);
             NetworkServer.StartServer();
             NetworkServer.ClientConnected += OnClientConnected;
-            NetworkClient.ClientConnectionStateChanged += NetworkClient_ClientConnectionStateChanged;
             Thread t = new Thread(SpamThread);
             t.Start();
-        }
-
-        private static void NetworkClient_ClientConnectionStateChanged(NetworkClient obj)
-        {
-            if (obj.CurrentConnectionState != ConnectionState.Connected) { return; }
-            Random r = new Random();
-            TestClient client = (TestClient)obj;
-            client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
         }
 
         private static void SpamThread()
         {
             Random r = new Random();
+            Stopwatch stopwatch = new Stopwatch();
+            //stopwatch.Start();
             while (true)
             {
-                continue;
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
+                    if(c is TestClient client)
+                    {
+                        client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
+                    }
+                    continue;
                     if (c.IsConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)
                     {
                         TestClient client2 = (TestClient)c;

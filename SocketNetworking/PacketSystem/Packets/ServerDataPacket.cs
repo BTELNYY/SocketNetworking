@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Attributes;
 using SocketNetworking.PacketSystem.TypeWrappers;
+using SocketNetworking.Misc;
 
 namespace SocketNetworking.PacketSystem.Packets
 {

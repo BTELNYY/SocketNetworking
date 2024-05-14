@@ -91,6 +91,7 @@ namespace SocketNetworking
                 int value = (int)(object)lastEnum;
                 dataType = typeof(int);
                 data = Convert.ChangeType(data, typeof(int));
+                sData.Type = data.GetType();
             }
 
             if (dataType == typeof(string))
@@ -224,6 +225,12 @@ namespace SocketNetworking
         {
             ByteReader reader = new ByteReader(data.Data);
             if (data.DataNull)
+            {
+                read = 0;
+                return null;
+            }
+
+            if(data.Type == null)
             {
                 read = 0;
                 return null;

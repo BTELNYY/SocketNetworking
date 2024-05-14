@@ -14,12 +14,13 @@ namespace SocketNetworking.ExampleSharedData
         private TestResult SomeNetworkMethod(float someFloat, int someInt)
         {
             Log.GlobalDebug($"{someFloat}, {someInt}");
-            return TestResult.Result2;
+            return TestResult.Result3;
         }
 
         public void NetworkInvokeSomeMethod(float someFloat, int someInt)
         {
-            int invokeCallback = NetworkManager.NetworkInvoke(this, this, "SomeNetworkMethod", new object[] { someFloat, someInt });
+            TestResult result = NetworkManager.NetworkInvoke<TestResult>(this, this, "SomeNetworkMethod", new object[] { someFloat, someInt });
+            Log.GlobalDebug(result.ToString());
         }
     }
 

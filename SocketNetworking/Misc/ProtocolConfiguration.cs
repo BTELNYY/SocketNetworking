@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketNetworking
+namespace SocketNetworking.Misc
 {
     public class ProtocolConfiguration : IPacketSerializable
     {
