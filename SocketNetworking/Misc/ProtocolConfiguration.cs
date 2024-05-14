@@ -54,16 +54,16 @@ namespace SocketNetworking.Misc
         public byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            writer.WriteString(_protocol);
             writer.WriteString(_version);
+            writer.WriteString(_protocol);
             return writer.Data;
         }
 
         public int Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
-            _protocol = reader.ReadString();
             _version = reader.ReadString();
+            _protocol = reader.ReadString();
             return reader.ReadBytes;
         }
     }
