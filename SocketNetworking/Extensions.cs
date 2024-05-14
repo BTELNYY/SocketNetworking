@@ -36,7 +36,7 @@ namespace SocketNetworking
         public static T[] RemoveFromStart<T>(this T[] array, int amount)
         {
             //Log.Debug("Old Size: " + array.Length);
-            if (array.Length <= amount)
+            if (array.Length < amount)
             {
                 throw new ArgumentOutOfRangeException("amount", "Amount is out of range for specified array.");
             }

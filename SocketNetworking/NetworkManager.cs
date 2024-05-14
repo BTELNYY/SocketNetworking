@@ -820,8 +820,13 @@ namespace SocketNetworking
                 return (T)result;
             }
         }
-    }
 
+        public static TResult NetworkInvoke<TResult>(object target, NetworkClient sender, Func<TResult> func)
+        {
+            return NetworkInvoke<TResult>(target, sender, func.Method.Name, new object[] { });
+        }
+    }
+        
     public struct NetworkObjectData
     {
         public Dictionary<Type, List<PacketListenerData>> Listeners;

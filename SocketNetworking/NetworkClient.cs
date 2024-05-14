@@ -17,6 +17,7 @@ using System.Security.Policy;
 using System.Collections.Concurrent;
 using System.Web;
 using SocketNetworking.Misc;
+using System.Runtime.CompilerServices;
 
 namespace SocketNetworking
 {
@@ -1158,10 +1159,22 @@ namespace SocketNetworking
             return NetworkManager.NetworkInvoke<T>(target, this, methodName, args, maxTimeMs);
         }
 
+        public T NetworkInvoke<T>(string methodName, object[] args, float maxTimeMs = 5000)
+        {
+            return NetworkManager.NetworkInvoke<T>(this, this, methodName, args, maxTimeMs);
+        }
+
         public void NetworkInvoke(object target, string methodName, object[] args)
         {
             NetworkManager.NetworkInvoke(target, this, methodName, args);
         }
+
+        public void NetworkInvoke(string methodName, object[] args)
+        {
+            NetworkManager.NetworkInvoke(this, this, methodName, args);
+        }
+
+        
     }
 
     /// <summary>

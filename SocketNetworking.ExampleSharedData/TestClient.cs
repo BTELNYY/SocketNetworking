@@ -19,7 +19,7 @@ namespace SocketNetworking.ExampleSharedData
 
         public void NetworkInvokeSomeMethod(float someFloat, int someInt)
         {
-            TestResult result = NetworkManager.NetworkInvoke<TestResult>(this, this, "SomeNetworkMethod", new object[] { someFloat, someInt });
+            TestResult result = NetworkInvoke<TestResult>(this, "SomeNetworkMethod", new object[] { someFloat, someInt });
             Log.GlobalDebug(result.ToString());
         }
     }

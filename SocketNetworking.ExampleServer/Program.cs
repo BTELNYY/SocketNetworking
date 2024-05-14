@@ -32,10 +32,6 @@ namespace SocketNetworking.ExampleServer
             //stopwatch.Start();
             while (true)
             {
-                byte[] protCnfig = NetworkServer.ServerConfiguration.Serialize();
-                ProtocolConfiguration protocolConfig = new ProtocolConfiguration();
-                protocolConfig.Deserialize(protCnfig);
-                continue;
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
                     if(c is TestClient client)

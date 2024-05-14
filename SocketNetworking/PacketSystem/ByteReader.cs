@@ -182,14 +182,9 @@ namespace SocketNetworking.PacketSystem
         {
             int lenghtOfString = ReadInt();
             int expectedBytes = _workingSetData.Length - lenghtOfString;
-            if(lenghtOfString < _workingSetData.Length)
-            {
-                Log.GlobalError("Failed to parse string, length marker is corrupt!");
-                return string.Empty;
-            }
             byte[] stringArray = _workingSetData.Take(lenghtOfString).ToArray();
             string result = Encoding.UTF8.GetString(stringArray, 0, stringArray.Length);
-            Remove(lenghtOfString);
+            Remove(stringArray.Length);
             if(_workingSetData.Length != expectedBytes)
             {
                 throw new InvalidOperationException("StringReader stole more bytes then it should have!");
