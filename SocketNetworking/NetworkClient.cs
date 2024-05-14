@@ -633,7 +633,20 @@ namespace SocketNetworking
                 case PacketType.NetworkInvocation:
                     NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
                     networkInvocationPacket.Deserialize(data);
-                    NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                    try
+                    {
+                        NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                    }
+                    catch (Exception ex)
+                    {
+                        NetworkInvocationResultPacket errorPacket = new NetworkInvocationResultPacket();
+                        errorPacket.Success = false;
+                        errorPacket.ErrorMessage = ex.Message;
+                        errorPacket.Result = SerializedData.NullData;
+                        errorPacket.CallbackID = networkInvocationPacket.CallbackID;
+                        errorPacket.IgnoreResult = false;
+                        Send(errorPacket);
+                    }
                     break;
                 case PacketType.NetworkInvocationResult:
                     NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
@@ -741,12 +754,26 @@ namespace SocketNetworking
                 case PacketType.NetworkInvocation:
                     NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
                     networkInvocationPacket.Deserialize(data);
-                    NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                    try
+                    {
+                        NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                    }
+                    catch (Exception ex)
+                    {
+                        NetworkInvocationResultPacket errorPacket = new NetworkInvocationResultPacket();
+                        errorPacket.Success = false;
+                        errorPacket.ErrorMessage = ex.Message;
+                        errorPacket.Result = SerializedData.NullData;
+                        errorPacket.CallbackID = networkInvocationPacket.CallbackID;
+                        errorPacket.IgnoreResult = false;
+                        Send(errorPacket);
+                    }
                     break;
                 case PacketType.NetworkInvocationResult:
                     NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
                     NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
+
                     break;
                 default:
                     Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
@@ -1123,6 +1150,17 @@ namespace SocketNetworking
             {
                 Clients.Remove(this);
             }
+        }
+
+
+        public T NetworkInvoke<T>(object target, string methodName, object[] args, float maxTimeMs = 5000)
+        {
+            return NetworkManager.NetworkInvoke<T>(target, this, methodName, args, maxTimeMs);
+        }
+
+        public void NetworkInvoke(object target, string methodName, object[] args)
+        {
+            NetworkManager.NetworkInvoke(target, this, methodName, args);
         }
     }
 

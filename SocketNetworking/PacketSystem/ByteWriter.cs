@@ -70,7 +70,8 @@ namespace SocketNetworking.PacketSystem
 
         public void WriteInt(int data)
         {
-            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
+            int network = IPAddress.HostToNetworkOrder(data);
+            byte[] result = BitConverter.GetBytes(network);
             _workingSetData = _workingSetData.Concat(result).ToArray();
         }
 
@@ -113,7 +114,12 @@ namespace SocketNetworking.PacketSystem
         public void WriteString(string data)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(data);
+            int curLength = _workingSetData.Length;
             WriteInt(bytes.Length);
+            if(curLength + 4 > _workingSetData.Length)
+            {
+                Log.GlobalWarning("WriteInt failed!");
+            }
             _workingSetData = _workingSetData.Concat(bytes).ToArray();
         }
 

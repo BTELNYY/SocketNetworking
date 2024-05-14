@@ -47,9 +47,7 @@ namespace SocketNetworking.Misc
 
         public int GetLength()
         {
-            int count = sizeof(int) * 2;
-            count += _protocol.SerializedSize();
-            count += _version.SerializedSize();
+            int count = Serialize().Length;
             return count;
         }
 

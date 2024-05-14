@@ -37,6 +37,7 @@ namespace SocketNetworking.PacketSystem
                 return _workingSetData.Length == 0;
             } 
         }
+
         private byte[] _workingSetData = new byte[] { };
 
         /// <summary>
@@ -49,7 +50,6 @@ namespace SocketNetworking.PacketSystem
                 return RawData.Length - _workingSetData.Length;
             }
         }
-
 
         public ByteReader(byte[] data)
         {
@@ -76,13 +76,13 @@ namespace SocketNetworking.PacketSystem
 
         public void Remove(int length)
         {
-            _workingSetData.RemoveFromStart(length);
+            _workingSetData = _workingSetData.RemoveFromStart(length);
         }
 
         public byte[] Read(int length)
         {
             byte[] data = _workingSetData.Take(length).ToArray();
-            _workingSetData = _workingSetData.RemoveFromStart(length);
+            Remove(length);
             return data;
         }
 
@@ -96,14 +96,14 @@ namespace SocketNetworking.PacketSystem
         {
             IPacketSerializable serializable = (IPacketSerializable)Activator.CreateInstance(typeof(T));
             int bytesUsed = serializable.Deserialize(_workingSetData);
-            _workingSetData = _workingSetData.RemoveFromStart(bytesUsed);
+            Remove(bytesUsed);
             return (T)serializable;
         }
 
         public byte ReadByte()
         {
             byte result = _workingSetData[0];
-            _workingSetData = _workingSetData.RemoveFromStart(1);
+            Remove(1);
             return result;
         }
 
@@ -117,7 +117,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(ulong);
             ulong result = BitConverter.ToUInt64(_workingSetData, 0);
-            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
+            Remove(sizeToRemove);
             return (ulong)IPAddress.NetworkToHostOrder((long)result);
         }
 
@@ -125,7 +125,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(uint);
             uint result = BitConverter.ToUInt32(_workingSetData, 0);
-            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
+            Remove(sizeToRemove);
             return (uint)IPAddress.NetworkToHostOrder((int)result);
         }
 
@@ -133,7 +133,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(ushort);
             ushort result = BitConverter.ToUInt16(_workingSetData, 0);
-            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
+            Remove(sizeToRemove);
             return (ushort)IPAddress.NetworkToHostOrder((short)result);
         }
 
@@ -141,7 +141,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(long);
             long result = BitConverter.ToInt64(_workingSetData, 0);
-            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
+            Remove(sizeToRemove);
             return IPAddress.NetworkToHostOrder(result);
         }
 
@@ -149,15 +149,16 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(int);
             int result = BitConverter.ToInt32(_workingSetData, 0);
-            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
-            return IPAddress.NetworkToHostOrder(result);
+            Remove(sizeToRemove);
+            int networkResult = IPAddress.NetworkToHostOrder(result);
+            return networkResult;
         }
 
         public short ReadShort()
         {
             int sizeToRemove = sizeof(short);
             short result = BitConverter.ToInt16(_workingSetData, 0);
-            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
+            Remove(sizeToRemove);
             return IPAddress.NetworkToHostOrder(result);
         }
 
@@ -165,7 +166,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(float);
             float result = BitConverter.ToSingle(_workingSetData, 0);
-            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
+            Remove(sizeToRemove);
             return result;
         }
 
@@ -173,15 +174,26 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(double);
             double result = BitConverter.ToDouble(_workingSetData, 0);
-            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
+            Remove(sizeToRemove);
             return result;
         }
 
         public string ReadString()
         {
             int lenghtOfString = ReadInt();
-            string result = Encoding.UTF8.GetString(_workingSetData, 0, lenghtOfString);
-            _workingSetData = _workingSetData.RemoveFromStart(lenghtOfString);
+            int expectedBytes = _workingSetData.Length - lenghtOfString;
+            if(lenghtOfString < _workingSetData.Length)
+            {
+                Log.GlobalError("Failed to parse string, length marker is corrupt!");
+                return string.Empty;
+            }
+            byte[] stringArray = _workingSetData.Take(lenghtOfString).ToArray();
+            string result = Encoding.UTF8.GetString(stringArray, 0, stringArray.Length);
+            Remove(lenghtOfString);
+            if(_workingSetData.Length != expectedBytes)
+            {
+                throw new InvalidOperationException("StringReader stole more bytes then it should have!");
+            }
             return result;
         }
 
@@ -189,7 +201,7 @@ namespace SocketNetworking.PacketSystem
         {
             int sizeToRemove = sizeof(bool);
             bool result = BitConverter.ToBoolean(_workingSetData, 0);
-            _workingSetData = _workingSetData.RemoveFromStart(sizeToRemove);
+            Remove(sizeToRemove);
             return result;
         }
     }

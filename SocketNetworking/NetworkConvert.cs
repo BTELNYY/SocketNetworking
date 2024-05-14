@@ -440,6 +440,10 @@ namespace SocketNetworking
         public byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
+            if(TypeFullName == null)
+            {
+                TypeFullName = typeof(void).FullName;
+            }
             writer.WriteString(TypeFullName);
             if(Data == null)
             {
@@ -452,6 +456,18 @@ namespace SocketNetworking
             }
             writer.WriteByteArray(Data);
             return writer.Data;
+        }
+
+        public static SerializedData NullData
+        {
+            get
+            {
+                SerializedData data = new SerializedData();
+                data.Type = typeof(void);
+                data.DataNull = true;
+                data.Data = null;
+                return data;
+            }
         }
     }
 }

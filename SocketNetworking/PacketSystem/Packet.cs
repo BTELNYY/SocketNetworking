@@ -89,6 +89,7 @@ namespace SocketNetworking.PacketSystem
         {
             ByteReader reader = new ByteReader(data);
             //Very cursed, must read first in so that the desil doesn't fail next line.
+            int expectedLength = reader.DataLength - 16;
             Size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadInt();
             if(type != Type)
@@ -97,6 +98,10 @@ namespace SocketNetworking.PacketSystem
             }
             NetowrkIDTarget = reader.ReadInt();
             CustomPacketID = reader.ReadInt();
+            if(expectedLength != reader.DataLength)
+            {
+                throw new InvalidNetworkDataException("Packet Deserializer stole more bytes then it should!");
+            }
             return reader;
         }
     }

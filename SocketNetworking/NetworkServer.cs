@@ -199,7 +199,6 @@ namespace SocketNetworking
             }
             else
             {
-                //cursed...
                 NetworkClient cursedClient = (NetworkClient)Convert.ChangeType(client, ClientType);
                 _clients.Add(clientId, cursedClient);
             }
@@ -209,7 +208,7 @@ namespace SocketNetworking
         {
             if (_clients.ContainsKey(clientId))
             {
-                ClientDisconnected.Invoke(clientId);
+                ClientDisconnected?.Invoke(clientId);
                 _clients.Remove(clientId);
             }
             else
@@ -312,6 +311,10 @@ namespace SocketNetworking
         /// </param>
         public static void SendToAll(Packet packet, bool toReadyOnly = false)
         {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
             if (toReadyOnly)
             {
                 SendToReady(packet);
@@ -337,6 +340,10 @@ namespace SocketNetworking
         /// </param>
         public static void SendToAll(Packet packet, INetworkObject target, bool toReadyOnly = false)
         {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
             if (toReadyOnly)
             {
                 SendToReady(packet);
@@ -357,6 +364,10 @@ namespace SocketNetworking
         /// </param>
         public static void DisconnectNotReady(string reason = "Failed to ready in time.")
         {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
             List<NetworkClient> readyClients = _clients.Values.Where(x => !x.Ready).ToList();
             foreach (NetworkClient client in readyClients)
             {
@@ -370,8 +381,12 @@ namespace SocketNetworking
         /// <param name="packet">
         /// The <see cref="Packet"/> to send.
         /// </param>
-        public static void SendToReady(Packet packet)
+        static void SendToReady(Packet packet)
         {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
             List<NetworkClient> readyClients = _clients.Values.Where(x => x.Ready).ToList();
             foreach(NetworkClient client in readyClients)
             {
@@ -388,12 +403,33 @@ namespace SocketNetworking
         /// <param name="target">
         /// The <see cref="INetworkObject"/> which is the target.
         /// </param>
-        public static void SendToReady(Packet packet, INetworkObject target)
+        static void SendToReady(Packet packet, INetworkObject target)
         {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
             List<NetworkClient> readyClients = _clients.Values.Where(x => x.Ready).ToList();
             foreach (NetworkClient client in readyClients)
             {
                 client.Send(packet, target);
+            }
+        }
+
+        public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, bool readyOnly = false)
+        {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
+            List<NetworkClient> clients = _clients.Values.ToList();
+            if(readyOnly)
+            {
+                clients = clients.Where(x => x.Ready).ToList();
+            }
+            foreach (NetworkClient client in clients)
+            {
+                client.NetworkInvoke(obj, methodName, args);
             }
         }
     }

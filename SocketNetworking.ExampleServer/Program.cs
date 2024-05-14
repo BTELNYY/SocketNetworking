@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking;
 using SocketNetworking.ExampleSharedData;
+using SocketNetworking.Misc;
 
 namespace SocketNetworking.ExampleServer
 {
@@ -17,6 +18,7 @@ namespace SocketNetworking.ExampleServer
             Log.OnLog += HandleNetworkLog;
             NetworkManager.ImportCustomPackets(PacketUtils.GetAllPackets());
             NetworkServer.ClientType = typeof(TestClient);
+            NetworkServer.HandshakeTime = 10000f;
             NetworkServer.StartServer();
             NetworkServer.ClientConnected += OnClientConnected;
             Thread t = new Thread(SpamThread);
@@ -30,6 +32,10 @@ namespace SocketNetworking.ExampleServer
             //stopwatch.Start();
             while (true)
             {
+                byte[] protCnfig = NetworkServer.ServerConfiguration.Serialize();
+                ProtocolConfiguration protocolConfig = new ProtocolConfiguration();
+                protocolConfig.Deserialize(protCnfig);
+                continue;
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
                     if(c is TestClient client)

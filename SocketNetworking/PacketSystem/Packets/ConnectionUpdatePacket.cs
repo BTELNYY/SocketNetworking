@@ -18,16 +18,16 @@ namespace SocketNetworking.PacketSystem.Packets
         public override ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = base.Deserialize(data);
-            State = (ConnectionState)reader.ReadInt();
             Reason = reader.ReadString();
+            State = (ConnectionState)reader.ReadInt();
             return reader;
         }
 
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
-            writer.WriteInt((int)State);
             writer.WriteString(Reason);
+            writer.WriteInt((int)State);
             return writer;
         }
     }

@@ -10,7 +10,7 @@ namespace SocketNetworking.ExampleSharedData
 {
     public class TestClient : NetworkClient
     {
-        [NetworkInvocable]
+        [NetworkInvocable(PacketDirection.Server)]
         private TestResult SomeNetworkMethod(float someFloat, int someInt)
         {
             Log.GlobalDebug($"{someFloat}, {someInt}");

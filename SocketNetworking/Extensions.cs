@@ -16,7 +16,7 @@ namespace SocketNetworking
     public static class Extensions
     {
         /// <summary>
-        /// Removes a specific amount of elements from the start of the array. Note that the original array is alos modified.
+        /// Removes a specific amount of elements from the start of the array.
         /// </summary>
         /// <typeparam name="T">
         /// Any Array.
@@ -36,7 +36,7 @@ namespace SocketNetworking
         public static T[] RemoveFromStart<T>(this T[] array, int amount)
         {
             //Log.Debug("Old Size: " + array.Length);
-            if (array.Length < amount)
+            if (array.Length <= amount)
             {
                 throw new ArgumentOutOfRangeException("amount", "Amount is out of range for specified array.");
             }
