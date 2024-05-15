@@ -650,7 +650,7 @@ namespace SocketNetworking
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.SecureMode)
+            if (invocable.SecureMode && reciever.CurrnetClientLocation != ClientLocation.Local)
             {
                 if (target is NetworkClient client && client.ClientID != reciever.ClientID)
                 {
@@ -730,7 +730,7 @@ namespace SocketNetworking
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.SecureMode)
+            if (invocable.SecureMode && WhereAmI != ClientLocation.Remote)
             {
                 if (target is NetworkClient client && client.ClientID != sender.ClientID)
                 {
@@ -815,7 +815,7 @@ namespace SocketNetworking
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.SecureMode)
+            if (invocable.SecureMode && WhereAmI != ClientLocation.Remote)
             {
                 if (target is NetworkClient client && client.ClientID != sender.ClientID)
                 {

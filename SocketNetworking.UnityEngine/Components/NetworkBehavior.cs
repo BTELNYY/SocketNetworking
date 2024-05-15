@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using SocketNetworking.Attributes;
 
 namespace SocketNetworking.UnityEngine.Components
 {
@@ -37,6 +38,34 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         public bool IsEnabled => base.enabled;
+
+        public int OwnerClientID
+        {
+            get
+            {
+                return _ownerClientID;
+            }
+            set
+            {
+                if(NetworkManager.WhereAmI != ClientLocation.Remote)
+                {
+                    return;
+                }
+                NetworkServer.NetworkInvokeOnAll(this, nameof(UpdateOwnerClientIDRPC), new object[] { value });
+            }
+        }
+
+        private int _ownerClientID = -1;
+
+        [NetworkInvocable(PacketDirection.Server, false)]
+        private void UpdateOwnerClientIDRPC(int id)
+        {
+            _ownerClientID = id;
+        }
+
+        public bool IsServerOwned => _isServerOwned;
+
+        private bool _isServerOwned = false;
 
         public virtual void OnAdded(INetworkObject addedObject)
         {
