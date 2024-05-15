@@ -25,6 +25,22 @@ namespace SocketNetworking.UnityEngine.Components
 
         private List<NetworkObject> NetworkObjects = new List<NetworkObject>();
 
+        public void SyncOwnershipMode()
+        {
+            foreach (NetworkObject obj in NetworkObjects)
+            {
+                obj.UpdateOwnershipMode(OwnershipMode);
+            }
+        }
+
+        public void SyncOwnerID()
+        {
+            foreach(NetworkObject obj in NetworkObjects)
+            {
+                obj.UpdateOwnerClientId(OwnerClientID);
+            }
+        }
+
         public int RegisteredObjectCount
         {
             get

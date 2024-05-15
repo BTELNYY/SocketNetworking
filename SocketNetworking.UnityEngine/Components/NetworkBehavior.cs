@@ -13,6 +13,14 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkBehavior : MonoBehaviour, INetworkObject
     {
+        public virtual OwnershipMode FallBackIfOwnerDisconnects
+        {
+            get
+            {
+                return OwnershipMode.Public;
+            }
+        }
+
         public virtual int NetworkID => _netId;
 
         private int _netId = -1;
@@ -51,21 +59,58 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return;
                 }
-                NetworkServer.NetworkInvokeOnAll(this, nameof(UpdateOwnerClientIDRPC), new object[] { value });
+                if (OwnershipMode == OwnershipMode.Server || OwnershipMode == OwnershipMode.Public)
+                {
+                    if(value != -1)
+                    {
+                        OwnershipMode = OwnershipMode.Client;
+                    }
+                }
+                NetworkServer.NetworkInvokeOnAll(this, nameof(UpdateOwnerClientIDRpc), new object[] { value });
             }
         }
 
         private int _ownerClientID = -1;
 
-        [NetworkInvocable(PacketDirection.Server, false)]
-        private void UpdateOwnerClientIDRPC(int id)
+        [NetworkInvocable(PacketDirection.Server)]
+        private void UpdateOwnerClientIDRpc(int id)
         {
             _ownerClientID = id;
         }
 
-        public bool IsServerOwned => _isServerOwned;
+        internal void UpdateOwnerClientId(int id)
+        {
+            _ownerClientID = id;
+        }
 
-        private bool _isServerOwned = false;
+        public OwnershipMode OwnershipMode
+        {
+            get
+            {
+                return _ownershipMode;
+            }
+            set
+            {
+                if (NetworkManager.WhereAmI != ClientLocation.Remote)
+                {
+                    return;
+                }
+                NetworkServer.NetworkInvokeOnAll(this, nameof(UpdateOwnershipModeRpc), new object[] { value });
+            }
+        }
+
+        [NetworkInvocable(PacketDirection.Server)]
+        private void UpdateOwnershipModeRpc(OwnershipMode mode)
+        {
+            _ownershipMode = mode;
+        }
+
+        private OwnershipMode _ownershipMode = OwnershipMode.Server;
+
+        internal void UpdateOwnershipMode(OwnershipMode mode)
+        {
+            _ownershipMode = mode;
+        }
 
         public virtual void OnAdded(INetworkObject addedObject)
         {
@@ -79,7 +124,11 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnDisconnected(NetworkClient client)
         {
-            
+            if(NetworkManager.WhereAmI != ClientLocation.Remote) { return; }
+            if(client.ClientID == OwnerClientID)
+            {
+                OwnershipMode = FallBackIfOwnerDisconnects;
+            }
         }
 
         public virtual void OnReady(NetworkClient client, bool isReady)

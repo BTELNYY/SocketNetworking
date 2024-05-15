@@ -78,6 +78,10 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
+                if(this is NetworkIdentity)
+                {
+                    return;
+                }
                 if(value == null)
                 {
                     Logger.Error("Can't set null NetworkIdentity!");

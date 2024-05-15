@@ -656,9 +656,20 @@ namespace SocketNetworking
                 {
                     throw new SecurityException("Attempted to invoke network method which the client does not own.");
                 }
-                if (target is INetworkObject owned && owned.OwnerClientID != reciever.ClientID)
+                if (target is INetworkObject owned)
                 {
-                    throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    if(owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != reciever.ClientID)
+                    {
+                        throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    }
+                    else if(owned.OwnershipMode == OwnershipMode.Server && reciever.CurrnetClientLocation != ClientLocation.Local)
+                    {
+                        throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    }
+                    else if(owned.OwnershipMode == OwnershipMode.Public)
+                    {
+                        //do nothing, everyone owns this object.
+                    }
                 }
                 if (!(target is INetworkObject) && !(target is NetworkClient))
                 {
@@ -736,11 +747,22 @@ namespace SocketNetworking
                 {
                     throw new SecurityException("Attempted to invoke network method which the client does not own.");
                 }
-                if (target is INetworkObject owned && owned.OwnerClientID != sender.ClientID)
+                if (target is INetworkObject owned)
                 {
-                    throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != sender.ClientID)
+                    {
+                        throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    }
+                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrnetClientLocation != ClientLocation.Remote)
+                    {
+                        throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    }
+                    else if (owned.OwnershipMode == OwnershipMode.Public)
+                    {
+                        //do nothing, everyone owns this object.
+                    }
                 }
-                if(!(target is INetworkObject) && !(target is NetworkClient))
+                if (!(target is INetworkObject) && !(target is NetworkClient))
                 {
                     if (!method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
                     {
@@ -821,9 +843,20 @@ namespace SocketNetworking
                 {
                     throw new SecurityException("Attempted to invoke network method which the client does not own.");
                 }
-                if (target is INetworkObject owned && owned.OwnerClientID != sender.ClientID)
+                if (target is INetworkObject owned)
                 {
-                    throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != sender.ClientID)
+                    {
+                        throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    }
+                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrnetClientLocation != ClientLocation.Remote)
+                    {
+                        throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    }
+                    else if (owned.OwnershipMode == OwnershipMode.Public)
+                    {
+                        //do nothing, everyone owns this object.
+                    }
                 }
                 if (!(target is INetworkObject) && !(target is NetworkClient))
                 {

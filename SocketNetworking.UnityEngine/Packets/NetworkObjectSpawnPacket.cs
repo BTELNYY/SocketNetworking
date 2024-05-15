@@ -17,11 +17,17 @@ namespace SocketNetworking.UnityEngine.Packets
 
         public int NewNetworkID { get; set; } = 0;
 
+        public int OwnerID { get; set; } = -1;
+
+        public OwnershipMode OwnershipMode { get; set; } = OwnershipMode.Server;
+
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
             writer.WriteInt(PrefabID);
             writer.WriteInt(NewNetworkID);
+            writer.WriteInt(OwnerID);
+            writer.WriteByte((byte)OwnershipMode);
             return writer;
         }
 
@@ -30,6 +36,8 @@ namespace SocketNetworking.UnityEngine.Packets
             ByteReader reader = base.Deserialize(data);
             PrefabID = reader.ReadInt();
             NewNetworkID = reader.ReadInt();
+            OwnerID = reader.ReadInt();
+            OwnershipMode = (OwnershipMode)reader.ReadByte();
             return reader;
         }
     }

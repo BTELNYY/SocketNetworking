@@ -1,4 +1,5 @@
 ﻿using SocketNetworking.Attributes;
+using SocketNetworking.PacketSystem;
 using SocketNetworking.UnityEngine.Components;
 using SocketNetworking.UnityEngine.Packets;
 using System;
@@ -39,6 +40,10 @@ namespace SocketNetworking.UnityEngine
                 networkIdentity = clone.AddComponent<NetworkIdentity>();
             }
             networkIdentity.SetNetworkID(packet.NewNetworkID);
+            networkIdentity.UpdateOwnershipMode(packet.OwnershipMode);
+            networkIdentity.UpdateOwnerClientId(packet.OwnerID);
+            networkIdentity.SyncOwnerID();
+            networkIdentity.SyncOwnershipMode();
             NetworkObjectSpawnedPacket returnPacket = new NetworkObjectSpawnedPacket();
             returnPacket.SpawnedPrefabID = packet.PrefabID;
             returnPacket.SpawnedNetworkID = packet.NewNetworkID;

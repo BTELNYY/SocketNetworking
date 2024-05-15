@@ -18,9 +18,9 @@ namespace SocketNetworking.PacketSystem
         int OwnerClientID { get; set; }
 
         /// <summary>
-        /// If true, the <see cref="OwnerClientID"/> is ignored, as the server owns the object. Clients may not execute any commands or any remote functions on the object.
+        /// Determines the objects ownership mode. <see cref="OwnershipMode.Client"/> = the <see cref="OwnerClientID"/> owns the object. <see cref="OwnershipMode.Server"/> = the Server owns the object. <see cref="OwnershipMode.Public"/> = Everybody owns the object.
         /// </summary>
-        bool IsServerOwned { get; }
+        OwnershipMode OwnershipMode { get; set; }
 
         /// <summary>
         /// The network ID of the object. This should be the same on the client and server.
@@ -54,5 +54,12 @@ namespace SocketNetworking.PacketSystem
         /// </summary>
         /// <param name="client"></param>
         void OnDisconnected(NetworkClient client);
+    }
+
+    public enum OwnershipMode
+    {
+        Client,
+        Server,
+        Public
     }
 }
