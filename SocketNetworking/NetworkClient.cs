@@ -39,6 +39,12 @@ namespace SocketNetworking
         public NetworkClient()
         {
             ClientCreated?.Invoke(this);
+            Init();
+        }
+
+        public virtual void Init()
+        {
+
         }
 
 
@@ -341,8 +347,8 @@ namespace SocketNetworking
                 };
                 Send(updatePacket);
                 _connectionState = value;
-                ClientConnectionStateChanged?.Invoke(this);
                 ConnectionStateUpdated?.Invoke(value);
+                ClientConnectionStateChanged?.Invoke(this);
             }
         }
 
@@ -456,24 +462,6 @@ namespace SocketNetworking
             ClientConnected += OnLocalClientConnected;
         }
 
-        void OnLocalClientConnected()
-        {
-            if(CurrnetClientLocation != ClientLocation.Local)
-            {
-                return;
-            }
-            ClientDataPacket dataPacket = new ClientDataPacket(_clientPassword);
-            Send(dataPacket);
-        }
-
-        void OnRemoteClientConnected()
-        {
-            if(CurrnetClientLocation != ClientLocation.Remote)
-            {
-                return;
-            }
-            CurrentConnectionState = ConnectionState.Handshake;
-        }
 
         /// <summary>
         /// Attempts to connect an IP and port. Note that if this operation fails, nothing is started, meaning you can call this method again without extra cleanup. Calling this method however, instantly drops the current socket. Do NOT call this if your client is already connected. Can only be run on the Local client.
@@ -518,6 +506,194 @@ namespace SocketNetworking
             _clientPassword = password;
             StartClient();
             return true;
+        }
+
+        /// <summary>
+        /// Sends the next <see cref="Packet"/> from the send queue. If <see cref="ManualPacketSend"/> is false, this method does nothing.
+        /// </summary>
+        public void SendNextPacket()
+        {
+            if (!ManualPacketSend)
+            {
+                return;
+            }
+            SendNextPacketInternal();
+        }
+
+
+        /// <summary>
+        /// Sends any <see cref="Packet"/> down the network stream to whatever is connected on the other side. Note that this method doesn't check who it is sending it to, instead sending it to the current stream.
+        /// </summary>
+        /// <param name="packet">
+        /// The <see cref="Packet"/> to send down the stream.
+        /// </param>
+        public void Send(Packet packet)
+        {
+            if (!IsConnected)
+            {
+                Log.GlobalWarning("Can't Send packet, not connected!");
+                ConnectionError?.Invoke(new NetworkErrorData("Tried to send packets while not connected.", IsConnected));
+                return;
+            }
+            else
+            {
+                _toSendPackets.Enqueue(packet);
+                if (ManualPacketSend)
+                {
+                    PacketReadyToSend?.Invoke(packet);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Overwrites the NetworkTarget of the given packet to the ID from <see cref="INetworkObject"/>
+        /// </summary>
+        /// <param name="packet">
+        /// Packet to overwrite
+        /// </param>
+        /// <param name="sender">
+        /// ID to write
+        /// </param>
+        public void Send(Packet packet, INetworkObject sender)
+        {
+            packet.NetowrkIDTarget = sender.NetworkID;
+            Send(packet);
+        }
+
+        /// <summary>
+        /// Send a disconnect message to the other party and kill local client
+        /// </summary>
+        /// <param name="message">
+        /// A <see cref="string"/> which to send as a message to the other party.
+        /// </param>
+        public void Disconnect(string message)
+        {
+            ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
+            {
+                State = ConnectionState.Disconnected,
+                Reason = message
+            };
+            Send(connectionUpdatePacket);
+            NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
+            ConnectionError?.Invoke(errorData);
+            ClientDisconnected?.Invoke();
+            if (CurrnetClientLocation == ClientLocation.Remote)
+            {
+                Log.GlobalInfo($"Disconnecting Client {ClientID} for " + message);
+                StopClient();
+            }
+            if (CurrnetClientLocation == ClientLocation.Local)
+            {
+                Log.GlobalInfo("Disconnecting from server. Reason: " + message);
+                StopClient();
+            }
+        }
+
+        /// <summary>
+        /// Disconnects the connection with the reason "Disconnected"
+        /// </summary>
+        public void Disconnect()
+        {
+            Disconnect("Disconnected");
+        }
+
+        /// <summary>
+        /// Stops the client, removing the Thread and closing the socket
+        /// </summary>
+        public void StopClient()
+        {
+            NetworkManager.SendDisconnectedPulse(this);
+            _connectionState = ConnectionState.Disconnected;
+            if (CurrnetClientLocation == ClientLocation.Remote)
+            {
+                NetworkServer.RemoveClient(ClientID);
+            }
+            _shuttingDown = true;
+            _packetReaderThread.Abort();
+            _packetSenderThread.Abort();
+            _packetReaderThread = null;
+            _packetSenderThread = null;
+            _tcpClient = null;
+            if (Clients.Contains(this))
+            {
+                Clients.Remove(this);
+            }
+        }
+
+        public T NetworkInvoke<T>(object target, string methodName, object[] args, float maxTimeMs = 5000)
+        {
+            return NetworkManager.NetworkInvoke<T>(target, this, methodName, args, maxTimeMs);
+        }
+
+        public void NetworkInvoke(object target, string methodName, object[] args)
+        {
+            NetworkManager.NetworkInvoke(target, this, methodName, args);
+        }
+
+        /// <summary>
+        /// Returns the amount of <see cref="Packet"/>s left to read, this is always zero if <see cref="NetworkClient.ManualPacketHandle"/> is false
+        /// </summary>
+        public int PacketsLeftToRead
+        {
+            get
+            {
+                return _toReadPackets.Count;
+            }
+        }
+
+        /// <summary>
+        /// Returns the amount of Packets left to send.
+        /// </summary>
+        public int PacketsLeftToSend
+        {
+            get
+            {
+                return _toSendPackets.Count;
+            }
+        }
+
+        /// <summary>
+        /// Handles the next <see cref="Packet"/> from the read queue. This method does nothing if <see cref="ManualPacketHandle"/> is false
+        /// </summary>
+        public void HandleNextPacket()
+        {
+            if (!ManualPacketHandle)
+            {
+                return;
+            }
+            if (_toReadPackets.TryDequeue(out ReadPacketInfo result))
+            {
+                HandlePacket(result.Header, result.Data);
+            }
+        }
+
+        public T NetworkInvoke<T>(string methodName, object[] args, float maxTimeMs = 5000)
+        {
+            return NetworkManager.NetworkInvoke<T>(this, this, methodName, args, maxTimeMs);
+        }
+        public void NetworkInvoke(string methodName, object[] args)
+        {
+            NetworkManager.NetworkInvoke(this, this, methodName, args);
+        }
+
+
+        void OnLocalClientConnected()
+        {
+            if (CurrnetClientLocation != ClientLocation.Local)
+            {
+                return;
+            }
+            ClientDataPacket dataPacket = new ClientDataPacket(_clientPassword);
+            Send(dataPacket);
+        }
+
+        void OnRemoteClientConnected()
+        {
+            if (CurrnetClientLocation != ClientLocation.Remote)
+            {
+                return;
+            }
+            CurrentConnectionState = ConnectionState.Handshake;
         }
 
         void StartClient()
@@ -840,18 +1016,6 @@ namespace SocketNetworking
             }
         }
 
-        /// <summary>
-        /// Sends the next <see cref="Packet"/> from the send queue. If <see cref="ManualPacketSend"/> is false, this method does nothing.
-        /// </summary>
-        public void SendNextPacket()
-        {
-            if(!ManualPacketSend)
-            {
-                return;
-            }
-            SendNextPacketInternal();
-        }
-
         void PacketReaderThreadMethod()
         {
             Log.GlobalInfo($"Client thread started, ID {ClientID}");
@@ -999,49 +1163,6 @@ namespace SocketNetworking
 
         ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
 
-        /// <summary>
-        /// Returns the amount of <see cref="Packet"/>s left to read, this is always zero if <see cref="NetworkClient.ManualPacketHandle"/> is false
-        /// </summary>
-        public int PacketsLeftToRead
-        {
-            get
-            {
-                return _toReadPackets.Count;
-            }
-        }
-
-        /// <summary>
-        /// Returns the amount of Packets left to send.
-        /// </summary>
-        public int PacketsLeftToSend
-        {
-            get
-            {
-                return _toSendPackets.Count;
-            }
-        }
-
-        struct ReadPacketInfo
-        {
-            public PacketHeader Header;
-            public byte[] Data;
-        }
-
-        /// <summary>
-        /// Handles the next <see cref="Packet"/> from the read queue. This method does nothing if <see cref="ManualPacketHandle"/> is false
-        /// </summary>
-        public void HandleNextPacket()
-        {
-            if (!ManualPacketHandle)
-            {
-                return;
-            }
-            if(_toReadPackets.TryDequeue(out ReadPacketInfo result))
-            {
-                HandlePacket(result.Header, result.Data);
-            }
-        }
-
         void HandlePacket(PacketHeader header, byte[] fullPacket)
         {
             if (CurrnetClientLocation == ClientLocation.Remote)
@@ -1054,127 +1175,11 @@ namespace SocketNetworking
             }
         }
 
-        /// <summary>
-        /// Sends any <see cref="Packet"/> down the network stream to whatever is connected on the other side. Note that this method doesn't check who it is sending it to, instead sending it to the current stream.
-        /// </summary>
-        /// <param name="packet">
-        /// The <see cref="Packet"/> to send down the stream.
-        /// </param>
-        public void Send(Packet packet)
+        struct ReadPacketInfo
         {
-            if (!IsConnected)
-            {
-                Log.GlobalWarning("Can't Send packet, not connected!");
-                ConnectionError?.Invoke(new NetworkErrorData("Tried to send packets while not connected.", IsConnected));
-                return;
-            }
-            else
-            {
-                _toSendPackets.Enqueue(packet);
-                if (ManualPacketSend)
-                {
-                    PacketReadyToSend?.Invoke(packet);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Overwrites the NetworkTarget of the given packet to the ID from <see cref="INetworkObject"/>
-        /// </summary>
-        /// <param name="packet">
-        /// Packet to overwrite
-        /// </param>
-        /// <param name="sender">
-        /// ID to write
-        /// </param>
-        public void Send(Packet packet, INetworkObject sender)
-        {
-            packet.NetowrkIDTarget = sender.NetworkID;
-            Send(packet);
-        }
-
-        /// <summary>
-        /// Send a disconnect message to the other party and kill local client
-        /// </summary>
-        /// <param name="message">
-        /// A <see cref="string"/> which to send as a message to the other party.
-        /// </param>
-        public void Disconnect(string message)
-        {
-            ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
-            {
-                State = ConnectionState.Disconnected,
-                Reason = message
-            };
-            Send(connectionUpdatePacket);
-            NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
-            ConnectionError?.Invoke(errorData);
-            ClientDisconnected?.Invoke();
-            if (CurrnetClientLocation == ClientLocation.Remote)
-            {
-                Log.GlobalInfo($"Disconnecting Client {ClientID} for " + message);
-                StopClient();
-            }
-            if(CurrnetClientLocation == ClientLocation.Local)
-            {
-                Log.GlobalInfo("Disconnecting from server. Reason: " + message);
-                StopClient();
-            }
-        }
-
-        /// <summary>
-        /// Disconnects the connection with the reason "Disconnected"
-        /// </summary>
-        public void Disconnect()
-        {
-            Disconnect("Disconnected");
-        }
-
-        /// <summary>
-        /// Stops the client, removing the Thread and closing the socket
-        /// </summary>
-        public void StopClient()
-        {
-            NetworkManager.SendDisconnectedPulse(this);
-            _connectionState = ConnectionState.Disconnected;
-            if(CurrnetClientLocation == ClientLocation.Remote)
-            {
-                NetworkServer.RemoveClient(ClientID);
-            }
-            _shuttingDown = true;
-            _packetReaderThread.Abort();
-            _packetSenderThread.Abort();
-            _packetReaderThread = null;
-            _packetSenderThread = null;
-            _tcpClient = null;
-            if (Clients.Contains(this))
-            {
-                Clients.Remove(this);
-            }
-        }
-
-
-        public T NetworkInvoke<T>(object target, string methodName, object[] args, float maxTimeMs = 5000)
-        {
-            return NetworkManager.NetworkInvoke<T>(target, this, methodName, args, maxTimeMs);
-        }
-
-        public T NetworkInvoke<T>(string methodName, object[] args, float maxTimeMs = 5000)
-        {
-            return NetworkManager.NetworkInvoke<T>(this, this, methodName, args, maxTimeMs);
-        }
-
-        public void NetworkInvoke(object target, string methodName, object[] args)
-        {
-            NetworkManager.NetworkInvoke(target, this, methodName, args);
-        }
-
-        public void NetworkInvoke(string methodName, object[] args)
-        {
-            NetworkManager.NetworkInvoke(this, this, methodName, args);
-        }
-
-        
+            public PacketHeader Header;
+            public byte[] Data;
+        }        
     }
 
     /// <summary>

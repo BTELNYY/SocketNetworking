@@ -393,7 +393,7 @@ namespace SocketNetworking
             Type givenType = sData.Type;
             if(givenType == null)
             {
-                throw new NetworkDeserializationException($"Type {sData.TypeFullName} cannnot be found.");
+                throw new NetworkDeserializationException($"Type {givenType.Name} cannnot be found.");
             }
             if (!typeof(T).IsAssignableFrom(givenType))
             {
@@ -405,17 +405,20 @@ namespace SocketNetworking
 
     public struct SerializedData : IPacketSerializable
     {
-        public string TypeFullName;
+        private string TypeFullName;
+
+        private string Assmebly;
 
         public Type Type
         {
             get
             {
-                return System.Type.GetType(TypeFullName);
+                return Assembly.Load(Assmebly).GetType(TypeFullName);
             }
             set
             {
                 TypeFullName = value.FullName;
+                Assmebly = Assembly.GetAssembly(value).GetName().FullName;
             }
         }
 
@@ -427,6 +430,7 @@ namespace SocketNetworking
         {
             ByteReader reader = new ByteReader(data);
             TypeFullName = reader.ReadString();
+            this.Assmebly = reader.ReadString();
             DataNull = reader.ReadBool();
             Data = reader.ReadByteArray();
             return reader.ReadBytes;
@@ -442,9 +446,10 @@ namespace SocketNetworking
             ByteWriter writer = new ByteWriter();
             if(TypeFullName == null)
             {
-                TypeFullName = typeof(void).FullName;
+                Type = typeof(void);
             }
             writer.WriteString(TypeFullName);
+            writer.WriteString(Assmebly);
             if(Data == null)
             {
                 writer.WriteBool(true);

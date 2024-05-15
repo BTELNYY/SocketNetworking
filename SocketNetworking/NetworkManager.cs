@@ -620,7 +620,7 @@ namespace SocketNetworking
             {
                 throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.");
             }
-            Type[] arguments = packet.Arguments.Select(x => Type.GetType(x.TypeFullName)).ToArray();
+            Type[] arguments = packet.Arguments.Select(x => x.Type).ToArray();
             MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToArray();
             MethodInfo method = null;
             string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
@@ -638,11 +638,11 @@ namespace SocketNetworking
                 throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}'.", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
-            if (invocable.Direction == PacketDirection.Client && reciever.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == PacketDirection.Server && reciever.CurrnetClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.Direction == PacketDirection.Server && reciever.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == PacketDirection.Client && reciever.CurrnetClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
@@ -700,11 +700,11 @@ namespace SocketNetworking
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}'.", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
-            if (invocable.Direction == PacketDirection.Client && sender.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == PacketDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.Direction == PacketDirection.Server && sender.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == PacketDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
