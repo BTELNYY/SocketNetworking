@@ -20,7 +20,7 @@ namespace SocketNetworking
         public static event Action ServerStopped;
 
 
-        private static readonly ServerState _serverState = ServerState.NotStarted;
+        private static ServerState _serverState = ServerState.NotStarted;
 
         public static ServerState CurrentServerState 
         { 
@@ -172,11 +172,12 @@ namespace SocketNetworking
 
         public static void StartServer()
         {
-            if(HasServerStarted)
+            if (HasServerStarted)
             {
                 Log.GlobalError("Server already started!");
                 return;
             }
+            _serverState = ServerState.Started;
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
             {
                 Log.GlobalError("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
@@ -187,6 +188,7 @@ namespace SocketNetworking
             ServerThread = new Thread(server.ServerStartThread);
             ServerThread.Start();
             ServerStarted?.Invoke();
+            _serverState = ServerState.NotReady;
         }
 
         protected static void AddClient(NetworkClient client, int clientId)
@@ -260,6 +262,7 @@ namespace SocketNetworking
             Log.GlobalInfo($"Listening on {BindIP}:{Port}");
             int counter = 0;
             ServerReady?.Invoke();
+            _serverState = ServerState.Ready;
             while (true)
             {
                 if (_isShuttingDown)

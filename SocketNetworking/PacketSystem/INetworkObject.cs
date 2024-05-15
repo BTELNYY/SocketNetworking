@@ -13,6 +13,16 @@ namespace SocketNetworking.PacketSystem
     public interface INetworkObject
     {
         /// <summary>
+        /// The <see cref="NetworkClient.ClientID"/> of the current owner.
+        /// </summary>
+        int OwnerClientID { get; set; }
+
+        /// <summary>
+        /// If true, the <see cref="OwnerClientID"/> is ignored, as the server owns the object. Clients may not execute any commands or any remote functions on the object.
+        /// </summary>
+        bool IsServerOwned { get; }
+
+        /// <summary>
         /// The network ID of the object. This should be the same on the client and server.
         /// </summary>
         int NetworkID { get; }

@@ -76,9 +76,9 @@ namespace SocketNetworking
                 return sData;
             }
 
-            if (dataType.GetInterfaces().Contains(typeof(IEnumerable)))
+            if (dataType.GetInterfaces().Contains(typeof(IEnumerable)) && data is IEnumerable<object> enumerable)
             {
-                IEnumerable<object> values = (IEnumerable<object>)data;
+                IEnumerable<object> values = enumerable;
                 SerializableList<object> list = new SerializableList<object>(values);
                 writer.Write<SerializableList<object>>(list);
                 sData.Data = writer.Data;

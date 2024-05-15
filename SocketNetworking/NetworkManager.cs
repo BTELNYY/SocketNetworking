@@ -599,6 +599,10 @@ namespace SocketNetworking
             {
                 return;
             }
+            if (!packet.Success)
+            {
+                Log.GlobalError("Network Invocation failed. Error: " + packet.ErrorMessage);
+            }
             Results.Add(packet);
             OnNetworkInvocationResult?.Invoke(packet);
         }
@@ -646,6 +650,24 @@ namespace SocketNetworking
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
+            if (invocable.SecureMode)
+            {
+                if (target is NetworkClient client && client.ClientID != reciever.ClientID)
+                {
+                    throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                }
+                if (target is INetworkObject owned && owned.OwnerClientID != reciever.ClientID)
+                {
+                    throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                }
+                if (!(target is INetworkObject) && !(target is NetworkClient))
+                {
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+                    {
+                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + packet.MethodName);
+                    }
+                }
+            }
             List<object> args = new List<object>();
             foreach (SerializedData data in packet.Arguments)
             {
@@ -673,7 +695,7 @@ namespace SocketNetworking
             {
                 targetID = networkObject.NetworkID;
             }
-            if (!(target is NetworkClient client))
+            else if (!(target is NetworkClient client))
             {
                 throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
             }
@@ -708,6 +730,24 @@ namespace SocketNetworking
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
+            if (invocable.SecureMode)
+            {
+                if (target is NetworkClient client && client.ClientID != sender.ClientID)
+                {
+                    throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                }
+                if (target is INetworkObject owned && owned.OwnerClientID != sender.ClientID)
+                {
+                    throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                }
+                if(!(target is INetworkObject) && !(target is NetworkClient))
+                {
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+                    {
+                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + methodName);
+                    }
+                }
+            }
             NetworkInvocationPacket packet = new NetworkInvocationPacket();
             packet.TargetTypeAssmebly = Assembly.GetAssembly(targetType).GetName().FullName;
             packet.NetworkObjectTarget = targetID;
@@ -736,7 +776,7 @@ namespace SocketNetworking
             {
                 targetID = networkObject.NetworkID;
             }
-            if (!(target is NetworkClient client))
+            else if (!(target is NetworkClient client))
             {
                 throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
             }
@@ -766,6 +806,33 @@ namespace SocketNetworking
             {
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}'.", new NullReferenceException());
             }
+            NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
+            if (invocable.Direction == PacketDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
+            {
+                throw new SecurityException("Attempted to invoke network method from incorrect direction.");
+            }
+            if (invocable.Direction == PacketDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
+            {
+                throw new SecurityException("Attempted to invoke network method from incorrect direction.");
+            }
+            if (invocable.SecureMode)
+            {
+                if (target is NetworkClient client && client.ClientID != sender.ClientID)
+                {
+                    throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                }
+                if (target is INetworkObject owned && owned.OwnerClientID != sender.ClientID)
+                {
+                    throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                }
+                if (!(target is INetworkObject) && !(target is NetworkClient))
+                {
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+                    {
+                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + methodName);
+                    }
+                }
+            }
             NetworkInvocationPacket packet = new NetworkInvocationPacket();
             packet.TargetTypeAssmebly = Assembly.GetAssembly(targetType).GetName().FullName;
             packet.NetworkObjectTarget = targetID;
@@ -788,7 +855,7 @@ namespace SocketNetworking
             NetworkResultAwaiter networkResultAwaiter = new NetworkResultAwaiter(callbackID);
             while (!networkResultAwaiter.HasResult)
             {
-                if (!client.IsConnected)
+                if (!sender.IsConnected)
                 {
                     Log.GlobalError($"NetworkInvoke on method {methodName} failed becuase the NetworkClient is not connected.");
                     break;
