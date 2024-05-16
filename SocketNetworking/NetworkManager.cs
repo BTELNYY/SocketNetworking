@@ -254,6 +254,14 @@ namespace SocketNetworking
             }
         }
 
+        public static void SendConnectedPulse(NetworkClient client)
+        {
+            foreach (INetworkObject @object in NetworkObjects.Keys)
+            {
+                @object.OnConnected(client);
+            }
+        }
+
         /// <summary>
         /// Determines if the given <see cref="INetworkObject"/> is registered.
         /// </summary>
@@ -870,6 +878,7 @@ namespace SocketNetworking
             packet.TargetTypeAssmebly = Assembly.GetAssembly(targetType).GetName().FullName;
             packet.NetworkObjectTarget = targetID;
             packet.MethodName = methodName;
+            packet.IgnoreResult = false;
             foreach (var arg in args)
             {
                 SerializedData data = NetworkConvert.Serialize(arg);

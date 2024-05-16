@@ -50,6 +50,12 @@ namespace SocketNetworking.PacketSystem
         void OnReady(NetworkClient client, bool isReady);
 
         /// <summary>
+        /// Called on the server and client when the <see cref="NetworkClient.CurrentConnectionState"/> is set to <see cref="ConnectionState.Connected"/>
+        /// </summary>
+        /// <param name="client"></param>
+        void OnConnected(NetworkClient client);
+
+        /// <summary>
         /// Called on Server and Client when the <see cref="NetworkClient"/> is disconnected.
         /// </summary>
         /// <param name="client"></param>

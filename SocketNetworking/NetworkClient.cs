@@ -349,6 +349,7 @@ namespace SocketNetworking
                 _connectionState = value;
                 ConnectionStateUpdated?.Invoke(value);
                 ClientConnectionStateChanged?.Invoke(this);
+                NetworkManager.SendConnectedPulse(this);
             }
         }
 
@@ -764,6 +765,7 @@ namespace SocketNetworking
                     if (connectionUpdatePacket.State == ConnectionState.Connected)
                     {
                         _connectionState = ConnectionState.Connected;
+                        NetworkManager.SendConnectedPulse(this);
                     }
                     ClientConnectionStateChanged?.Invoke(this);
                     ConnectionStateUpdated?.Invoke(_connectionState);
@@ -924,6 +926,7 @@ namespace SocketNetworking
                     if(connectionUpdatePacket.State == ConnectionState.Connected)
                     {
                         _connectionState = ConnectionState.Connected;
+                        NetworkManager.SendConnectedPulse(this);
                     }
                     ClientConnectionStateChanged?.Invoke(this);
                     ConnectionStateUpdated?.Invoke(_connectionState);

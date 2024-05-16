@@ -78,9 +78,29 @@ namespace SocketNetworking.UnityEngine.Components
             _ownerClientID = id;
         }
 
-        internal void UpdateOwnerClientId(int id)
+        /// <summary>
+        /// Updates the local value for the <see cref="OwnerClientID"/>, Note that this does NOT change the owner of this object on the server, and will cause desync if not used incorrectly.
+        /// </summary>
+        /// <param name="id"></param>
+        public void UpdateOwnerClientId(int id)
         {
             _ownerClientID = id;
+        }
+
+
+        /// <summary>
+        /// Changes the <see cref="OwnerClientID"/> of the current object, requires the Sender to be the owner of the current object.
+        /// </summary>
+        /// <param name="newOwner"></param>
+        public void ClientChangeOwner(int newOwner)
+        {
+            NetworkInvoke(nameof(ServerProccessChangeOwnerCommand), new object[] { newOwner });
+        }
+
+        [NetworkInvocable(PacketDirection.Client)]
+        private void ServerProccessChangeOwnerCommand(int newOwner)
+        {
+            OwnerClientID = newOwner;
         }
 
         public OwnershipMode OwnershipMode
@@ -107,7 +127,11 @@ namespace SocketNetworking.UnityEngine.Components
 
         private OwnershipMode _ownershipMode = OwnershipMode.Server;
 
-        internal void UpdateOwnershipMode(OwnershipMode mode)
+        /// <summary>
+        /// Updates the local value for the <see cref="OwnershipMode"/>, Note that this does NOT change the Ownership mode of the server object. This will cause desync if used incorrectly.
+        /// </summary>
+        /// <param name="id"></param>
+        public void UpdateOwnershipMode(OwnershipMode mode)
         {
             _ownershipMode = mode;
         }
@@ -132,6 +156,11 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         public virtual void OnReady(NetworkClient client, bool isReady)
+        {
+            
+        }
+
+        public virtual void OnConnected(NetworkClient client)
         {
             
         }
@@ -195,6 +224,62 @@ namespace SocketNetworking.UnityEngine.Components
         void Start()
         {
             RegisterListener();
+        }
+
+
+        public void NetworkInvoke(string methodName, object[] args)
+        {
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkServer.NetworkInvokeOnAll(this, methodName, args);
+            }
+            else if(NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                if(UnityNetworkManager.GameNetworkClient == null)
+                {
+                    throw new InvalidOperationException("Attempted to networkinvoke using a client when the game client is not set!");
+                }
+                else
+                {
+                    NetworkManager.NetworkInvoke(this, UnityNetworkManager.GameNetworkClient, methodName, args);
+                }
+            }
+        }
+
+        public void NetworkInvoke(string methodName, object[] args, bool globalRpc, bool readyOnly)
+        {
+            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                if(globalRpc)
+                {
+                    UnityNetworkServer.NetworkInvokeOnAll(this, methodName, args, readyOnly);
+                }
+                else
+                {
+                    if(OwnershipMode != OwnershipMode.Client)
+                    {
+                        throw new InvalidOperationException("Attempted to NetworkInvoke using non-global rpc but the Ownership mode is set to something that isn't client!");
+                    }
+                    NetworkClient sender = NetworkServer.GetClient(OwnerClientID);
+                    if(sender == null)
+                    {
+                        throw new InvalidOperationException("Attempted to NetworkInvoke using non-global rpc but the Owner client by ID is not found!");
+                    }
+                    NetworkManager.NetworkInvoke(this, sender, methodName, args);
+                }
+            }
+            else if(NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                Log.GlobalWarning("Trying to call a server-only method on the client. in this case, this is fine, but this may be uintended.");
+                if (UnityNetworkManager.GameNetworkClient == null)
+                {
+                    throw new InvalidOperationException("Attempted to networkinvoke using a client when the game client is not set!");
+                }
+                else
+                {
+                    NetworkManager.NetworkInvoke(this, UnityNetworkManager.GameNetworkClient, methodName, args);
+                }
+            }
         }
     }
 }
