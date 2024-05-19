@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="Components\NetworkBehavior.cs" />
     <Compile Include="Components\NetworkAnimator.cs" />
+    <Compile Include="Components\NetworkComponent.cs" />
     <Compile Include="Components\NetworkIdentity.cs" />
     <Compile Include="Components\NetworkObject.cs" />
     <Compile Include="Components\NetworkPrefab.cs" />

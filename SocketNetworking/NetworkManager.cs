@@ -624,13 +624,22 @@ namespace SocketNetworking
                 throw new NetworkInvocationException($"Cannot find type: '{packet.TargetType}'.", new NullReferenceException());
             }
             object target = reciever;
+            List<object> targets = new List<object>();
             if (packet.NetworkObjectTarget != 0)
             {
-                target = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkObjectTarget && x.GetType() == targetType).First();
+                List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkObjectTarget && x.GetType() == targetType).ToList();
+                if(netObjs.Count != 0)
+                {
+                    targets.AddRange(netObjs);
+                }
+            }
+            else if(targetType.IsSubclassOf(typeof(NetworkClient)))
+            {
+                targets.Add(target);
             }
             if (target == null)
             {
-                throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.");
+                throw new NetworkInvocationException($"Unable to find the Object this packet is referencing.");
             }
             Type[] arguments = packet.Arguments.Select(x => x.Type).ToArray();
             MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToArray();
@@ -693,7 +702,11 @@ namespace SocketNetworking
                 object obj = NetworkConvert.Deserialize(data, out int read);
                 args.Add(obj);
             }
-            object result = method.Invoke(target, args.ToArray());
+            object result = null;
+            foreach(object obj in targets)
+            {
+                result = method.Invoke(target, args.ToArray());
+            }
             NetworkInvocations.Remove(packet.NetworkObjectTarget);
             NetworkInvocationResultPacket resultPacket = new NetworkInvocationResultPacket();
             resultPacket.CallbackID = packet.CallbackID;
@@ -703,6 +716,23 @@ namespace SocketNetworking
             return result;
         }
 
+        /// <summary>
+        /// Sends a network invocation to the target <see cref="NetworkClient"/> with the target <see cref="object"/> which has to be a <see cref="INetworkObject"/> or a <see cref="NetworkClient"/>.
+        /// </summary>
+        /// <param name="target">
+        /// The target <see cref="object"/>, must be either <see cref="INetworkObject"/> or <see cref="NetworkClient"/>.
+        /// </param>
+        /// <param name="sender">
+        /// The <see cref="NetworkClient"/> sender of the invocation.
+        /// </param>
+        /// <param name="methodName">
+        /// The method name of the object from target argument. Note that the method msut be a non-static method. The access modifier does not matter.
+        /// </param>
+        /// <param name="args">
+        /// The arguments that should be provided to the method. Note that these arguments are serialized by <see cref="NetworkConvert"/>. Note: if your method has <see cref="NetworkClient"/> as its first argument, you do not have to inlude it, but you can.
+        /// </param>
+        /// <exception cref="NetworkInvocationException"></exception>
+        /// <exception cref="SecurityException"></exception>
         public static void NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args)
         {
             if (target == null)

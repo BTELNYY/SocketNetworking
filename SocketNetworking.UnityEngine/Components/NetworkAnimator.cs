@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {
-    public class NetworkAnimator : NetworkObject
+    public class NetworkAnimator : NetworkComponent
     {
         private Animator _animator;
 
@@ -60,7 +60,7 @@ namespace SocketNetworking.UnityEngine.Components
         [PacketListener(typeof(NetworkAnimatorPlayAnimPacket), PacketDirection.Any)]
         public void OnAnimtorUpdatePlaybackPacket(NetworkAnimatorPlayAnimPacket packet, NetworkClient client)
         {
-            if (!ShouldBeReceivingPackets)
+            if (!ShouldBeReceivingPacketsFrom(client))
             {
                 Logger.Warning("Incorrect packet direction!");
                 return;
@@ -81,7 +81,7 @@ namespace SocketNetworking.UnityEngine.Components
         [PacketListener(typeof(NetworkAnimatorSpeedUpdatePacket), PacketDirection.Any)]
         public void OnAnimatorSpeedPacket(NetworkAnimatorSpeedUpdatePacket packet, NetworkClient client)
         {
-            if (!ShouldBeReceivingPackets)
+            if (!ShouldBeReceivingPacketsFrom(client))
             {
                 return;
             }
@@ -97,7 +97,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
-                if(IsSyncOwner)
+                if(IsOwner)
                 {
                     //optimization to avoid sending extra data.
                     if(_animator.speed == value)
@@ -110,10 +110,16 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public override void OnClientObjectCreated(UnityNetworkClient client)
+        {
+            base.OnClientObjectCreated(client);
+            NetworkAnimatorSpeed = NetworkAnimatorSpeed;
+        }
+
         [PacketListener(typeof(NetworkAnimatorTriggerPacket), PacketDirection.Any)]
         public virtual void OnAnimatorTriggerPacket(NetworkAnimatorTriggerPacket packet, NetworkClient client)
         {
-            if (!ShouldBeReceivingPackets)
+            if (!ShouldBeReceivingPacketsFrom(client))
             {
                 return;
             }
@@ -131,7 +137,7 @@ namespace SocketNetworking.UnityEngine.Components
         [PacketListener(typeof(NetworkAnimatorFloatValueUpdatePacket), PacketDirection.Any)]
         public virtual void OnAnimatorFloatUpdatePacket(NetworkAnimatorFloatValueUpdatePacket packet, NetworkClient client)
         {
-            if(!ShouldBeReceivingPackets)
+            if(!ShouldBeReceivingPacketsFrom(client))
             {
                 Logger.Warning("Incorrect packet direction!");
                 return;
@@ -150,7 +156,7 @@ namespace SocketNetworking.UnityEngine.Components
         [PacketListener(typeof(NetworkAnimatorBoolValueUpdatePacket), PacketDirection.Any)]
         public void OnAnimatorBoolUpdatePacket(NetworkAnimatorBoolValueUpdatePacket packet, NetworkClient client)
         {
-            if (!ShouldBeReceivingPackets)
+            if (!ShouldBeReceivingPacketsFrom(client))
             {
                 Logger.Warning("Incorrect packet direction!");
                 return;
@@ -162,7 +168,7 @@ namespace SocketNetworking.UnityEngine.Components
         [PacketListener(typeof(NetworkAnimatorIntValueUpdatePacket), PacketDirection.Any)]
         public void OnAnimatorBoolUpdatePacket(NetworkAnimatorIntValueUpdatePacket packet, NetworkClient client)
         {
-            if (!ShouldBeReceivingPackets)
+            if (!ShouldBeReceivingPacketsFrom(client))
             {
                 Logger.Warning("Incorrect packet direction!");
                 return;
@@ -196,7 +202,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkSetFloat(string name, float value)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -229,7 +235,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkSetFloat(string name, float value, float dampTime, float deltaTime)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -262,7 +268,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkSetFloat(int id, float value)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -295,7 +301,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkSetFloat(int id, float value, float dampTime, float deltaTime)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -328,7 +334,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkSetBool(string name, bool value)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -363,7 +369,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkSetBool(int id, bool value)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -398,7 +404,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkSetInteger(string name, int value)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -431,7 +437,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkSetInteger(int id, int value)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -464,7 +470,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkSetTrigger(string name)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -482,7 +488,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkSetTrigger(int id)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -500,7 +506,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkResetTrigger(string name)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
@@ -518,7 +524,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkResetTrigger(int id)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }

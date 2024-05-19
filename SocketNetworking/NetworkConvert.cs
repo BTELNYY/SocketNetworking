@@ -69,6 +69,14 @@ namespace SocketNetworking
             SerializedData sData = new SerializedData();
             sData.Type = dataType;
 
+            if (dataType.IsSubclassOf(typeof(NetworkClient)))
+            {
+                NetworkClient client = data as NetworkClient;
+                writer.WriteInt(client.ClientID);
+                sData.Type = typeof(NetworkClient);
+                sData.Data = writer.Data;
+                return sData;
+            }
             if (data is IPacketSerializable serializable)
             {
                 writer.Write<IPacketSerializable>(serializable);
@@ -84,7 +92,6 @@ namespace SocketNetworking
                 sData.Data = writer.Data;
                 return sData;
             }
-
             if (dataType.IsEnum)
             {
                 Enum lastEnum = (Enum)data.LastEnum();
@@ -235,7 +242,26 @@ namespace SocketNetworking
                 read = 0;
                 return null;
             }
-
+            
+            if(data.Type == typeof(NetworkClient))
+            {
+                int clientId = reader.ReadInt();
+                NetworkClient client = null;
+                if(NetworkManager.WhereAmI == ClientLocation.Remote)
+                {
+                    client = NetworkServer.GetClient(clientId);
+                }
+                else if(NetworkManager.WhereAmI == ClientLocation.Local)
+                {
+                    client = NetworkClient.Clients.Where(x => x.ClientID == clientId).FirstOrDefault();
+                }
+                if(client == default(NetworkClient))
+                {
+                    throw new Exception("Can't find the networkclient which is referenced in this serialization.");
+                }
+                read = reader.ReadBytes;
+                return client;
+            }
             if (data.Type.GetInterfaces().Contains(typeof(IPacketSerializable)))
             {
                 object obj = Activator.CreateInstance(data.Type);

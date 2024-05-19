@@ -9,35 +9,20 @@ using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.UnityEngine.Packets.NetworkTransform;
 using SocketNetworking.UnityEngine.Packets;
+using SocketNetworking.UnityEngine.TypeWrappers;
 
 namespace SocketNetworking.UnityEngine.Components
 {
-    public class NetworkTransform : NetworkObject
+    public class NetworkTransform : NetworkComponent
     {
-        private string uuid = string.Empty;
-
-        public string UUID
+        public void ServerSyncRotationAndPosition()
         {
-            get
-            {
-                return uuid;
-            }
-        }
-
-        public override void SendPacket(Packet packet)
-        {
-            if(packet is NetworkTransformBasePacket basePacket)
-            {
-                basePacket.UUID = UUID;
-                base.SendPacket(basePacket);
-                return;
-            }
-            base.SendPacket(packet);
+            NetworkPosition = NetworkPosition;
+            NetworkRotation = NetworkRotation;
         }
 
         void Awake()
         {
-            uuid = Guid.NewGuid().ToString();
             UnityNetworkManager.Register(this);
         }
 
@@ -54,16 +39,23 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
-                if (!IsSyncOwner)
+                if (!IsOwner)
                 {
-                    //Logger.LogWarning($"Tried to set property of {gameObject.name} from illegal client side.");
                     return;
                 }
                 transform.position = value;
-                NetworkTransformPositionUpdatePacket packet = new NetworkTransformPositionUpdatePacket();
-                packet.Position = value;
-                packet.Rotation = transform.rotation;
-                SendPacket(packet);
+                SerializableVector3 vec = new SerializableVector3(value);
+                NetworkInvoke(nameof(GetNewNetworkPosition), new object[] { vec });
+            }
+        }
+
+        [NetworkInvocable]
+        private void GetNewNetworkPosition(SerializableVector3 position)
+        {
+            transform.position = position.Vector;
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkPosition = position.Vector;
             }
         }
 
@@ -75,86 +67,92 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
-                if (!IsSyncOwner)
+                if (!IsOwner)
                 {
-                    //Logger.LogWarning($"Tried to set property of {gameObject.name} from illegal client side.");
                     return;
                 }
                 transform.rotation = value;
-                NetworkTransformPositionUpdatePacket packet = new NetworkTransformPositionUpdatePacket();
-                packet.Position = transform.position;
-                packet.Rotation = value;
-                SendPacket(packet);
+                SerializableQuaternion quat = new SerializableQuaternion(value);
+                NetworkInvoke(nameof(GetNewNetworkRotation), new object[] { quat });
             }
         }
 
-        [PacketListener(typeof(NetworkTransformPositionUpdatePacket), PacketDirection.Any)]
-        private void OnNetworkUpdatePositionOrRotation(NetworkTransformPositionUpdatePacket packet, NetworkClient client)
+        [NetworkInvocable]
+        private void GetNewNetworkRotation(SerializableQuaternion rotation)
         {
-            if (!ShouldBeReceivingPackets || packet.UUID != UUID)
+            transform.rotation = rotation.Quaternion;
+            if(NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                return;
+                NetworkRotation = rotation.Quaternion;
             }
-            transform.position = packet.Position;
-            transform.rotation = packet.Rotation;
         }
 
         public void NetworkRotate(Vector3 euler, Space relativeTo = Space.Self)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
-            NetworkTransformRotatePacket packet = new NetworkTransformRotatePacket(euler, relativeTo);
-            SendPacket(packet);
+            SerializableVector3 vector3 = new SerializableVector3(euler);
+            NetworkInvoke(nameof(GetNetworkRotation), new object[] { vector3, relativeTo });
+        }
+
+        [NetworkInvocable]
+        private void GetNetworkRotation(SerializableVector3 euler, Space relativeTo)
+        {
+            transform.Rotate(euler.Vector, relativeTo);
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkRotate(euler.Vector, relativeTo);
+            }
         }
 
         public void NetworkRotate(Vector3 euler, float angle, Space relativeTo = Space.Self)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
-            NetworkTransformRotatePacket packet = new NetworkTransformRotatePacket(euler, relativeTo);
-            packet.Angle = angle;
-            SendPacket(packet);
+            SerializableVector3 vector3 = new SerializableVector3(euler);
+            NetworkInvoke(nameof(GetNetworkRotation), new object[] { vector3, angle, relativeTo });
         }
 
-        [PacketListener(typeof(NetworkTransformRotatePacket), PacketDirection.Any)]
-        private void OnTransformRotate(NetworkTransformRotatePacket packet, NetworkClient client)
+        [NetworkInvocable]
+        private void GetNetworkRotation(SerializableVector3 euler, float angle, Space relativeTo)
         {
-            if (!ShouldBeReceivingPackets || packet.UUID != UUID)
+            transform.Rotate(euler.Vector, angle, relativeTo);
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                return;
-            }
-            if (packet.Angle == float.NaN)
-            {
-                transform.Rotate(packet.Rotation, packet.Space);
-            }
-            else
-            {
-                transform.Rotate(packet.Rotation, packet.Angle, packet.Space);
+                NetworkRotate(euler.Vector, angle, relativeTo);
             }
         }
 
         public void NetworkRotateAround(Vector3 point, Vector3 axis, float angle)
         {
-            if (!IsSyncOwner)
+            if (!IsOwner)
             {
                 return;
             }
-            NetworkTransformRotateAroundPacket packet = new NetworkTransformRotateAroundPacket(point, axis, angle);
-            SendPacket(packet); 
+            SerializableVector3 vecPoint = new SerializableVector3(point);
+            SerializableVector3 vecAxis = new SerializableVector3(axis);
+            NetworkInvoke(nameof(GetNetworkRotation), new object[] { vecPoint, vecAxis, angle });
         }
 
-        [PacketListener(typeof(NetworkTransformRotateAroundPacket), PacketDirection.Any)]
-        private void OnNetworkRotateAround(NetworkTransformRotateAroundPacket packet, NetworkClient client)
+        [NetworkInvocable]
+        private void GetNetworkRotation(SerializableVector3 point, SerializableVector3 axis, float angle)
         {
-            if (!ShouldBeReceivingPackets || packet.UUID != UUID)
+            transform.RotateAround(point.Vector, axis.Vector, angle);
+            if(NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                return;
+                NetworkRotateAround(point.Vector, point.Vector, angle);
             }
-            transform.RotateAround(packet.Axis, packet.Point, packet.Angle);
+        }
+
+        public override void OnClientObjectCreated(UnityNetworkClient client)
+        {
+            base.OnClientObjectCreated(client);
+            NetworkPosition = transform.position;
+            NetworkRotation = transform.rotation;
         }
     }
 }

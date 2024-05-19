@@ -16,13 +16,23 @@ namespace SocketNetworking.UnityEngine.Components
         /// <summary>
         /// Checks if the current point (where the code is executed) is the sync owner. If Sync ownership is ignored, always returns true.
         /// </summary>
-        public virtual bool IsSyncOwner
+        public virtual bool IsOwner
         {
             get
             {
-                if(NetworkID == -1) return false;
-                if(IgnoreSyncOwner) return true;
-                return SyncOwner == NetworkManager.WhereAmI;
+                if(OwnershipMode == OwnershipMode.Public)
+                {
+                    return true;
+                }
+                else if(OwnershipMode == OwnershipMode.Server && NetworkManager.WhereAmI == ClientLocation.Remote)
+                {
+                    return true;
+                }
+                else if(OwnershipMode == OwnershipMode.Client && OwnerClientID == UnityNetworkManager.GameNetworkClient.ClientID)
+                {
+                    return true;
+                }
+                return false;
             }
         }
 
@@ -34,96 +44,41 @@ namespace SocketNetworking.UnityEngine.Components
             get
             {
                 if (NetworkID == -1) return false;
-                if(IgnoreSyncOwner)
+                if (NetworkManager.WhereAmI == ClientLocation.Local)
                 {
                     return true;
                 }
-                return SyncOwner != NetworkManager.WhereAmI;
+                if (OwnershipMode == OwnershipMode.Public)
+                {
+                    return true;
+                }
+                if (OwnershipMode == OwnershipMode.Server && NetworkManager.WhereAmI == ClientLocation.Local)
+                {
+                    return true;
+                }
+                if (OwnershipMode == OwnershipMode.Client && NetworkManager.WhereAmI == ClientLocation.Remote)
+                {
+                    return true;
+                }
+                return false;
             }
         }
 
-        /// <summary>
-        /// If set to true, the client/server will completely ignore the SyncOwner
-        /// </summary>
-        public bool IgnoreSyncOwner = false;
-
-        /// <summary>
-        /// Gets the network ID of the object. if a <see cref="NetworkIdentity"/> (or any subclass of it) is present, returns its NetworkID.
-        /// </summary>
-        public sealed override int NetworkID
+        public virtual bool ShouldBeReceivingPacketsFrom(NetworkClient client)
         {
-            get
+            if(OwnershipMode == OwnershipMode.Server && client.CurrnetClientLocation == ClientLocation.Local)
             {
-                if(Identity == null)
-                {
-                    return base.NetworkID;
-                }
-                else
-                {
-                    return Identity.NetworkID;
-                }
+                return true;
             }
-        }
-
-        private NetworkIdentity _identity;
-
-        /// <summary>
-        /// All objects should have a <see cref="NetworkIdentity"/> attached to them or referenced somehow. This is not a hard coded requirement, but is suggested for larger systems (e.g. the player uses this to prevent having to make 80 NetIDs for one thing)
-        /// </summary>
-        public NetworkIdentity Identity
-        {
-            get
+            if(OwnershipMode == OwnershipMode.Client && OwnerClientID == client.ClientID)
             {
-                return _identity;
+                return true;
             }
-            set
+            if(OwnershipMode == OwnershipMode.Public)
             {
-                if(this is NetworkIdentity)
-                {
-                    return;
-                }
-                if(value == null)
-                {
-                    Logger.Error("Can't set null NetworkIdentity!");
-                    return;
-                }
-                if(_identity != value)
-                {
-                    if(_identity != null)
-                    {
-                        _identity.UnregisterObject(this);
-                    }
-                    _identity = value;
-                    _identity.RegisterObject(this);
-                }
-                else
-                {
-                    _identity = value;
-                }
-                SetNetworkID(value.NetworkID);
+                return true;
             }
-        }
-
-        void Awake()
-        {
-            if(this is NetworkIdentity selfId)
-            {
-                Identity = selfId;
-            }
-            NetworkIdentity identity = GetComponent<NetworkIdentity>();
-            if(Identity == null)
-            {
-                if(identity != null)
-                {
-                    Identity = identity;
-                }
-                else
-                {
-                    Logger.Warning("Can't find Identity attached to this object!");
-                    SetNetworkID(-1);
-                    return;
-                }
-            }
+            return false;
         }
 
         /// <summary>

@@ -23,7 +23,14 @@ namespace SocketNetworking.UnityEngine.Components
             UnityNetworkManager.Unregister(this);
         }
 
-        private List<NetworkObject> NetworkObjects = new List<NetworkObject>();
+        private readonly List<NetworkObject> NetworkObjects = new List<NetworkObject>();
+
+        private static readonly Dictionary<Type, uint> ObjectLimits = new Dictionary<Type, uint>() 
+        {
+            [typeof(NetworkTransform)] = 1,
+            [typeof(NetworkAnimator)] = 1,
+            [typeof(NetworkPrefab)] = 1,
+        };
 
         public void SyncOwnershipMode()
         {
@@ -51,8 +58,20 @@ namespace SocketNetworking.UnityEngine.Components
         
         public void RegisterObject(NetworkObject obj)
         {
-            if (obj == null) throw new ArgumentNullException("obj");
-            if (NetworkObjects.Contains(obj)) throw new ArgumentException("obj");
+            if (obj == null) throw new ArgumentNullException("obj cannot be null!", new NullReferenceException("obj is not set to an instance of an object"));
+            if (NetworkObjects.Contains(obj)) throw new ArgumentException("Object is already registered", "obj");
+            if (ObjectLimits.Keys.Any(x => obj.GetType().IsSubclassOf(x)))
+            {
+                Type limitingType = ObjectLimits.Keys.Where(x => obj.GetType().IsSubclassOf(x)).FirstOrDefault();
+                if(limitingType != default)
+                {
+                    List<NetworkObject> registered = NetworkObjects.Where(x => x.GetType().IsSubclassOf(limitingType)).ToList();
+                    if(registered.Count >= ObjectLimits[limitingType])
+                    {
+                        throw new ArgumentException("Cannot register any more of that object type to this identity!", "obj");
+                    }
+                }
+            }
             NetworkObjects.Add(obj);
         }
 
@@ -61,6 +80,11 @@ namespace SocketNetworking.UnityEngine.Components
             if (obj == null) throw new ArgumentNullException("obj");
             if (!NetworkObjects.Contains(obj)) throw new ArgumentException("obj");
             NetworkObjects.Remove(obj);
+        }
+
+        public bool IsRegistered(NetworkObject obj)
+        {
+            return NetworkObjects.Contains(obj);
         }
 
         public override void OnObjectUpdateNetworkIDLocal(int newNetID)
