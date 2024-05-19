@@ -280,7 +280,7 @@ namespace SocketNetworking
         /// Returns the next available unused NetworkID
         /// </summary>
         /// <returns>
-        /// The Network ID which hasn't been used before.
+        /// A Network ID which hasn't been used before.
         /// </returns>
         public static int GetNextNetworkID()
         {
@@ -697,6 +697,10 @@ namespace SocketNetworking
                 }
             }
             List<object> args = new List<object>();
+            if (method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+            {
+                args.Add(reciever);
+            }
             foreach (SerializedData data in packet.Arguments)
             {
                 object obj = NetworkConvert.Deserialize(data, out int read);
@@ -759,8 +763,12 @@ namespace SocketNetworking
             string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
             foreach (MethodInfo m in methods)
             {
-                string[] m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToArray();
-                if (m_args.ArraysEqual(expectedArgs))
+                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
+                if (m.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+                {
+                    m_args.Insert(0, m.GetParameters()[0].ParameterType.FullName);
+                }
+                if (m_args.ToArray().ArraysEqual(expectedArgs))
                 {
                     method = m;
                     break;
@@ -851,8 +859,12 @@ namespace SocketNetworking
             string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
             foreach (MethodInfo m in methods)
             {
-                string[] m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToArray();
-                if (m_args.ArraysEqual(expectedArgs))
+                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
+                if (m.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+                {
+                    m_args.Insert(0, m.GetParameters()[0].ParameterType.FullName);
+                }
+                if (m_args.ToArray().ArraysEqual(expectedArgs))
                 {
                     method = m;
                     break;
