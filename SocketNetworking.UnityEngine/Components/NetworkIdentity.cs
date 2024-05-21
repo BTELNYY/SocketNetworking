@@ -13,6 +13,15 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkIdentity : NetworkObject
     {
+        public sealed override int NetworkID
+        {
+            get
+            {
+                return base.NetworkID;
+            }
+        }
+
+
         void Awake()
         {
             UnityNetworkManager.Register(this);
@@ -73,6 +82,14 @@ namespace SocketNetworking.UnityEngine.Components
                 }
             }
             NetworkObjects.Add(obj);
+            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                obj.ServerSetNetworkID(NetworkID);
+            }
+            if(NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                obj.ClientSetNetworkID(NetworkID);
+            }
         }
 
         public void UnregisterObject(NetworkObject obj)

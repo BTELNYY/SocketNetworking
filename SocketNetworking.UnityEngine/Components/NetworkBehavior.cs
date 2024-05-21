@@ -26,15 +26,18 @@ namespace SocketNetworking.UnityEngine.Components
         private int _netId = -1;
 
         /// <summary>
-        /// Sets the objects <see cref="NetworkID"/>.
+        /// Sets the objects <see cref="NetworkID"/> and tells all clients about it. Note that: The client must already know the old Network ID, so it is suggested you broadcast in some other way.
         /// </summary>
         /// <param name="id">
         /// The new ID to set the <see cref="NetworkID"/> to.
         /// </param>
-        public void SetNetworkID(int id)
+        public void ServerSetNetworkID(int id)
         {
+            if(NetworkManager.WhereAmI != ClientLocation.Remote)
+            {
+                throw new InvalidOperationException("Tried to change the NetworkID on the client!");
+            }
             _netId = id;
-            OnObjectUpdateNetworkIDLocal(id);
             if (NetworkManager.IsRegistered(this))
             {
                 NetworkManager.ModifyNetworkID(this);
@@ -43,6 +46,55 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 RegisterListener();
             }
+            NetworkInvoke(nameof(ClientSetNetId), new object[] { id });
+        }
+
+        public void SetNetworkID(int id)
+        {
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                ServerSetNetworkID(NetworkID);
+            }
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                ClientSetNetworkID(NetworkID);
+            }
+        }
+
+        /// <summary>
+        /// Updates the local network id. Note that no check is done if the new ID is correct, so this method can desync if used incorrectly.
+        /// </summary>
+        /// <param name="id"></param>
+        public void ClientSetNetworkID(int id)
+        {
+            if(NetworkManager.WhereAmI != ClientLocation.Local)
+            {
+                throw new InvalidOperationException("Tried to change the local network ID on the server! Use ServerSetNetworkID() instead!");
+            }
+            _netId = id;
+            if (NetworkManager.IsRegistered(this))
+            {
+                NetworkManager.ModifyNetworkID(this);
+            }
+            else
+            {
+                RegisterListener();
+            }
+        }
+
+        [NetworkInvocable(PacketDirection.Server)]
+        private void ClientSetNetId(int id)
+        {
+            _netId = id;
+            if (NetworkManager.IsRegistered(this))
+            {
+                NetworkManager.ModifyNetworkID(this);
+            }
+            else
+            {
+                RegisterListener();
+            }
+            OnObjectUpdateNetworkIDLocal(id);
         }
 
         public bool IsEnabled => base.enabled;

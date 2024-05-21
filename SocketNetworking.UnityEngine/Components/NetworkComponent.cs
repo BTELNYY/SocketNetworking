@@ -46,10 +46,7 @@ namespace SocketNetworking.UnityEngine.Components
                 }
                 if (_identity != value)
                 {
-                    if (_identity != null)
-                    {
-                        _identity.UnregisterObject(this);
-                    }
+                    _identity?.UnregisterObject(this);
                     _identity = value;
                     _identity.RegisterObject(this);
                 }
@@ -57,11 +54,10 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     _identity = value;
                 }
-                SetNetworkID(value.NetworkID);
             }
         }
 
-        void Awake()
+        void Start()
         {
             NetworkIdentity identity = GetComponent<NetworkIdentity>();
             if (Identity == null)
@@ -73,7 +69,6 @@ namespace SocketNetworking.UnityEngine.Components
                 else
                 {
                     Logger.Warning("Can't find Identity attached to this object!");
-                    SetNetworkID(-1);
                     return;
                 }
             }

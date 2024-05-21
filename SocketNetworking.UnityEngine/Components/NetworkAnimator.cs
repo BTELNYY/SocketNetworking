@@ -114,6 +114,41 @@ namespace SocketNetworking.UnityEngine.Components
         {
             base.OnClientObjectCreated(client);
             NetworkAnimatorSpeed = NetworkAnimatorSpeed;
+            for (int i = -1; i < _animator.layerCount; i++)
+            {
+                AnimatorStateInfo info = _animator.GetCurrentAnimatorStateInfo(i);
+                NetworkPlay(info.fullPathHash, i, info.normalizedTime);
+            }
+        }
+
+        public void NetworkPlay(string name, int layer = -1, float normalizedTime = float.NegativeInfinity)
+        {
+            NetworkInvoke(nameof(GetPlayData), new object[] { Animator.StringToHash(name), layer, normalizedTime });
+        }
+
+        public void NetworkPlay(int hash, int layer = -1, float normalizedTime = float.NegativeInfinity)
+        {
+            NetworkInvoke(nameof(GetPlayData), new object[] { hash, layer, normalizedTime });
+        }
+
+        [NetworkInvocable]
+        private void GetPlayData(NetworkClient client, int hash, int layer, float normalizedTime)
+        {
+            if (!ShouldBeReceivingPacketsFrom(client))
+            {
+                return;
+            }
+            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkPlay(hash, layer, normalizedTime);
+            }
+            _animator.Play(hash, layer, normalizedTime);
+        }
+
+        [NetworkInvocable]
+        private void GetPlayData(int hash, int layer, float normalizedTime)
+        {
+            _animator.Play(hash, layer, normalizedTime);
         }
 
         [PacketListener(typeof(NetworkAnimatorTriggerPacket), PacketDirection.Any)]

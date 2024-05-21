@@ -37,7 +37,12 @@ namespace SocketNetworking.UnityEngine
             NetworkIdentity networkIdentity = clone.GetComponent<NetworkIdentity>();
             if(networkIdentity == null)
             {
+                Log.GlobalError("NetworkPrefab is missing a NetworkIdentity! A new one has been created, ensure all prefabs have a NetworkIdenity on both the server and client.");
                 networkIdentity = clone.AddComponent<NetworkIdentity>();
+            }
+            foreach(NetworkComponent component in clone.GetComponents<NetworkComponent>())
+            {
+                component.Identity = networkIdentity;
             }
             networkIdentity.SetNetworkID(packet.NewNetworkID);
             networkIdentity.UpdateOwnershipMode(packet.OwnershipMode);
