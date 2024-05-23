@@ -818,9 +818,10 @@ namespace SocketNetworking
                     }
                     catch (Exception ex)
                     {
+                        Log.GlobalWarning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
                         NetworkInvocationResultPacket errorPacket = new NetworkInvocationResultPacket();
                         errorPacket.Success = false;
-                        errorPacket.ErrorMessage = ex.Message;
+                        errorPacket.ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message;
                         errorPacket.Result = SerializedData.NullData;
                         errorPacket.CallbackID = networkInvocationPacket.CallbackID;
                         errorPacket.IgnoreResult = false;
@@ -940,9 +941,10 @@ namespace SocketNetworking
                     }
                     catch (Exception ex)
                     {
+                        Log.GlobalWarning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
                         NetworkInvocationResultPacket errorPacket = new NetworkInvocationResultPacket();
                         errorPacket.Success = false;
-                        errorPacket.ErrorMessage = ex.Message;
+                        errorPacket.ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message;
                         errorPacket.Result = SerializedData.NullData;
                         errorPacket.CallbackID = networkInvocationPacket.CallbackID;
                         errorPacket.IgnoreResult = false;
@@ -953,7 +955,6 @@ namespace SocketNetworking
                     NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
                     NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
-
                     break;
                 default:
                     Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");

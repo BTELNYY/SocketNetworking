@@ -605,7 +605,7 @@ namespace SocketNetworking
         {
             if (packet.IgnoreResult)
             {
-                return;
+                //return;
             }
             if (!packet.Success)
             {
@@ -707,9 +707,19 @@ namespace SocketNetworking
                 args.Add(obj);
             }
             object result = null;
-            foreach(object obj in targets)
+            if (!packet.IgnoreResult)
             {
-                result = method.Invoke(target, args.ToArray());
+                foreach (object obj in targets)
+                {
+                    result = method.Invoke(obj, args.ToArray());
+                }
+            }
+            else
+            {
+                foreach (object obj in targets)
+                {
+                    method.Invoke(obj, args.ToArray());
+                }
             }
             NetworkInvocations.Remove(packet.NetworkObjectTarget);
             NetworkInvocationResultPacket resultPacket = new NetworkInvocationResultPacket();
