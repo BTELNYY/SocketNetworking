@@ -8,8 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using SocketNetworking.UnityEngine.Components;
 
-namespace SocketNetworking.UnityEngine.Components
+namespace SocketNetworking.UnityEngine
 {
     public class UnityNetworkManager : NetworkManager
     {
