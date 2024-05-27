@@ -16,7 +16,7 @@ namespace SocketNetworking.ExampleServer
         public static void Main(string[] args)
         {
             Log.OnLog += HandleNetworkLog;
-            NetworkManager.ImportCustomPackets(PacketUtils.GetAllPackets());
+            NetworkManager.ImportAssmebly(Utility.GetAssembly());
             NetworkServer.ClientType = typeof(TestClient);
             NetworkServer.HandshakeTime = 10000f;
             NetworkServer.StartServer();

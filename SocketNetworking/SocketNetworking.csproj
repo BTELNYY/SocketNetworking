@@ -46,6 +46,7 @@
     <Compile Include="Attributes\NetworkSerialized.cs" />
     <Compile Include="Attributes\PacketDefinition.cs" />
     <Compile Include="Attributes\PacketListener.cs" />
+    <Compile Include="Attributes\TypeWrapperAttribute.cs" />
     <Compile Include="Misc\CallbackTimer.cs" />
     <Compile Include="Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Exceptions\NetworkInvocationException.cs" />
@@ -57,6 +58,7 @@
     <Compile Include="PacketSystem\Packets\NetworkInvocationResultPacket.cs" />
     <Compile Include="PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
     <Compile Include="PacketSystem\Packets\ClientDataPacket.cs" />
+    <Compile Include="PacketSystem\TypeWrapper.cs" />
     <Compile Include="PacketSystem\TypeWrappers\SerializableDictionary.cs" />
     <Compile Include="Misc\ProtocolConfiguration.cs" />
     <Compile Include="Enums.cs" />

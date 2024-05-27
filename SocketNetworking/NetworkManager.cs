@@ -111,7 +111,94 @@ namespace SocketNetworking
             }
         }
 
+        public static Dictionary<Type, NetworkObjectCache> TypeCache = new Dictionary<Type, NetworkObjectCache>();
 
+        public static Dictionary<Type, Type> TypeToTypeWrapper = new Dictionary<Type, Type>();
+
+        /// <summary>
+        /// Imports the target assembly, caching: <see cref="ITypeWrapper{T}"/>s, any methods with <see cref="NetworkInvocable"/> (which are on a class with <see cref="INetworkObject"/> implemented) and any <see cref="CustomPacket"/>s  
+        /// </summary>
+        /// <param name="target"></param>
+        public static void ImportAssmebly(Assembly target)
+        {
+            ImportCustomPackets(target);
+            List<Type> applicableTypes = target.GetTypes().Where(x => x.GetInterfaces().Contains(typeof(INetworkObject)) || x.IsSubclassOf(typeof(NetworkClient)) || x.IsSubclassOf(typeof(TypeWrapper<>))).ToList();
+            foreach(Type t in applicableTypes)
+            {
+                if (TypeCache.ContainsKey(t) || TypeToTypeWrapper.ContainsValue(t))
+                {
+                    continue;
+                }
+                if (t.IsSubclassOf(typeof(TypeWrapper<>)))
+                {
+                    TypeWrapper<object> wrapper = (TypeWrapper<object>)Activator.CreateInstance(t);
+                    Type targetType = wrapper.GetContainedType();
+                    if(!TypeToTypeWrapper.ContainsKey(targetType))
+                    {
+                        TypeToTypeWrapper.Add(targetType, t);
+                    }
+                }
+                NetworkObjectCache networkObjectCache = new NetworkObjectCache();
+                networkObjectCache.Target = t;
+                networkObjectCache.Invokables = new List<(MethodInfo, NetworkInvocable)>();
+                networkObjectCache.Listeners = new Dictionary<Type, List<PacketListenerData>>();
+                foreach(MethodInfo method in t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                {
+                    if(method.GetCustomAttribute<PacketListener>() != null)
+                    {
+                        if (method.GetParameters().Length < AcceptedMethodArugments.Length)
+                        {
+                            Log.GlobalWarning("Method " + method.Name + " was ignored becuase it doesn't have the proper amount of arguments");
+                        }
+                        else
+                        {
+                            bool methodArgsFailed = false;
+                            for (int i = 0; i < AcceptedMethodArugments.Length; i++)
+                            {
+                                Type methodType = method.GetParameters()[i].ParameterType;
+                                Type acceptedType = AcceptedMethodArugments[i];
+                                if (!methodType.IsSubclassOf(acceptedType))
+                                {
+                                    Log.GlobalWarning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
+                                    methodArgsFailed = true;
+                                }
+                            }
+                            if (!methodArgsFailed)
+                            {
+                                PacketListener attribute = method.GetCustomAttribute<PacketListener>();
+                                PacketListenerData data = new PacketListenerData
+                                {
+                                    Attribute = attribute,
+                                    AttachedMethod = method
+                                };
+                                if (!networkObjectCache.Listeners.ContainsKey(attribute.DefinedType))
+                                {
+                                    networkObjectCache.Listeners.Add(attribute.DefinedType, new List<PacketListenerData>() { data });
+                                }
+                                else
+                                {
+                                    if (!networkObjectCache.Listeners[attribute.DefinedType].Contains(data))
+                                    {
+                                        networkObjectCache.Listeners[attribute.DefinedType].Add(data);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if(method.GetCustomAttribute<NetworkInvocable>() != null)
+                    {
+                        ValueTuple<MethodInfo, NetworkInvocable> tuple = (method, method.GetCustomAttribute<NetworkInvocable>());
+                        if (networkObjectCache.Invokables.Contains(tuple))
+                        {
+                            Log.GlobalWarning($"Tried to cache duplicate! Type: {t.FullName}, Method: {method.Name}");
+                            continue;
+                        }
+                        networkObjectCache.Invokables.Add(tuple);
+                    }
+                }
+            }
+        }
+    
         /// <summary>
         /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your netowrk objects.
         /// </summary>
@@ -987,7 +1074,16 @@ namespace SocketNetworking
             return NetworkInvoke<TResult>(target, sender, func.Method.Name, new object[] { });
         }
     }
-        
+    
+    public struct NetworkObjectCache
+    {
+        public Type Target;
+
+        public Dictionary<Type, List<PacketListenerData>> Listeners;
+
+        public List<ValueTuple<MethodInfo, NetworkInvocable>> Invokables;    
+    }
+
     public struct NetworkObjectData
     {
         public Dictionary<Type, List<PacketListenerData>> Listeners;

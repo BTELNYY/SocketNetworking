@@ -9,12 +9,17 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.ExampleSharedData
 {
-    public class PacketUtils
+    public class Utility
     {
         public static List<Type> GetAllPackets()
         {
             List<Type> packets = Assembly.GetExecutingAssembly().GetTypes().Where(x => x.IsSubclassOf(typeof(CustomPacket)) && x.GetCustomAttribute<PacketDefinition>() != null).ToList();
             return packets;
+        }
+
+        public static Assembly GetAssembly()
+        {
+            return Assembly.GetExecutingAssembly();
         }
     }
 }
