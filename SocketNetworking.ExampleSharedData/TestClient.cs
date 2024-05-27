@@ -11,15 +11,15 @@ namespace SocketNetworking.ExampleSharedData
     public class TestClient : NetworkClient
     {
         [NetworkInvocable(PacketDirection.Server)]
-        private TestResult SomeNetworkMethod(float someFloat, int someInt)
+        private TestResult SomeNetworkMethod(float someFloat, int someInt, ValueTuple<int, int> values)
         {
-            Log.GlobalDebug($"{someFloat}, {someInt}");
+            Log.GlobalDebug($"{someFloat}, {someInt}, {values.Item1 + values.Item2}");
             return TestResult.Result3;
         }
 
         public void NetworkInvokeSomeMethod(float someFloat, int someInt)
         {
-            TestResult result = NetworkInvoke<TestResult>(this, "SomeNetworkMethod", new object[] { someFloat, someInt });
+            TestResult result = NetworkInvoke<TestResult>(this, "SomeNetworkMethod", new object[] { someFloat, someInt, new ValueTuple<int, int> (1, 345975985) });
             Log.GlobalDebug(result.ToString());
         }
     }

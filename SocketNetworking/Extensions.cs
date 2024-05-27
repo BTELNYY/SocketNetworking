@@ -230,5 +230,25 @@ namespace SocketNetworking
 
             return i; // Return the first "free" spot.
         }
+
+        /// <summary>
+        /// Checks if the type is a sublcass of the generic type <paramref name="generic"/>.
+        /// </summary>
+        /// <param name="toCheck"></param>
+        /// <param name="generic"></param>
+        /// <returns></returns>
+        public static bool IsSubclassOfRawGeneric(this Type toCheck, Type generic)
+        {
+            while (toCheck != null && toCheck != typeof(object))
+            {
+                var cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
+                if (generic == cur)
+                {
+                    return true;
+                }
+                toCheck = toCheck.BaseType;
+            }
+            return false;
+        }
     }
 }

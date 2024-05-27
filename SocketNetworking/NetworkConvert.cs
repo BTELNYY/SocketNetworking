@@ -1,21 +1,13 @@
-﻿using SocketNetworking.PacketSystem;
+﻿using SocketNetworking.Attributes;
 using SocketNetworking.Exceptions;
-using SocketNetworking.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.TypeWrappers;
+using System;
 using System.Collections;
-using System.Reflection;
+using System.Collections.Generic;
 using System.Data;
-using System.Windows.Markup;
-using System.ComponentModel;
-using System.CodeDom;
-using System.Diagnostics.Eventing.Reader;
-using System.Xml.Linq;
-using System.Security.Cryptography;
+using System.Linq;
+using System.Reflection;
 
 namespace SocketNetworking
 {
@@ -92,6 +84,19 @@ namespace SocketNetworking
                 sData.Data = writer.Data;
                 return sData;
             }
+
+            if (NetworkManager.TypeToTypeWrapper.ContainsKey(dataType))
+            {
+                object obj = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[dataType]);
+                PropertyInfo valueInfo = obj.GetType().GetProperty(nameof(TypeWrapper<object>.Value));
+                valueInfo.SetValue(obj, data, null);
+                MethodInfo serialize = obj.GetType().GetMethod(nameof(TypeWrapper<object>.Serialize));
+                byte[] array = (byte[])serialize.Invoke(obj, null);
+                writer.Write(array);
+                sData.Data = writer.Data;
+                return sData;
+            }
+
             if (dataType.IsEnum)
             {
                 Enum lastEnum = (Enum)data.LastEnum();
@@ -262,12 +267,24 @@ namespace SocketNetworking
                 read = reader.ReadBytes;
                 return client;
             }
+
             if (data.Type.GetInterfaces().Contains(typeof(IPacketSerializable)))
             {
                 object obj = Activator.CreateInstance(data.Type);
                 IPacketSerializable serializable = (IPacketSerializable)obj;
                 read = serializable.Deserialize(data.Data);
                 return serializable;
+            }
+
+            if (NetworkManager.TypeToTypeWrapper.ContainsKey(data.Type))
+            {
+                Type wrapper = NetworkManager.TypeToTypeWrapper[data.Type];
+                object typper = Activator.CreateInstance(wrapper);
+                object output = typper.GetType().GetMethod("Deserialize").Invoke(typper, new object[] { data.Data });
+                FieldInfo item1 = output.GetType().GetField(nameof(ValueTuple<object, int>.Item1));
+                FieldInfo item2 = output.GetType().GetField(nameof(ValueTuple<object, int>.Item2));
+                read = (int)item2.GetValue(output);
+                return Convert.ChangeType(item1.GetValue(output), data.Type);
             }
 
             if (data.Type.IsEnum)

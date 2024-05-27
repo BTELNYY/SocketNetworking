@@ -17,6 +17,6 @@ namespace SocketNetworking.PacketSystem
 
         public abstract byte[] Serialize();
 
-        public abstract T Deserialize(byte[] data);
+        public abstract ValueTuple<T, int> Deserialize(byte[] data);
     }
 }

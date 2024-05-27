@@ -122,18 +122,20 @@ namespace SocketNetworking
         public static void ImportAssmebly(Assembly target)
         {
             ImportCustomPackets(target);
-            List<Type> applicableTypes = target.GetTypes().Where(x => x.GetInterfaces().Contains(typeof(INetworkObject)) || x.IsSubclassOf(typeof(NetworkClient)) || x.IsSubclassOf(typeof(TypeWrapper<>))).ToList();
+            List<Type> applicableTypes = target.GetTypes().ToList();
             foreach(Type t in applicableTypes)
             {
                 if (TypeCache.ContainsKey(t) || TypeToTypeWrapper.ContainsValue(t))
                 {
                     continue;
                 }
-                if (t.IsSubclassOf(typeof(TypeWrapper<>)))
+                Type baseType = t.BaseType;
+                if (t.IsSubclassOfRawGeneric(typeof(TypeWrapper<>)))
                 {
-                    TypeWrapper<object> wrapper = (TypeWrapper<object>)Activator.CreateInstance(t);
-                    Type targetType = wrapper.GetContainedType();
-                    if(!TypeToTypeWrapper.ContainsKey(targetType))
+                    object obj = Activator.CreateInstance(t);
+                    MethodInfo method = obj.GetType().GetMethod(nameof(TypeWrapper<object>.GetContainedType));
+                    Type targetType = (Type)method.Invoke(obj, null);
+                    if (!TypeToTypeWrapper.ContainsKey(targetType))
                     {
                         TypeToTypeWrapper.Add(targetType, t);
                     }
