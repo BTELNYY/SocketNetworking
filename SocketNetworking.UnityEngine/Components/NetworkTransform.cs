@@ -148,6 +148,25 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public void NetworkTranslate(Vector3 position, Space relativeTo = Space.Self)
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+            NetworkInvoke(nameof(GetNetworkTranslate), new object[] { new SerializableVector3(position), relativeTo });
+        }
+
+        [NetworkInvocable]
+        private void GetNetworkTranslate(SerializableVector3 vector3, Space space)
+        {
+            transform.Translate(vector3.Vector, space);
+            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkTranslate(vector3.Vector, space);
+            }
+        }
+
         public override void OnClientObjectCreated(UnityNetworkClient client)
         {
             base.OnClientObjectCreated(client);

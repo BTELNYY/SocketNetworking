@@ -21,7 +21,6 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-
         void Awake()
         {
             UnityNetworkManager.Register(this);
@@ -125,26 +124,20 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
-                if (NetworkManager.WhereAmI != SyncOwner)
+                if (!IsOwner)
                 {
                     Logger.Warning($"Tried to set property of {gameObject.name} from illegal client side.");
                     return;
                 }
-                NetworkObjectEnabledStatusPacket status = new NetworkObjectEnabledStatusPacket();
-                status.IsEnabled = value;
-                SendPacket(status);
+                NetworkInvoke(nameof(GetNetworkStatus), new object[] { value });
                 gameObject.SetActive(value);
             }
         }
 
-        [PacketListener(typeof(NetworkObjectEnabledStatusPacket), PacketDirection.Server)]
-        private void OnNetworkEnabledStateUpdate(NetworkObjectEnabledStatusPacket packet, NetworkClient client)
+        [NetworkInvocable]
+        private void GetNetworkStatus(NetworkClient client, bool enabled)
         {
-            if (client.CurrnetClientLocation == SyncOwner && DoStrictMode)
-            {
-                return;
-            }
-            gameObject.SetActive(packet.IsEnabled);
+            gameObject.SetActive(enabled);
         }
     }
 }

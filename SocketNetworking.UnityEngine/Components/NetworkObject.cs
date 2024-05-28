@@ -81,16 +81,6 @@ namespace SocketNetworking.UnityEngine.Components
             return false;
         }
 
-        /// <summary>
-        /// Who should be allowed to send sync data?
-        /// </summary>
-        public ClientLocation SyncOwner = ClientLocation.Remote;
-
-        /// <summary>
-        /// If set to false, the client/server will be lenient when checking who should be sending packets
-        /// </summary>
-        public bool DoStrictMode = true;
-
         public Log Logger
         {
             get
