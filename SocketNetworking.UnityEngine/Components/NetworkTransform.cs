@@ -15,7 +15,7 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkTransform : NetworkComponent
     {
-        public void ServerSyncRotationAndPosition()
+        public void ServerSyncPositionAndRotation()
         {
             NetworkPosition = NetworkPosition;
             NetworkRotation = NetworkRotation;
@@ -164,6 +164,25 @@ namespace SocketNetworking.UnityEngine.Components
             if(NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkTranslate(vector3.Vector, space);
+            }
+        }
+
+        public void NetworkLookAt(Vector3 position)
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+            NetworkInvoke(nameof(GetNetworkLookAt), new object[] { new SerializableVector3(position) });
+        }
+
+        [NetworkInvocable]
+        private void GetNetworkLookAt(SerializableVector3 vector3)
+        {
+            transform.LookAt(vector3.Vector);
+            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkLookAt(vector3.Vector);
             }
         }
 

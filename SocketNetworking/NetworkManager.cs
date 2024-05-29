@@ -731,7 +731,7 @@ namespace SocketNetworking
                 throw new NetworkInvocationException($"Unable to find the Object this packet is referencing.");
             }
             Type[] arguments = packet.Arguments.Select(x => x.Type).ToArray();
-            MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToArray();
+            MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToArray();
             MethodInfo method = null;
             string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
             foreach (MethodInfo m in methods)
@@ -745,7 +745,7 @@ namespace SocketNetworking
             }
             if (method == null)
             {
-                throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}'.", new NullReferenceException());
+                throw new NetworkInvocationException($"Cannot find method: '{method.Name}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
             if (invocable.Direction == PacketDirection.Server && reciever.CurrnetClientLocation == ClientLocation.Remote)
@@ -857,7 +857,7 @@ namespace SocketNetworking
                 throw new NetworkInvocationException($"Cannot find type: '{target.GetType()}'.", new NullReferenceException());
             }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
-            MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
+            MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
             MethodInfo method = null;
             string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
             foreach (MethodInfo m in methods)
@@ -875,7 +875,7 @@ namespace SocketNetworking
             }
             if (method == null)
             {
-                throw new NetworkInvocationException($"Cannot find method: '{methodName}'.", new NullReferenceException());
+                throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
             if (invocable.Direction == PacketDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
@@ -953,7 +953,7 @@ namespace SocketNetworking
                 throw new NetworkInvocationException($"Cannot find type: '{target.GetType()}'.", new NullReferenceException());
             }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
-            MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
+            MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
             MethodInfo method = null;
             string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
             foreach (MethodInfo m in methods)
@@ -975,7 +975,7 @@ namespace SocketNetworking
             }
             if (method == null)
             {
-                throw new NetworkInvocationException($"Cannot find method: '{methodName}'.", new NullReferenceException());
+                throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
             if (invocable.Direction == PacketDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)

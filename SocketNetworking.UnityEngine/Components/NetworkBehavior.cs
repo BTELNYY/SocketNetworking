@@ -44,13 +44,34 @@ namespace SocketNetworking.UnityEngine.Components
             }
             else
             {
-                RegisterListener();
+                RegisterObject();
             }
-            NetworkInvoke(nameof(ClientSetNetId), new object[] { id });
+            NetworkInvoke(nameof(ClientSetNetId), new object[] { id }, true, false);
         }
 
-        public void SetNetworkID(int id)
+
+        [NetworkInvocable(PacketDirection.Server)]
+        private void ClientSetNetId(int id)
         {
+            _netId = id;
+            if (NetworkManager.IsRegistered(this))
+            {
+                NetworkManager.ModifyNetworkID(this);
+            }
+            else
+            {
+                RegisterObject();
+            }
+            OnObjectUpdateNetworkIDLocal(id);
+        }
+
+        public void SetNetworkID(int id, bool local = false)
+        {
+            if (local)
+            {
+                _netId = id;
+                return;
+            }
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 ServerSetNetworkID(NetworkID);
@@ -78,23 +99,8 @@ namespace SocketNetworking.UnityEngine.Components
             }
             else
             {
-                RegisterListener();
+                RegisterObject();
             }
-        }
-
-        [NetworkInvocable(PacketDirection.Server)]
-        private void ClientSetNetId(int id)
-        {
-            _netId = id;
-            if (NetworkManager.IsRegistered(this))
-            {
-                NetworkManager.ModifyNetworkID(this);
-            }
-            else
-            {
-                RegisterListener();
-            }
-            OnObjectUpdateNetworkIDLocal(id);
         }
 
         public bool IsEnabled => base.enabled;
@@ -236,9 +242,9 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         /// <summary>
-        /// Ensures the current script is registered as a packet listener.
+        /// Ensures the current script is registered as a network object
         /// </summary>
-        public virtual void RegisterListener()
+        public virtual void RegisterObject()
         {
             if(NetworkID == -1)
             {
@@ -275,11 +281,11 @@ namespace SocketNetworking.UnityEngine.Components
 
         void Start()
         {
-            RegisterListener();
+            RegisterObject();
         }
 
 
-        public void NetworkInvoke(string methodName, object[] args)
+        public virtual void NetworkInvoke(string methodName, object[] args)
         {
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
@@ -298,7 +304,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        public void NetworkInvoke(string methodName, object[] args, bool globalRpc, bool readyOnly)
+        public virtual void NetworkInvoke(string methodName, object[] args, bool globalRpc, bool readyOnly)
         {
             if(NetworkManager.WhereAmI == ClientLocation.Remote)
             {

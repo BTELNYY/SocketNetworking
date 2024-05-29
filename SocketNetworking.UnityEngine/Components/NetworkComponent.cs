@@ -41,7 +41,8 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 if (value == null)
                 {
-                    Logger.Error("Can't set null NetworkIdentity!");
+                    _identity?.UnregisterObject(this);
+                    _identity = null;
                     return;
                 }
                 if (_identity != value)

@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.Serialization.Formatters.Binary;
 using SocketNetworking.PacketSystem;
+using System.Reflection;
 
 namespace SocketNetworking
 {
@@ -249,6 +250,29 @@ namespace SocketNetworking
                 toCheck = toCheck.BaseType;
             }
             return false;
+        }
+
+        public static IEnumerable<MethodInfo> GetMethodsDeep(this Type type, BindingFlags flags = BindingFlags.Default)
+        {
+            List<MethodInfo> list = new List<MethodInfo>();
+            if(type == null)
+            {
+                return list;
+            }
+            while(type != typeof(object))
+            {
+                MethodInfo[] methods = type.GetMethods(flags);
+                foreach(MethodInfo m in methods)
+                {
+                    if (list.Contains(m))
+                    {
+                        continue;
+                    }
+                    list.Add(m);
+                }
+                type = type.BaseType;
+            }
+            return list;
         }
     }
 }

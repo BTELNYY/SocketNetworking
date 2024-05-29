@@ -53,6 +53,7 @@
     <Compile Include="Components\NetworkObject.cs" />
     <Compile Include="Components\NetworkPrefab.cs" />
     <Compile Include="Components\NetworkTransform.cs" />
+    <Compile Include="Components\UnityMainThreadDispatcher.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorBoolValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorFloatValueUpdatePacket.cs" />
