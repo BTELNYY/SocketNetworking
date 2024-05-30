@@ -812,6 +812,7 @@ namespace SocketNetworking
                 case PacketType.NetworkInvocation:
                     NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
                     networkInvocationPacket.Deserialize(data);
+                    Log.GlobalDebug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
                     {
                         NetworkManager.NetworkInvoke(networkInvocationPacket, this);
@@ -831,6 +832,7 @@ namespace SocketNetworking
                 case PacketType.NetworkInvocationResult:
                     NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
+                    Log.GlobalDebug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
                     NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
                     break;
                 default:
@@ -935,6 +937,7 @@ namespace SocketNetworking
                 case PacketType.NetworkInvocation:
                     NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
                     networkInvocationPacket.Deserialize(data);
+                    Log.GlobalDebug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
                     {
                         NetworkManager.NetworkInvoke(networkInvocationPacket, this);
@@ -954,6 +957,7 @@ namespace SocketNetworking
                 case PacketType.NetworkInvocationResult:
                     NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
+                    Log.GlobalDebug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
                     NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
                     break;
                 default:

@@ -726,6 +726,10 @@ namespace SocketNetworking
             {
                 targets.Add(target);
             }
+            if(targets.Count == 0)
+            {
+                throw new NetworkInvocationException("Unable to find any networkobjects with ID: " + packet.NetworkObjectTarget);
+            }
             if (target == null)
             {
                 throw new NetworkInvocationException($"Unable to find the Object this packet is referencing.");
