@@ -1053,6 +1053,7 @@ namespace SocketNetworking
                     break;
                 }
             }
+            Log.GlobalDebug($"NetowkInvoke on {methodName} successfully returned and took {stopwatch.ElapsedMilliseconds}ms");
             NetworkInvocationResultPacket resultPacket = networkResultAwaiter.ResultPacket;
             if(resultPacket == null)
             {
