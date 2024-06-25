@@ -722,7 +722,7 @@ namespace SocketNetworking
                     targets.AddRange(netObjs);
                 }
             }
-            else if(targetType.IsSubclassOf(typeof(NetworkClient)))
+            else if(targetType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
             {
                 targets.Add(target);
             }
@@ -740,8 +740,12 @@ namespace SocketNetworking
             string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
             foreach (MethodInfo m in methods)
             {
-                string[] m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToArray();
-                if (m_args.ArraysEqual(expectedArgs))
+                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
+                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)) && !arguments[0].IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                {
+                    m_args.RemoveAt(0);
+                }
+                if (m_args.ToArray().ArraysEqual(expectedArgs))
                 {
                     method = m;
                     break;
@@ -749,7 +753,7 @@ namespace SocketNetworking
             }
             if (method == null)
             {
-                throw new NetworkInvocationException($"Cannot find method: '{method.Name}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
+                throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
             if (invocable.Direction == PacketDirection.Server && reciever.CurrnetClientLocation == ClientLocation.Remote)
@@ -783,14 +787,14 @@ namespace SocketNetworking
                 }
                 if (!(target is INetworkObject) && !(target is NetworkClient))
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
                     {
                         Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + packet.MethodName);
                     }
                 }
             }
             List<object> args = new List<object>();
-            if (method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+            if (method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
             {
                 args.Add(reciever);
             }
@@ -867,9 +871,9 @@ namespace SocketNetworking
             foreach (MethodInfo m in methods)
             {
                 List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
                 {
-                    m_args.Insert(0, m.GetParameters()[0].ParameterType.FullName);
+                    m_args.RemoveAt(0);
                 }
                 if (m_args.ToArray().ArraysEqual(expectedArgs))
                 {
@@ -913,7 +917,7 @@ namespace SocketNetworking
                 }
                 if (!(target is INetworkObject) && !(target is NetworkClient))
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
                     {
                         Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + methodName);
                     }
@@ -963,9 +967,9 @@ namespace SocketNetworking
             foreach (MethodInfo m in methods)
             {
                 List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
                 {
-                    m_args.Insert(0, m.GetParameters()[0].ParameterType.FullName);
+                    m_args.RemoveAt(0);
                 }
                 if (m_args.ToArray().ArraysEqual(expectedArgs))
                 {
