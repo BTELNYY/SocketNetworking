@@ -118,6 +118,8 @@ namespace SocketNetworking.PacketSystem
         ServerData,
         NetworkInvocation,
         NetworkInvocationResult,
+        EncryptionPublicKeyData,
+        EncryptionKeyData,
         CustomPacket,
     }
     
