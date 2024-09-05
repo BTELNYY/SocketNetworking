@@ -36,12 +36,7 @@ namespace SocketNetworking.PacketSystem
         /// </returns>
         public static PacketHeader ReadPacketHeader(byte[] data)
         {
-            ByteReader reader = new ByteReader(data);
-            int size = reader.ReadInt();
-            PacketType type = (PacketType)reader.ReadInt();
-            int networkTarget = reader.ReadInt();
-            int customPacketID = reader.ReadInt();
-            return new PacketHeader(type, networkTarget, customPacketID, size);
+            return PacketHeader.GetHeader(data);
         }
 
         /// <summary>
@@ -53,6 +48,11 @@ namespace SocketNetworking.PacketSystem
         /// PacketType used to determine if the library should look for Listeners or handle internally.
         /// </summary>
         public virtual PacketType Type { get; } = PacketType.None;
+
+        /// <summary>
+        /// <see cref="PacketFlags"/> are used to determine metadata about the packet, such as encryption status or compression. Default value is <see cref="PacketFlags.None"/>. Setting this value on the sender applies the flags in transit, setting these flags otherwise causes no effects.
+        /// </summary>
+        public virtual PacketFlags Flags { get; set; } = PacketFlags.None;
 
         /// <summary>
         /// The NetworkID of the object which this packet is being sent to. 0 Means only sent to the other clients class.
@@ -74,6 +74,7 @@ namespace SocketNetworking.PacketSystem
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteInt((int)Type);
+            writer.WriteByte((byte)Flags);
             writer.WriteInt(NetowrkIDTarget);
             writer.WriteInt(CustomPacketID);
             return writer;
@@ -89,13 +90,15 @@ namespace SocketNetworking.PacketSystem
         {
             ByteReader reader = new ByteReader(data);
             //Very cursed, must read first in so that the desil doesn't fail next line.
-            int expectedLength = reader.DataLength - 16;
+            int expectedLength = reader.DataLength - PacketHeader.HeaderLength;
             Size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadInt();
             if(type != Type)
             {
                 throw new InvalidNetworkDataException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
             }
+            PacketFlags flags = (PacketFlags)reader.ReadByte();
+            Flags = flags;
             NetowrkIDTarget = reader.ReadInt();
             CustomPacketID = reader.ReadInt();
             if(expectedLength != reader.DataLength)
@@ -118,18 +121,28 @@ namespace SocketNetworking.PacketSystem
         ServerData,
         NetworkInvocation,
         NetworkInvocationResult,
-        EncryptionPublicKeyData,
-        EncryptionKeyData,
+        EncryptionPacket,
         CustomPacket,
     }
-    
+
+    [Flags]
+    public enum PacketFlags : byte
+    {
+        None = 0,
+        Compressed,
+        Encrypted,
+    }
+
     /// <summary>
     /// Represents the first fields of a packet in a nicer way, to get this from a raw <see cref="byte[]"/> use <see cref="Packet.ReadPacketHeader(byte[])"/>
     /// </summary>
     public struct PacketHeader
     {
+        public const int HeaderLength = 17;
+
         public int Size;
         public PacketType Type;
+        public PacketFlags Flags;
         public int NetworkIDTarget;
         public int CustomPacketID;
 
@@ -139,6 +152,7 @@ namespace SocketNetworking.PacketSystem
             NetworkIDTarget = networkIDTarget;
             CustomPacketID = customPacketID;
             Size = size;
+            Flags = PacketFlags.None;
         }
 
         public PacketHeader(PacketType type, int networkIDTarget, int size)
@@ -147,6 +161,16 @@ namespace SocketNetworking.PacketSystem
             NetworkIDTarget = networkIDTarget;
             CustomPacketID = 0;
             Size = size;
+            Flags = PacketFlags.None;
+        }
+
+        public PacketHeader(int size, PacketType type, PacketFlags flags, int networkIDTarget, int customPacketID)
+        {
+            Size = size;
+            Type = type;
+            Flags = flags;
+            NetworkIDTarget = networkIDTarget;
+            CustomPacketID = customPacketID;
         }
 
         /// <summary>
@@ -161,13 +185,14 @@ namespace SocketNetworking.PacketSystem
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         public static PacketHeader GetHeader(byte[] data)
         {
-            if(data.Length < 17)
+            if(data.Length < HeaderLength + 1)
             {
-                throw new ArgumentOutOfRangeException("data", "Data must be at least 16 bytes long!");
+                throw new ArgumentOutOfRangeException("data", "Data must be at least 17 bytes long!");
             }
             ByteReader reader = new ByteReader(data);
             int size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadInt();
+            PacketFlags flags = (PacketFlags)reader.ReadByte();
             int networkTarget = reader.ReadInt();
             int customPacketID = reader.ReadInt();
             return new PacketHeader(type, networkTarget, customPacketID, size);

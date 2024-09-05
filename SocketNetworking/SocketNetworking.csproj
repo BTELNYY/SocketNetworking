@@ -52,8 +52,10 @@
     <Compile Include="Exceptions\NetworkInvocationException.cs" />
     <Compile Include="Exceptions\NetworkSerializationException.cs" />
     <Compile Include="NetworkConvert.cs" />
+    <Compile Include="NetworkEncryptionManager.cs" />
     <Compile Include="NetworkManager.cs" />
     <Compile Include="Misc\NetworkResultAwaiter.cs" />
+    <Compile Include="PacketSystem\Packets\EncryptionPacket.cs" />
     <Compile Include="PacketSystem\Packets\NetworkInvocationPacket.cs" />
     <Compile Include="PacketSystem\Packets\NetworkInvocationResultPacket.cs" />
     <Compile Include="PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
