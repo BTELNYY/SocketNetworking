@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -55,6 +56,21 @@ namespace SocketNetworking.PacketSystem
         public virtual PacketFlags Flags { get; set; } = PacketFlags.None;
 
         /// <summary>
+        /// Method ensures that the <see cref="PacketFlags"/> set in <see cref="Flags"/> are not conflicting. 
+        /// </summary>
+        /// <returns>
+        /// Either <see cref="true"/> for a successful validation or <see cref="false"/> for a failed one.
+        /// </returns>
+        public bool ValidateFlags()
+        {
+            if(Flags.HasFlag(PacketFlags.AsymtreicalEncrypted) && Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
         /// The NetworkID of the object which this packet is being sent to. 0 Means only sent to the other clients class.
         /// </summary>
         public int NetowrkIDTarget = 0;
@@ -73,7 +89,7 @@ namespace SocketNetworking.PacketSystem
         public virtual ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            writer.WriteInt((int)Type);
+            writer.WriteByte((byte)Type);
             writer.WriteByte((byte)Flags);
             writer.WriteInt(NetowrkIDTarget);
             writer.WriteInt(CustomPacketID);
@@ -92,7 +108,7 @@ namespace SocketNetworking.PacketSystem
             //Very cursed, must read first in so that the desil doesn't fail next line.
             int expectedLength = reader.DataLength - PacketHeader.HeaderLength;
             Size = reader.ReadInt();
-            PacketType type = (PacketType)reader.ReadInt();
+            PacketType type = (PacketType)reader.ReadByte();
             if(type != Type)
             {
                 throw new InvalidNetworkDataException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
@@ -112,7 +128,7 @@ namespace SocketNetworking.PacketSystem
     /// <summary>
     /// Structure which represents what kind of packet is being sent, Note that the only type the user should use is CustomPacket.
     /// </summary>
-    public enum PacketType 
+    public enum PacketType : byte
     {
         None,
         ReadyStateUpdate,
@@ -125,12 +141,25 @@ namespace SocketNetworking.PacketSystem
         CustomPacket,
     }
 
+    /// <summary>
+    /// <see cref="PacketFlags"/> are used to give metadata to packets for the sending method to interpert. For exmaple, flagging the packet as <see cref="PacketFlags.SymetricalEncrypted"/> will use the symmetrical key sent in the Encryption Handshake during connection time. Some flags cannot be used if the framework for them has not yet been implemented. (Handshake isn't complete, RSA/AES keys are not exchanged, or they are incorrect.)
+    /// </summary>
     [Flags]
     public enum PacketFlags : byte
     {
         None = 0,
+        /// <summary>
+        /// Uses GZIP Compression.
+        /// </summary>
         Compressed,
-        Encrypted,
+        /// <summary>
+        /// Uses the RSA Algorithim at send to encrypt data. RSA has a limit to the size of the data it can encrypt. Not Compatible with <see cref="PacketFlags.SymetricalEncrypted"/>
+        /// </summary>
+        AsymtreicalEncrypted,
+        /// <summary>
+        /// Uses Symetrical Encryption to send data, note that this can only be used once the full encryptoin handshake has been completed. Not Compatible with <see cref="PacketFlags.AsymtreicalEncrypted"/>
+        /// </summary>
+        SymetricalEncrypted,
     }
 
     /// <summary>
@@ -138,7 +167,7 @@ namespace SocketNetworking.PacketSystem
     /// </summary>
     public struct PacketHeader
     {
-        public const int HeaderLength = 17;
+        public const int HeaderLength = 14;
 
         public int Size;
         public PacketType Type;
@@ -191,11 +220,11 @@ namespace SocketNetworking.PacketSystem
             }
             ByteReader reader = new ByteReader(data);
             int size = reader.ReadInt();
-            PacketType type = (PacketType)reader.ReadInt();
+            PacketType type = (PacketType)reader.ReadByte();
             PacketFlags flags = (PacketFlags)reader.ReadByte();
             int networkTarget = reader.ReadInt();
             int customPacketID = reader.ReadInt();
-            return new PacketHeader(type, networkTarget, customPacketID, size);
+            return new PacketHeader(size, type, flags, networkTarget, customPacketID);
         }
     }
 }

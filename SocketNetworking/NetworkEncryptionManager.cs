@@ -52,7 +52,16 @@ namespace SocketNetworking
         {
             if (useSymmetry)
             {
-                throw new NotImplementedException();
+                using (MemoryStream stream = new MemoryStream(data))
+                {
+                    using (CryptoStream cryptoStream = new CryptoStream(stream, SymetricalEncryption.CreateEncryptor(), CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(data, 0 , data.Length);
+                        byte[] output = new byte[cryptoStream.Length];
+                        cryptoStream.Read(output, 0, output.Length);
+                        return output;
+                    };
+                };
             }
             else
             {

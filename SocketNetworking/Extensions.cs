@@ -178,7 +178,8 @@ namespace SocketNetworking
                 {
                     gzipStream.Write(bytes, 0, bytes.Length);
                 }
-                return memoryStream.ToArray();
+                byte[] finalArray  = memoryStream.ToArray();
+                return finalArray;
             }
         }
 
@@ -192,7 +193,8 @@ namespace SocketNetworking
                     {
                         decompressStream.CopyTo(outputStream);
                     }
-                    return outputStream.ToArray();
+                    byte[] output = outputStream.ToArray();
+                    return output;
                 }
             }
         }
@@ -269,6 +271,20 @@ namespace SocketNetworking
             }
 
             return (T)valueAsInt;
+        }
+
+        public static List<T> GetActiveFlags<T>(this T value) where  T : Enum
+        {
+            List<T> allValues = Enum.GetValues(typeof(T)).Cast<T>().ToList();
+            List<T> activeFlags = new List<T>();
+            foreach(T t in allValues)
+            {
+                if (value.HasFlag(t))
+                {
+                    activeFlags.Add(t);
+                }
+            }
+            return activeFlags;
         }
 
         public static IEnumerable<MethodInfo> GetMethodsDeep(this Type type, BindingFlags flags = BindingFlags.Default)

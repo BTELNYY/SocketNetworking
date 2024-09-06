@@ -39,6 +39,7 @@ namespace SocketNetworking
         public NetworkClient()
         {
             ClientCreated?.Invoke(this);
+            networkEncryptionManager = new NetworkEncryptionManager();
             Init();
         }
 
@@ -143,6 +144,16 @@ namespace SocketNetworking
             get
             {
                 return _tcpClient;
+            }
+        }
+
+        private NetworkEncryptionManager networkEncryptionManager;
+
+        public NetworkEncryptionManager EncryptionManager
+        {
+            get
+            {
+                return networkEncryptionManager;
             }
         }
 
@@ -992,11 +1003,23 @@ namespace SocketNetworking
             lock (streamLock)
             {
                 _toSendPackets.TryDequeue(out Packet packet);
+                if(!packet.ValidateFlags())
+                {
+                    Log.GlobalError($"Packet send failed! Flag validation failure. Packet Type: {packet.Type}, Target: {packet.NetowrkIDTarget}, Custom Packet ID: {packet.CustomPacketID}, Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
+                    return;
+                }
                 NetworkStream serverStream = NetworkStream;
                 byte[] packetBytes = packet.Serialize().Data;
+                byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
+                byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
+                if (packet.Flags.HasFlag(PacketFlags.Compressed))
+                {
+                    packetDataBytes = packetDataBytes.Compress();
+                }
                 ByteWriter writer = new ByteWriter();
-                writer.WriteInt(packetBytes.Length);
-                writer.Write(packetBytes);
+                byte[] packetFull = packetHeaderBytes.Concat(packetDataBytes).ToArray();
+                writer.WriteInt(packetFull.Length);
+                writer.Write(packetFull);
                 int written = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(writer.Data, 0));
                 if (written > packetBytes.Length + 4)
                 {
@@ -1138,6 +1161,14 @@ namespace SocketNetworking
                     Log.GlobalWarning($"Got a packet with a Custom Packet ID that does not exist, either not registered or corrupt. Custom Packet ID: {header.CustomPacketID}, Target: {header.NetworkIDTarget}");
                 }
                 Log.GlobalDebug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
+                byte[] rawPacket = fullPacket;
+                byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
+                byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
+                if (header.Flags.HasFlag(PacketFlags.Compressed))
+                {
+                    packetBytes = packetBytes.Decompress();
+                }
+                fullPacket = headerBytes.Concat(packetBytes).ToArray();
                 PacketRead?.Invoke(header, fullPacket);
                 if(header.Size + 4 < fullPacket.Length)
                 {

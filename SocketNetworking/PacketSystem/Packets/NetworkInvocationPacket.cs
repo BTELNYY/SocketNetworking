@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,6 +11,14 @@ namespace SocketNetworking.PacketSystem.Packets
     public sealed class NetworkInvocationPacket : Packet
     {
         public override PacketType Type => PacketType.NetworkInvocation;
+
+        public override PacketFlags Flags
+        {
+            get
+            {
+                return PacketFlags.Compressed;
+            }
+        }
 
         public string TargetTypeAssmebly { get; set; } = string.Empty;
 
