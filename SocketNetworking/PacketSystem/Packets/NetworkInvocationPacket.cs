@@ -12,13 +12,13 @@ namespace SocketNetworking.PacketSystem.Packets
     {
         public override PacketType Type => PacketType.NetworkInvocation;
 
-        public override PacketFlags Flags
-        {
-            get
-            {
-                return PacketFlags.Compressed;
-            }
-        }
+        //public override PacketFlags Flags
+        //{
+        //    get
+        //    {
+        //        return PacketFlags.Compressed;
+        //    }
+        //}
 
         public string TargetTypeAssmebly { get; set; } = string.Empty;
 
