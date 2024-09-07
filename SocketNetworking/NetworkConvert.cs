@@ -13,6 +13,9 @@ namespace SocketNetworking
 {
     public class NetworkConvert
     {
+        /// <summary>
+        /// List of allowed types for serialization. (Technically you can serialize anything but thats not a good idea, for complex structures just make use of <see cref="IPacketSerializable"/>)
+        /// </summary>
         public static readonly Type[] SupportedTypes =
         {
             typeof(IEnumerable),
@@ -452,16 +455,23 @@ namespace SocketNetworking
 
         private string Assmebly;
 
+        private Assembly asmCache;
+
         public Type Type
         {
             get
             {
-                return Assembly.Load(Assmebly).GetType(TypeFullName);
+                if(asmCache == null)
+                {
+                    asmCache = Assembly.Load(Assmebly);
+                }
+                return asmCache.GetType(TypeFullName);
             }
             set
             {
                 TypeFullName = value.FullName;
-                Assmebly = Assembly.GetAssembly(value).GetName().FullName;
+                asmCache = Assembly.GetAssembly(value);
+                Assmebly = asmCache.GetName().FullName;
             }
         }
 
@@ -506,6 +516,7 @@ namespace SocketNetworking
             return writer.Data;
         }
 
+        //Used internally to represent void returns in RPC and what not.
         public static SerializedData NullData
         {
             get
