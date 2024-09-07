@@ -269,7 +269,7 @@ namespace SocketNetworking
         /// </summary>
         public bool ManualPacketHandle
         {
-            get { return _manualPacketHandle; } 
+            get => _manualPacketHandle;
             set 
             {
                 if(CurrentConnectionState == ConnectionState.Handshake)
@@ -285,10 +285,7 @@ namespace SocketNetworking
         /// </summary>
         public bool ManualPacketSend
         {
-            get
-            {
-                return _manualPacketSend;
-            }
+            get => _manualPacketSend;
             set
             {
                 if(CurrentConnectionState == ConnectionState.Handshake)
@@ -310,28 +307,14 @@ namespace SocketNetworking
                 {
                     return true;
                 }
-                if(TcpClient != null) 
-                {
-                    return TcpClient.Connected;
-                }
-                return false;
+                return TcpClient != null && TcpClient.Connected;
             }
         }
 
         /// <summary>
         /// <see cref="bool"/> which represents if the Client has been started
         /// </summary>
-        public bool ClientStarted
-        {
-            get
-            {
-                if(CurrnetClientLocation == ClientLocation.Remote)
-                {
-                    return true;
-                }
-                return _clientActive;
-            }
-        }
+        private bool ClientStarted => CurrnetClientLocation == ClientLocation.Remote || _clientActive;
 
         private ConnectionState _connectionState = ConnectionState.Disconnected;
 
@@ -340,10 +323,7 @@ namespace SocketNetworking
         /// </summary>
         public ConnectionState CurrentConnectionState
         {
-            get
-            {
-                return _connectionState;
-            }
+            get => _connectionState;
             set
             {
                 if(CurrnetClientLocation != ClientLocation.Remote)
@@ -368,13 +348,7 @@ namespace SocketNetworking
 
         private string _clientPassword = "DefaultPassword";
 
-        public string PasswordHash
-        {
-            get
-            {
-                return _clientPassword.GetStringHash();
-            }
-        }
+        public string PasswordHash => _clientPassword.GetStringHash();
 
         private Thread _packetSenderThread;
 
