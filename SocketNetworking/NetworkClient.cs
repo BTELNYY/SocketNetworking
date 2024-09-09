@@ -243,7 +243,7 @@ namespace SocketNetworking
         /// <summary>
         /// Sets if the TCP Socket should wait for more packets before sending.
         /// </summary>
-        public bool TCPNoDelay
+        public bool TcpNoDelay
         {
             get
             {
@@ -344,6 +344,67 @@ namespace SocketNetworking
             }
         }
 
+        private EncryptionState _encryptionState = EncryptionState.Disabled;
+
+        public EncryptionState EncryptionState
+        {
+            get
+            {
+                return _encryptionState;
+            }
+        }
+
+        /// <summary>
+        /// Requests encryption from the remote server.
+        /// </summary>
+        /// <returns>
+        /// <see langword="false"/> if the remote server has its encryption state as <see cref="ServerEncryptionMode.Disabled"/>, true otherwise.
+        /// </returns>
+        public bool ClientRequestEncryption()
+        {
+            return NetworkInvoke<bool>(nameof(ServerGetEncryptionRequest), new object[] { });
+        }
+
+        [NetworkInvocable(PacketDirection.Client)]
+        private bool ServerGetEncryptionRequest()
+        {
+            if(NetworkServer.EncryptionMode == ServerEncryptionMode.Disabled)
+            {
+                return false;
+            }
+            if(NetworkServer.EncryptionMode == ServerEncryptionMode.Required)
+            {
+                return true;
+            }
+            ServerBeginEncryption();
+            return true;
+        }
+
+        public void ServerBeginEncryption()
+        {
+            EncryptionPacket packet = new EncryptionPacket();
+            packet.AsymKey = EncryptionManager.PublicKey;
+            packet.EncryptionFunction = EncryptionFunction.PublicKeySend;
+            _encryptionState = EncryptionState.Handshake;
+            Send(packet);
+            CallbackTimer<NetworkClient> timer = new CallbackTimer<NetworkClient>((x) => 
+            {
+                int encryptionState = (int)x.EncryptionState;
+                if(encryptionState < 2)
+                {
+                    x.Disconnect("Failed Encryption Handshake.");
+                }
+                //Cheap hack.
+                EncryptionPacket symkey = new EncryptionPacket();
+                symkey.SymIV = EncryptionManager.IVAndKey.Item1;
+                symkey.SymKey = EncryptionManager.IVAndKey.Item2;
+                symkey.EncryptionFunction = EncryptionFunction.SymetricalKeySend;
+                Send(symkey);
+            }, this, 10f);
+            timer.Start();
+        }
+
+
         private bool _clientActive = false;
 
         private string _clientPassword = "DefaultPassword";
@@ -428,7 +489,7 @@ namespace SocketNetworking
         {
             _clientId = clientId;
             _tcpClient = socket;
-            _tcpClient.NoDelay = TCPNoDelay;
+            _tcpClient.NoDelay = TcpNoDelay;
             //_tcpClient.NoDelay = true;
             _clientLocation = ClientLocation.Remote;
             ClientConnected += OnRemoteClientConnected;
@@ -477,7 +538,7 @@ namespace SocketNetworking
                 return false;
             }
             _tcpClient = new TcpClient();
-            _tcpClient.NoDelay = TCPNoDelay;
+            _tcpClient.NoDelay = TcpNoDelay;
             try
             {
                 _tcpClient.Connect(hostname, port);
@@ -789,6 +850,10 @@ namespace SocketNetworking
                     };
                     Send(serverDataPacket);
                     CurrentConnectionState = ConnectionState.Connected;
+                    if(NetworkServer.EncryptionMode == ServerEncryptionMode.Required)
+                    {
+                        ServerBeginEncryption();
+                    }
                     if (NetworkServer.DefaultReady)
                     {
                         Ready = true;
@@ -819,6 +884,23 @@ namespace SocketNetworking
                     networkInvocationResultPacket.Deserialize(data);
                     Log.GlobalDebug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
                     NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
+                    break;
+                case PacketType.EncryptionPacket:
+                    EncryptionPacket encryptionPacket = new EncryptionPacket();
+                    encryptionPacket.Deserialize(data);
+                    Log.GlobalInfo($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
+                    switch (encryptionPacket.EncryptionFunction)
+                    {
+                        case EncryptionFunction.None:
+                            break;
+                        case EncryptionFunction.PublicKeySend:
+                            EncryptionManager.PublicKey = encryptionPacket.AsymKey;
+                            _encryptionState = EncryptionState.AsymmetricalReady;
+                            break;
+                        case EncryptionFunction.SymetricalKeySend:
+                            Disconnect("Illegal encryption handshake: Cannot send own symmetry key, wait for server.");
+                            break;
+                    }
                     break;
                 default:
                     Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
@@ -945,6 +1027,24 @@ namespace SocketNetworking
                     Log.GlobalDebug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
                     NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
                     break;
+                case PacketType.EncryptionPacket:
+                    EncryptionPacket encryptionPacket = new EncryptionPacket();
+                    encryptionPacket.Deserialize(data);
+                    Log.GlobalInfo($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
+                    switch (encryptionPacket.EncryptionFunction)
+                    {
+                        case EncryptionFunction.None:
+                            break;
+                        case EncryptionFunction.PublicKeySend:
+                            EncryptionManager.PublicKey = encryptionPacket.AsymKey;
+                            _encryptionState = EncryptionState.AsymmetricalReady;
+                            break;
+                        case EncryptionFunction.SymetricalKeySend:
+                            _encryptionState = EncryptionState.SymmetricalReady;
+                            EncryptionManager.IVAndKey = new Tuple<byte[], byte[]>(encryptionPacket.SymIV, encryptionPacket.SymKey);
+                            break;
+                    }
+                    break;
                 default:
                     Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
                     Disconnect("Server Sent an Unknown packet with PacketID " + header.Type.ToString());
@@ -1060,7 +1160,7 @@ namespace SocketNetworking
                     try
                     {
                         int tempFillSize = fillSize;
-                        if (TCPNoDelay)
+                        if (TcpNoDelay)
                         {
                             count = NetworkStream.Read(buffer, 0, buffer.Length - fillSize);
                         }
@@ -1164,7 +1264,7 @@ namespace SocketNetworking
                 }
                 // any leftover data in the buffer is recycled for the next iteration 
                 //unless we don't do a delay, becuase there is no point in keeping the buffer.
-                if (TCPNoDelay)
+                if (TcpNoDelay)
                 {
                     buffer = new byte[Packet.MaxPacketSize];
                     fillSize = 0;

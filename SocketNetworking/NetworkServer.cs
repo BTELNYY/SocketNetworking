@@ -92,6 +92,11 @@ namespace SocketNetworking
         }
 
         /// <summary>
+        /// The Servers <see cref="ServerEncryptionMode"/>.
+        /// </summary>
+        public static ServerEncryptionMode EncryptionMode = ServerEncryptionMode.Request;
+
+        /// <summary>
         /// Should the server accept the connection, then instantly disconnect the client with a message?
         /// </summary>
         public static bool AutoDisconnectClients = false;
@@ -443,5 +448,21 @@ namespace SocketNetworking
         Started,
         NotReady,
         Ready,
+    }
+
+    public enum ServerEncryptionMode
+    {
+        /// <summary>
+        /// Encryption is not handled at all by the server.
+        /// </summary>
+        Disabled,
+        /// <summary>
+        /// Encryption is only enabled if the client requests it via <see cref="NetworkClient.ClientRequestEncryption"/>
+        /// </summary>
+        Request,
+        /// <summary>
+        /// Encryption is required.
+        /// </summary>
+        Required
     }
 }
