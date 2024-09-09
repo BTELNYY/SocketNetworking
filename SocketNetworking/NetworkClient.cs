@@ -1142,12 +1142,12 @@ namespace SocketNetworking
                 {
                     packetBytes = packetBytes.Decompress();
                 }
-                fullPacket = headerBytes.Concat(packetBytes).ToArray();
-                PacketRead?.Invoke(header, fullPacket);
-                if(header.Size + 4 < fullPacket.Length)
+                if (header.Size + 4 < fullPacket.Length)
                 {
                     Log.GlobalWarning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
                 }
+                fullPacket = headerBytes.Concat(packetBytes).ToArray();
+                PacketRead?.Invoke(header, fullPacket);
                 if (ManualPacketHandle)
                 {
                     ReadPacketInfo packetInfo = new ReadPacketInfo()

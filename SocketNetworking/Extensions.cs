@@ -179,6 +179,9 @@ namespace SocketNetworking
                     gzipStream.Write(bytes, 0, bytes.Length);
                 }
                 byte[] finalArray  = memoryStream.ToArray();
+#if DEBUG
+                Log.GlobalDebug($"Compression Data. Input Length: {bytes.Length}, Compressed Length: {finalArray.Length}");
+#endif
                 return finalArray;
             }
         }
