@@ -30,7 +30,7 @@ namespace SocketNetworking.PacketSystem.Packets
                 case EncryptionFunction.None:
                     break;
                 case EncryptionFunction.PublicKeySend:
-                    writer.Write(AsymKey);
+                    writer.WriteByteArray(AsymKey);
                     break;
                 case EncryptionFunction.SymetricalKeySend:
                     //Enforce ASYM encryption when sending the SYM key.

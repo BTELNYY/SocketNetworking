@@ -35,7 +35,7 @@ namespace SocketNetworking.ExampleServer
             {
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
-                    if(c is TestClient client)
+                    if (c is TestClient client)
                     {
                         client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
                     }
