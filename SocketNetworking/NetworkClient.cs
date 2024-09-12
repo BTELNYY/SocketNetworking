@@ -1091,6 +1091,16 @@ namespace SocketNetworking
                     packetDataBytes = packetDataBytes.Compress();
                 }
                 int currentEncryptionState = (int)EncryptionState;
+                //if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
+                //{
+                //    Log.GlobalDebug("Encrypting using ASYMMETRICAL");
+                //    packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
+                //}
+                //if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
+                //{
+                //    Log.GlobalDebug("Encrypting using SYMMETRICAL");
+                //    packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
+                //}
                 if (packet.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
                 {
                     if(currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
@@ -1257,11 +1267,16 @@ namespace SocketNetworking
                 byte[] rawPacket = fullPacket;
                 byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
                 byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
-                if (header.Flags.HasFlag(PacketFlags.Compressed))
-                {
-                    packetBytes = packetBytes.Decompress();
-                }
                 int currentEncryptionState = (int)EncryptionState;
+                if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+                {
+                    if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
+                    {
+                        Log.GlobalError("Encryption cannot be done at this point: Not ready.");
+                        return;
+                    }
+                    packetBytes = EncryptionManager.Decrypt(packetBytes);
+                }
                 if (header.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
                 {
                     if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
@@ -1271,14 +1286,9 @@ namespace SocketNetworking
                     }
                     packetBytes = EncryptionManager.Decrypt(packetBytes, false);
                 }
-                if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+                if (header.Flags.HasFlag(PacketFlags.Compressed))
                 {
-                    if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
-                    {
-                        Log.GlobalError("Encryption cannot be done at this point: Not ready.");
-                        return;
-                    }
-                    packetBytes = EncryptionManager.Decrypt(packetBytes);
+                    packetBytes = packetBytes.Decompress();
                 }
                 if (header.Size + 4 < fullPacket.Length)
                 {

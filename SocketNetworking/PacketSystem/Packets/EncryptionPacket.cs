@@ -35,8 +35,8 @@ namespace SocketNetworking.PacketSystem.Packets
                 case EncryptionFunction.SymetricalKeySend:
                     //Enforce ASYM encryption when sending the SYM key.
                     Flags = Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
-                    writer.Write(SymIV);
-                    writer.Write(SymKey);
+                    writer.WriteByteArray(SymIV);
+                    writer.WriteByteArray(SymKey);
                     break;
             }
             return writer;

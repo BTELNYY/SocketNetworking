@@ -16,7 +16,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             get
             {
-                return PacketFlags.Compressed;
+                return PacketFlags.None;
             }
         }
 
