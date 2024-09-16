@@ -15,16 +15,18 @@ namespace SocketNetworking
 
         public Aes SymetricalEncryption { get; set; }
 
-        public byte[] PublicKey
+        public Tuple<byte[], byte[]> ModulusAndExponent
         {
             get
             {
-                return AsymetricalEncryption.ExportParameters(false).Modulus;
+                RSAParameters parameters = AsymetricalEncryption.ExportParameters(false);
+                return new Tuple<byte[], byte[]>(parameters.Modulus, parameters.Exponent);
             }
             set
             {
                 RSAParameters encParams = AsymetricalEncryption.ExportParameters(true);
-                encParams.Modulus = value;
+                encParams.Modulus = value.Item1;
+                encParams.Exponent = value.Item2;
                 AsymetricalEncryption.ImportParameters(encParams);
             }
         }

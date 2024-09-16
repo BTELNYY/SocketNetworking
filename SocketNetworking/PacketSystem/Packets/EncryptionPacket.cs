@@ -15,7 +15,9 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public EncryptionFunction EncryptionFunction { get; set; } = EncryptionFunction.None;
 
-        public byte[] AsymKey { get; set; } = new byte[] { };
+        public byte[] AsymExponent { get; set; } = new byte[] { };
+
+        public byte[] AsymModulus { get; set; } = new byte[] { };
 
         public byte[] SymIV { get; set; } = new byte[] { };
 
@@ -30,7 +32,8 @@ namespace SocketNetworking.PacketSystem.Packets
                 case EncryptionFunction.None:
                     break;
                 case EncryptionFunction.PublicKeySend:
-                    writer.WriteByteArray(AsymKey);
+                    writer.WriteByteArray(AsymModulus);
+                    writer.WriteByteArray(AsymExponent);
                     break;
                 case EncryptionFunction.SymetricalKeySend:
                     //Enforce ASYM encryption when sending the SYM key.
@@ -51,7 +54,8 @@ namespace SocketNetworking.PacketSystem.Packets
                 case EncryptionFunction.None:
                     break;
                 case EncryptionFunction.PublicKeySend:
-                    AsymKey = reader.ReadByteArray();
+                    AsymModulus = reader.ReadByteArray();
+                    AsymExponent = reader.ReadByteArray();
                     break;
                 case EncryptionFunction.SymetricalKeySend:
                     SymIV = reader.ReadByteArray();

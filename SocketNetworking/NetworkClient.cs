@@ -383,7 +383,8 @@ namespace SocketNetworking
         public void ServerBeginEncryption()
         {
             EncryptionPacket packet = new EncryptionPacket();
-            packet.AsymKey = EncryptionManager.PublicKey;
+            packet.AsymModulus = EncryptionManager.ModulusAndExponent.Item1;
+            packet.AsymExponent = EncryptionManager.ModulusAndExponent.Item2;
             packet.EncryptionFunction = EncryptionFunction.PublicKeySend;
             _encryptionState = EncryptionState.Handshake;
             Send(packet);
@@ -894,7 +895,7 @@ namespace SocketNetworking
                         case EncryptionFunction.None:
                             break;
                         case EncryptionFunction.PublicKeySend:
-                            EncryptionManager.PublicKey = encryptionPacket.AsymKey;
+                            EncryptionManager.ModulusAndExponent = new Tuple<byte[], byte[]>(encryptionPacket.AsymModulus, encryptionPacket.AsymExponent);
                             _encryptionState = EncryptionState.AsymmetricalReady;
                             break;
                         case EncryptionFunction.SymetricalKeySend:
@@ -1036,7 +1037,7 @@ namespace SocketNetworking
                         case EncryptionFunction.None:
                             break;
                         case EncryptionFunction.PublicKeySend:
-                            EncryptionManager.PublicKey = encryptionPacket.AsymKey;
+                            EncryptionManager.ModulusAndExponent = new Tuple<byte[], byte[]>(encryptionPacket.AsymModulus, encryptionPacket.AsymExponent);
                             _encryptionState = EncryptionState.AsymmetricalReady;
                             break;
                         case EncryptionFunction.SymetricalKeySend:
