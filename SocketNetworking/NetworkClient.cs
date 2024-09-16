@@ -385,7 +385,7 @@ namespace SocketNetworking
             EncryptionPacket packet = new EncryptionPacket();
             packet.AsymModulus = EncryptionManager.ModulusAndExponent.Item1;
             packet.AsymExponent = EncryptionManager.ModulusAndExponent.Item2;
-            packet.EncryptionFunction = EncryptionFunction.PublicKeySend;
+            packet.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
             _encryptionState = EncryptionState.Handshake;
             Send(packet);
             CallbackTimer<NetworkClient> timer = new CallbackTimer<NetworkClient>((x) => 
@@ -399,7 +399,7 @@ namespace SocketNetworking
                 EncryptionPacket symkey = new EncryptionPacket();
                 symkey.SymIV = EncryptionManager.IVAndKey.Item1;
                 symkey.SymKey = EncryptionManager.IVAndKey.Item2;
-                symkey.EncryptionFunction = EncryptionFunction.SymetricalKeySend;
+                symkey.EncryptionFunction = EncryptionFunction.SymmetricalKeySend;
                 Send(symkey);
             }, this, 10f);
             timer.Start();
@@ -894,12 +894,21 @@ namespace SocketNetworking
                     {
                         case EncryptionFunction.None:
                             break;
-                        case EncryptionFunction.PublicKeySend:
+                        case EncryptionFunction.AsymmetricalKeySend:
                             EncryptionManager.ModulusAndExponent = new Tuple<byte[], byte[]>(encryptionPacket.AsymModulus, encryptionPacket.AsymExponent);
                             _encryptionState = EncryptionState.AsymmetricalReady;
+                            EncryptionPacket symmetricalKey = new EncryptionPacket();
+                            symmetricalKey.SymIV = EncryptionManager.IVAndKey.Item1;
+                            symmetricalKey.SymKey = EncryptionManager.IVAndKey.Item2;
+                            symmetricalKey.EncryptionFunction = EncryptionFunction.SymmetricalKeySend;
+                            Send(symmetricalKey);
                             break;
-                        case EncryptionFunction.SymetricalKeySend:
+                        case EncryptionFunction.SymmetricalKeySend:
                             Disconnect("Illegal encryption handshake: Cannot send own symmetry key, wait for server.");
+                            break;
+                        case EncryptionFunction.AsymmetricalKeyRecieve:
+                            break;
+                        case EncryptionFunction.SymetricalKeyRecieve:
                             break;
                     }
                     break;
@@ -1031,18 +1040,29 @@ namespace SocketNetworking
                 case PacketType.EncryptionPacket:
                     EncryptionPacket encryptionPacket = new EncryptionPacket();
                     encryptionPacket.Deserialize(data);
+                    EncryptionPacket encryptionRecieve = new EncryptionPacket();
                     Log.GlobalInfo($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
                     switch (encryptionPacket.EncryptionFunction)
                     {
                         case EncryptionFunction.None:
                             break;
-                        case EncryptionFunction.PublicKeySend:
+                        case EncryptionFunction.AsymmetricalKeySend:
                             EncryptionManager.ModulusAndExponent = new Tuple<byte[], byte[]>(encryptionPacket.AsymModulus, encryptionPacket.AsymExponent);
                             _encryptionState = EncryptionState.AsymmetricalReady;
+                            encryptionRecieve.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
+                            encryptionRecieve.AsymModulus = EncryptionManager.ModulusAndExponent.Item1;
+                            encryptionRecieve.AsymExponent = EncryptionManager.ModulusAndExponent.Item2;
+                            Send(encryptionRecieve);
                             break;
-                        case EncryptionFunction.SymetricalKeySend:
+                        case EncryptionFunction.SymmetricalKeySend:
                             _encryptionState = EncryptionState.SymmetricalReady;
                             EncryptionManager.IVAndKey = new Tuple<byte[], byte[]>(encryptionPacket.SymIV, encryptionPacket.SymKey);
+                            encryptionRecieve.EncryptionFunction = EncryptionFunction.SymetricalKeyRecieve;
+                            Send(encryptionRecieve);
+                            break;
+                        case EncryptionFunction.AsymmetricalKeyRecieve:
+                            break;
+                        case EncryptionFunction.SymetricalKeyRecieve:
                             break;
                     }
                     break;
@@ -1092,11 +1112,11 @@ namespace SocketNetworking
                     packetDataBytes = packetDataBytes.Compress();
                 }
                 int currentEncryptionState = (int)EncryptionState;
-                //if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
-                //{
-                //    Log.GlobalDebug("Encrypting using ASYMMETRICAL");
-                //    packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
-                //}
+                if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
+                {
+                    Log.GlobalDebug("Encrypting using ASYMMETRICAL");
+                    packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
+                }
                 //if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
                 //{
                 //    Log.GlobalDebug("Encrypting using SYMMETRICAL");
@@ -1127,7 +1147,7 @@ namespace SocketNetworking
                 int written = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(writer.Data, 0));
                 if (written > packetBytes.Length + 4)
                 {
-                    Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}");
+                    Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}");
                     return;
                 }
                 byte[] fullBytes = writer.Data;

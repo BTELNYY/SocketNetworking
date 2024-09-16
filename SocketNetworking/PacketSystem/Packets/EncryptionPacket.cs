@@ -31,11 +31,11 @@ namespace SocketNetworking.PacketSystem.Packets
             {
                 case EncryptionFunction.None:
                     break;
-                case EncryptionFunction.PublicKeySend:
+                case EncryptionFunction.AsymmetricalKeySend:
                     writer.WriteByteArray(AsymModulus);
                     writer.WriteByteArray(AsymExponent);
                     break;
-                case EncryptionFunction.SymetricalKeySend:
+                case EncryptionFunction.SymmetricalKeySend:
                     //Enforce ASYM encryption when sending the SYM key.
                     Flags = Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
                     writer.WriteByteArray(SymIV);
@@ -51,15 +51,15 @@ namespace SocketNetworking.PacketSystem.Packets
             EncryptionFunction = (EncryptionFunction)reader.ReadByte();
             switch (EncryptionFunction)
             {
-                case EncryptionFunction.None:
-                    break;
-                case EncryptionFunction.PublicKeySend:
+                case EncryptionFunction.AsymmetricalKeySend:
                     AsymModulus = reader.ReadByteArray();
                     AsymExponent = reader.ReadByteArray();
                     break;
-                case EncryptionFunction.SymetricalKeySend:
+                case EncryptionFunction.SymmetricalKeySend:
                     SymIV = reader.ReadByteArray();
                     SymKey = reader.ReadByteArray();
+                    break;
+                default:
                     break;
             }
             return reader;
@@ -69,7 +69,9 @@ namespace SocketNetworking.PacketSystem.Packets
     public enum EncryptionFunction : byte
     {
         None,
-        PublicKeySend,
-        SymetricalKeySend,
+        AsymmetricalKeySend,
+        AsymmetricalKeyRecieve,
+        SymmetricalKeySend,
+        SymetricalKeyRecieve,
     }
 }
