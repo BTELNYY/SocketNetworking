@@ -910,6 +910,9 @@ namespace SocketNetworking
                             break;
                         case EncryptionFunction.SymetricalKeyRecieve:
                             break;
+                        default:
+                            Log.GlobalError($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
+                            break;
                     }
                     break;
                 default:
@@ -1064,6 +1067,9 @@ namespace SocketNetworking
                             break;
                         case EncryptionFunction.SymetricalKeyRecieve:
                             break;
+                        default:
+                            Log.GlobalError($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
+                            break;
                     }
                     break;
                 default:
@@ -1112,11 +1118,11 @@ namespace SocketNetworking
                     packetDataBytes = packetDataBytes.Compress();
                 }
                 int currentEncryptionState = (int)EncryptionState;
-                if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
-                {
-                    Log.GlobalDebug("Encrypting using ASYMMETRICAL");
-                    packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
-                }
+                //if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
+                //{
+                //    Log.GlobalDebug("Encrypting using ASYMMETRICAL");
+                //    packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
+                //}
                 //if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
                 //{
                 //    Log.GlobalDebug("Encrypting using SYMMETRICAL");
@@ -1142,16 +1148,17 @@ namespace SocketNetworking
                 }
                 ByteWriter writer = new ByteWriter();
                 byte[] packetFull = packetHeaderBytes.Concat(packetDataBytes).ToArray();
+                Log.GlobalDebug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
                 writer.WriteInt(packetFull.Length);
                 writer.Write(packetFull);
-                int written = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(writer.Data, 0));
-                if (written > packetBytes.Length + 4)
+                int written = packetFull.Length;
+                if (written > (packetFull.Length + 4))
                 {
-                    Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}");
+                    Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetBytes.Length + 4}");
                     return;
                 }
                 byte[] fullBytes = writer.Data;
-                if (packetBytes.Length > Packet.MaxPacketSize)
+                if (fullBytes.Length > Packet.MaxPacketSize)
                 {
                     Log.GlobalError("Packet too large!");
                     return;
@@ -1160,6 +1167,8 @@ namespace SocketNetworking
                 {
                     Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                     serverStream.Write(fullBytes, 0, fullBytes.Length);
+                    //LMAO, I DONT KNOW WHY I NEED THIS!
+                    //Do not remove, will break if removed. (Don't question it)
                     Thread.Sleep(1);
                 }
                 catch (Exception ex)
@@ -1291,6 +1300,7 @@ namespace SocketNetworking
                 int currentEncryptionState = (int)EncryptionState;
                 if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
                 {
+                    Log.GlobalDebug("Trying to decrypt a packet using SYMMETRICAL encryption!");
                     if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
                     {
                         Log.GlobalError("Encryption cannot be done at this point: Not ready.");
@@ -1300,6 +1310,7 @@ namespace SocketNetworking
                 }
                 if (header.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
                 {
+                    Log.GlobalDebug("Trying to decrypt a packet using ASYMMETRICAL encryption!");
                     if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
                     {
                         Log.GlobalError("Encryption cannot be done at this point: Not ready.");

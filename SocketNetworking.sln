@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.UnityEngin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.ExampleSharedData", "SocketNetworking.ExampleSharedData\SocketNetworking.ExampleSharedData.csproj", "{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Tests", "SocketNetworking.Tests\SocketNetworking.Tests.csproj", "{F8A3DDFE-39A6-403E-BFD4-47F7CFD1A5F8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8A3DDFE-39A6-403E-BFD4-47F7CFD1A5F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8A3DDFE-39A6-403E-BFD4-47F7CFD1A5F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8A3DDFE-39A6-403E-BFD4-47F7CFD1A5F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8A3DDFE-39A6-403E-BFD4-47F7CFD1A5F8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
