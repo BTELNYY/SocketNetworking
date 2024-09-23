@@ -1039,8 +1039,10 @@ namespace SocketNetworking
                         case EncryptionFunction.None:
                             break;
                         case EncryptionFunction.AsymmetricalKeySend:
+                            EncryptionManager.OthersPublicKey = encryptionPacket.PublicKey;
                             break;
                         case EncryptionFunction.SymmetricalKeySend:
+                            EncryptionManager.SharedAesKey = new Tuple<byte[], byte[]>(encryptionPacket.SymKey, encryptionPacket.SymIV);
                             break;
                         case EncryptionFunction.AsymmetricalKeyRecieve:
                             break;
