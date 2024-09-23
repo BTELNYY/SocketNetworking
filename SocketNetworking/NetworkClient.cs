@@ -383,8 +383,6 @@ namespace SocketNetworking
         public void ServerBeginEncryption()
         {
             EncryptionPacket packet = new EncryptionPacket();
-            packet.AsymModulus = EncryptionManager.ModulusAndExponent.Item1;
-            packet.AsymExponent = EncryptionManager.ModulusAndExponent.Item2;
             packet.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
             _encryptionState = EncryptionState.Handshake;
             Send(packet);
@@ -397,8 +395,6 @@ namespace SocketNetworking
                 }
                 //Cheap hack.
                 EncryptionPacket symkey = new EncryptionPacket();
-                symkey.SymIV = EncryptionManager.IVAndKey.Item1;
-                symkey.SymKey = EncryptionManager.IVAndKey.Item2;
                 symkey.EncryptionFunction = EncryptionFunction.SymmetricalKeySend;
                 Send(symkey);
             }, this, 10f);
@@ -895,13 +891,6 @@ namespace SocketNetworking
                         case EncryptionFunction.None:
                             break;
                         case EncryptionFunction.AsymmetricalKeySend:
-                            EncryptionManager.ModulusAndExponent = new Tuple<byte[], byte[]>(encryptionPacket.AsymModulus, encryptionPacket.AsymExponent);
-                            _encryptionState = EncryptionState.AsymmetricalReady;
-                            EncryptionPacket symmetricalKey = new EncryptionPacket();
-                            symmetricalKey.SymIV = EncryptionManager.IVAndKey.Item1;
-                            symmetricalKey.SymKey = EncryptionManager.IVAndKey.Item2;
-                            symmetricalKey.EncryptionFunction = EncryptionFunction.SymmetricalKeySend;
-                            Send(symmetricalKey);
                             break;
                         case EncryptionFunction.SymmetricalKeySend:
                             Disconnect("Illegal encryption handshake: Cannot send own symmetry key, wait for server.");
@@ -1050,18 +1039,8 @@ namespace SocketNetworking
                         case EncryptionFunction.None:
                             break;
                         case EncryptionFunction.AsymmetricalKeySend:
-                            EncryptionManager.ModulusAndExponent = new Tuple<byte[], byte[]>(encryptionPacket.AsymModulus, encryptionPacket.AsymExponent);
-                            _encryptionState = EncryptionState.AsymmetricalReady;
-                            encryptionRecieve.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
-                            encryptionRecieve.AsymModulus = EncryptionManager.ModulusAndExponent.Item1;
-                            encryptionRecieve.AsymExponent = EncryptionManager.ModulusAndExponent.Item2;
-                            Send(encryptionRecieve);
                             break;
                         case EncryptionFunction.SymmetricalKeySend:
-                            _encryptionState = EncryptionState.SymmetricalReady;
-                            EncryptionManager.IVAndKey = new Tuple<byte[], byte[]>(encryptionPacket.SymIV, encryptionPacket.SymKey);
-                            encryptionRecieve.EncryptionFunction = EncryptionFunction.SymetricalKeyRecieve;
-                            Send(encryptionRecieve);
                             break;
                         case EncryptionFunction.AsymmetricalKeyRecieve:
                             break;
@@ -1128,6 +1107,7 @@ namespace SocketNetworking
                 //    Log.GlobalDebug("Encrypting using SYMMETRICAL");
                 //    packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
                 //}
+                Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags());
                 if (packet.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
                 {
                     if(currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
@@ -1135,6 +1115,7 @@ namespace SocketNetworking
                         Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                         return;
                     }
+                    Log.GlobalDebug("Encrypting Packet: Asymmetrical");
                     packetDataBytes = EncryptionManager.Encrypt(packetDataBytes, false);
                 }
                 if (packet.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
@@ -1144,6 +1125,7 @@ namespace SocketNetworking
                         Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                         return;
                     }
+                    Log.GlobalDebug("Encrypting Packet: Symmetrical");
                     packetDataBytes = EncryptionManager.Encrypt(packetDataBytes);
                 }
                 ByteWriter writer = new ByteWriter();

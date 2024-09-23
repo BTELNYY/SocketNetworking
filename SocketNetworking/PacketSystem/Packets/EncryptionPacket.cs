@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,9 +16,7 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public EncryptionFunction EncryptionFunction { get; set; } = EncryptionFunction.None;
 
-        public byte[] AsymExponent { get; set; } = new byte[] { };
-
-        public byte[] AsymModulus { get; set; } = new byte[] { };
+        public string PublicKey { get; set; } = string.Empty;
 
         public byte[] SymIV { get; set; } = new byte[] { };
 
@@ -29,19 +28,21 @@ namespace SocketNetworking.PacketSystem.Packets
             writer.WriteByte((byte)EncryptionFunction);
             switch (EncryptionFunction)
             {
-                case EncryptionFunction.None:
-                    break;
                 case EncryptionFunction.AsymmetricalKeySend:
-                    writer.WriteByteArray(AsymModulus);
-                    writer.WriteByteArray(AsymExponent);
+                    writer.WriteString(PublicKey);
+                    Log.GlobalDebug("Wrote Key: " + PublicKey);
                     break;
                 case EncryptionFunction.SymmetricalKeySend:
                     //Enforce ASYM encryption when sending the SYM key.
+                    Log.GlobalDebug("Encryption Packet: Set Encryption mode to asymmetrical.");
                     Flags = Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
                     writer.WriteByteArray(SymIV);
                     writer.WriteByteArray(SymKey);
                     break;
+                default:
+                    break;
             }
+            Log.GlobalDebug("Wrote: " + string.Join("-", writer.Data));
             return writer;
         }
 
@@ -52,8 +53,8 @@ namespace SocketNetworking.PacketSystem.Packets
             switch (EncryptionFunction)
             {
                 case EncryptionFunction.AsymmetricalKeySend:
-                    AsymModulus = reader.ReadByteArray();
-                    AsymExponent = reader.ReadByteArray();
+                    PublicKey = reader.ReadString();
+                    Log.GlobalDebug("Read Key: " + PublicKey);
                     break;
                 case EncryptionFunction.SymmetricalKeySend:
                     SymIV = reader.ReadByteArray();
@@ -62,6 +63,7 @@ namespace SocketNetworking.PacketSystem.Packets
                 default:
                     break;
             }
+            Log.GlobalDebug("Read: " + string.Join("-", reader.RawData));
             return reader;
         }
     }

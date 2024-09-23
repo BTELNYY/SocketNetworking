@@ -4,59 +4,73 @@ using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace SocketNetworking
 {
     public class NetworkEncryptionManager
     {
-        public RSA AsymetricalEncryption {  get; set; } 
+        public RSACryptoServiceProvider MyRSA {  get; set; } 
 
-        public Aes SymetricalEncryption { get; set; }
+        public RSACryptoServiceProvider OthersRSA { get; set; }
 
-        public Tuple<byte[], byte[]> ModulusAndExponent
+        public Aes SharedAes { get; set; }
+
+        /// <summary>
+        /// Key Then IV
+        /// </summary>
+        public Tuple<byte[], byte[]> SharedAesKey
         {
             get
             {
-                RSAParameters parameters = AsymetricalEncryption.ExportParameters(false);
-                return new Tuple<byte[], byte[]>(parameters.Modulus, parameters.Exponent);
+                return new Tuple<byte[], byte[]>(SharedAes.Key, SharedAes.IV);
             }
             set
             {
-                RSAParameters encParams = AsymetricalEncryption.ExportParameters(true);
-                encParams.Modulus = value.Item1;
-                encParams.Exponent = value.Item2;
-                AsymetricalEncryption.ImportParameters(encParams);
+                SharedAes.Key = value.Item1;
+                SharedAes.IV = value.Item2;
             }
         }
 
-        public Tuple<byte[], byte[]> IVAndKey
+        public string OthersPublicKey
+        {
+            set
+            {
+                OthersRSA.FromXmlString(value);
+            }
+        }
+
+        public string MyPublicKey
         {
             get
             {
-                return new Tuple<byte[], byte[]>(SymetricalEncryption.IV, SymetricalEncryption.Key);
-            }
-            set
-            {
-                SymetricalEncryption.IV = value.Item1;
-                SymetricalEncryption.Key = value.Item2;
+                return MyRSA.ToXmlString(false);
             }
         }
 
         public NetworkEncryptionManager()
         {
-            SymetricalEncryption = Aes.Create();
-            AsymetricalEncryption = RSA.Create();
+            SharedAes = new AesCryptoServiceProvider();
+            MyRSA = new RSACryptoServiceProvider();
+            OthersRSA = new RSACryptoServiceProvider();
         }
 
-        public byte[] Encrypt(byte[] data, bool useSymmetry = true)
+        /// <summary>
+        /// Encrypts data using <see cref="OthersPublicKey"/> by default.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="useSymmetry"></param>
+        /// <returns></returns>
+        public byte[] Encrypt(byte[] data, bool useSymmetry = true, bool useMyKey = false)
         {
             if (useSymmetry)
             {
                 using (MemoryStream stream = new MemoryStream(data))
                 {
-                    using (CryptoStream cryptoStream = new CryptoStream(stream, SymetricalEncryption.CreateEncryptor(), CryptoStreamMode.Write))
+                    using (CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(data, 0 , data.Length);
                         byte[] output = new byte[cryptoStream.Length];
@@ -67,7 +81,11 @@ namespace SocketNetworking
             }
             else
             {
-                return AsymetricalEncryption.Encrypt(data, RSAEncryptionPadding.Pkcs1);
+                if (useMyKey)
+                {
+                    return MyRSA.Encrypt(data, RSAEncryptionPadding.Pkcs1);
+                }
+                return OthersRSA.Encrypt(data, RSAEncryptionPadding.Pkcs1);
             }
         }
 
@@ -78,7 +96,7 @@ namespace SocketNetworking
                 byte[] outputBytes = data;
                 using (MemoryStream memoryStream = new MemoryStream(outputBytes))
                 {
-                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, SymetricalEncryption.CreateDecryptor(), CryptoStreamMode.Read))
+                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, SharedAes.CreateDecryptor(), CryptoStreamMode.Read))
                     {
                         cryptoStream.Read(outputBytes, 0, outputBytes.Length);
                     }
@@ -87,7 +105,7 @@ namespace SocketNetworking
             }
             else
             {
-                return AsymetricalEncryption.Decrypt(data, RSAEncryptionPadding.Pkcs1);
+                return MyRSA.Decrypt(data, RSAEncryptionPadding.Pkcs1);
             }
         }
     }

@@ -19,7 +19,7 @@ namespace SocketNetworking.ExampleServer
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
             NetworkServer.ClientType = typeof(TestClient);
             NetworkServer.HandshakeTime = 10000f;
-            //NetworkServer.EncryptionMode = ServerEncryptionMode.Required;
+            NetworkServer.EncryptionMode = ServerEncryptionMode.Required;
             NetworkServer.StartServer();
             NetworkServer.ClientConnected += OnClientConnected;
             Thread t = new Thread(SpamThread);
