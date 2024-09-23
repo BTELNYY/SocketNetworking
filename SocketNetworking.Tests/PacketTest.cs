@@ -15,8 +15,6 @@ namespace SocketNetworking.Tests
         {
             EncryptionPacket packet = new EncryptionPacket();
             packet.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
-            packet.AsymExponent = new byte[16];
-            packet.AsymModulus = new byte[16];
             byte[] complete = packet.Serialize().Data;
             complete = BitConverter.GetBytes(complete.Length).Concat(complete).ToArray();
             EncryptionPacket returned = new EncryptionPacket();

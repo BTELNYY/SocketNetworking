@@ -1107,7 +1107,7 @@ namespace SocketNetworking
                 //    Log.GlobalDebug("Encrypting using SYMMETRICAL");
                 //    packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
                 //}
-                Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags());
+                Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
                 if (packet.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
                 {
                     if(currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
