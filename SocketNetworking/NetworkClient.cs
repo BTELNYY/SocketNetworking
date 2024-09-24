@@ -1132,16 +1132,16 @@ namespace SocketNetworking
                     packetDataBytes = packetDataBytes.Compress();
                 }
                 int currentEncryptionState = (int)EncryptionState;
-                //if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
-                //{
-                //    Log.GlobalDebug("Encrypting using ASYMMETRICAL");
-                //    packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
-                //}
-                //if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
-                //{
-                //    Log.GlobalDebug("Encrypting using SYMMETRICAL");
-                //    packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
-                //}
+                if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
+                {
+                    Log.GlobalDebug("Encrypting using SYMMETRICAL");
+                    packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
+                }
+                else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
+                {
+                    Log.GlobalDebug("Encrypting using ASYMMETRICAL");
+                    packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
+                }
                 if (packet.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
                 {
                     if(currentEncryptionState < (int)EncryptionState.AsymmetricalReady)

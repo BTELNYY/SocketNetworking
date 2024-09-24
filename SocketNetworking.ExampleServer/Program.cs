@@ -37,7 +37,7 @@ namespace SocketNetworking.ExampleServer
                 {
                     if (c is TestClient client)
                     {
-                        //client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
+                        client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
                     }
                     continue;
                     if (c.IsConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)

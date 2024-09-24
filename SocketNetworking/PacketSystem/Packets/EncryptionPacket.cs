@@ -48,7 +48,7 @@ namespace SocketNetworking.PacketSystem.Packets
                 default:
                     break;
             }
-            Log.GlobalDebug("Wrote: " + string.Join("-", writer.Data));
+            //Log.GlobalDebug("Wrote: " + string.Join("-", writer.Data));
             return writer;
         }
 
@@ -72,7 +72,7 @@ namespace SocketNetworking.PacketSystem.Packets
                 default:
                     break;
             }
-            Log.GlobalDebug("Read: " + string.Join("-", reader.RawData));
+            //Log.GlobalDebug("Read: " + string.Join("-", reader.RawData));
             return reader;
         }
     }
