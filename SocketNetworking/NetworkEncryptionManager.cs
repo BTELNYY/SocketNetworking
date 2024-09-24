@@ -1,19 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net.Http.Headers;
 using System.Security.Cryptography;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
 
 namespace SocketNetworking
 {
     public class NetworkEncryptionManager
     {
-        public RSACryptoServiceProvider MyRSA {  get; set; } 
+        public const int KEY_SIZE = 2048;
+
+        public RSACryptoServiceProvider MyRSA { get; set; }
 
         public RSACryptoServiceProvider OthersRSA { get; set; }
 
@@ -54,8 +49,12 @@ namespace SocketNetworking
         public NetworkEncryptionManager()
         {
             SharedAes = new AesCryptoServiceProvider();
-            MyRSA = new RSACryptoServiceProvider();
-            OthersRSA = new RSACryptoServiceProvider();
+            SharedAes.GenerateIV();
+            SharedAes.GenerateKey();
+            RSA rsa = RSA.Create(KEY_SIZE);
+            MyRSA = new RSACryptoServiceProvider(KEY_SIZE);
+            MyRSA.ImportParameters(rsa.ExportParameters(true));
+            OthersRSA = new RSACryptoServiceProvider(KEY_SIZE);
         }
 
         /// <summary>
@@ -72,7 +71,7 @@ namespace SocketNetworking
                 {
                     using (CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write))
                     {
-                        cryptoStream.Write(data, 0 , data.Length);
+                        cryptoStream.Write(data, 0, data.Length);
                         byte[] output = new byte[cryptoStream.Length];
                         cryptoStream.Read(output, 0, output.Length);
                         return output;
@@ -83,9 +82,9 @@ namespace SocketNetworking
             {
                 if (useMyKey)
                 {
-                    return MyRSA.Encrypt(data, RSAEncryptionPadding.Pkcs1);
+                    return MyRSA.Encrypt(data, false);
                 }
-                return OthersRSA.Encrypt(data, RSAEncryptionPadding.Pkcs1);
+                return OthersRSA.Encrypt(data, false);
             }
         }
 
@@ -105,7 +104,7 @@ namespace SocketNetworking
             }
             else
             {
-                return MyRSA.Decrypt(data, RSAEncryptionPadding.Pkcs1);
+                return MyRSA.Decrypt(data, false);
             }
         }
     }

@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
@@ -113,8 +114,7 @@ namespace SocketNetworking.PacketSystem
             {
                 throw new InvalidNetworkDataException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
             }
-            PacketFlags flags = (PacketFlags)reader.ReadByte();
-            Flags = flags;
+            Flags = (PacketFlags)reader.ReadByte();
             NetowrkIDTarget = reader.ReadInt();
             CustomPacketID = reader.ReadInt();
             if(expectedLength != reader.DataLength)
@@ -151,15 +151,15 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// Uses GZIP Compression.
         /// </summary>
-        Compressed,
+        Compressed = 1,
         /// <summary>
         /// Uses the RSA Algorithim at send to encrypt data. RSA has a limit to the size of the data it can encrypt. Not Compatible with <see cref="PacketFlags.SymetricalEncrypted"/>
         /// </summary>
-        AsymtreicalEncrypted,
+        AsymtreicalEncrypted = 2,
         /// <summary>
         /// Uses Symetrical Encryption to send data, note that this can only be used once the full encryptoin handshake has been completed. Not Compatible with <see cref="PacketFlags.AsymtreicalEncrypted"/>
         /// </summary>
-        SymetricalEncrypted,
+        SymetricalEncrypted = 4,
     }
 
     /// <summary>
@@ -216,7 +216,7 @@ namespace SocketNetworking.PacketSystem
         {
             if(data.Length < HeaderLength + 1)
             {
-                throw new ArgumentOutOfRangeException("data", "Data must be at least 17 bytes long!");
+                throw new ArgumentOutOfRangeException("data", $"Data must be at least {HeaderLength + 1} bytes long!");
             }
             ByteReader reader = new ByteReader(data);
             int size = reader.ReadInt();

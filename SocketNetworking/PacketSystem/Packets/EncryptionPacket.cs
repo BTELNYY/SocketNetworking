@@ -22,8 +22,14 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public byte[] SymKey { get; set; } = new byte[] { };
 
+        public EncryptionState State { get; set; }
+
         public override ByteWriter Serialize()
         {
+            if(EncryptionFunction == EncryptionFunction.SymmetricalKeySend)
+            {
+                Flags = Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
+            }
             ByteWriter writer = base.Serialize();
             writer.WriteByte((byte)EncryptionFunction);
             switch (EncryptionFunction)
@@ -33,11 +39,11 @@ namespace SocketNetworking.PacketSystem.Packets
                     Log.GlobalDebug("Wrote Key: " + PublicKey);
                     break;
                 case EncryptionFunction.SymmetricalKeySend:
-                    //Enforce ASYM encryption when sending the SYM key.
-                    Log.GlobalDebug("Encryption Packet: Set Encryption mode to asymmetrical.");
-                    Flags = Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
                     writer.WriteByteArray(SymIV);
                     writer.WriteByteArray(SymKey);
+                    break;
+                case EncryptionFunction.UpdateEncryptionStatus:
+                    writer.WriteByte((byte)State);
                     break;
                 default:
                     break;
@@ -60,6 +66,9 @@ namespace SocketNetworking.PacketSystem.Packets
                     SymIV = reader.ReadByteArray();
                     SymKey = reader.ReadByteArray();
                     break;
+                case EncryptionFunction.UpdateEncryptionStatus:
+                    State = (EncryptionState)reader.ReadByte();
+                    break;
                 default:
                     break;
             }
@@ -75,5 +84,6 @@ namespace SocketNetworking.PacketSystem.Packets
         AsymmetricalKeyRecieve,
         SymmetricalKeySend,
         SymetricalKeyRecieve,
+        UpdateEncryptionStatus,
     }
 }
