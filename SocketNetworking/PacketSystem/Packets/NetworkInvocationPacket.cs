@@ -12,14 +12,6 @@ namespace SocketNetworking.PacketSystem.Packets
     {
         public override PacketType Type => PacketType.NetworkInvocation;
 
-        public override PacketFlags Flags
-        {
-            get
-            {
-                return PacketFlags.None;
-            }
-        }
-
         public string TargetTypeAssmebly { get; set; } = string.Empty;
 
         public string TargetType { get; set; } = string.Empty;
