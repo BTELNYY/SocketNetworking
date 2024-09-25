@@ -505,47 +505,6 @@ namespace SocketNetworking
         }
 
         /// <summary>
-        /// Sends the next <see cref="Packet"/> from the send queue. If <see cref="ManualPacketSend"/> is false, this method does nothing.
-        /// </summary>
-        public void SendNextPacket()
-        {
-            if (!ManualPacketSend)
-            {
-                return;
-            }
-            SendNextPacketInternal();
-        }
-
-
-        /// <summary>
-        /// Sends any <see cref="Packet"/> down the network stream to whatever is connected on the other side. Note that this method doesn't check who it is sending it to, instead sending it to the current stream.
-        /// </summary>
-        /// <param name="packet">
-        /// The <see cref="Packet"/> to send down the stream.
-        /// </param>
-        public override void Send(Packet packet)
-        {
-
-        }
-
-        /// <summary>
-        /// Overwrites the NetworkTarget of the given packet to the ID from <see cref="INetworkObject"/>
-        /// </summary>
-        /// <param name="packet">
-        /// Packet to overwrite
-        /// </param>
-        /// <param name="sender">
-        /// ID to write
-        /// </param>
-        public void Send(Packet packet, INetworkObject sender)
-        {
-            packet.NetowrkIDTarget = sender.NetworkID;
-            Send(packet);
-        }
-
-
-
-        /// <summary>
         /// Stops the client, removing the Thread and closing the socket
         /// </summary>
         public override void StopClient()
@@ -574,120 +533,25 @@ namespace SocketNetworking
 
         void StartClient()
         {
-            if(CurrnetClientLocation == ClientLocation.Remote)
-            {
-                Log.GlobalError("Can't start client on remote, started by constructor.");
-                return;
-            }
-            if (ClientStarted)
-            {
-                Log.GlobalError("Can't start client, already started.");
-                return;
-            }
-            Log.GlobalInfo("Starting client!");
-            _packetReaderThread?.Abort();
-            _packetReaderThread = new Thread(PacketReaderThreadMethod);
-            _packetSenderThread?.Abort();
-            _packetSenderThread = new Thread(PacketSenderThreadMethod);
-            _clientActive = true;
-            _shuttingDown = false;
-            _packetReaderThread.Start();
-            _packetSenderThread.Start();
-            _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
-            _toSendPackets = new ConcurrentQueue<Packet>();
-            ClientConnected?.Invoke();
-            Clients.Add(this);
+            
         }
 
-
-        object streamLock = new object();
-
-        internal void SendNextPacketInternal()
+        public override bool Send(byte[] data)
         {
-            if (_toSendPackets.IsEmpty)
+            try
             {
-                return;
+                NetworkStream.Write(data, 0, data.Length);
+                //LMAO, I DONT KNOW WHY I NEED THIS!
+                //Do not remove, will break if removed. (Don't question it)
+                Thread.Sleep(1);
+                return true;
             }
-            lock (streamLock)
+            catch (Exception ex)
             {
-                _toSendPackets.TryDequeue(out Packet packet);
-                if(!packet.ValidateFlags())
-                {
-                    Log.GlobalError($"Packet send failed! Flag validation failure. Packet Type: {packet.Type}, Target: {packet.NetowrkIDTarget}, Custom Packet ID: {packet.CustomPacketID}, Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
-                    return;
-                }
-                NetworkStream serverStream = NetworkStream;
-                byte[] packetBytes = packet.Serialize().Data;
-                byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
-                byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
-                //Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
-                if (packet.Flags.HasFlag(PacketFlags.Compressed))
-                {
-                    //Log.GlobalDebug("Compressing the packet.");
-                    packetDataBytes = packetDataBytes.Compress();
-                }
-                int currentEncryptionState = (int)EncryptionState;
-                if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
-                {
-                    //Log.GlobalDebug("Encrypting using SYMMETRICAL");
-                    packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
-                }
-                else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
-                {
-                    //Log.GlobalDebug("Encrypting using ASYMMETRICAL");
-                    packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
-                }
-                if (packet.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
-                {
-                    if(currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
-                    {
-                        Log.GlobalError("Encryption cannot be done at this point: Not ready.");
-                        return;
-                    }
-                    //Log.GlobalDebug("Encrypting Packet: Asymmetrical");
-                    packetDataBytes = EncryptionManager.Encrypt(packetDataBytes, false);
-                }
-                if (packet.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
-                {
-                    if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
-                    {
-                        Log.GlobalError("Encryption cannot be done at this point: Not ready.");
-                        return;
-                    }
-                    //Log.GlobalDebug("Encrypting Packet: Symmetrical");
-                    packetDataBytes = EncryptionManager.Encrypt(packetDataBytes);
-                }
-                ByteWriter writer = new ByteWriter();
-                byte[] packetFull = packetHeaderBytes.Concat(packetDataBytes).ToArray();
-                Log.GlobalDebug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
-                writer.WriteInt(packetFull.Length);
-                writer.Write(packetFull);
-                int written = packetFull.Length;
-                if (written > (packetFull.Length + 4))
-                {
-                    Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetBytes.Length + 4}");
-                    return;
-                }
-                byte[] fullBytes = writer.Data;
-                if (fullBytes.Length > Packet.MaxPacketSize)
-                {
-                    Log.GlobalError("Packet too large!");
-                    return;
-                }
-                try
-                {
-                    Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
-                    serverStream.Write(fullBytes, 0, fullBytes.Length);
-                    //LMAO, I DONT KNOW WHY I NEED THIS!
-                    //Do not remove, will break if removed. (Don't question it)
-                    Thread.Sleep(1);
-                }
-                catch (Exception ex)
-                {
-                    Log.GlobalError("Failed to send packet! Error:\n" + ex.ToString());
-                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
-                    ConnectionError?.Invoke(networkErrorData);
-                }
+                Log.GlobalError("Failed to send packet! Error:\n" + ex.ToString());
+                //NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                //ConnectionError?.Invoke(networkErrorData);
+                return false;   
             }
         }
 
