@@ -21,7 +21,7 @@ using System.Runtime.CompilerServices;
 
 namespace SocketNetworking
 {
-    public class NetworkClient
+    public class NetworkClient : NetworkClientBase
     {
 
         /// <summary>
@@ -609,42 +609,7 @@ namespace SocketNetworking
             Send(packet);
         }
 
-        /// <summary>
-        /// Send a disconnect message to the other party and kill local client
-        /// </summary>
-        /// <param name="message">
-        /// A <see cref="string"/> which to send as a message to the other party.
-        /// </param>
-        public void Disconnect(string message)
-        {
-            ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
-            {
-                State = ConnectionState.Disconnected,
-                Reason = message
-            };
-            Send(connectionUpdatePacket);
-            NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
-            ConnectionError?.Invoke(errorData);
-            ClientDisconnected?.Invoke();
-            if (CurrnetClientLocation == ClientLocation.Remote)
-            {
-                Log.GlobalInfo($"Disconnecting Client {ClientID} for " + message);
-                StopClient();
-            }
-            if (CurrnetClientLocation == ClientLocation.Local)
-            {
-                Log.GlobalInfo("Disconnecting from server. Reason: " + message);
-                StopClient();
-            }
-        }
 
-        /// <summary>
-        /// Disconnects the connection with the reason "Disconnected"
-        /// </summary>
-        public void Disconnect()
-        {
-            Disconnect("Disconnected");
-        }
 
         /// <summary>
         /// Stops the client, removing the Thread and closing the socket
@@ -726,7 +691,7 @@ namespace SocketNetworking
         }
 
 
-        void OnLocalClientConnected()
+        protected override void OnLocalClientConnected()
         {
             if (CurrnetClientLocation != ClientLocation.Local)
             {
@@ -1125,21 +1090,21 @@ namespace SocketNetworking
                 byte[] packetBytes = packet.Serialize().Data;
                 byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
                 byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
-                Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
+                //Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
                 if (packet.Flags.HasFlag(PacketFlags.Compressed))
                 {
-                    Log.GlobalDebug("Compressing the packet.");
+                    //Log.GlobalDebug("Compressing the packet.");
                     packetDataBytes = packetDataBytes.Compress();
                 }
                 int currentEncryptionState = (int)EncryptionState;
                 if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
                 {
-                    Log.GlobalDebug("Encrypting using SYMMETRICAL");
+                    //Log.GlobalDebug("Encrypting using SYMMETRICAL");
                     packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
                 }
                 else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
                 {
-                    Log.GlobalDebug("Encrypting using ASYMMETRICAL");
+                    //Log.GlobalDebug("Encrypting using ASYMMETRICAL");
                     packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
                 }
                 if (packet.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
@@ -1149,7 +1114,7 @@ namespace SocketNetworking
                         Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                         return;
                     }
-                    Log.GlobalDebug("Encrypting Packet: Asymmetrical");
+                    //Log.GlobalDebug("Encrypting Packet: Asymmetrical");
                     packetDataBytes = EncryptionManager.Encrypt(packetDataBytes, false);
                 }
                 if (packet.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
@@ -1159,7 +1124,7 @@ namespace SocketNetworking
                         Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                         return;
                     }
-                    Log.GlobalDebug("Encrypting Packet: Symmetrical");
+                    //Log.GlobalDebug("Encrypting Packet: Symmetrical");
                     packetDataBytes = EncryptionManager.Encrypt(packetDataBytes);
                 }
                 ByteWriter writer = new ByteWriter();
@@ -1383,51 +1348,6 @@ namespace SocketNetworking
             {
                 HandleLocalClient(header, fullPacket);
             }
-        }
-
-        struct ReadPacketInfo
-        {
-            public PacketHeader Header;
-            public byte[] Data;
-        }        
-    }
-
-    /// <summary>
-    /// Represents the encryption state withe the remote client/server.
-    /// </summary>
-    public enum EncryptionState : byte
-    {
-        Disabled,
-        Handshake,
-        AsymmetricalReady,
-        SymmetricalReady,
-        Encrypted
-    }
-
-    /// <summary>
-    /// The current state of the handshake. Disconnect = Either not connected at all or just got disconnected. Handshake = Client-Server still agreeing on protocol and version. Connected = System connected.
-    /// </summary>
-    public enum ConnectionState
-    {
-        Disconnected,
-        Handshake,
-        Connected,
-    }
-
-    public struct NetworkErrorData
-    {
-        public string Error { get; private set; } 
-        public bool IsConnected { get; private set; }
-
-        public NetworkErrorData(string error, bool isConnected)
-        {
-            Error = error;
-            IsConnected = isConnected;
-        }
-
-        public override string ToString()
-        {
-            return "Is Connected: " + IsConnected + " Error: " + Error;
         }
     }
 }

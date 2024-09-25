@@ -47,10 +47,12 @@
     <Compile Include="Attributes\PacketDefinition.cs" />
     <Compile Include="Attributes\PacketListener.cs" />
     <Compile Include="Attributes\TypeWrapperAttribute.cs" />
+    <Compile Include="INetworkClient.cs" />
     <Compile Include="Misc\CallbackTimer.cs" />
     <Compile Include="Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Exceptions\NetworkInvocationException.cs" />
     <Compile Include="Exceptions\NetworkSerializationException.cs" />
+    <Compile Include="NetworkClientBase.cs" />
     <Compile Include="NetworkConvert.cs" />
     <Compile Include="NetworkEncryptionManager.cs" />
     <Compile Include="NetworkManager.cs" />

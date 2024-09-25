@@ -13,7 +13,7 @@ namespace SocketNetworking.PacketSystem
     public interface INetworkObject
     {
         /// <summary>
-        /// The <see cref="NetworkClient.ClientID"/> of the current owner.
+        /// The <see cref="NetworkClientBase.ClientID"/> of the current owner.
         /// </summary>
         int OwnerClientID { get; set; }
 
@@ -44,22 +44,22 @@ namespace SocketNetworking.PacketSystem
         void OnRemoved(INetworkObject removedObject);
 
         /// <summary>
-        /// Called on the Server and Client when the <see cref="NetworkClient.Ready"/> property is set to true.
+        /// Called on the Server and Client when the <see cref="NetworkClientBase.Ready"/> property is set to true.
         /// </summary>
         /// <param name="client"></param>
-        void OnReady(NetworkClient client, bool isReady);
+        void OnReady(NetworkClientBase client, bool isReady);
 
         /// <summary>
-        /// Called on the server and client when the <see cref="NetworkClient.CurrentConnectionState"/> is set to <see cref="ConnectionState.Connected"/>
+        /// Called on the server and client when the <see cref="NetworkClientBase.CurrentConnectionState"/> is set to <see cref="ConnectionState.Connected"/>
         /// </summary>
         /// <param name="client"></param>
-        void OnConnected(NetworkClient client);
+        void OnConnected(NetworkClientBase client);
 
         /// <summary>
-        /// Called on Server and Client when the <see cref="NetworkClient"/> is disconnected.
+        /// Called on Server and Client when the <see cref="NetworkClientBase"/> is disconnected.
         /// </summary>
         /// <param name="client"></param>
-        void OnDisconnected(NetworkClient client);
+        void OnDisconnected(NetworkClientBase client);
     }
 
     public enum OwnershipMode

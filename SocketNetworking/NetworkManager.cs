@@ -23,7 +23,7 @@ namespace SocketNetworking
         public static readonly Type[] AcceptedMethodArugments = new Type[]
         {
             typeof(CustomPacket),
-            typeof(NetworkClient),
+            typeof(NetworkClientBase),
         };
 
         public static readonly Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
@@ -79,21 +79,21 @@ namespace SocketNetworking
             {
                 if (NetworkServer.Active)
                 {
-                    if (NetworkClient.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() == 0)
+                    if (NetworkClientBase.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() == 0)
                     {
                         return ClientLocation.Remote;
                     }
-                    if (NetworkClient.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() != 0)
+                    if (NetworkClientBase.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() != 0)
                     {
                         return ClientLocation.Unknown;
                     }
                 }
                 else
                 {
-                    if (NetworkClient.Clients.Any(x => x.CurrnetClientLocation == ClientLocation.Remote))
+                    if (NetworkClientBase.Clients.Any(x => x.CurrnetClientLocation == ClientLocation.Remote))
                     {
                         Log.GlobalError("There are active remote clients even though the server is closed, these clients will now be terminated.");
-                        foreach (var x in NetworkClient.Clients)
+                        foreach (var x in NetworkClientBase.Clients)
                         {
                             if (x.CurrnetClientLocation == ClientLocation.Local)
                             {
@@ -102,7 +102,7 @@ namespace SocketNetworking
                             x.StopClient();
                         }
                     }
-                    if (NetworkClient.Clients.Any())
+                    if (NetworkClientBase.Clients.Any())
                     {
                         return ClientLocation.Local;
                     }
@@ -311,7 +311,7 @@ namespace SocketNetworking
             return NetworkObjects.Keys.ToList();
         }
 
-        public static void SendReadyPulse(NetworkClient sender, bool isReady)
+        public static void SendReadyPulse(NetworkClientBase sender, bool isReady)
         {
             foreach (INetworkObject @object in NetworkObjects.Keys)
             {
@@ -335,7 +335,7 @@ namespace SocketNetworking
             }
         }
 
-        public static void SendDisconnectedPulse(NetworkClient networkClient)
+        public static void SendDisconnectedPulse(NetworkClientBase networkClient)
         {
             foreach (INetworkObject @object in NetworkObjects.Keys)
             {
@@ -343,7 +343,7 @@ namespace SocketNetworking
             }
         }
 
-        public static void SendConnectedPulse(NetworkClient client)
+        public static void SendConnectedPulse(NetworkClientBase client)
         {
             foreach (INetworkObject @object in NetworkObjects.Keys)
             {
@@ -558,9 +558,9 @@ namespace SocketNetworking
         /// A <see cref="byte[]"/> of the data of that packet. Note that it is the full data, do not trim out the header.
         /// </param>
         /// <param name="runningClient">
-        /// A reference to a <see cref="NetworkClient"/> which ran this method.
+        /// A reference to a <see cref="NetworkClientBase"/> which ran this method.
         /// </param>
-        public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
+        public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClientBase runningClient)
         {
             ClientLocation clientLocation = runningClient.CurrnetClientLocation;
             if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
@@ -690,7 +690,7 @@ namespace SocketNetworking
             return packet;
         }
 
-        internal static void NetworkInvoke(NetworkInvocationResultPacket packet, NetworkClient reciever)
+        internal static void NetworkInvoke(NetworkInvocationResultPacket packet, NetworkClientBase reciever)
         {
             if (packet.IgnoreResult)
             {
@@ -704,7 +704,7 @@ namespace SocketNetworking
             OnNetworkInvocationResult?.Invoke(packet);
         }
 
-        internal static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient reciever)
+        internal static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClientBase reciever)
         {
             Assembly assmebly = Assembly.Load(packet.TargetTypeAssmebly);
             Type targetType = assmebly.GetType(packet.TargetType);
@@ -722,7 +722,7 @@ namespace SocketNetworking
                     targets.AddRange(netObjs);
                 }
             }
-            else if(targetType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+            else if(targetType.IsSubclassOfRawGeneric(typeof(NetworkClientBase)))
             {
                 targets.Add(target);
             }
@@ -741,7 +741,7 @@ namespace SocketNetworking
             foreach (MethodInfo m in methods)
             {
                 List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)) && !arguments[0].IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClientBase)) && !arguments[0].IsSubclassOfRawGeneric(typeof(NetworkClientBase)))
                 {
                     m_args.RemoveAt(0);
                 }
@@ -766,7 +766,7 @@ namespace SocketNetworking
             }
             if (invocable.SecureMode && reciever.CurrnetClientLocation != ClientLocation.Local)
             {
-                if (target is NetworkClient client && client.ClientID != reciever.ClientID)
+                if (target is NetworkClientBase client && client.ClientID != reciever.ClientID)
                 {
                     throw new SecurityException("Attempted to invoke network method which the client does not own.");
                 }
@@ -785,16 +785,16 @@ namespace SocketNetworking
                         //do nothing, everyone owns this object.
                     }
                 }
-                if (!(target is INetworkObject) && !(target is NetworkClient))
+                if (!(target is INetworkObject) && !(target is NetworkClientBase))
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClientBase)))
                     {
-                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + packet.MethodName);
+                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClientBase subclass does not take NetworkClientBase as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClientBase. Method: " + packet.MethodName);
                     }
                 }
             }
             List<object> args = new List<object>();
-            if (method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+            if (method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClientBase)))
             {
                 args.Add(reciever);
             }
@@ -828,23 +828,23 @@ namespace SocketNetworking
         }
 
         /// <summary>
-        /// Sends a network invocation to the target <see cref="NetworkClient"/> with the target <see cref="object"/> which has to be a <see cref="INetworkObject"/> or a <see cref="NetworkClient"/>.
+        /// Sends a network invocation to the target <see cref="NetworkClientBase"/> with the target <see cref="object"/> which has to be a <see cref="INetworkObject"/> or a <see cref="NetworkClientBase"/>.
         /// </summary>
         /// <param name="target">
-        /// The target <see cref="object"/>, must be either <see cref="INetworkObject"/> or <see cref="NetworkClient"/>.
+        /// The target <see cref="object"/>, must be either <see cref="INetworkObject"/> or <see cref="NetworkClientBase"/>.
         /// </param>
         /// <param name="sender">
-        /// The <see cref="NetworkClient"/> sender of the invocation.
+        /// The <see cref="NetworkClientBase"/> sender of the invocation.
         /// </param>
         /// <param name="methodName">
         /// The method name of the object from target argument. Note that the method msut be a non-static method. The access modifier does not matter.
         /// </param>
         /// <param name="args">
-        /// The arguments that should be provided to the method. Note that these arguments are serialized by <see cref="NetworkConvert"/>. Note: if your method has <see cref="NetworkClient"/> as its first argument, you do not have to inlude it, but you can.
+        /// The arguments that should be provided to the method. Note that these arguments are serialized by <see cref="NetworkConvert"/>. Note: if your method has <see cref="NetworkClientBase"/> as its first argument, you do not have to inlude it, but you can.
         /// </param>
         /// <exception cref="NetworkInvocationException"></exception>
         /// <exception cref="SecurityException"></exception>
-        public static void NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args)
+        public static void NetworkInvoke(object target, NetworkClientBase sender, string methodName, object[] args)
         {
             if (target == null)
             {
@@ -855,9 +855,9 @@ namespace SocketNetworking
             {
                 targetID = networkObject.NetworkID;
             }
-            else if (!(target is NetworkClient client))
+            else if (!(target is NetworkClientBase client))
             {
-                throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
+                throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClientBase."));
             }
             Type targetType = target.GetType();
             if (targetType == null)
@@ -871,7 +871,7 @@ namespace SocketNetworking
             foreach (MethodInfo m in methods)
             {
                 List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClientBase)))
                 {
                     m_args.RemoveAt(0);
                 }
@@ -896,7 +896,7 @@ namespace SocketNetworking
             }
             if (invocable.SecureMode && WhereAmI != ClientLocation.Remote)
             {
-                if (target is NetworkClient client && client.ClientID != sender.ClientID)
+                if (target is NetworkClientBase client && client.ClientID != sender.ClientID)
                 {
                     throw new SecurityException("Attempted to invoke network method which the client does not own.");
                 }
@@ -915,11 +915,11 @@ namespace SocketNetworking
                         //do nothing, everyone owns this object.
                     }
                 }
-                if (!(target is INetworkObject) && !(target is NetworkClient))
+                if (!(target is INetworkObject) && !(target is NetworkClientBase))
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClientBase)))
                     {
-                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + methodName);
+                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClientBase subclass does not take NetworkClientBase as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClientBase. Method: " + methodName);
                     }
                 }
             }
@@ -940,7 +940,7 @@ namespace SocketNetworking
             sender.Send(packet);
         }
 
-        public static T NetworkInvoke<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000)
+        public static T NetworkInvoke<T>(object target, NetworkClientBase sender, string methodName, object[] args, float msTimeOut = 5000)
         {
             if (target == null)
             {
@@ -951,9 +951,9 @@ namespace SocketNetworking
             {
                 targetID = networkObject.NetworkID;
             }
-            else if (!(target is NetworkClient client))
+            else if (!(target is NetworkClientBase client))
             {
-                throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
+                throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClientBase."));
             }
             Type targetType = target.GetType();
             if (targetType == null)
@@ -967,7 +967,7 @@ namespace SocketNetworking
             foreach (MethodInfo m in methods)
             {
                 List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClientBase)))
                 {
                     m_args.RemoveAt(0);
                 }
@@ -996,7 +996,7 @@ namespace SocketNetworking
             }
             if (invocable.SecureMode && WhereAmI != ClientLocation.Remote)
             {
-                if (target is NetworkClient client && client.ClientID != sender.ClientID)
+                if (target is NetworkClientBase client && client.ClientID != sender.ClientID)
                 {
                     throw new SecurityException("Attempted to invoke network method which the client does not own.");
                 }
@@ -1015,11 +1015,11 @@ namespace SocketNetworking
                         //do nothing, everyone owns this object.
                     }
                 }
-                if (!(target is INetworkObject) && !(target is NetworkClient))
+                if (!(target is INetworkObject) && !(target is NetworkClientBase))
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClientBase)))
                     {
-                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + methodName);
+                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClientBase subclass does not take NetworkClientBase as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClientBase. Method: " + methodName);
                     }
                 }
             }
@@ -1048,7 +1048,7 @@ namespace SocketNetworking
             {
                 if (!sender.IsConnected)
                 {
-                    Log.GlobalError($"NetworkInvoke on method {methodName} failed becuase the NetworkClient is not connected.");
+                    Log.GlobalError($"NetworkInvoke on method {methodName} failed becuase the NetworkClientBase is not connected.");
                     break;
                 }
                 if(stopwatch.ElapsedMilliseconds > msTimeOut)
@@ -1080,7 +1080,7 @@ namespace SocketNetworking
             }
         }
 
-        public static TResult NetworkInvoke<TResult>(object target, NetworkClient sender, Func<TResult> func)
+        public static TResult NetworkInvoke<TResult>(object target, NetworkClientBase sender, Func<TResult> func)
         {
             return NetworkInvoke<TResult>(target, sender, func.Method.Name, new object[] { });
         }
