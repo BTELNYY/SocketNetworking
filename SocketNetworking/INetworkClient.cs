@@ -9,9 +9,9 @@ namespace SocketNetworking
 {
     public interface INetworkClient
     {
-        void Connect(string host, int port, string password);
+        bool Connect(string host, int port, string password);
 
-        void Send(byte[] data);
+        bool Send(byte[] data);
 
         byte[] Recieve();
 
