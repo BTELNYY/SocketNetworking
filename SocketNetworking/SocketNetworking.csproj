@@ -78,6 +78,8 @@
     <Compile Include="PacketSystem\ByteWriter.cs" />
     <Compile Include="PacketSystem\ByteReader.cs" />
     <Compile Include="PacketSystem\Packet.cs" />
+    <Compile Include="PacketSystem\TypeWrappers\SerializableIPAddress.cs" />
+    <Compile Include="PacketSystem\TypeWrappers\SerializableIPEndpoinrt.cs" />
     <Compile Include="PacketSystem\TypeWrappers\SerializableList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

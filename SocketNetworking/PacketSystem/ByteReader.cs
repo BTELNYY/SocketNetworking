@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Security.Policy;
 using System.Text;
@@ -99,6 +100,29 @@ namespace SocketNetworking.PacketSystem
             Remove(bytesUsed);
             return (T)serializable;
         }
+
+        public K Read<T, K>() where T : TypeWrapper<K>
+        {
+            TypeWrapper<K> wrapper = (TypeWrapper<K>)Activator.CreateInstance(typeof(T));
+            ValueTuple<K, int> result = wrapper.Deserialize(_workingSetData);
+            Remove(result.Item2);
+            return result.Item1;
+        }
+
+        public T Read<T>()
+        {
+            Type type = typeof(T);
+            if (!NetworkManager.TypeToTypeWrapper.ContainsKey(type))
+            {
+                throw new InvalidOperationException("No type wrapper for type: " + type.FullName);
+            }
+            object typeWrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
+            MethodInfo deserializer = typeWrapper.GetType().GetMethod("Deserialize"));
+            ValueTuple<T, int> result = (ValueTuple<T, int>)deserializer.Invoke(typeWrapper, new object[] { _workingSetData });
+            Remove(result.Item2);
+            return result.Item1;
+        }
+
 
         public byte ReadByte()
         {

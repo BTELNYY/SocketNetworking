@@ -1392,28 +1392,6 @@ namespace SocketNetworking
         }        
     }
 
-    /// <summary>
-    /// Represents the encryption state withe the remote client/server.
-    /// </summary>
-    public enum EncryptionState : byte
-    {
-        Disabled,
-        Handshake,
-        AsymmetricalReady,
-        SymmetricalReady,
-        Encrypted
-    }
-
-    /// <summary>
-    /// The current state of the handshake. Disconnect = Either not connected at all or just got disconnected. Handshake = Client-Server still agreeing on protocol and version. Connected = System connected.
-    /// </summary>
-    public enum ConnectionState
-    {
-        Disconnected,
-        Handshake,
-        Connected,
-    }
-
     public struct NetworkErrorData
     {
         public string Error { get; private set; } 
