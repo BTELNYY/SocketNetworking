@@ -17,6 +17,7 @@ namespace SocketNetworking.PacketSystem
     {
         /// <summary>
         /// Represents the original untouched data fed into the class. This data is not changed by any method.
+        /// Meaning, This is the original data you gave in the constructor.
         /// </summary>
         public byte[] RawData { get; private set; }
 
@@ -31,6 +32,9 @@ namespace SocketNetworking.PacketSystem
             }
         }
 
+        /// <summary>
+        /// Is the buffer empty?
+        /// </summary>
         public bool IsEmpty 
         { 
             get

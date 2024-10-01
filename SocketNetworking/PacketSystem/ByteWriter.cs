@@ -8,8 +8,14 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.PacketSystem
 {
+    /// <summary>
+    /// Provides buffer manipulation methods.
+    /// </summary>
     public class ByteWriter
     {
+        /// <summary>
+        /// The current length of the buffer.
+        /// </summary>
         public int DataLength
         {
             get
@@ -18,6 +24,9 @@ namespace SocketNetworking.PacketSystem
             }
         }
 
+        /// <summary>
+        /// The written data buffer.
+        /// </summary>
         public byte[] Data
         {
             get
