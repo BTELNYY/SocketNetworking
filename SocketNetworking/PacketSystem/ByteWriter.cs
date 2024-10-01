@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -34,10 +35,23 @@ namespace SocketNetworking.PacketSystem
             _workingSetData = null;
         }
 
-        public void Write<T>(IPacketSerializable serializable)
+        public void WritePacketSerialized<T>(IPacketSerializable serializable)
         {
             byte[] data = serializable.Serialize();
             Write(data);
+        }
+
+        public void WriteWrapper(object any)
+        {
+            Type type = any.GetType();
+            if (!NetworkManager.TypeToTypeWrapper.ContainsKey(type))
+            {
+                throw new InvalidOperationException("No type wrapper for type: " + type.FullName);
+            }
+            object wrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
+            MethodInfo serializer = wrapper.GetType().GetMethod("Serialize");
+            byte[] result = (byte[])serializer.Invoke(wrapper, new object[] { any });
+            Write(result);
         }
 
         public void Write(byte[] data)

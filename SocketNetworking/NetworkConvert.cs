@@ -74,7 +74,7 @@ namespace SocketNetworking
             }
             if (data is IPacketSerializable serializable)
             {
-                writer.Write<IPacketSerializable>(serializable);
+                writer.WritePacketSerialized<IPacketSerializable>(serializable);
                 sData.Data = writer.Data;
                 return sData;
             }
@@ -83,7 +83,7 @@ namespace SocketNetworking
             {
                 IEnumerable<object> values = enumerable;
                 SerializableList<object> list = new SerializableList<object>(values);
-                writer.Write<SerializableList<object>>(list);
+                writer.WritePacketSerialized<SerializableList<object>>(list);
                 sData.Data = writer.Data;
                 return sData;
             }
@@ -218,8 +218,8 @@ namespace SocketNetworking
                 }
             }
 
-            writer.Write<SerializableList<SerializedData>>(fieldData);
-            writer.Write<SerializableList<SerializedData>>(propertyData);
+            writer.WritePacketSerialized<SerializableList<SerializedData>>(fieldData);
+            writer.WritePacketSerialized<SerializableList<SerializedData>>(propertyData);
             sData.Data = writer.Data;
             sData.DataNull = sData.Data == null;
             return sData;
@@ -376,8 +376,8 @@ namespace SocketNetworking
             }
 
             object newObject = Activator.CreateInstance(data.Type);
-            List<SerializedData> fieldData = reader.Read<SerializableList<SerializedData>>().ContainedList;
-            List<SerializedData> propertyData = reader.Read<SerializableList<SerializedData>>().ContainedList;
+            List<SerializedData> fieldData = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;
+            List<SerializedData> propertyData = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;
             int customReadBytes = 0;
             if (data.Type.GetCustomAttribute<NetworkSerialized>() != null)
             {
@@ -431,7 +431,7 @@ namespace SocketNetworking
         public static T Deserialize<T>(byte[] data)
         {
             ByteReader br = new ByteReader(data);
-            SerializedData sData = br.Read<SerializedData>();
+            SerializedData sData = br.ReadPacketSerialized<SerializedData>();
             if(!br.IsEmpty)
             {
                 Log.GlobalWarning("Provided Data Array was not emptied by the deseiralizer, probably extra bytes?");

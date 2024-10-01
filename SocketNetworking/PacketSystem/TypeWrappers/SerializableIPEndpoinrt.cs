@@ -12,7 +12,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
         public override (IPEndPoint, int) Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
-            IPAddress result = reader.Read<SerializableIPAddress, IPAddress>();
+            IPAddress result = reader.ReadWrapper<SerializableIPAddress, IPAddress>();
             int port = reader.ReadUShort();
             IPEndPoint endPoint = new IPEndPoint(result, port);
             return (endPoint, reader.ReadBytes);

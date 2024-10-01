@@ -37,7 +37,7 @@ namespace SocketNetworking.PacketSystem.Packets
             writer.WriteBool(IgnoreResult);
             SerializableList<SerializedData> list = new SerializableList<SerializedData>();
             list.OverwriteContained(Arguments);
-            writer.Write<SerializableList<SerializedData>>(list);
+            writer.WritePacketSerialized<SerializableList<SerializedData>>(list);
             return writer;
         }
 
@@ -50,7 +50,7 @@ namespace SocketNetworking.PacketSystem.Packets
             NetworkObjectTarget = reader.ReadInt();
             CallbackID = reader.ReadInt();
             IgnoreResult = reader.ReadBool();
-            Arguments = reader.Read<SerializableList<SerializedData>>().ContainedList;
+            Arguments = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;
             return reader;
         }
     }

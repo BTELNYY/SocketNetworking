@@ -24,9 +24,9 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteWriter writer = base.Serialize();
             writer.WriteInt(YourClientID);
-            writer.Write<ProtocolConfiguration>(Configuration);
+            writer.WritePacketSerialized<ProtocolConfiguration>(Configuration);
             SerializableDictionary<int, string> dict = new SerializableDictionary<int, string>(CustomPacketAutoPairs);
-            writer.Write<SerializableDictionary<string, int>>(dict);
+            writer.WritePacketSerialized<SerializableDictionary<string, int>>(dict);
             return writer;
         }
 
@@ -34,8 +34,8 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteReader reader = base.Deserialize(data);
             YourClientID = reader.ReadInt();
-            Configuration = reader.Read<ProtocolConfiguration>();
-            CustomPacketAutoPairs = reader.Read<SerializableDictionary<int, string>>().ContainedDict;
+            Configuration = reader.ReadPacketSerialized<ProtocolConfiguration>();
+            CustomPacketAutoPairs = reader.ReadPacketSerialized<SerializableDictionary<int, string>>().ContainedDict;
             return reader;
         }
     }

@@ -93,7 +93,7 @@ namespace SocketNetworking.PacketSystem
             return Read(length);
         }
 
-        public T Read<T>() where T : IPacketSerializable
+        public T ReadPacketSerialized<T>() where T : IPacketSerializable
         {
             IPacketSerializable serializable = (IPacketSerializable)Activator.CreateInstance(typeof(T));
             int bytesUsed = serializable.Deserialize(_workingSetData);
@@ -101,7 +101,7 @@ namespace SocketNetworking.PacketSystem
             return (T)serializable;
         }
 
-        public K Read<T, K>() where T : TypeWrapper<K>
+        public K ReadWrapper<T, K>() where T : TypeWrapper<K>
         {
             TypeWrapper<K> wrapper = (TypeWrapper<K>)Activator.CreateInstance(typeof(T));
             ValueTuple<K, int> result = wrapper.Deserialize(_workingSetData);
@@ -109,7 +109,7 @@ namespace SocketNetworking.PacketSystem
             return result.Item1;
         }
 
-        public T Read<T>()
+        public T ReadWrapper<T>()
         {
             Type type = typeof(T);
             if (!NetworkManager.TypeToTypeWrapper.ContainsKey(type))
@@ -117,7 +117,7 @@ namespace SocketNetworking.PacketSystem
                 throw new InvalidOperationException("No type wrapper for type: " + type.FullName);
             }
             object typeWrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
-            MethodInfo deserializer = typeWrapper.GetType().GetMethod("Deserialize"));
+            MethodInfo deserializer = typeWrapper.GetType().GetMethod("Deserialize");
             ValueTuple<T, int> result = (ValueTuple<T, int>)deserializer.Invoke(typeWrapper, new object[] { _workingSetData });
             Remove(result.Item2);
             return result.Item1;

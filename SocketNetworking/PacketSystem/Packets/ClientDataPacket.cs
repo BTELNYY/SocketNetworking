@@ -30,7 +30,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteReader reader = base.Deserialize(data);
             PasswordHash = reader.ReadString();
-            Configuration = reader.Read<ProtocolConfiguration>();
+            Configuration = reader.ReadPacketSerialized<ProtocolConfiguration>();
             return reader;
         }
 
@@ -38,7 +38,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteWriter writer = base.Serialize();
             writer.WriteString(PasswordHash);
-            writer.Write<ProtocolConfiguration>(Configuration);
+            writer.WriteWrapper(Configuration);
             return writer;
         }
     }
