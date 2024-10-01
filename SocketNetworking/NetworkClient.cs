@@ -18,6 +18,7 @@ using System.Collections.Concurrent;
 using System.Web;
 using SocketNetworking.Misc;
 using System.Runtime.CompilerServices;
+using SocketNetworking.Transports;
 
 namespace SocketNetworking
 {
@@ -134,18 +135,7 @@ namespace SocketNetworking
             }
         }
 
-        private TcpClient _tcpClient;
-
-        /// <summary>
-        /// The current TcpClient reference
-        /// </summary>
-        public TcpClient TcpClient
-        {
-            get
-            {
-                return _tcpClient;
-            }
-        }
+        public NetworkTransport Transport { get; set; }
 
         private NetworkEncryptionManager networkEncryptionManager;
 
@@ -164,7 +154,7 @@ namespace SocketNetworking
         {
             get
             {
-                IPEndPoint remoteIpEndPoint = TcpClient.Client.RemoteEndPoint as IPEndPoint;
+                IPEndPoint remoteIpEndPoint = Transport.Peer;
                 return $"{remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}";
             }
         }
@@ -176,7 +166,7 @@ namespace SocketNetworking
         {
             get
             {
-                IPEndPoint remoteIpEndPoint = TcpClient.Client.RemoteEndPoint as IPEndPoint;
+                IPEndPoint remoteIpEndPoint = Transport.Peer;
                 return $"{remoteIpEndPoint.Address}";
             }
         }
@@ -188,7 +178,7 @@ namespace SocketNetworking
         {
             get
             {
-                IPEndPoint remoteIpEndPoint = TcpClient.Client.RemoteEndPoint as IPEndPoint;
+                IPEndPoint remoteIpEndPoint = Transport.Peer;
                 return remoteIpEndPoint.Port;
             }
         }
@@ -220,42 +210,6 @@ namespace SocketNetworking
                     Ready = value
                 };
                 Send(readyStateUpdatePacket);
-            }
-        }
-
-        /// <summary>
-        /// The <see cref="System.Net.Sockets.TcpClient"/>s <see cref="System.Net.Sockets.NetworkStream"/>
-        /// </summary>
-        public NetworkStream NetworkStream
-        {
-            get
-            {
-                if (IsConnected)
-                {
-                    return TcpClient.GetStream();
-                }
-                return null;
-            }
-        }
-
-        private bool _tcpNoDelay = false;
-
-        /// <summary>
-        /// Sets if the TCP Socket should wait for more packets before sending.
-        /// </summary>
-        public bool TcpNoDelay
-        {
-            get
-            {
-                return _tcpNoDelay;
-            }
-            set
-            {
-                if(TcpClient != null)
-                {
-                    TcpClient.NoDelay = value;
-                }
-                _tcpNoDelay = value;
             }
         }
 
@@ -303,15 +257,15 @@ namespace SocketNetworking
         {
             get
             {
-                if(TcpClient == null)
+                if(Transport == null)
                 {
                     return false;
                 }
-                if(CurrnetClientLocation == ClientLocation.Remote && TcpClient.Connected)
+                if(CurrnetClientLocation == ClientLocation.Remote && Transport.IsConnected)
                 {
                     return true;
                 }
-                return TcpClient != null && TcpClient.Connected;
+                return Transport != null && Transport.IsConnected;
             }
         }
 
@@ -485,14 +439,12 @@ namespace SocketNetworking
         /// Given ClientID
         /// </param>
         /// <param name="socket">
-        /// The <see cref="System.Net.Sockets.TcpClient"/> object which handles data transport.
+        /// The <see cref="NetworkTransport"/> object which handles data transport.
         /// </param>
-        public void InitRemoteClient(int clientId, TcpClient socket)
+        public void InitRemoteClient(int clientId, NetworkTransport socket)
         {
             _clientId = clientId;
-            _tcpClient = socket;
-            _tcpClient.NoDelay = TcpNoDelay;
-            //_tcpClient.NoDelay = true;
+            Transport = socket;
             _clientLocation = ClientLocation.Remote;
             ClientConnected += OnRemoteClientConnected;
             ClientConnected?.Invoke();
@@ -539,11 +491,13 @@ namespace SocketNetworking
                 Log.GlobalError("Can't connect: Already connected to a server.");
                 return false;
             }
-            _tcpClient = new TcpClient();
-            _tcpClient.NoDelay = TcpNoDelay;
             try
             {
-                _tcpClient.Connect(hostname, port);
+                Exception ex = Transport.Connect(hostname, port);
+                if (ex != null)
+                {
+                    throw ex;
+                }
             }
             catch(Exception ex)
             {
@@ -662,7 +616,6 @@ namespace SocketNetworking
             _packetSenderThread.Abort();
             _packetReaderThread = null;
             _packetSenderThread = null;
-            _tcpClient = null;
             if (Clients.Contains(this))
             {
                 Clients.Remove(this);
@@ -1107,7 +1060,7 @@ namespace SocketNetworking
 
         object streamLock = new object();
 
-        internal void SendNextPacketInternal()
+        protected virtual void SendNextPacketInternal()
         {
             if (_toSendPackets.IsEmpty)
             {
@@ -1121,7 +1074,6 @@ namespace SocketNetworking
                     Log.GlobalError($"Packet send failed! Flag validation failure. Packet Type: {packet.Type}, Target: {packet.NetowrkIDTarget}, Custom Packet ID: {packet.CustomPacketID}, Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
                     return;
                 }
-                NetworkStream serverStream = NetworkStream;
                 byte[] packetBytes = packet.Serialize().Data;
                 byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
                 byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
@@ -1182,10 +1134,11 @@ namespace SocketNetworking
                 try
                 {
                     Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
-                    serverStream.Write(fullBytes, 0, fullBytes.Length);
-                    //LMAO, I DONT KNOW WHY I NEED THIS!
-                    //Do not remove, will break if removed. (Don't question it)
-                    Thread.Sleep(1);
+                    Exception ex = Transport.Send(fullBytes);
+                    if(ex != null)
+                    {
+                        throw ex;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -1196,12 +1149,13 @@ namespace SocketNetworking
             }
         }
 
-        void PacketReaderThreadMethod()
+        protected virtual void PacketReaderThreadMethod()
         {
             Log.GlobalInfo($"Client thread started, ID {ClientID}");
             //int waitingSize = 0;
             //byte[] prevPacketFragment = { };
             byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
+            Transport.BufferSize = Packet.MaxPacketSize;
             int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined.
             while (true)
             {
@@ -1235,14 +1189,10 @@ namespace SocketNetworking
                     try
                     {
                         int tempFillSize = fillSize;
-                        if (TcpNoDelay)
-                        {
-                            count = NetworkStream.Read(buffer, 0, buffer.Length - fillSize);
-                        }
-                        else
-                        {
-                            count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
-                        }
+                        //(byte[], Exception) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
+                        (byte[], Exception) transportRead = Transport.Receive(0, buffer.Length - fillSize);
+                        count = transportRead.Item1.Length;
+                        buffer = Transport.Buffer;
                         //count = NetworkStream.Read(tempBuffer, 0, buffer.Length - fillSize);
                     }
                     catch(Exception ex)
@@ -1287,7 +1237,10 @@ namespace SocketNetworking
                     int count;
                     try
                     {
-                        count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
+                        (byte[], Exception) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
+                        count = transportRead.Item1.Length;
+                        buffer = Transport.Buffer;
+                        //count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
                     }
                     catch(Exception ex)
                     {
@@ -1359,16 +1312,9 @@ namespace SocketNetworking
                 {
                     HandlePacket(header, fullPacket);
                 }
-                // any leftover data in the buffer is recycled for the next iteration 
-                //unless we don't do a delay, becuase there is no point in keeping the buffer.
-                if (TcpNoDelay)
-                {
-                    buffer = new byte[Packet.MaxPacketSize];
-                    fillSize = 0;
-                }
             }
             Log.GlobalInfo("Shutting down client, Closing socket.");
-            _tcpClient.Close();
+            Transport.Close();
         }
 
         ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();

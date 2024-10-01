@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.Misc;
+using SocketNetworking.Transports;
 
 namespace SocketNetworking
 {
@@ -283,11 +284,13 @@ namespace SocketNetworking
                     continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();
+                TcpTransport tcpTransport = new TcpTransport();
+                tcpTransport.Client = socket;
                 socket.NoDelay = true;
                 IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                 Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
                 NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
-                client.InitRemoteClient(counter, socket);
+                client.InitRemoteClient(counter, tcpTransport);
                 AddClient(client, counter);
                 CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                 {

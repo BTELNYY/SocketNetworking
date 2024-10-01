@@ -38,7 +38,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteWriter writer = base.Serialize();
             writer.WriteString(PasswordHash);
-            writer.WriteWrapper(Configuration);
+            writer.WritePacketSerialized<ProtocolConfiguration>(Configuration);
             return writer;
         }
     }

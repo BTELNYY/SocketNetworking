@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking;
 using SocketNetworking.ExampleSharedData;
+using SocketNetworking.Transports;
 
 namespace SocketNetworking.ExampleClient
 {
@@ -15,6 +16,7 @@ namespace SocketNetworking.ExampleClient
             Log.OnLog += HandleNetworkLog;
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
             TestClient client = new TestClient();
+            client.Transport = new TcpTransport();
             client.InitLocalClient();
             client.Connect("127.0.0.1", 7777, "DefaultPassword");
         }

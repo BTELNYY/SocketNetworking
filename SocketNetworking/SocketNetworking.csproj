@@ -51,6 +51,7 @@
     <Compile Include="Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Exceptions\NetworkInvocationException.cs" />
     <Compile Include="Exceptions\NetworkSerializationException.cs" />
+    <Compile Include="Transports\NetworkConnection.cs" />
     <Compile Include="NetworkConvert.cs" />
     <Compile Include="NetworkEncryptionManager.cs" />
     <Compile Include="NetworkManager.cs" />
@@ -82,6 +83,7 @@
     <Compile Include="PacketSystem\TypeWrappers\SerializableIPEndpoinrt.cs" />
     <Compile Include="PacketSystem\TypeWrappers\SerializableList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Transports\TcpTransport.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
