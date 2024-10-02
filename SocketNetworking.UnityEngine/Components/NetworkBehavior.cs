@@ -8,6 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using SocketNetworking.Attributes;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
+using SocketNetworking.Server;
 
 namespace SocketNetworking.UnityEngine.Components
 {

@@ -9,8 +9,10 @@ using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.Misc;
 using SocketNetworking.Transports;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
-namespace SocketNetworking
+namespace SocketNetworking.Server
 {
     public class NetworkServer
     {

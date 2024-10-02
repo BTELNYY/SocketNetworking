@@ -36,7 +36,7 @@ namespace SocketNetworking.Transports
 
         public abstract Exception Send(byte[] data);
 
-        public abstract (byte[], Exception) Receive(int offset, int size);
+        public abstract (byte[], Exception, IPEndPoint) Receive(int offset, int size);
 
         public abstract void Close();
     }

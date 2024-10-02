@@ -5,10 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Attributes;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.ExampleSharedData
 {
-    public class TestClient : NetworkClient
+    public class TestClient : TcpNetworkClient
     {
         [NetworkInvocable(PacketDirection.Server)]
         private TestResult SomeNetworkMethod(float someFloat, int someInt, ValueTuple<int, int> values)

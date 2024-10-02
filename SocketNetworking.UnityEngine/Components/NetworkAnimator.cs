@@ -8,6 +8,9 @@ using System.Runtime.Serialization.Formatters;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using SocketNetworking.Server;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.UnityEngine.Components
 {

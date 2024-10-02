@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using SocketNetworking;
 using SocketNetworking.ExampleSharedData;
 using SocketNetworking.Transports;
+using SocketNetworking.Shared;
+using SocketNetworking.Client;
 
 namespace SocketNetworking.ExampleClient
 {

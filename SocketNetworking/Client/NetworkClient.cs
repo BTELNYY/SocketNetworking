@@ -19,8 +19,10 @@ using System.Web;
 using SocketNetworking.Misc;
 using System.Runtime.CompilerServices;
 using SocketNetworking.Transports;
+using SocketNetworking.Shared;
+using SocketNetworking.Server;
 
-namespace SocketNetworking
+namespace SocketNetworking.Client
 {
     public class NetworkClient
     {
@@ -81,10 +83,20 @@ namespace SocketNetworking
         /// </summary>
         public event Action<PacketHeader, byte[]> PacketRead;
 
+        protected void InvokePacketRead(PacketHeader header, byte[] data)
+        {
+            PacketRead?.Invoke(header, data);
+        }
+
         /// <summary>
         /// Called when a packet is ready to handle, this event is never called if <see cref="NetworkClient.ManualPacketHandle"/> is set to false
         /// </summary>
         public event Action<PacketHeader, byte[]> PacketReadyToHandle;
+
+        protected void InvokePacketReadyToHandle(PacketHeader header, byte[] data)
+        {
+            PacketReadyToHandle?.Invoke(header, data);
+        }
 
         /// <summary>
         /// Called when a packet is ready to send, this event is never called if <see cref="NetworkClient.ManualPacketSend"/> is set to false.
@@ -135,7 +147,19 @@ namespace SocketNetworking
             }
         }
 
-        public NetworkTransport Transport { get; set; }
+        private NetworkTransport _transport;
+
+        public virtual NetworkTransport Transport
+        {
+            get
+            {
+                return _transport;
+            }
+            set
+            {
+                _transport = value;
+            }
+        }
 
         private NetworkEncryptionManager networkEncryptionManager;
 
@@ -430,7 +454,7 @@ namespace SocketNetworking
         }
 
 
-        private bool _shuttingDown = false;
+        protected bool _shuttingDown = false;
 
         /// <summary>
         /// Used when initializing a <see cref="NetworkClient"/> object on the server. Do not call this on the local client.
@@ -726,7 +750,7 @@ namespace SocketNetworking
         }
 
 
-        private static byte[] ShiftOut(ref byte[] input, int count)
+        protected static byte[] ShiftOut(ref byte[] input, int count)
         {
             byte[] output = new byte[count];
             // copy the first N elements to output
@@ -1190,7 +1214,7 @@ namespace SocketNetworking
                     {
                         int tempFillSize = fillSize;
                         //(byte[], Exception) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
-                        (byte[], Exception) transportRead = Transport.Receive(0, buffer.Length - fillSize);
+                        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(0, buffer.Length - fillSize);
                         count = transportRead.Item1.Length;
                         buffer = Transport.Buffer;
                         //count = NetworkStream.Read(tempBuffer, 0, buffer.Length - fillSize);
@@ -1237,7 +1261,7 @@ namespace SocketNetworking
                     int count;
                     try
                     {
-                        (byte[], Exception) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
+                        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
                         count = transportRead.Item1.Length;
                         buffer = Transport.Buffer;
                         //count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
@@ -1317,9 +1341,9 @@ namespace SocketNetworking
             Transport.Close();
         }
 
-        ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
+        protected ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
 
-        void HandlePacket(PacketHeader header, byte[] fullPacket)
+        protected void HandlePacket(PacketHeader header, byte[] fullPacket)
         {
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
@@ -1331,7 +1355,7 @@ namespace SocketNetworking
             }
         }
 
-        struct ReadPacketInfo
+        protected struct ReadPacketInfo
         {
             public PacketHeader Header;
             public byte[] Data;

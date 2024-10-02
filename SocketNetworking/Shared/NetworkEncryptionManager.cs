@@ -2,7 +2,7 @@
 using System.IO;
 using System.Security.Cryptography;
 
-namespace SocketNetworking
+namespace SocketNetworking.Shared
 {
     public class NetworkEncryptionManager
     {

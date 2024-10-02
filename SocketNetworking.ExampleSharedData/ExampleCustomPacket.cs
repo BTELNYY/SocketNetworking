@@ -1,6 +1,9 @@
 ﻿using SocketNetworking.Attributes;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Server;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.ExampleSharedData
 {

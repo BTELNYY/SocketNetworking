@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using SocketNetworking;
 using SocketNetworking.ExampleSharedData;
 using SocketNetworking.Misc;
+using SocketNetworking.Server;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.ExampleServer
 {

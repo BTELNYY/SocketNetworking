@@ -46,16 +46,16 @@ namespace SocketNetworking.Transports
             }
         }
 
-        public override (byte[], Exception) Receive(int offset, int size)
+        public override (byte[], Exception, IPEndPoint) Receive(int offset, int size)
         {
             try
             {
                 Stream.Read(Buffer, offset, size);
-                return (Buffer, null);
+                return (Buffer, null, Peer);
             }
             catch (Exception ex)
             {
-                return (null, ex);
+                return (null, ex, Peer);
             }
         }
 

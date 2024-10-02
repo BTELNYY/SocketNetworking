@@ -8,8 +8,11 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using SocketNetworking.Client;
+using SocketNetworking.Server;
+using SocketNetworking.Shared;
 
-namespace SocketNetworking
+namespace SocketNetworking.Shared
 {
     public class NetworkConvert
     {

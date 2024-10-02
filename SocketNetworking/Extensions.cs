@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 using System.Runtime.Serialization.Formatters.Binary;
 using SocketNetworking.PacketSystem;
 using System.Reflection;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
+using SocketNetworking.Server;
 
 namespace SocketNetworking
 {

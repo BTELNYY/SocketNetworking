@@ -15,8 +15,11 @@ using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using SocketNetworking.Misc;
 using System.Security;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
+using SocketNetworking.Server;
 
-namespace SocketNetworking
+namespace SocketNetworking.Shared
 {
     public class NetworkManager
     {
@@ -929,7 +932,7 @@ namespace SocketNetworking
             packet.MethodName = methodName;
             foreach (var arg in args)
             {
-                SerializedData data = NetworkConvert.Serialize(arg);
+                SocketNetworking.Shared.SerializedData data = NetworkConvert.Serialize(arg);
                 packet.Arguments.Add(data);
             }
             packet.TargetType = targetType.FullName;

@@ -10,6 +10,9 @@ using SocketNetworking.PacketSystem;
 using SocketNetworking.UnityEngine.Packets.NetworkTransform;
 using SocketNetworking.UnityEngine.Packets;
 using SocketNetworking.UnityEngine.TypeWrappers;
+using SocketNetworking.Server;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.UnityEngine.Components
 {
