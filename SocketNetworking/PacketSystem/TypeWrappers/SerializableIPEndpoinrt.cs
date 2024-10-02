@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SocketNetworking.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.PacketSystem.TypeWrappers
 {
+    [TypeWrapperAttribute(typeof(IPEndPoint))]
     public class SerializableIPEndpoinrt : TypeWrapper<IPEndPoint>
     {
         public override (IPEndPoint, int) Deserialize(byte[] data)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SocketNetworking.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.PacketSystem.TypeWrappers
 {
+    [TypeWrapperAttribute(typeof(IPAddress))]
     public class SerializableIPAddress : TypeWrapper<IPAddress>
     {
         public override (IPAddress, int) Deserialize(byte[] data)
