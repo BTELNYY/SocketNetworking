@@ -171,63 +171,7 @@ namespace SocketNetworking.Client
                 {
                     fillSize = 0;
                 }
-                //fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
-                //Log.Debug($"Read full packet with size: {fullPacket.Length}");
-                PacketHeader header = Packet.ReadPacketHeader(fullPacket);
-                if (header.Type == PacketType.CustomPacket && NetworkManager.GetCustomPacketByID(header.CustomPacketID) == null)
-                {
-                    Log.GlobalWarning($"Got a packet with a Custom Packet ID that does not exist, either not registered or corrupt. Custom Packet ID: {header.CustomPacketID}, Target: {header.NetworkIDTarget}");
-                }
-                Log.GlobalDebug("Active Flags: " + string.Join(", ", header.Flags.GetActiveFlags()));
-                Log.GlobalDebug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
-                byte[] rawPacket = fullPacket;
-                byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
-                byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
-                int currentEncryptionState = (int)EncryptionState;
-                if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
-                {
-                    Log.GlobalDebug("Trying to decrypt a packet using SYMMETRICAL encryption!");
-                    if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
-                    {
-                        Log.GlobalError("Encryption cannot be done at this point: Not ready.");
-                        return;
-                    }
-                    packetBytes = EncryptionManager.Decrypt(packetBytes);
-                }
-                if (header.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
-                {
-                    Log.GlobalDebug("Trying to decrypt a packet using ASYMMETRICAL encryption!");
-                    if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
-                    {
-                        Log.GlobalError("Encryption cannot be done at this point: Not ready.");
-                        return;
-                    }
-                    packetBytes = EncryptionManager.Decrypt(packetBytes, false);
-                }
-                if (header.Flags.HasFlag(PacketFlags.Compressed))
-                {
-                    packetBytes = packetBytes.Decompress();
-                }
-                if (header.Size + 4 < fullPacket.Length)
-                {
-                    Log.GlobalWarning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
-                }
-                fullPacket = headerBytes.Concat(packetBytes).ToArray();
-                InvokePacketRead(header, fullPacket);
-                if (ManualPacketHandle)
-                {
-                    ReadPacketInfo packetInfo = new ReadPacketInfo()
-                    {
-                        Header = header,
-                        Data = fullPacket
-                    };
-                    _toReadPackets.Enqueue(packetInfo);
-                    InvokePacketReadyToHandle(packetInfo.Header, packetInfo.Data);
-                }
-                else
-                {
-                    HandlePacket(header, fullPacket);
-                }
+                HandlePacket(fullPacket, Transport.Peer);
             }
             Log.GlobalInfo("Shutting down client, Closing socket.");
             Transport.Close();

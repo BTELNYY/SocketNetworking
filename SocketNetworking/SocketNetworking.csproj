@@ -48,6 +48,7 @@
     <Compile Include="Attributes\PacketListener.cs" />
     <Compile Include="Attributes\TypeWrapperAttribute.cs" />
     <Compile Include="Client\TcpNetworkClient.cs" />
+    <Compile Include="Client\UdpNetworkClient.cs" />
     <Compile Include="Misc\CallbackTimer.cs" />
     <Compile Include="Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Exceptions\NetworkInvocationException.cs" />
