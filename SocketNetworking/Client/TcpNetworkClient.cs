@@ -12,6 +12,11 @@ namespace SocketNetworking.Client
 {
     public class TcpNetworkClient : NetworkClient
     {
+        public TcpNetworkClient()
+        {
+            Transport = new TcpTransport();
+        }
+
         public override NetworkTransport Transport
         {
             get
@@ -123,7 +128,7 @@ namespace SocketNetworking.Client
                 bodySize = IPAddress.NetworkToHostOrder(bodySize);
                 if (bodySize == 0)
                 {
-                    Log.GlobalWarning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
+                    //Log.GlobalWarning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
                     fillSize = 0;
                     continue;
                 }

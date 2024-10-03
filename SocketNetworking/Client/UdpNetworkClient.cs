@@ -1,4 +1,5 @@
 ﻿using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared;
 using SocketNetworking.Transports;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,36 @@ namespace SocketNetworking.Client
 {
     public class UdpNetworkClient : NetworkClient
     {
+
+        public UdpNetworkClient()
+        {
+            Transport = new UdpTransport();
+            _currentMode = DefaultMode;
+        }
+
+        public virtual UdpClientMode DefaultMode
+        {
+            get
+            {
+                return UdpClientMode.ServerClient;
+            }
+        }
+
+        protected UdpClientMode _currentMode;
+
+        public virtual UdpClientMode ClientMode
+        {
+            get
+            {
+                return _currentMode;
+            }
+            set
+            {
+                _currentMode = value;
+            }
+        }
+
+
         public override NetworkTransport Transport
         {
             get
@@ -42,10 +73,18 @@ namespace SocketNetworking.Client
             }
         }
 
+        
+
         public void Send(Packet packet, IPEndPoint where)
         {
             packet.Destination = where;
             Send(packet);
+        }
+
+        public void Send(Packet packet, INetworkObject sender, IPEndPoint peer)
+        {
+            packet.NetowrkIDTarget = sender.NetworkID;
+            Send(packet, peer);
         }
 
         protected override void PacketReaderThreadMethod()

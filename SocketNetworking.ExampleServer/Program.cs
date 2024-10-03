@@ -20,11 +20,12 @@ namespace SocketNetworking.ExampleServer
         {
             Log.OnLog += HandleNetworkLog;
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
+            UdpNetworkServer server = new UdpNetworkServer();
             NetworkServer.ClientType = typeof(TestClient);
             NetworkServer.HandshakeTime = 10000f;
             NetworkServer.EncryptionMode = ServerEncryptionMode.Required;
-            NetworkServer.StartServer();
             NetworkServer.ClientConnected += OnClientConnected;
+            server.StartServer();
             Thread t = new Thread(SpamThread);
             t.Start();
         }
@@ -38,6 +39,7 @@ namespace SocketNetworking.ExampleServer
             {
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
+                    
                     if (c is TestClient client)
                     {
                         client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());

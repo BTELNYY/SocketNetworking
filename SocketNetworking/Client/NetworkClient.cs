@@ -465,7 +465,7 @@ namespace SocketNetworking.Client
         /// <param name="socket">
         /// The <see cref="NetworkTransport"/> object which handles data transport.
         /// </param>
-        public void InitRemoteClient(int clientId, NetworkTransport socket)
+        public virtual void InitRemoteClient(int clientId, NetworkTransport socket)
         {
             _clientId = clientId;
             Transport = socket;
@@ -481,7 +481,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Should be called locally to initialize the client, switching it from just being created to being ready to be used.
         /// </summary>
-        public void InitLocalClient()
+        public virtual void InitLocalClient()
         {
             _clientLocation = ClientLocation.Local;
             ClientConnected += OnLocalClientConnected;
@@ -549,7 +549,8 @@ namespace SocketNetworking.Client
 
 
         /// <summary>
-        /// Sends any <see cref="Packet"/> down the network stream to whatever is connected on the other side. Note that this method doesn't check who it is sending it to, instead sending it to the current stream.
+        /// Sends any <see cref="Packet"/> down the network, If you don't specify a <see cref="Packet.Destination"/>, the packet will be sent to <see cref="NetworkTransport.Peer"/> as set by <see cref="Transport"/>
+        /// Note that this method doesn't check who it is sending it to, instead sending it to the current stream.
         /// </summary>
         /// <param name="packet">
         /// The <see cref="Packet"/> to send down the stream.

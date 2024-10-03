@@ -17,13 +17,41 @@ namespace SocketNetworking.Server
     public class NetworkServer
     {
         public static event Action ServerReady;
+
+        protected static void InvokeServerReady()
+        {
+            ServerReady?.Invoke();
+        }
+
         public static event Action<int> ClientConnected;
+
+        protected static void InvokeClientConnected(int id)
+        {
+            ClientConnected?.Invoke(id);
+        }
+
         public static event Action<int> ClientDisconnected;
+
+        protected static void InvokeClientDisconnected(int id)
+        {
+            ClientDisconnected?.Invoke(id);
+        }
+
         public static event Action ServerStarted;
+
+        protected static void InvokeServerStarted()
+        {
+            ServerStarted?.Invoke();
+        }
+
         public static event Action ServerStopped;
 
+        protected static void InvokeServerStopped()
+        {
+            ServerStopped?.Invoke();
+        }
 
-        private static ServerState _serverState = ServerState.NotStarted;
+        protected static ServerState _serverState = ServerState.NotStarted;
 
         public static ServerState CurrentServerState 
         { 
@@ -154,7 +182,9 @@ namespace SocketNetworking.Server
         /// </summary>
         public static bool AllowClientSelfReady = true;
 
-        public static Thread ServerThread;
+        public static Thread ServerTcpThread;
+
+        public static Thread ServerUdpThread;
 
         private static NetworkServer _serverInstance;
 
@@ -174,11 +204,11 @@ namespace SocketNetworking.Server
             }
         }
 
-        private readonly bool _isShuttingDown = false;
+        protected readonly bool _isShuttingDown = false;
 
         private static readonly Dictionary<int, NetworkClient> _clients = new Dictionary<int, NetworkClient>();
 
-        public static void StartServer()
+        public void StartServer()
         {
             if (HasServerStarted)
             {
@@ -191,12 +221,17 @@ namespace SocketNetworking.Server
                 Log.GlobalError("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
                 return;
             }
-            NetworkServer server = new NetworkServer();
+            NetworkServer server = GetServer();
             _serverInstance = server;
-            ServerThread = new Thread(server.ServerStartThread);
-            ServerThread.Start();
+            ServerTcpThread = new Thread(server.ServerStartThread);
+            ServerTcpThread.Start();
             ServerStarted?.Invoke();
             _serverState = ServerState.NotReady;
+        }
+
+        protected virtual NetworkServer GetServer()
+        {
+            return new NetworkServer();
         }
 
         protected static void AddClient(NetworkClient client, int clientId)
@@ -257,60 +292,13 @@ namespace SocketNetworking.Server
                 client.Disconnect("Server shutting down");
             }
             _clients.Clear();
-            ServerThread.Abort();
+            ServerTcpThread.Abort();
             ServerStopped?.Invoke();
         }
 
-        private void ServerStartThread()
+        protected virtual void ServerStartThread()
         {
-            Log.GlobalInfo("Server starting...");
-            TcpListener serverSocket = new TcpListener(IPAddress.Parse(BindIP), Port);
-            serverSocket.Start();
-            Log.GlobalInfo("Socket Started.");
-            Log.GlobalInfo($"Listening on {BindIP}:{Port}");
-            int counter = 0;
-            ServerReady?.Invoke();
-            _serverState = ServerState.Ready;
-            while (true)
-            {
-                if (_isShuttingDown)
-                {
-                    break;
-                }
-                if (!serverSocket.Pending())
-                {
-                    continue;
-                }
-                if(!ShouldAcceptConnections)
-                {
-                    continue;
-                }
-                TcpClient socket = serverSocket.AcceptTcpClient();
-                TcpTransport tcpTransport = new TcpTransport();
-                tcpTransport.Client = socket;
-                socket.NoDelay = true;
-                IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
-                Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
-                NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
-                client.InitRemoteClient(counter, tcpTransport);
-                AddClient(client, counter);
-                CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
-                {
-                    if(x == null)
-                    {
-                        return;
-                    }
-                    if(x.CurrentConnectionState != ConnectionState.Connected)
-                    {
-                        x.Disconnect("Failed to handshake in time.");
-                    }
-                }, client, HandshakeTime);
-                callback.Start();
-                ClientConnected?.Invoke(counter);
-                counter++;
-            }
-            Log.GlobalInfo("Shutting down!");
-            serverSocket.Stop();
+            throw new NotImplementedException("Trying to use the non-overriden server thread, you should probably override it, do not run the base method!");
         }
 
         /// <summary>

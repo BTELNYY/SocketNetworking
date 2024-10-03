@@ -44,6 +44,8 @@ namespace SocketNetworking.Transports
 
         private List<IPAddress> _multiCastGroups = new List<IPAddress>();
 
+        private bool _hasConnected = false;
+
         public void JoinMulticastGroup(IPAddress multicastGroup)
         {
             _multiCastGroups.Add(multicastGroup);
@@ -71,6 +73,7 @@ namespace SocketNetworking.Transports
             try
             {
                 Client.Connect(hostname, port);
+                _hasConnected = true;
                 return null;
             }
             catch (Exception ex)
@@ -107,6 +110,12 @@ namespace SocketNetworking.Transports
         {
             try
             {
+                if (_hasConnected)
+                {
+                    Log.GlobalWarning("Tried to send data to random host while connected!");
+                    Send(data);
+                    return null;
+                }
                 Client.Send(data, data.Length, destination);
                 return null;
             }
@@ -118,7 +127,15 @@ namespace SocketNetworking.Transports
 
         public override Exception Send(byte[] data)
         {
-            return Send(data, Peer);
+            try
+            {
+                Client.Send(data, data.Length);
+                return null;
+            }
+            catch(Exception ex)
+            {
+                return ex;
+            }
         }
 
         public Exception SendBroadcast(byte[] data)

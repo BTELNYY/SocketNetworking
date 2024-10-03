@@ -53,6 +53,8 @@
     <Compile Include="Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Exceptions\NetworkInvocationException.cs" />
     <Compile Include="Exceptions\NetworkSerializationException.cs" />
+    <Compile Include="Server\TcpNetworkServer.cs" />
+    <Compile Include="Server\UdpNetworkServer.cs" />
     <Compile Include="Transports\NetworkTransport.cs" />
     <Compile Include="Shared\NetworkConvert.cs" />
     <Compile Include="Shared\NetworkEncryptionManager.cs" />
