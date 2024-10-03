@@ -26,13 +26,18 @@ namespace SocketNetworking.Transports
 
         public abstract IPEndPoint Peer { get; }
 
+        public abstract IPEndPoint LocalEndPoint { get; }
+
         public abstract IPAddress PeerAddress { get; }
+
 
         public abstract int PeerPort { get; }
 
         public abstract bool IsConnected { get; }
 
         public abstract Exception Connect(string hostname, int port);
+
+        public abstract Exception Send(byte[] data, IPEndPoint destination);
 
         public abstract Exception Send(byte[] data);
 

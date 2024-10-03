@@ -8,6 +8,13 @@ namespace SocketNetworking.PacketSystem
 {
     public abstract class TypeWrapper<T>
     {
+        public TypeWrapper(T value)
+        {
+            Value = value;
+        }
+
+        public TypeWrapper() { }
+
         public Type GetContainedType()
         {
             return typeof(T);

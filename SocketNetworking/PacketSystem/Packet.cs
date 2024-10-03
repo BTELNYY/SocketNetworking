@@ -8,6 +8,8 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
+using System.Net;
+using SocketNetworking.PacketSystem.TypeWrappers;
 
 namespace SocketNetworking.PacketSystem
 {
@@ -83,6 +85,16 @@ namespace SocketNetworking.PacketSystem
         public virtual int CustomPacketID { get; private set; } = -1;
 
         /// <summary>
+        /// The Destination of the packet.
+        /// </summary>
+        public IPEndPoint Destination { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
+
+        /// <summary>
+        /// The source of the packet. This isn't trusted on the recieving client, so it will be overwritten.
+        /// </summary>
+        public IPEndPoint Source { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
+
+        /// <summary>
         /// Function called to serialize packets. Ensure you get the return type of this function becuase you'll need to add on to that array. creating a new array will cause issues.
         /// </summary>
         /// <returns>
@@ -95,6 +107,10 @@ namespace SocketNetworking.PacketSystem
             writer.WriteByte((byte)Flags);
             writer.WriteInt(NetowrkIDTarget);
             writer.WriteInt(CustomPacketID);
+            SerializableIPEndPoint destination = new SerializableIPEndPoint(Destination);
+            SerializableIPEndPoint source = new SerializableIPEndPoint(Source);
+            writer.WriteWrapper<SerializableIPEndPoint, IPEndPoint>(destination);
+            writer.WriteWrapper<SerializableIPEndPoint, IPEndPoint>(source);
             return writer;
         }
 
@@ -118,10 +134,12 @@ namespace SocketNetworking.PacketSystem
             Flags = (PacketFlags)reader.ReadByte();
             NetowrkIDTarget = reader.ReadInt();
             CustomPacketID = reader.ReadInt();
-            if(expectedLength != reader.DataLength)
-            {
-                throw new InvalidNetworkDataException("Packet Deserializer stole more bytes then it should!");
-            }
+            Destination = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
+            Source = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
+            //if (expectedLength != reader.DataLength)
+            //{
+            //    throw new InvalidNetworkDataException("Packet Deserializer stole more bytes then it should!");
+            //}
             return reader;
         }
     }

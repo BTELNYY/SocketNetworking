@@ -12,6 +12,8 @@ namespace SocketNetworking.Transports
     {
         public override IPEndPoint Peer => Client.Client.RemoteEndPoint as IPEndPoint;
 
+        public override IPEndPoint LocalEndPoint => Client.Client.LocalEndPoint as IPEndPoint;
+
         public override IPAddress PeerAddress => Peer.Address;
 
         public override int PeerPort => Peer.Port;
@@ -101,11 +103,11 @@ namespace SocketNetworking.Transports
             }
         }
 
-        public override Exception Send(byte[] data)
+        public override Exception Send(byte[] data, IPEndPoint destination)
         {
             try
             {
-                Client.Send(data, data.Length, Peer);
+                Client.Send(data, data.Length, destination);
                 return null;
             }
             catch(Exception ex)
@@ -114,17 +116,9 @@ namespace SocketNetworking.Transports
             }
         }
 
-        public Exception Send(byte[] data, IPEndPoint peer)
+        public override Exception Send(byte[] data)
         {
-            try
-            {
-                Client.Send(data, data.Length, peer);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
+            return Send(data, Peer);
         }
 
         public Exception SendBroadcast(byte[] data)

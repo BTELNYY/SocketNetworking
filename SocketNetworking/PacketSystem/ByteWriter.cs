@@ -61,7 +61,13 @@ namespace SocketNetworking.PacketSystem
             object wrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
             MethodInfo serializer = wrapper.GetType().GetMethod("Serialize");
             byte[] result = (byte[])serializer.Invoke(wrapper, new object[] { any });
-            Write(result);
+            WriteByteArray(result);
+        }
+
+        public void WriteWrapper<T, K>(T value) where T : TypeWrapper<K>
+        {
+            byte[] data = value.Serialize();
+            WriteByteArray(data);
         }
 
         public void Write(byte[] data)

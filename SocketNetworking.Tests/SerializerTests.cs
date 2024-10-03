@@ -23,12 +23,26 @@ namespace SocketNetworking.Tests
             NetworkManager.ImportAssmebly(Assembly.GetExecutingAssembly()); 
             IPAddress iPAddress = IPAddress.Loopback;
             IPEndPoint endPoint = new IPEndPoint(iPAddress, 3877);
-            SerializableIPEndpoinrt serializedEndpoint = new SerializableIPEndpoinrt();
+            SerializableIPEndPoint serializedEndpoint = new SerializableIPEndPoint();
             serializedEndpoint.Value = endPoint;
             byte[] serialized = serializedEndpoint.Serialize();
             IPEndPoint returned = serializedEndpoint.Deserialize(serialized).Item1;
             Assert.IsNotNull(returned);
             Assert.AreEqual(endPoint, returned);
+        }
+
+        [TestMethod]
+        public void IPEndPointTesting1()
+        {
+            NetworkManager.ImportAssmebly(Assembly.GetExecutingAssembly());
+            IPAddress iPAddress = IPAddress.Loopback;
+            IPEndPoint endPoint = new IPEndPoint(iPAddress, 3877);
+            ByteWriter writer = new ByteWriter();
+            writer.WriteWrapper<SerializableIPEndPoint, IPEndPoint>(new SerializableIPEndPoint(endPoint));
+            ByteReader reader = new ByteReader(writer.Data);
+            IPEndPoint point2 = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
+            Assert.IsNotNull(point2);
+            Assert.AreEqual(endPoint, point2);
         }
     }
 }

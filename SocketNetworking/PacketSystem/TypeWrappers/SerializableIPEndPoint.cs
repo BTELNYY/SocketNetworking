@@ -9,8 +9,17 @@ using System.Threading.Tasks;
 namespace SocketNetworking.PacketSystem.TypeWrappers
 {
     [TypeWrapperAttribute(typeof(IPEndPoint))]
-    public class SerializableIPEndpoinrt : TypeWrapper<IPEndPoint>
+    public class SerializableIPEndPoint : TypeWrapper<IPEndPoint>
     {
+        public SerializableIPEndPoint()
+        {
+        }
+
+        public SerializableIPEndPoint(IPEndPoint value) : base(value)
+        {
+        }
+
+
         public override (IPEndPoint, int) Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);

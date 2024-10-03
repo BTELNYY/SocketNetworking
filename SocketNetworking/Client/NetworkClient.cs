@@ -765,7 +765,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Only called on the server.
         /// </summary>
-        private void HandleRemoteClient(PacketHeader header, byte[] data)
+        protected virtual void HandleRemoteClient(PacketHeader header, byte[] data)
         {
             switch (header.Type)
             {
@@ -909,7 +909,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Only called on the client.
         /// </summary>
-        private void HandleLocalClient(PacketHeader header, byte[] data)
+        protected virtual void HandleLocalClient(PacketHeader header, byte[] data)
         {
             switch (header.Type)
             {
@@ -1068,7 +1068,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        private ConcurrentQueue<Packet> _toSendPackets = new ConcurrentQueue<Packet>();
+        protected ConcurrentQueue<Packet> _toSendPackets = new ConcurrentQueue<Packet>();
 
         void PacketSenderThreadMethod()
         {
@@ -1093,72 +1093,12 @@ namespace SocketNetworking.Client
             lock (streamLock)
             {
                 _toSendPackets.TryDequeue(out Packet packet);
-                if(!packet.ValidateFlags())
-                {
-                    Log.GlobalError($"Packet send failed! Flag validation failure. Packet Type: {packet.Type}, Target: {packet.NetowrkIDTarget}, Custom Packet ID: {packet.CustomPacketID}, Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
-                    return;
-                }
-                byte[] packetBytes = packet.Serialize().Data;
-                byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
-                byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
-                Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
-                if (packet.Flags.HasFlag(PacketFlags.Compressed))
-                {
-                    Log.GlobalDebug("Compressing the packet.");
-                    packetDataBytes = packetDataBytes.Compress();
-                }
-                int currentEncryptionState = (int)EncryptionState;
-                if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
-                {
-                    Log.GlobalDebug("Encrypting using SYMMETRICAL");
-                    packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
-                }
-                else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
-                {
-                    Log.GlobalDebug("Encrypting using ASYMMETRICAL");
-                    packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
-                }
-                if (packet.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
-                {
-                    if(currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
-                    {
-                        Log.GlobalError("Encryption cannot be done at this point: Not ready.");
-                        return;
-                    }
-                    Log.GlobalDebug("Encrypting Packet: Asymmetrical");
-                    packetDataBytes = EncryptionManager.Encrypt(packetDataBytes, false);
-                }
-                if (packet.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
-                {
-                    if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
-                    {
-                        Log.GlobalError("Encryption cannot be done at this point: Not ready.");
-                        return;
-                    }
-                    Log.GlobalDebug("Encrypting Packet: Symmetrical");
-                    packetDataBytes = EncryptionManager.Encrypt(packetDataBytes);
-                }
-                ByteWriter writer = new ByteWriter();
-                byte[] packetFull = packetHeaderBytes.Concat(packetDataBytes).ToArray();
-                Log.GlobalDebug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
-                writer.WriteInt(packetFull.Length);
-                writer.Write(packetFull);
-                int written = packetFull.Length;
-                if (written > (packetFull.Length + 4))
-                {
-                    Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetBytes.Length + 4}");
-                    return;
-                }
-                byte[] fullBytes = writer.Data;
-                if (fullBytes.Length > Packet.MaxPacketSize)
-                {
-                    Log.GlobalError("Packet too large!");
-                    return;
-                }
+                packet = PreparePacket(packet);
+                byte[] fullBytes = SerializePacket(packet);
                 try
                 {
                     Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
-                    Exception ex = Transport.Send(fullBytes);
+                    Exception ex = Transport.Send(fullBytes, packet.Destination);
                     if(ex != null)
                     {
                         throw ex;
@@ -1171,6 +1111,79 @@ namespace SocketNetworking.Client
                     ConnectionError?.Invoke(networkErrorData);
                 }
             }
+        }
+
+        protected virtual Packet PreparePacket(Packet packet)
+        {
+            packet.Source = Transport.LocalEndPoint;
+            return packet;
+        }
+
+        protected virtual byte[] SerializePacket(Packet packet)
+        {
+            if (!packet.ValidateFlags())
+            {
+                Log.GlobalError($"Packet send failed! Flag validation failure. Packet Type: {packet.Type}, Target: {packet.NetowrkIDTarget}, Custom Packet ID: {packet.CustomPacketID}, Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
+                return null;
+            }
+            byte[] packetBytes = packet.Serialize().Data;
+            byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
+            byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
+            Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
+            if (packet.Flags.HasFlag(PacketFlags.Compressed))
+            {
+                Log.GlobalDebug("Compressing the packet.");
+                packetDataBytes = packetDataBytes.Compress();
+            }
+            int currentEncryptionState = (int)EncryptionState;
+            if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
+            {
+                Log.GlobalDebug("Encrypting using SYMMETRICAL");
+                packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
+            }
+            else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
+            {
+                Log.GlobalDebug("Encrypting using ASYMMETRICAL");
+                packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
+            }
+            if (packet.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
+            {
+                if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
+                {
+                    Log.GlobalError("Encryption cannot be done at this point: Not ready.");
+                    return null;
+                }
+                Log.GlobalDebug("Encrypting Packet: Asymmetrical");
+                packetDataBytes = EncryptionManager.Encrypt(packetDataBytes, false);
+            }
+            if (packet.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            {
+                if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
+                {
+                    Log.GlobalError("Encryption cannot be done at this point: Not ready.");
+                    return null;
+                }
+                Log.GlobalDebug("Encrypting Packet: Symmetrical");
+                packetDataBytes = EncryptionManager.Encrypt(packetDataBytes);
+            }
+            ByteWriter writer = new ByteWriter();
+            byte[] packetFull = packetHeaderBytes.Concat(packetDataBytes).ToArray();
+            Log.GlobalDebug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
+            writer.WriteInt(packetFull.Length);
+            writer.Write(packetFull);
+            int written = packetFull.Length;
+            if (written > (packetFull.Length + 4))
+            {
+                Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetBytes.Length + 4}");
+                return null;
+            }
+            byte[] fullBytes = writer.Data;
+            if (fullBytes.Length > Packet.MaxPacketSize)
+            {
+                Log.GlobalError("Packet too large!");
+                return null;
+            }
+            return fullBytes;
         }
 
         protected virtual void PacketReaderThreadMethod()

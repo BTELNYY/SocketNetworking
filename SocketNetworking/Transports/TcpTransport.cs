@@ -13,6 +13,8 @@ namespace SocketNetworking.Transports
     {
         public override IPEndPoint Peer => Client.Client.RemoteEndPoint as IPEndPoint;
 
+        public override IPEndPoint LocalEndPoint => Client.Client.LocalEndPoint as IPEndPoint;
+
         public override IPAddress PeerAddress => Peer.Address;
 
         public override int PeerPort => Peer.Port;
@@ -59,7 +61,7 @@ namespace SocketNetworking.Transports
             }
         }
 
-        public override Exception Send(byte[] data)
+        public override Exception Send(byte[] data, IPEndPoint destination)
         {
             try
             {
@@ -71,6 +73,11 @@ namespace SocketNetworking.Transports
             {
                 return ex;
             }   
+        }
+
+        public override Exception Send(byte[] data)
+        {
+            return Send(data, Peer);
         }
 
         public override void Close()

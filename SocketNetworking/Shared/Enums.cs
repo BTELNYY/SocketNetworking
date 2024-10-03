@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Client;
 
 namespace SocketNetworking.Shared
 {
@@ -84,5 +85,24 @@ namespace SocketNetworking.Shared
         Client,
         Server,
         Any,
+    }
+
+    /// <summary>
+    /// Defines the behavior of the <see cref="UdpNetworkClient"/>
+    /// </summary>
+    public enum UdpClientMode
+    {
+        /// <summary>
+        /// Assumes the client is connecting to a server and nobody else.
+        /// </summary>
+        ServerClient,
+        /// <summary>
+        /// Assumes the client is connecting to a server, but may have non-authoritive peers
+        /// </summary>
+        Peer2PeerWithAuthoritivePeer,
+        /// <summary>
+        /// Assumes the client has no central server, only peers.
+        /// </summary>
+        Peer2Peer,
     }
 }

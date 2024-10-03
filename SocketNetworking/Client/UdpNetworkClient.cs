@@ -1,4 +1,5 @@
-﻿using SocketNetworking.Transports;
+﻿using SocketNetworking.PacketSystem;
+using SocketNetworking.Transports;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,6 +40,12 @@ namespace SocketNetworking.Client
             {
                 Transport = value;
             }
+        }
+
+        public void Send(Packet packet, IPEndPoint where)
+        {
+            packet.Destination = where;
+            Send(packet);
         }
 
         protected override void PacketReaderThreadMethod()

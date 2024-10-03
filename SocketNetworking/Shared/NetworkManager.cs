@@ -693,6 +693,24 @@ namespace SocketNetworking.Shared
             return packet;
         }
 
+        private static MethodInfo GetNetworkInvokeMethod(MethodInfo[] methods, Type[] arguments)
+        {
+            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
+            foreach (MethodInfo m in methods)
+            {
+                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
+                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)) && !arguments[0].IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                {
+                    m_args.RemoveAt(0);
+                }
+                if (m_args.ToArray().ArraysEqual(expectedArgs))
+                {
+                    return m;
+                }
+            }
+            return null;
+        }
+
         internal static void NetworkInvoke(NetworkInvocationResultPacket packet, NetworkClient reciever)
         {
             if (packet.IgnoreResult)
@@ -739,21 +757,7 @@ namespace SocketNetworking.Shared
             }
             Type[] arguments = packet.Arguments.Select(x => x.Type).ToArray();
             MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToArray();
-            MethodInfo method = null;
-            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
-            foreach (MethodInfo m in methods)
-            {
-                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)) && !arguments[0].IsSubclassOfRawGeneric(typeof(NetworkClient)))
-                {
-                    m_args.RemoveAt(0);
-                }
-                if (m_args.ToArray().ArraysEqual(expectedArgs))
-                {
-                    method = m;
-                    break;
-                }
-            }
+            MethodInfo method = GetNetworkInvokeMethod(methods, arguments);
             if (method == null)
             {
                 throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
@@ -869,21 +873,7 @@ namespace SocketNetworking.Shared
             }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
             MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
-            MethodInfo method = null;
-            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
-            foreach (MethodInfo m in methods)
-            {
-                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
-                {
-                    m_args.RemoveAt(0);
-                }
-                if (m_args.ToArray().ArraysEqual(expectedArgs))
-                {
-                    method = m;
-                    break;
-                }
-            }
+            MethodInfo method = GetNetworkInvokeMethod(methods, arguments);
             if (method == null)
             {
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
@@ -965,21 +955,7 @@ namespace SocketNetworking.Shared
             }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
             MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
-            MethodInfo method = null;
-            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
-            foreach (MethodInfo m in methods)
-            {
-                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
-                {
-                    m_args.RemoveAt(0);
-                }
-                if (m_args.ToArray().ArraysEqual(expectedArgs))
-                {
-                    method = m;
-                    break;
-                }
-            }
+            MethodInfo method = GetNetworkInvokeMethod(methods, arguments);
             if (method.ReturnType != typeof(T))
             {
                 throw new NetworkInvocationException("Cannot invoke method, return type is incorrect.", new InvalidCastException());

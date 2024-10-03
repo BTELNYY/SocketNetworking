@@ -108,9 +108,10 @@ namespace SocketNetworking.PacketSystem
 
         public K ReadWrapper<T, K>() where T : TypeWrapper<K>
         {
+            byte[] bytes = ReadByteArray();
             TypeWrapper<K> wrapper = (TypeWrapper<K>)Activator.CreateInstance(typeof(T));
-            ValueTuple<K, int> result = wrapper.Deserialize(_workingSetData);
-            Remove(result.Item2);
+            ValueTuple<K, int> result = wrapper.Deserialize(bytes);
+            //Remove(result.Item2);
             return result.Item1;
         }
 
@@ -121,10 +122,11 @@ namespace SocketNetworking.PacketSystem
             {
                 throw new InvalidOperationException("No type wrapper for type: " + type.FullName);
             }
+            byte[] bytes = ReadByteArray();
             object typeWrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
             MethodInfo deserializer = typeWrapper.GetType().GetMethod("Deserialize");
-            ValueTuple<T, int> result = (ValueTuple<T, int>)deserializer.Invoke(typeWrapper, new object[] { _workingSetData });
-            Remove(result.Item2);
+            ValueTuple<T, int> result = (ValueTuple<T, int>)deserializer.Invoke(typeWrapper, new object[] { bytes });
+            //Remove(result.Item2);
             return result.Item1;
         }
 
