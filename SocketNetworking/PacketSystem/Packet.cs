@@ -196,6 +196,10 @@ namespace SocketNetworking.PacketSystem
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         public static PacketHeader GetHeader(byte[] data)
         {
+            if(data == null)
+            {
+                return new PacketHeader();
+            }
             if(data.Length < HeaderLength + 1)
             {
                 throw new ArgumentOutOfRangeException("data", $"Data must be at least {HeaderLength + 1} bytes long!");

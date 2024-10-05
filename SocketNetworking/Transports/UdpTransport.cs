@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -10,7 +11,18 @@ namespace SocketNetworking.Transports
 {
     public class UdpTransport : NetworkTransport
     {
-        public override IPEndPoint Peer => Client.Client.RemoteEndPoint as IPEndPoint;
+
+        public override IPEndPoint Peer
+        {
+            get
+            {
+                if(IsServerMode)
+                {
+                    return _emulatedPeer;
+                }
+                return Client.Client.RemoteEndPoint as IPEndPoint;
+            }
+        }
 
         public override IPEndPoint LocalEndPoint => Client.Client.LocalEndPoint as IPEndPoint;
 
@@ -18,7 +30,56 @@ namespace SocketNetworking.Transports
 
         public override int PeerPort => Peer.Port;
 
-        public override bool IsConnected => Client.Client.Connected;
+        public bool OverrideConnectedState { get; set; } = false;
+
+        public bool OverrideConnectedStateValue { get; set; } = true;
+
+        public override bool IsConnected
+        {
+            get
+            {
+                if (IsServerMode)
+                {
+                    return true;
+                }
+                else if (OverrideConnectedState)
+                {
+                    return OverrideConnectedStateValue;
+                }
+                else
+                {
+                    return Client.Client.Connected;
+                }
+            }
+        }
+
+        protected IPEndPoint _emulatedPeer = new IPEndPoint(IPAddress.Any, 0);
+
+        protected IPEndPoint _emulatedMe = new IPEndPoint(0, 0);
+
+        protected bool _isServerMode = false;
+
+        public bool IsServerMode
+        {
+            get
+            {
+                return _isServerMode;
+            }
+        }
+
+        public virtual void SetupForServerUse(IPEndPoint peer, IPEndPoint me)
+        {
+            _isServerMode = true;
+            _emulatedPeer = peer;
+            _emulatedMe = me;
+        }
+
+        public virtual void ServerRecieve(byte[] data)
+        {
+            _receivedBytes.Enqueue(data);
+        }
+
+        ConcurrentQueue<byte[]> _receivedBytes = new ConcurrentQueue<byte[]>();
 
         public IPEndPoint BroadcastEndpoint
         {
@@ -84,25 +145,39 @@ namespace SocketNetworking.Transports
 
         public override (byte[], Exception, IPEndPoint) Receive(int offset, int size)
         {
-            try
+            if (IsServerMode)
             {
-                byte[] read = new byte[] { };
-                IPEndPoint peer;
-                if (AllowBroadcast)
+                while (_receivedBytes.IsEmpty)
                 {
-                    peer = BroadcastEndpoint;
-                    read = Client.Receive(ref peer);
+                    //do nothing.
                 }
-                else
-                {
-                    peer = Peer;
-                    read = Client.Receive(ref peer);
-                }
-                return (read, null, peer);
+                _receivedBytes.TryDequeue(out byte[] result);
+                Log.GlobalDebug(result.Length.ToString());
+                return (result, null, _emulatedPeer);
             }
-            catch (Exception ex)
+            else
             {
-                return (null, ex, null);
+                try
+                {
+                    byte[] read = new byte[] { };
+                    IPEndPoint peer;
+                    if (AllowBroadcast)
+                    {
+                        peer = BroadcastEndpoint;
+                        read = Client.Receive(ref peer);
+                    }
+                    else
+                    {
+                        peer = Peer;
+                        read = Client.Receive(ref peer);
+                    }
+                    Log.GlobalDebug(read.Length.ToString());
+                    return (read, null, peer);
+                }
+                catch (Exception ex)
+                {
+                    return (null, ex, null);
+                }
             }
         }
 

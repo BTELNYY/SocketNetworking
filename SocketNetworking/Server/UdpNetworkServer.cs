@@ -14,7 +14,7 @@ namespace SocketNetworking.Server
 {
     public class UdpNetworkServer : NetworkServer
     {
-        protected Dictionary<IPEndPoint, UdpNetworkClient> _clients = new Dictionary<IPEndPoint, UdpNetworkClient> ();
+        protected Dictionary<IPEndPoint, UdpNetworkClient> _udpClients = new Dictionary<IPEndPoint, UdpNetworkClient> ();
 
         protected override NetworkServer GetServer()
         {
@@ -41,28 +41,38 @@ namespace SocketNetworking.Server
                     continue;
                 }
                 byte[] recieve = udpClient.Receive(ref listener);
-                Log.GlobalDebug("Got someting.");
                 IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
-                Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
-                NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
-                UdpTransport transport = new UdpTransport();
-                
-                client.InitRemoteClient(counter, transport);
-                AddClient(client, counter);
-                CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
+                if (!_udpClients.ContainsKey(remoteIpEndPoint))
                 {
-                    if (x == null)
+                    Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
+                    NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
+                    UdpTransport transport = new UdpTransport();
+                    transport.SetupForServerUse(remoteIpEndPoint, (IPEndPoint)udpClient.Client.LocalEndPoint);
+                    client.InitRemoteClient(counter, transport);
+                    AddClient(client, counter);
+                    _udpClients.Add(remoteIpEndPoint, client as UdpNetworkClient);
+                    transport.ServerRecieve(recieve);
+                    CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                     {
-                        return;
-                    }
-                    if (x.CurrentConnectionState != ConnectionState.Connected)
-                    {
-                        x.Disconnect("Failed to handshake in time.");
-                    }
-                }, client, HandshakeTime);
-                callback.Start();
-                InvokeClientConnected(counter);
-                counter++;
+                        if (x == null)
+                        {
+                            return;
+                        }
+                        if (x.CurrentConnectionState != ConnectionState.Connected)
+                        {
+                            x.Disconnect("Failed to handshake in time.");
+                        }
+                    }, client, HandshakeTime);
+                    callback.Start();
+                    InvokeClientConnected(counter);
+                    counter++;
+                }
+                else
+                {
+                    UdpNetworkClient client = _udpClients[remoteIpEndPoint];
+                    UdpTransport transport = client.UdpTransport;
+                    transport.ServerRecieve(recieve);
+                }
             }
             Log.GlobalInfo("Shutting down!");
             return;

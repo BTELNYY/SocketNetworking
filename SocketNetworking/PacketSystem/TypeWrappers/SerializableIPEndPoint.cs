@@ -34,6 +34,11 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
         public override byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
+            if(Value == null)
+            {
+                Log.GlobalWarning("Value is null! Cannot serialize, default address used.");
+                Value = new IPEndPoint(0, 0);
+            }
             IPAddress target = Value.Address;
             int targetPort = Value.Port;
             SerializableIPAddress serializableIP = new SerializableIPAddress();

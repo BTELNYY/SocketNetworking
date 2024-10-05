@@ -208,6 +208,7 @@ namespace SocketNetworking.Server
 
         private static readonly Dictionary<int, NetworkClient> _clients = new Dictionary<int, NetworkClient>();
 
+
         public void StartServer()
         {
             if (HasServerStarted)
