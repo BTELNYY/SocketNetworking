@@ -16,6 +16,14 @@ namespace SocketNetworking.Server
     {
         protected Dictionary<IPEndPoint, UdpNetworkClient> _udpClients = new Dictionary<IPEndPoint, UdpNetworkClient> ();
 
+        public static IPEndPoint MyEndPoint
+        {
+            get
+            {
+                return new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.First(), Port);
+            }
+        }
+
         protected override NetworkServer GetServer()
         {
             return new UdpNetworkServer();
@@ -24,10 +32,10 @@ namespace SocketNetworking.Server
         protected override void ServerStartThread()
         {
             Log.GlobalInfo("Server starting...");
-            IPEndPoint listener = new IPEndPoint(IPAddress.Any, Port);
-            UdpClient udpClient = new UdpClient(listener);
             Log.GlobalInfo($"Listening on {BindIP}:{Port}");
             int counter = 0;
+            IPEndPoint listener = new IPEndPoint(IPAddress.Any, Port);
+            UdpClient udpClient = new UdpClient(listener);
             InvokeServerReady();
             _serverState = ServerState.Ready;
             while (true)
@@ -47,7 +55,8 @@ namespace SocketNetworking.Server
                     Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
                     NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
                     UdpTransport transport = new UdpTransport();
-                    transport.SetupForServerUse(remoteIpEndPoint, (IPEndPoint)udpClient.Client.LocalEndPoint);
+                    transport.Client = udpClient;
+                    transport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
                     client.InitRemoteClient(counter, transport);
                     AddClient(client, counter);
                     _udpClients.Add(remoteIpEndPoint, client as UdpNetworkClient);

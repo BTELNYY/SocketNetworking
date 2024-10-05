@@ -11,7 +11,6 @@ namespace SocketNetworking.Transports
 {
     public class UdpTransport : NetworkTransport
     {
-
         public override IPEndPoint Peer
         {
             get
@@ -20,9 +19,15 @@ namespace SocketNetworking.Transports
                 {
                     return _emulatedPeer;
                 }
-                return Client.Client.RemoteEndPoint as IPEndPoint;
+                if (_hasConnected)
+                {
+                    return Client.Client.RemoteEndPoint as IPEndPoint;
+                }
+                return _peer;
             }
         }
+
+        private IPEndPoint _peer = new IPEndPoint(IPAddress.Any, 0);
 
         public override IPEndPoint LocalEndPoint => Client.Client.LocalEndPoint as IPEndPoint;
 
@@ -42,14 +47,15 @@ namespace SocketNetworking.Transports
                 {
                     return true;
                 }
-                else if (OverrideConnectedState)
+                if (OverrideConnectedState)
                 {
                     return OverrideConnectedStateValue;
                 }
-                else
+                if(_hasConnected)
                 {
                     return Client.Client.Connected;
                 }
+                return false;
             }
         }
 
@@ -109,12 +115,22 @@ namespace SocketNetworking.Transports
 
         public void JoinMulticastGroup(IPAddress multicastGroup)
         {
+            if (_hasConnected)
+            {
+                Log.GlobalWarning("Can't join multicast groups if connected.");
+                return;
+            }
             _multiCastGroups.Add(multicastGroup);
             Client.JoinMulticastGroup(multicastGroup);
         }
 
         public void DropMulticastGroup(IPAddress multicastGroup)
         {
+            if (_hasConnected)
+            {
+                Log.GlobalWarning("Can't join multicast groups if connected.");
+                return;
+            }
             _multiCastGroups.Remove(multicastGroup);
             Client.DropMulticastGroup(multicastGroup);
         }
@@ -152,7 +168,7 @@ namespace SocketNetworking.Transports
                     //do nothing.
                 }
                 _receivedBytes.TryDequeue(out byte[] result);
-                Log.GlobalDebug(result.Length.ToString());
+                Log.GlobalDebug(result.Length.ToString() + " ServerMode");
                 return (result, null, _emulatedPeer);
             }
             else
@@ -164,14 +180,16 @@ namespace SocketNetworking.Transports
                     if (AllowBroadcast)
                     {
                         peer = BroadcastEndpoint;
+                        Log.GlobalDebug("Waiting for BroadcastEndpoint");
                         read = Client.Receive(ref peer);
                     }
                     else
                     {
                         peer = Peer;
+                        Log.GlobalDebug($"Waiting for RemoteEndPoint. EndPoint: ${peer.Address}:{peer.Port}");
                         read = Client.Receive(ref peer);
                     }
-                    Log.GlobalDebug(read.Length.ToString());
+                    Log.GlobalDebug(read.Length.ToString() + " ClientMode");
                     return (read, null, peer);
                 }
                 catch (Exception ex)
@@ -183,6 +201,7 @@ namespace SocketNetworking.Transports
 
         public override Exception Send(byte[] data, IPEndPoint destination)
         {
+            Log.GlobalDebug($"Sending data on: {LocalEndPoint.Address}:{LocalEndPoint.Port}, To: {destination.Address}:{destination.Port}");
             try
             {
                 if (_hasConnected)
@@ -191,7 +210,17 @@ namespace SocketNetworking.Transports
                     Send(data);
                     return null;
                 }
-                Client.Send(data, data.Length, destination);
+                int sent;
+                if (IsServerMode)
+                {
+                    sent = Client.Send(data, data.Length, _emulatedPeer);
+                    return null;
+                }
+                else
+                {
+                    sent = Client.Send(data, data.Length, _peer);
+                }
+                Log.GlobalDebug("Bytes Sent: " + sent);
                 return null;
             }
             catch(Exception ex)
