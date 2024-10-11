@@ -123,7 +123,7 @@ namespace SocketNetworking.Transports
             _multiCastGroups.Add(multicastGroup);
             Client.JoinMulticastGroup(multicastGroup);
         }
-
+        
         public void DropMulticastGroup(IPAddress multicastGroup)
         {
             if (_hasConnected)
