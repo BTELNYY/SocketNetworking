@@ -76,7 +76,7 @@ namespace SocketNetworking.Client
                     Log.GlobalInfo("Shutting down loop");
                     break;
                 }
-                if (!IsConnected)
+                if (!IsTransportConnected)
                 {
                     Log.GlobalDebug("Disconnected!");
                     StopClient();

@@ -1025,7 +1025,7 @@ namespace SocketNetworking.Shared
             NetworkResultAwaiter networkResultAwaiter = new NetworkResultAwaiter(callbackID);
             while (!networkResultAwaiter.HasResult)
             {
-                if (!sender.IsConnected)
+                if (!sender.IsTransportConnected)
                 {
                     Log.GlobalError($"NetworkInvoke on method {methodName} failed becuase the NetworkClient is not connected.");
                     break;

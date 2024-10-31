@@ -83,7 +83,7 @@ namespace SocketNetworking.Server
             get
             {
                 List<NetworkClient> clients = _clients.Values.ToList();
-                return clients.Where(x => x.IsConnected).ToList();
+                return clients.Where(x => x.IsTransportConnected).ToList();
             }
         }
 
@@ -256,6 +256,7 @@ namespace SocketNetworking.Server
             {
                 NetworkClient cursedClient = (NetworkClient)Convert.ChangeType(client, ClientType);
                 _clients.Add(clientId, cursedClient);
+                Log.GlobalDebug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
             }
         }
 

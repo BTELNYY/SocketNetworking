@@ -217,7 +217,7 @@ namespace SocketNetworking.Client
             }
             set
             {
-                if(!IsConnected || CurrentConnectionState != ConnectionState.Connected) 
+                if(!IsTransportConnected || CurrentConnectionState != ConnectionState.Connected) 
                 {
                     Log.GlobalWarning("Can't change ready state becuase the socket is not connected or the handshake isn't done.");
                     return;
@@ -277,7 +277,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// <see cref="bool"/> which determines if the client has connected to a server
         /// </summary>
-        public bool IsConnected
+        public bool IsTransportConnected
         {
             get
             {
@@ -290,6 +290,14 @@ namespace SocketNetworking.Client
                     return true;
                 }
                 return Transport != null && Transport.IsConnected;
+            }
+        }
+
+        public bool IsConnected
+        {
+            get
+            {
+                return CurrentConnectionState == ConnectionState.Connected || CurrentConnectionState == ConnectionState.Handshake;
             }
         }
 
@@ -444,7 +452,7 @@ namespace SocketNetworking.Client
             }
             set
             {
-                if (IsConnected)
+                if (IsTransportConnected)
                 {
                     Log.GlobalError("Can't update NetworkConfiguration while client is connected.");
                     return;
@@ -510,7 +518,7 @@ namespace SocketNetworking.Client
                 Log.GlobalError("Cannot connect to other servers from remote.");
                 return false;
             }
-            if (IsConnected)
+            if (IsTransportConnected)
             {
                 Log.GlobalError("Can't connect: Already connected to a server.");
                 return false;
@@ -547,6 +555,30 @@ namespace SocketNetworking.Client
             SendNextPacketInternal();
         }
 
+        /// <summary>
+        /// Forces the library to send the provided packet immediately.
+        /// </summary>
+        /// <param name="packet"></param>
+        public void SendImmediate(Packet packet)
+        {
+            packet = PreparePacket(packet);
+            byte[] fullBytes = SerializePacket(packet);
+            try
+            {
+                Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                Exception ex = Transport.Send(fullBytes, packet.Destination);
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.GlobalError("Failed to send packet! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                ConnectionError?.Invoke(networkErrorData);
+            }
+        }
 
         /// <summary>
         /// Sends any <see cref="Packet"/> down the network, If you don't specify a <see cref="Packet.Destination"/>, the packet will be sent to <see cref="NetworkTransport.Peer"/> as set by <see cref="Transport"/>
@@ -557,10 +589,10 @@ namespace SocketNetworking.Client
         /// </param>
         public void Send(Packet packet)
         {
-            if (!IsConnected)
+            if (!IsTransportConnected)
             {
                 Log.GlobalWarning("Can't Send packet, not connected!");
-                ConnectionError?.Invoke(new NetworkErrorData("Tried to send packets while not connected.", IsConnected));
+                ConnectionError?.Invoke(new NetworkErrorData("Tried to send packets while not connected.", IsTransportConnected));
                 return;
             }
             else
@@ -594,14 +626,19 @@ namespace SocketNetworking.Client
         /// <param name="message">
         /// A <see cref="string"/> which to send as a message to the other party.
         /// </param>
-        public void Disconnect(string message)
+        public virtual void Disconnect(string message)
         {
+            if (!IsConnected || !IsTransportConnected)
+            {
+                return;
+            }
             ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
             {
                 State = ConnectionState.Disconnected,
                 Reason = message
             };
-            Send(connectionUpdatePacket);
+            SendImmediate(connectionUpdatePacket);
+            _connectionState = ConnectionState.Disconnected;
             NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
             ConnectionError?.Invoke(errorData);
             ClientDisconnected?.Invoke();
@@ -628,17 +665,18 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Stops the client, removing the Thread and closing the socket
         /// </summary>
-        public void StopClient()
+        public virtual void StopClient()
         {
             NetworkManager.SendDisconnectedPulse(this);
-            _connectionState = ConnectionState.Disconnected;
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
                 NetworkServer.RemoveClient(ClientID);
             }
+            _connectionState = ConnectionState.Disconnected;
+            Transport?.Close();
             _shuttingDown = true;
-            _packetReaderThread.Abort();
-            _packetSenderThread.Abort();
+            _packetReaderThread?.Abort();
+            _packetSenderThread?.Abort();
             _packetReaderThread = null;
             _packetSenderThread = null;
             if (Clients.Contains(this))
@@ -1203,7 +1241,7 @@ namespace SocketNetworking.Client
                     Log.GlobalInfo("Shutting down loop");
                     break;
                 }
-                if (!IsConnected)
+                if (!IsTransportConnected)
                 {
                     Log.GlobalDebug("Disconnected!");
                     StopClient();

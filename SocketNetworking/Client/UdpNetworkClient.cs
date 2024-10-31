@@ -95,7 +95,7 @@ namespace SocketNetworking.Client
                 {   
                     break;
                 }
-                if (!IsConnected)
+                if (!IsTransportConnected)
                 {
                     StopClient();
                     return;

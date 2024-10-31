@@ -20,14 +20,14 @@ namespace SocketNetworking.ExampleServer
         {
             Log.OnLog += HandleNetworkLog;
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
-            UdpNetworkServer server = new UdpNetworkServer();
+            MixedNetworkServer server = new MixedNetworkServer();
             NetworkServer.ClientType = typeof(TestClient);
-            NetworkServer.HandshakeTime = 10000f;
+            NetworkServer.HandshakeTime = 10f;
             NetworkServer.EncryptionMode = ServerEncryptionMode.Required;
             NetworkServer.ClientConnected += OnClientConnected;
             server.StartServer();
             Thread t = new Thread(SpamThread);
-            t.Start();
+            //t.Start();
         }
 
         private static void SpamThread()
@@ -45,7 +45,7 @@ namespace SocketNetworking.ExampleServer
                         client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
                     }
                     continue;
-                    if (c.IsConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)
+                    if (c.IsTransportConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)
                     {
                         TestClient client2 = (TestClient)c;
                         client2.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());

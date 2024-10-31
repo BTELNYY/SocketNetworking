@@ -12,21 +12,26 @@ using SocketNetworking.Shared;
 
 namespace SocketNetworking.Client
 {
-    public class MixedNetworkClient : NetworkClient
+    public class MixedNetworkClient : TcpNetworkClient
     {
+        public MixedNetworkClient()
+        {
+            Transport = new TcpTransport();
+        }
+
         public int InitialUDPKey = 0;
 
         public override NetworkTransport Transport
         {
             get
             {
-                return Transport;
+                return base.Transport;
             }
             set
             {
                 if(value is TcpTransport tcpTransport)
                 {
-                    Transport = tcpTransport;
+                    base.Transport = tcpTransport;
                 }
                 else if(value is UdpTransport udpTransport)
                 {
@@ -39,7 +44,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        public TcpTransport TcpTransport
+        public new TcpTransport TcpTransport
         {
             get
             {
@@ -67,8 +72,8 @@ namespace SocketNetworking.Client
 
         public override void InitRemoteClient(int clientId, NetworkTransport socket)
         {
-            base.InitRemoteClient(clientId, socket);
             base.ClientConnected += MixedNetworkClient_ClientConnected;
+            base.InitRemoteClient(clientId, socket);
         }
 
         private void MixedNetworkClient_ClientConnected()
