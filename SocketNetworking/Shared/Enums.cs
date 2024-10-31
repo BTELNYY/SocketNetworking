@@ -43,6 +43,10 @@ namespace SocketNetworking.Shared
         /// Uses Symetrical Encryption to send data, note that this can only be used once the full encryptoin handshake has been completed. Not Compatible with <see cref="PacketFlags.AsymtreicalEncrypted"/>
         /// </summary>
         SymetricalEncrypted = 4,
+        /// <summary>
+        /// Used to specify this packet is to be treated with priority, being sent first. This can cause out of order situations, so its best to use this only for systems which are not affected by this.
+        /// </summary>
+        Priority = 5,
     }
 
     /// <summary>

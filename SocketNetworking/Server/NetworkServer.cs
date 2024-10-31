@@ -182,7 +182,7 @@ namespace SocketNetworking.Server
         /// </summary>
         public static bool AllowClientSelfReady = true;
 
-        public static Thread ServerTcpThread;
+        public static Thread ServerThread;
 
         public static Thread ServerUdpThread;
 
@@ -217,17 +217,26 @@ namespace SocketNetworking.Server
                 return;
             }
             _serverState = ServerState.Started;
+            NetworkServer server = GetServer();
+            if (!server.ValidateClient())
+            {
+                return;
+            }
+            _serverInstance = server;
+            ServerThread = new Thread(server.ServerStartThread);
+            ServerThread.Start();
+            ServerStarted?.Invoke();
+            _serverState = ServerState.NotReady;
+        }
+
+        protected virtual bool ValidateClient()
+        {
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
             {
                 Log.GlobalError("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
-                return;
+                return false;
             }
-            NetworkServer server = GetServer();
-            _serverInstance = server;
-            ServerTcpThread = new Thread(server.ServerStartThread);
-            ServerTcpThread.Start();
-            ServerStarted?.Invoke();
-            _serverState = ServerState.NotReady;
+            return true;
         }
 
         protected virtual NetworkServer GetServer()
@@ -293,7 +302,7 @@ namespace SocketNetworking.Server
                 client.Disconnect("Server shutting down");
             }
             _clients.Clear();
-            ServerTcpThread.Abort();
+            ServerThread.Abort();
             ServerStopped?.Invoke();
         }
 
