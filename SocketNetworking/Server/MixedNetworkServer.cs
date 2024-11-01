@@ -120,17 +120,18 @@ namespace SocketNetworking.Server
                 if (!_udpClients.ContainsKey(remoteIpEndPoint))
                 {
                     Log.GlobalInfo($"Connecting client {netId} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on UDP.");
-                    NetworkClient client = _awaitingUDPConnection.Find(x => x.InitialUDPKey == passKey && x.ClientID == netId);
+                    MixedNetworkClient client = _awaitingUDPConnection.Find(x => x.InitialUDPKey == passKey && x.ClientID == netId);
                     if(client == default(NetworkClient))
                     {
                         Log.GlobalError($"There was an error finding the client with NetID: {netId} and Passkey: {passKey}");
                         continue;
                     }
-                    UdpTransport transport = new UdpTransport();
+                    UdpTransport transport = client.UdpTransport;
                     transport.Client = udpClient;
                     transport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
                     _udpClients.Add(remoteIpEndPoint, client as MixedNetworkClient);
-                    transport.ServerRecieve(recieve);
+                    //Dont read the first message since its not actually a packet, and just the client ID and the passkey.
+                    //transport.ServerRecieve(recieve);
                     _awaitingUDPConnection.Remove((MixedNetworkClient)client);
                 }
                 else

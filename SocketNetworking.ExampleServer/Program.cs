@@ -27,7 +27,7 @@ namespace SocketNetworking.ExampleServer
             NetworkServer.ClientConnected += OnClientConnected;
             server.StartServer();
             Thread t = new Thread(SpamThread);
-            //t.Start();
+            t.Start();
         }
 
         private static void SpamThread()

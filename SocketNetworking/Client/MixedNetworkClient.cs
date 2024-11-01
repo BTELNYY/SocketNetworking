@@ -137,6 +137,15 @@ namespace SocketNetworking.Client
                     return;
                 }
                 (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
+                if(packet.Item2 != null)
+                {
+                    Log.GlobalError(packet.Item2.ToString());
+                    continue;
+                }
+                if(packet.Item1.Length == 0)
+                {
+                    continue;
+                }
                 HandlePacket(packet.Item1, packet.Item3);
             }
         }

@@ -23,6 +23,9 @@ namespace SocketNetworking.ExampleSharedData
         {
             TestResult result = NetworkInvoke<TestResult>(this, "SomeNetworkMethod", new object[] { someFloat, someInt, new ValueTuple<int, int> (1, 3) });
             Log.GlobalDebug(result.ToString());
+            ExampleCustomPacket exampleCustom = new ExampleCustomPacket();
+            exampleCustom.Data = "rah";
+            exampleCustom.Flags = exampleCustom.Flags.SetFlag(PacketFlags.Priority, true);
         }
     }
 
