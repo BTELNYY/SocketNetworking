@@ -95,6 +95,17 @@ namespace SocketNetworking.PacketSystem
         public IPEndPoint Source { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
 
         /// <summary>
+        /// This method will validate the packet and modify it as needed. For example, it will change flags if need be, or the content if it isn't properly defined.
+        /// </summary>
+        /// <returns>
+        /// true if the validation suceeds, false otherwise.
+        /// </returns>
+        public virtual bool ValidatePacket()
+        {
+            return true;
+        }
+
+        /// <summary>
         /// Function called to serialize packets. Ensure you get the return type of this function becuase you'll need to add on to that array. creating a new array will cause issues.
         /// </summary>
         /// <returns>

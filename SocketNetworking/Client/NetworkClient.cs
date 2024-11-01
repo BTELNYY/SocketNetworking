@@ -73,6 +73,12 @@ namespace SocketNetworking.Client
         /// </summary>
         public event Action<NetworkErrorData> ConnectionError;
 
+        protected void InvokeConnectionError(NetworkErrorData data)
+        {
+            ConnectionError?.Invoke(data);
+        }
+
+
         /// <summary>
         /// Called when the state of the <see cref="NetworkClient.Ready"/> variable changes. First variable is the old state, and the second is the new state. This event is fired on both Local and Remote clients.
         /// </summary>
@@ -561,7 +567,7 @@ namespace SocketNetworking.Client
         /// <param name="packet"></param>
         public void SendImmediate(Packet packet)
         {
-            packet = PreparePacket(packet);
+            PreparePacket(ref packet);
             byte[] fullBytes = SerializePacket(packet);
             try
             {
@@ -1121,7 +1127,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        object streamLock = new object();
+        protected object streamLock = new object();
 
         protected virtual void SendNextPacketInternal()
         {
@@ -1132,7 +1138,7 @@ namespace SocketNetworking.Client
             lock (streamLock)
             {
                 _toSendPackets.TryDequeue(out Packet packet);
-                packet = PreparePacket(packet);
+                PreparePacket(ref packet);
                 byte[] fullBytes = SerializePacket(packet);
                 try
                 {
@@ -1152,10 +1158,14 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected virtual Packet PreparePacket(Packet packet)
+        protected virtual void PreparePacket(ref Packet packet)
         {
             packet.Source = Transport.LocalEndPoint;
-            return packet;
+            bool validationSuccess = packet.ValidatePacket();
+            if (!validationSuccess)
+            {
+                Log.GlobalError($"Invalid packet: {packet}");
+            }
         }
 
         protected virtual byte[] SerializePacket(Packet packet)

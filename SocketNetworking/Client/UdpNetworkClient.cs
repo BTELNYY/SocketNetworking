@@ -73,8 +73,6 @@ namespace SocketNetworking.Client
             }
         }
 
-        
-
         public void Send(Packet packet, IPEndPoint where)
         {
             packet.Destination = where;

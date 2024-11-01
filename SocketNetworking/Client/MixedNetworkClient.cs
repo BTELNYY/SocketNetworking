@@ -9,6 +9,8 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Attributes;
 using SocketNetworking.Shared;
+using System.Net.Sockets;
+using System.Threading;
 
 namespace SocketNetworking.Client
 {
@@ -70,6 +72,75 @@ namespace SocketNetworking.Client
             }
         }
 
+        protected override void SendNextPacketInternal()
+        {
+            if (_toSendPackets.IsEmpty)
+            {
+                return;
+            }
+            lock (streamLock)
+            {
+                _toSendPackets.TryDequeue(out Packet packet);
+                PreparePacket(ref packet);
+                byte[] fullBytes = SerializePacket(packet);
+                try
+                {
+                    Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    Exception ex;
+                    if (packet.Flags.HasFlag(PacketFlags.Priority))
+                    {
+                        ex = UdpTransport.Send(fullBytes, packet.Destination);
+                    }
+                    else
+                    {
+                        ex = Transport.Send(fullBytes, packet.Destination);
+                    }
+                    if (ex != null)
+                    {
+                        throw ex;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.GlobalError("Failed to send packet! Error:\n" + ex.ToString());
+                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                    InvokeConnectionError(networkErrorData);
+                }
+            }
+        }
+
+        private Thread _udpThread = null;
+
+        public Thread UdpThread
+        {
+            get
+            {
+                if(_udpThread == null)
+                {
+                    _udpThread = new Thread(UdpReaderThread);
+                }
+                return _udpThread;
+            }
+        }
+
+        void UdpReaderThread()
+        {
+            while (true)
+            {
+                if (_shuttingDown)
+                {
+                    break;
+                }
+                if (!IsTransportConnected)
+                {
+                    StopClient();
+                    return;
+                }
+                (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
+                HandlePacket(packet.Item1, packet.Item3);
+            }
+        }
+
         public override void InitRemoteClient(int clientId, NetworkTransport socket)
         {
             base.ClientConnected += MixedNetworkClient_ClientConnected;
@@ -81,6 +152,8 @@ namespace SocketNetworking.Client
             Random random = new Random();
             InitialUDPKey = random.Next(int.MinValue, int.MaxValue);
             ServerSendUDPInfo(InitialUDPKey);
+            _udpThread = new Thread(UdpReaderThread);
+            _udpThread.Start();
         }
 
         private void ServerSendUDPInfo(int passKey)
@@ -103,6 +176,8 @@ namespace SocketNetworking.Client
                 writer.WriteInt(ClientID);
                 writer.WriteInt(InitialUDPKey);
                 UdpTransport.Send(writer.Data);
+                _udpThread = new Thread(UdpReaderThread);
+                _udpThread.Start();
             }
         }
     }
