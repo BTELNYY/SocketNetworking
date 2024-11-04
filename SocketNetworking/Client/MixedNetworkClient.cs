@@ -73,7 +73,7 @@ namespace SocketNetworking.Client
         }
 
         protected override void SendNextPacketInternal()
-        {
+        {   
             if (_toSendPackets.IsEmpty)
             {
                 return;
@@ -131,14 +131,13 @@ namespace SocketNetworking.Client
                 {
                     break;
                 }
-                if (!IsTransportConnected)
+                if (!UdpTransport.IsConnected)
                 {
-                    StopClient();
-                    return;
+                    continue;
                 }
                 (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
                 if(packet.Item2 != null)
-                {
+                { 
                     Log.GlobalError(packet.Item2.ToString());
                     continue;
                 }
@@ -146,7 +145,7 @@ namespace SocketNetworking.Client
                 {
                     continue;
                 }
-                HandlePacket(packet.Item1, packet.Item3);
+                Deserialize(packet.Item1, packet.Item3);
             }
         }
 
@@ -184,9 +183,9 @@ namespace SocketNetworking.Client
                 ByteWriter writer = new ByteWriter();
                 writer.WriteInt(ClientID);
                 writer.WriteInt(InitialUDPKey);
-                UdpTransport.Send(writer.Data);
                 _udpThread = new Thread(UdpReaderThread);
                 _udpThread.Start();
+                UdpTransport.Send(writer.Data);
             }
         }
     }

@@ -260,7 +260,7 @@ namespace SocketNetworking
             return false;
         }
 
-        public static T SetFlag<T>(this Enum value, T flag, bool set)
+        public static T SetFlag<T>(this T value, T flag, bool set) where T : Enum
         {
             Type underlyingType = Enum.GetUnderlyingType(value.GetType());
 

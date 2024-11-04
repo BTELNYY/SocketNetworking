@@ -39,10 +39,13 @@ namespace SocketNetworking.ExampleServer
             {
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
-                    
                     if (c is TestClient client)
                     {
-                        client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
+                        //client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
+                        ExampleCustomPacket packet = new ExampleCustomPacket();
+                        packet.Data = "aaa";
+                        packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
+                        c.Send(packet);
                     }
                     continue;
                     if (c.IsTransportConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)

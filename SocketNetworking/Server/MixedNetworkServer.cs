@@ -137,8 +137,7 @@ namespace SocketNetworking.Server
                 else
                 {
                     MixedNetworkClient client = _udpClients[remoteIpEndPoint];
-                    UdpTransport transport = client.UdpTransport;
-                    transport.ServerRecieve(recieve);
+                    client.UdpTransport.ServerRecieve(recieve);
                 }
             }
             Log.GlobalInfo("Shutting down UDP Server!");

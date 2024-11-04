@@ -99,7 +99,7 @@ namespace SocketNetworking.Client
                     return;
                 }
                 (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
-                HandlePacket(packet.Item1, packet.Item3);
+                Deserialize(packet.Item1, packet.Item3);
             }
         }
     }

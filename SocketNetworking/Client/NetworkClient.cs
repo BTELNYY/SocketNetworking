@@ -1185,19 +1185,19 @@ namespace SocketNetworking.Client
                 packetDataBytes = packetDataBytes.Compress();
             }
             int currentEncryptionState = (int)EncryptionState;
-            if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
+            if (currentEncryptionState == (int)EncryptionState.SymmetricalReady)
             {
                 Log.GlobalDebug("Encrypting using SYMMETRICAL");
                 packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
             }
-            else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
+            else if (currentEncryptionState == (int)EncryptionState.AsymmetricalReady)
             {
                 Log.GlobalDebug("Encrypting using ASYMMETRICAL");
                 packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
             }
             if (packet.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
             {
-                if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
+                if (currentEncryptionState == (int)EncryptionState.AsymmetricalReady)
                 {
                     Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                     return null;
@@ -1207,7 +1207,7 @@ namespace SocketNetworking.Client
             }
             if (packet.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
             {
-                if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
+                if (currentEncryptionState == (int)EncryptionState.SymmetricalReady)
                 {
                     Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                     return null;
@@ -1344,13 +1344,13 @@ namespace SocketNetworking.Client
                 //fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
                 //Log.Debug($"Read full packet with size: {fullPacket.Length}");
 
-                HandlePacket(fullPacket, Transport.Peer);
+                Deserialize(fullPacket, Transport.Peer);
             }
             Log.GlobalInfo("Shutting down client, Closing socket.");
             Transport.Close();
         }
 
-        protected virtual void HandlePacket(byte[] fullPacket, IPEndPoint endpoint)
+        protected virtual void Deserialize(byte[] fullPacket, IPEndPoint endpoint)
         {
             PacketHeader header = Packet.ReadPacketHeader(fullPacket);
             if (header.Type == PacketType.CustomPacket && NetworkManager.GetCustomPacketByID(header.CustomPacketID) == null)
@@ -1366,7 +1366,7 @@ namespace SocketNetworking.Client
             if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
             {
                 Log.GlobalDebug("Trying to decrypt a packet using SYMMETRICAL encryption!");
-                if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
+                if (currentEncryptionState == (int)EncryptionState.SymmetricalReady)
                 {
                     Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                     return;
@@ -1376,7 +1376,7 @@ namespace SocketNetworking.Client
             if (header.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
             {
                 Log.GlobalDebug("Trying to decrypt a packet using ASYMMETRICAL encryption!");
-                if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
+                if (currentEncryptionState == (int)EncryptionState.AsymmetricalReady)
                 {
                     Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                     return;

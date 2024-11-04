@@ -176,7 +176,7 @@ namespace SocketNetworking.Client
                 {
                     fillSize = 0;
                 }
-                HandlePacket(fullPacket, Transport.Peer);
+                Deserialize(fullPacket, Transport.Peer);
             }
             Log.GlobalInfo("Shutting down client, Closing socket.");
             Transport.Close();
