@@ -81,8 +81,15 @@ namespace SocketNetworking.Client
             lock (streamLock)
             {
                 _toSendPackets.TryDequeue(out Packet packet);
+                Log.GlobalDebug($"Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
                 PreparePacket(ref packet);
+                Log.GlobalDebug($"Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
                 byte[] fullBytes = SerializePacket(packet);
+                if(fullBytes == null)
+                {
+                    Log.GlobalDebug($"Packet dropped before sending, serialization failure. ID: {packet.CustomPacketID}, Type: {packet.GetType().FullName}, Destination: {packet.Destination.ToString()}");
+                    return;
+                }
                 try
                 {
                     Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");

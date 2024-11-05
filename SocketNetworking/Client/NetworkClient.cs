@@ -42,7 +42,7 @@ namespace SocketNetworking.Client
         public NetworkClient()
         {
             ClientCreated?.Invoke(this);
-            networkEncryptionManager = new NetworkEncryptionManager();
+            _networkEncryptionManager = new NetworkEncryptionManager();
             Init();
         }
 
@@ -167,13 +167,13 @@ namespace SocketNetworking.Client
             }
         }
 
-        private NetworkEncryptionManager networkEncryptionManager;
+        private NetworkEncryptionManager _networkEncryptionManager;
 
         public NetworkEncryptionManager EncryptionManager
         {
             get
             {
-                return networkEncryptionManager;
+                return _networkEncryptionManager;
             }
         }
 
@@ -1170,6 +1170,25 @@ namespace SocketNetworking.Client
 
         protected virtual byte[] SerializePacket(Packet packet)
         {
+            Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
+            int currentEncryptionState = (int)EncryptionState;
+            if (currentEncryptionState > (int)EncryptionState.SymmetricalReady)
+            {
+                Log.GlobalDebug("Encrypting using SYMMETRICAL");
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
+            }
+            else if (currentEncryptionState > (int)EncryptionState.AsymmetricalReady)
+            {
+                Log.GlobalDebug("Encrypting using ASYMMETRICAL");
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
+            }
+            else
+            {
+                //Ensure the packet isnt ecnrypted if we don't support it.
+                Log.GlobalDebug("Encryption is not supported at this moment, ensuring it isn't flagged as being enabled on this packet.");
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, false);
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, false);
+            }
             if (!packet.ValidateFlags())
             {
                 Log.GlobalError($"Packet send failed! Flag validation failure. Packet Type: {packet.Type}, Target: {packet.NetowrkIDTarget}, Custom Packet ID: {packet.CustomPacketID}, Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
@@ -1178,26 +1197,14 @@ namespace SocketNetworking.Client
             byte[] packetBytes = packet.Serialize().Data;
             byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
             byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
-            Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
             if (packet.Flags.HasFlag(PacketFlags.Compressed))
             {
                 Log.GlobalDebug("Compressing the packet.");
                 packetDataBytes = packetDataBytes.Compress();
             }
-            int currentEncryptionState = (int)EncryptionState;
-            if (currentEncryptionState == (int)EncryptionState.SymmetricalReady)
-            {
-                Log.GlobalDebug("Encrypting using SYMMETRICAL");
-                packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
-            }
-            else if (currentEncryptionState == (int)EncryptionState.AsymmetricalReady)
-            {
-                Log.GlobalDebug("Encrypting using ASYMMETRICAL");
-                packet.Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
-            }
             if (packet.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
             {
-                if (currentEncryptionState == (int)EncryptionState.AsymmetricalReady)
+                if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
                 {
                     Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                     return null;
@@ -1207,7 +1214,7 @@ namespace SocketNetworking.Client
             }
             if (packet.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
             {
-                if (currentEncryptionState == (int)EncryptionState.SymmetricalReady)
+                if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
                 {
                     Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                     return null;
@@ -1220,11 +1227,15 @@ namespace SocketNetworking.Client
             Log.GlobalDebug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
             writer.WriteInt(packetFull.Length);
             writer.Write(packetFull);
-            int written = packetFull.Length;
+            int written = packetFull.Length + 4;
             if (written > (packetFull.Length + 4))
             {
                 Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetBytes.Length + 4}");
                 return null;
+            }
+            if(written < (packetFull.Length + 4))
+            {
+                Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetBytes.Length + 4}");
             }
             byte[] fullBytes = writer.Data;
             if (fullBytes.Length > Packet.MaxPacketSize)
@@ -1233,6 +1244,65 @@ namespace SocketNetworking.Client
                 return null;
             }
             return fullBytes;
+        }
+
+        protected virtual void Deserialize(byte[] fullPacket, IPEndPoint endpoint)
+        {
+            PacketHeader header = Packet.ReadPacketHeader(fullPacket);
+            if (header.Type == PacketType.CustomPacket && NetworkManager.GetCustomPacketByID(header.CustomPacketID) == null)
+            {
+                Log.GlobalWarning($"Got a packet with a Custom Packet ID that does not exist, either not registered or corrupt. Custom Packet ID: {header.CustomPacketID}, Target: {header.NetworkIDTarget}");
+            }
+            Log.GlobalDebug("Active Flags: " + string.Join(", ", header.Flags.GetActiveFlags()));
+            Log.GlobalDebug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
+            byte[] rawPacket = fullPacket;
+            byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
+            byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
+            int currentEncryptionState = (int)EncryptionState;
+            if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            {
+                Log.GlobalDebug("Trying to decrypt a packet using SYMMETRICAL encryption!");
+                if (currentEncryptionState == (int)EncryptionState.SymmetricalReady)
+                {
+                    Log.GlobalError("Encryption cannot be done at this point: Not ready.");
+                    return;
+                }
+                packetBytes = EncryptionManager.Decrypt(packetBytes);
+            }
+            if (header.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
+            {
+                Log.GlobalDebug("Trying to decrypt a packet using ASYMMETRICAL encryption!");
+                if (currentEncryptionState == (int)EncryptionState.AsymmetricalReady)
+                {
+                    Log.GlobalError("Encryption cannot be done at this point: Not ready.");
+                    return;
+                }
+                packetBytes = EncryptionManager.Decrypt(packetBytes, false);
+            }
+            if (header.Flags.HasFlag(PacketFlags.Compressed))
+            {
+                packetBytes = packetBytes.Decompress();
+            }
+            if (header.Size + 4 < fullPacket.Length)
+            {
+                Log.GlobalWarning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
+            }
+            fullPacket = headerBytes.Concat(packetBytes).ToArray();
+            PacketRead?.Invoke(header, fullPacket);
+            if (ManualPacketHandle)
+            {
+                ReadPacketInfo packetInfo = new ReadPacketInfo()
+                {
+                    Header = header,
+                    Data = fullPacket
+                };
+                _toReadPackets.Enqueue(packetInfo);
+                PacketReadyToHandle?.Invoke(packetInfo.Header, packetInfo.Data);
+            }
+            else
+            {
+                HandlePacket(header, fullPacket);
+            }
         }
 
         protected virtual void PacketReaderThreadMethod()
@@ -1348,65 +1418,6 @@ namespace SocketNetworking.Client
             }
             Log.GlobalInfo("Shutting down client, Closing socket.");
             Transport.Close();
-        }
-
-        protected virtual void Deserialize(byte[] fullPacket, IPEndPoint endpoint)
-        {
-            PacketHeader header = Packet.ReadPacketHeader(fullPacket);
-            if (header.Type == PacketType.CustomPacket && NetworkManager.GetCustomPacketByID(header.CustomPacketID) == null)
-            {
-                Log.GlobalWarning($"Got a packet with a Custom Packet ID that does not exist, either not registered or corrupt. Custom Packet ID: {header.CustomPacketID}, Target: {header.NetworkIDTarget}");
-            }
-            Log.GlobalDebug("Active Flags: " + string.Join(", ", header.Flags.GetActiveFlags()));
-            Log.GlobalDebug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
-            byte[] rawPacket = fullPacket;
-            byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
-            byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
-            int currentEncryptionState = (int)EncryptionState;
-            if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
-            {
-                Log.GlobalDebug("Trying to decrypt a packet using SYMMETRICAL encryption!");
-                if (currentEncryptionState == (int)EncryptionState.SymmetricalReady)
-                {
-                    Log.GlobalError("Encryption cannot be done at this point: Not ready.");
-                    return;
-                }
-                packetBytes = EncryptionManager.Decrypt(packetBytes);
-            }
-            if (header.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
-            {
-                Log.GlobalDebug("Trying to decrypt a packet using ASYMMETRICAL encryption!");
-                if (currentEncryptionState == (int)EncryptionState.AsymmetricalReady)
-                {
-                    Log.GlobalError("Encryption cannot be done at this point: Not ready.");
-                    return;
-                }
-                packetBytes = EncryptionManager.Decrypt(packetBytes, false);
-            }
-            if (header.Flags.HasFlag(PacketFlags.Compressed))
-            {
-                packetBytes = packetBytes.Decompress();
-            }
-            if (header.Size + 4 < fullPacket.Length)
-            {
-                Log.GlobalWarning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
-            }
-            fullPacket = headerBytes.Concat(packetBytes).ToArray();
-            PacketRead?.Invoke(header, fullPacket);
-            if (ManualPacketHandle)
-            {
-                ReadPacketInfo packetInfo = new ReadPacketInfo()
-                {
-                    Header = header,
-                    Data = fullPacket
-                };
-                _toReadPackets.Enqueue(packetInfo);
-                PacketReadyToHandle?.Invoke(packetInfo.Header, packetInfo.Data);
-            }
-            else
-            {
-                HandlePacket(header, fullPacket);
-            }
         }
 
         protected ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();

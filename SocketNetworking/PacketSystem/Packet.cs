@@ -57,7 +57,11 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// <see cref="PacketFlags"/> are used to determine metadata about the packet, such as encryption status or compression. Default value is <see cref="PacketFlags.None"/>. Setting this value on the sender applies the flags in transit, setting these flags otherwise causes no effects.
         /// </summary>
-        public virtual PacketFlags Flags { get; set; } = PacketFlags.None;
+        public virtual PacketFlags Flags 
+        { 
+            get; 
+            set;
+        } = PacketFlags.None;
 
         /// <summary>
         /// Method ensures that the <see cref="PacketFlags"/> set in <see cref="Flags"/> are not conflicting. 

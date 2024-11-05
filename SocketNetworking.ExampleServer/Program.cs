@@ -39,11 +39,11 @@ namespace SocketNetworking.ExampleServer
             {
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
-                    if (c is TestClient client)
+                    if (c is TestClient client && c.Ready)
                     {
                         //client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
                         ExampleCustomPacket packet = new ExampleCustomPacket();
-                        packet.Data = "aaa";
+                        packet.Data = "test";
                         packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
                         c.Send(packet);
                     }

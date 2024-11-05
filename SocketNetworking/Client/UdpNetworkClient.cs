@@ -12,7 +12,6 @@ namespace SocketNetworking.Client
 {
     public class UdpNetworkClient : NetworkClient
     {
-
         public UdpNetworkClient()
         {
             Transport = new UdpTransport();

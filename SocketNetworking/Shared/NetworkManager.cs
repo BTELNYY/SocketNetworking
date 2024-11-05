@@ -576,7 +576,7 @@ namespace SocketNetworking.Shared
             ByteReader reader = packet.Deserialize(data);
             if (reader.ReadBytes < header.Size)
             {
-                Log.GlobalWarning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read.");
+                Log.GlobalWarning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read. Actual: {reader.ReadBytes}, Header: {header.Size}");
             }
             object changedPacket = Convert.ChangeType(packet, packetType);
             if (header.NetworkIDTarget == 0)
