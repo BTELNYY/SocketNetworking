@@ -14,7 +14,7 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public ConnectionState State  = ConnectionState.Disconnected;
 
-        public string Reason  = "No comment";
+        public string Reason  = "";
 
         public override ByteReader Deserialize(byte[] data)
         {

@@ -30,6 +30,9 @@ namespace SocketNetworking.Shared
     [Flags]
     public enum PacketFlags : byte
     {
+        /// <summary>
+        /// No flags are set.
+        /// </summary>
         None = 0,
         /// <summary>
         /// Uses GZIP Compression.
@@ -46,11 +49,11 @@ namespace SocketNetworking.Shared
         /// <summary>
         /// Used to specify this packet is to be treated with priority, being sent first. This can cause out of order situations, so its best to use this only for systems which are not affected by this.
         /// </summary>
-        Priority = 5,
+        Priority = 8,
         /// <summary>
         /// Tells the library to not Encrypt this packet at all, if combined with <see cref="PacketFlags.AsymtreicalEncrypted"/> or <see cref="PacketFlags.SymetricalEncrypted"/>, the encryption flags are ignored.
         /// </summary>
-        DoNotEncrypt = 6,
+        DoNotEncrypt = 16,
     }
 
     /// <summary>

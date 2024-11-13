@@ -167,7 +167,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        private NetworkEncryptionManager _networkEncryptionManager;
+        protected NetworkEncryptionManager _networkEncryptionManager;
 
         public NetworkEncryptionManager EncryptionManager
         {
@@ -351,6 +351,7 @@ namespace SocketNetworking.Client
             protected set
             {
                 _encryptionState = value;
+                Log.GlobalDebug($"Encryption State Updated: {_encryptionState}, As Number: {(int)_encryptionState}");
             }
         }
 
@@ -922,6 +923,8 @@ namespace SocketNetworking.Client
                             EncryptionPacket gotYourPublicKey = new EncryptionPacket();
                             gotYourPublicKey.EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve;
                             Send(gotYourPublicKey);
+                            EncryptionState = EncryptionState.AsymmetricalReady;
+                            Log.GlobalInfo($"Got Asymmetrical Encryption Key, ID: {ClientID}");
                             EncryptionPacket sendSymKey = new EncryptionPacket();
                             sendSymKey.EncryptionFunction = EncryptionFunction.SymmetricalKeySend;
                             sendSymKey.SymKey = EncryptionManager.SharedAesKey.Item1;
@@ -932,12 +935,15 @@ namespace SocketNetworking.Client
                             Disconnect("Illegal encryption handshake: Cannot send own symmetry key, wait for server.");
                             break;
                         case EncryptionFunction.AsymmetricalKeyRecieve:
-                            EncryptionState = EncryptionState.AsymmetricalReady;
                             Log.GlobalInfo($"Client Got Asymmetrical Encryption Key, ID: {ClientID}");
                             break;
                         case EncryptionFunction.SymetricalKeyRecieve:
                             EncryptionState = EncryptionState.SymmetricalReady;
                             Log.GlobalInfo($"Client Got Symmetrical Encryption Key, ID: {ClientID}");
+                            EncryptionPacket updateEncryptionStateFinal = new EncryptionPacket();
+                            updateEncryptionStateFinal.EncryptionFunction = EncryptionFunction.UpdateEncryptionStatus;
+                            updateEncryptionStateFinal.State = EncryptionState.Encrypted;
+                            //Send(updateEncryptionStateFinal);
                             break;
                         default:
                             Log.GlobalError($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
@@ -1082,17 +1088,20 @@ namespace SocketNetworking.Client
                             EncryptionManager.OthersPublicKey = encryptionPacket.PublicKey;
                             EncryptionPacket gotYourPublicKey = new EncryptionPacket();
                             gotYourPublicKey.EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve;
+                            Log.GlobalInfo("Got Servers Public key, Sending mine.");
                             Send(gotYourPublicKey);
+                            EncryptionState = EncryptionState.AsymmetricalReady;
                             encryptionRecieve.PublicKey = EncryptionManager.MyPublicKey;
                             encryptionRecieve.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
                             Send(encryptionRecieve);
                             break;
                         case EncryptionFunction.SymmetricalKeySend:
+                            Log.GlobalInfo($"Got servers symetrical key. Key Length: {encryptionPacket.SymKey.Length}");
                             EncryptionManager.SharedAesKey = new Tuple<byte[], byte[]>(encryptionPacket.SymKey, encryptionPacket.SymIV);
                             EncryptionPacket gotYourSymmetricalKey = new EncryptionPacket();
                             gotYourSymmetricalKey.EncryptionFunction = EncryptionFunction.SymetricalKeyRecieve;
-                            Send(gotYourSymmetricalKey);
                             EncryptionState = EncryptionState.SymmetricalReady;
+                            Send(gotYourSymmetricalKey);
                             break;
                         case EncryptionFunction.AsymmetricalKeyRecieve:
                             EncryptionState = EncryptionState.AsymmetricalReady;
@@ -1170,7 +1179,6 @@ namespace SocketNetworking.Client
 
         protected virtual byte[] SerializePacket(Packet packet)
         {
-            Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
             int currentEncryptionState = (int)EncryptionState;
             if (currentEncryptionState > (int)EncryptionState.SymmetricalReady)
             {
@@ -1194,6 +1202,7 @@ namespace SocketNetworking.Client
                 Log.GlobalError($"Packet send failed! Flag validation failure. Packet Type: {packet.Type}, Target: {packet.NetowrkIDTarget}, Custom Packet ID: {packet.CustomPacketID}, Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
                 return null;
             }
+            Log.GlobalDebug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
             byte[] packetBytes = packet.Serialize().Data;
             byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
             byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
@@ -1262,7 +1271,7 @@ namespace SocketNetworking.Client
             if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
             {
                 Log.GlobalDebug("Trying to decrypt a packet using SYMMETRICAL encryption!");
-                if (currentEncryptionState == (int)EncryptionState.SymmetricalReady)
+                if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
                 {
                     Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                     return;
@@ -1272,7 +1281,7 @@ namespace SocketNetworking.Client
             if (header.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted))
             {
                 Log.GlobalDebug("Trying to decrypt a packet using ASYMMETRICAL encryption!");
-                if (currentEncryptionState == (int)EncryptionState.AsymmetricalReady)
+                if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
                 {
                     Log.GlobalError("Encryption cannot be done at this point: Not ready.");
                     return;

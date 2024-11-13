@@ -19,6 +19,7 @@ namespace SocketNetworking.Client
         public MixedNetworkClient()
         {
             Transport = new TcpTransport();
+            _networkEncryptionManager = new NetworkEncryptionManager();
         }
 
         public int InitialUDPKey = 0;
