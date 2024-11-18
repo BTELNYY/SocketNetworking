@@ -82,7 +82,6 @@ namespace SocketNetworking.Client
             lock (streamLock)
             {
                 _toSendPackets.TryDequeue(out Packet packet);
-                Log.GlobalDebug($"Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
                 PreparePacket(ref packet);
                 Log.GlobalDebug($"Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
                 byte[] fullBytes = SerializePacket(packet);

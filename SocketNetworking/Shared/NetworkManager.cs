@@ -126,7 +126,7 @@ namespace SocketNetworking.Shared
         {
             ImportCustomPackets(target);
             List<Type> applicableTypes = target.GetTypes().ToList();
-            foreach(Type t in applicableTypes)
+            foreach (Type t in applicableTypes)
             {
                 if (TypeCache.ContainsKey(t) || TypeToTypeWrapper.ContainsValue(t))
                 {
@@ -147,9 +147,9 @@ namespace SocketNetworking.Shared
                 networkObjectCache.Target = t;
                 networkObjectCache.Invokables = new List<(MethodInfo, NetworkInvocable)>();
                 networkObjectCache.Listeners = new Dictionary<Type, List<PacketListenerData>>();
-                foreach(MethodInfo method in t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                foreach (MethodInfo method in t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
-                    if(method.GetCustomAttribute<PacketListener>() != null)
+                    if (method.GetCustomAttribute<PacketListener>() != null)
                     {
                         if (method.GetParameters().Length < AcceptedMethodArugments.Length)
                         {
@@ -190,7 +190,7 @@ namespace SocketNetworking.Shared
                             }
                         }
                     }
-                    if(method.GetCustomAttribute<NetworkInvocable>() != null)
+                    if (method.GetCustomAttribute<NetworkInvocable>() != null)
                     {
                         ValueTuple<MethodInfo, NetworkInvocable> tuple = (method, method.GetCustomAttribute<NetworkInvocable>());
                         if (networkObjectCache.Invokables.Contains(tuple))
@@ -203,7 +203,7 @@ namespace SocketNetworking.Shared
                 }
             }
         }
-    
+
         /// <summary>
         /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your netowrk objects.
         /// </summary>
@@ -738,16 +738,16 @@ namespace SocketNetworking.Shared
             if (packet.NetworkObjectTarget != 0)
             {
                 List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkObjectTarget && x.GetType() == targetType).ToList();
-                if(netObjs.Count != 0)
+                if (netObjs.Count != 0)
                 {
                     targets.AddRange(netObjs);
                 }
             }
-            else if(targetType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+            else if (targetType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
             {
                 targets.Add(target);
             }
-            if(targets.Count == 0)
+            if (targets.Count == 0)
             {
                 throw new NetworkInvocationException("Unable to find any networkobjects with ID: " + packet.NetworkObjectTarget);
             }
@@ -779,15 +779,15 @@ namespace SocketNetworking.Shared
                 }
                 if (target is INetworkObject owned)
                 {
-                    if(owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != reciever.ClientID)
+                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != reciever.ClientID)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if(owned.OwnershipMode == OwnershipMode.Server && reciever.CurrnetClientLocation != ClientLocation.Local)
+                    else if (owned.OwnershipMode == OwnershipMode.Server && reciever.CurrnetClientLocation != ClientLocation.Local)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if(owned.OwnershipMode == OwnershipMode.Public)
+                    else if (owned.OwnershipMode == OwnershipMode.Public)
                     {
                         //do nothing, everyone owns this object.
                     }
@@ -1030,7 +1030,7 @@ namespace SocketNetworking.Shared
                     Log.GlobalError($"NetworkInvoke on method {methodName} failed becuase the NetworkClient is not connected.");
                     break;
                 }
-                if(stopwatch.ElapsedMilliseconds > msTimeOut)
+                if (stopwatch.ElapsedMilliseconds > msTimeOut)
                 {
                     Log.GlobalError($"NetworkInvoke on method {methodName} timed out after {msTimeOut}ms of proccessing.");
                     break;
@@ -1038,7 +1038,7 @@ namespace SocketNetworking.Shared
             }
             Log.GlobalDebug($"NetowkInvoke on {methodName} successfully returned and took {stopwatch.ElapsedMilliseconds}ms");
             NetworkInvocationResultPacket resultPacket = networkResultAwaiter.ResultPacket;
-            if(resultPacket == null)
+            if (resultPacket == null)
             {
                 Log.GlobalError($"NetworkInvoke on method {methodName} failed remotely! Error: null");
                 return default;
@@ -1064,14 +1064,14 @@ namespace SocketNetworking.Shared
             return NetworkInvoke<TResult>(target, sender, func.Method.Name, new object[] { });
         }
     }
-    
+
     public struct NetworkObjectCache
     {
         public Type Target;
 
         public Dictionary<Type, List<PacketListenerData>> Listeners;
 
-        public List<ValueTuple<MethodInfo, NetworkInvocable>> Invokables;    
+        public List<ValueTuple<MethodInfo, NetworkInvocable>> Invokables;
     }
 
     public struct NetworkObjectData
