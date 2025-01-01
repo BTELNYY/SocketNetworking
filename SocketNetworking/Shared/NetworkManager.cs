@@ -133,7 +133,7 @@ namespace SocketNetworking.Shared
                     continue;
                 }
                 Type baseType = t.BaseType;
-                if (t.IsSubclassOfRawGeneric(typeof(TypeWrapper<>)))
+                if (t.IsSubclassDeep(typeof(TypeWrapper<>)))
                 {
                     object obj = Activator.CreateInstance(t);
                     MethodInfo method = obj.GetType().GetMethod(nameof(TypeWrapper<object>.GetContainedType));
@@ -579,6 +579,7 @@ namespace SocketNetworking.Shared
                 Log.GlobalWarning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read. Actual: {reader.ReadBytes}, Header: {header.Size}");
             }
             object changedPacket = Convert.ChangeType(packet, packetType);
+            NetworkHandle handle = new NetworkHandle(runningClient, (Packet)changedPacket);
             if (header.NetworkIDTarget == 0)
             {
                 //Log.Debug("Handle Client-Client communication!");
@@ -597,24 +598,26 @@ namespace SocketNetworking.Shared
                         //Log.Debug("Type dont match!");
                         continue;
                     }
+                    object[] allParams = { changedPacket, runningClient, handle };
+                    object[] methodArgs = method.MatchParameters(allParams.ToList()).ToArray();
                     //Log.Debug("Checking packet direction");
                     //Log.Debug("Direction of client: " + clientLocation + " Listener direction: " + packetDirection);
                     if (packetDirection == PacketDirection.Any)
                     {
                         //Log.Debug("Invoking " + method.Name);
-                        method.Invoke(runningClient, new object[] { changedPacket, runningClient });
+                        method.Invoke(runningClient, methodArgs);
                         continue;
                     }
                     if (packetDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
                     {
                         //Log.Debug("Invoking " + method.Name);
-                        method.Invoke(runningClient, new object[] { changedPacket, runningClient });
+                        method.Invoke(runningClient, methodArgs);
                         continue;
                     }
                     if (packetDirection == PacketDirection.Server && clientLocation == ClientLocation.Local)
                     {
                         //Log.Debug("Invoking " + method.Name);
-                        method.Invoke(runningClient, new object[] { changedPacket, runningClient });
+                        method.Invoke(runningClient, methodArgs);
                         continue;
                     }
                 }
@@ -699,7 +702,7 @@ namespace SocketNetworking.Shared
             foreach (MethodInfo m in methods)
             {
                 List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)) && !arguments[0].IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                if (m.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)) && !arguments[0].IsSubclassDeep(typeof(NetworkClient)))
                 {
                     m_args.RemoveAt(0);
                 }
@@ -743,7 +746,7 @@ namespace SocketNetworking.Shared
                     targets.AddRange(netObjs);
                 }
             }
-            else if (targetType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+            else if (targetType.IsSubclassDeep(typeof(NetworkClient)))
             {
                 targets.Add(target);
             }
@@ -794,14 +797,14 @@ namespace SocketNetworking.Shared
                 }
                 if (!(target is INetworkObject) && !(target is NetworkClient))
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
                     {
                         Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + packet.MethodName);
                     }
                 }
             }
             List<object> args = new List<object>();
-            if (method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+            if (method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
             {
                 args.Add(reciever);
             }
@@ -910,7 +913,7 @@ namespace SocketNetworking.Shared
                 }
                 if (!(target is INetworkObject) && !(target is NetworkClient))
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
                     {
                         Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + methodName);
                     }

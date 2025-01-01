@@ -24,6 +24,12 @@ namespace SocketNetworking.ExampleSharedData
             TestResult result = NetworkInvoke<TestResult>(this, "SomeNetworkMethod", new object[] { someFloat, someInt, new ValueTuple<int, int> (1, 3) });
             Log.GlobalDebug(result.ToString());
         }
+
+        [PacketListener(typeof(ExampleCustomPacket), PacketDirection.Any)]
+        public void Listener(ExampleCustomPacket packet, NetworkHandle handle)
+        {
+            Log.GlobalInfo($"Got a packet! Data: {packet.Data}, Flags: {packet.Flags.GetActiveFlagsString()}, Encrypted?: {handle.WasEncrypted}");
+        }
     }
 
     public enum TestResult

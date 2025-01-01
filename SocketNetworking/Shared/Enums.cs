@@ -116,4 +116,13 @@ namespace SocketNetworking.Shared
         /// </summary>
         Peer2Peer,
     }
+
+    /// <summary>
+    /// Mode of the network invocation. <see cref="Listener"/> is for packet listenrs, <see cref="RemoteProcedureCall"/> is for Network Invocations.
+    /// </summary>
+    public enum InvocationMode
+    {
+        Listener,
+        RemoteProcedureCall
+    }
 }
