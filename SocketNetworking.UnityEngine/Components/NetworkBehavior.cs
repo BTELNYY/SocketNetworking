@@ -53,7 +53,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
 
-        [NetworkInvocable(PacketDirection.Server)]
+        [NetworkInvocable(NetworkDirection.Server)]
         private void ClientSetNetId(int id)
         {
             _netId = id;
@@ -133,7 +133,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         private int _ownerClientID = -1;
 
-        [NetworkInvocable(PacketDirection.Server)]
+        [NetworkInvocable(NetworkDirection.Server)]
         private void UpdateOwnerClientIDRpc(int id)
         {
             _ownerClientID = id;
@@ -158,7 +158,7 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(ServerProccessChangeOwnerCommand), new object[] { newOwner });
         }
 
-        [NetworkInvocable(PacketDirection.Client)]
+        [NetworkInvocable(NetworkDirection.Client)]
         private void ServerProccessChangeOwnerCommand(int newOwner)
         {
             OwnerClientID = newOwner;
@@ -180,7 +180,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        [NetworkInvocable(PacketDirection.Server)]
+        [NetworkInvocable(NetworkDirection.Server)]
         private void UpdateOwnershipModeRpc(OwnershipMode mode)
         {
             _ownershipMode = mode;

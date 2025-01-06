@@ -114,6 +114,19 @@ namespace SocketNetworking.Shared
             }
         }
 
+        public static NetworkDirection WhereAmIDirection
+        {
+            get
+            {
+                return LocationToDirection(WhereAmI);
+            }
+        }
+
+        public static NetworkDirection LocationToDirection(ClientLocation location)
+        {
+            return (NetworkDirection)location;
+        }
+
         public static Dictionary<Type, NetworkObjectCache> TypeCache = new Dictionary<Type, NetworkObjectCache>();
 
         public static Dictionary<Type, Type> TypeToTypeWrapper = new Dictionary<Type, Type>();
@@ -591,7 +604,7 @@ namespace SocketNetworking.Shared
                     {
                         continue;
                     }
-                    PacketDirection packetDirection = listener.DefinedDirection;
+                    NetworkDirection packetDirection = listener.DefinedDirection;
                     Type listenerType = listener.DefinedType;
                     if (packetType != listenerType)
                     {
@@ -602,19 +615,19 @@ namespace SocketNetworking.Shared
                     object[] methodArgs = method.MatchParameters(allParams.ToList()).ToArray();
                     //Log.Debug("Checking packet direction");
                     //Log.Debug("Direction of client: " + clientLocation + " Listener direction: " + packetDirection);
-                    if (packetDirection == PacketDirection.Any)
+                    if (packetDirection == NetworkDirection.Any)
                     {
                         //Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, methodArgs);
                         continue;
                     }
-                    if (packetDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
+                    if (packetDirection == NetworkDirection.Client && clientLocation == ClientLocation.Remote)
                     {
                         //Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, methodArgs);
                         continue;
                     }
-                    if (packetDirection == PacketDirection.Server && clientLocation == ClientLocation.Local)
+                    if (packetDirection == NetworkDirection.Server && clientLocation == ClientLocation.Local)
                     {
                         //Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, methodArgs);
@@ -646,17 +659,17 @@ namespace SocketNetworking.Shared
                 //Log.Debug($"Packet listeners for type {netObj.GetType().Name}: {packetListeners.Count}");
                 foreach (PacketListenerData packetListener in packetListeners)
                 {
-                    if (packetListener.Attribute.DefinedDirection == PacketDirection.Any)
+                    if (packetListener.Attribute.DefinedDirection == NetworkDirection.Any)
                     {
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
-                    if (packetListener.Attribute.DefinedDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
+                    if (packetListener.Attribute.DefinedDirection == NetworkDirection.Client && clientLocation == ClientLocation.Remote)
                     {
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
-                    if (packetListener.Attribute.DefinedDirection == PacketDirection.Server && clientLocation == ClientLocation.Local)
+                    if (packetListener.Attribute.DefinedDirection == NetworkDirection.Server && clientLocation == ClientLocation.Local)
                     {
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
@@ -766,11 +779,11 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
-            if (invocable.Direction == PacketDirection.Server && reciever.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == NetworkDirection.Server && reciever.CurrnetClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.Direction == PacketDirection.Client && reciever.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == NetworkDirection.Client && reciever.CurrnetClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
@@ -882,11 +895,11 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
-            if (invocable.Direction == PacketDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == NetworkDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.Direction == PacketDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == NetworkDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
@@ -968,11 +981,11 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
-            if (invocable.Direction == PacketDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == NetworkDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.Direction == PacketDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == NetworkDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }

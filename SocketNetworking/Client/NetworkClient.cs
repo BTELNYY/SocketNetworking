@@ -366,7 +366,7 @@ namespace SocketNetworking.Client
             return NetworkInvoke<bool>(nameof(ServerGetEncryptionRequest), new object[] { });
         }
 
-        [NetworkInvocable(PacketDirection.Client)]
+        [NetworkInvocable(NetworkDirection.Client)]
         private bool ServerGetEncryptionRequest()
         {
             if(NetworkServer.EncryptionMode == ServerEncryptionMode.Disabled)

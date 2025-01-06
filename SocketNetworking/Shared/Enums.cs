@@ -91,7 +91,7 @@ namespace SocketNetworking.Shared
     /// <summary>
     /// An enum which represents the direction from which the Packet was sent.
     /// </summary>
-    public enum PacketDirection
+    public enum NetworkDirection
     {
         Client,
         Server,
