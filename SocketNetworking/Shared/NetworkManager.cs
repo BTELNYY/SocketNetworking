@@ -160,6 +160,7 @@ namespace SocketNetworking.Shared
                 networkObjectCache.Target = t;
                 networkObjectCache.Invokables = new List<(MethodInfo, NetworkInvocable)>();
                 networkObjectCache.Listeners = new Dictionary<Type, List<PacketListenerData>>();
+                networkObjectCache.SyncVars = new List<INetworkSyncVar>();
                 foreach (MethodInfo method in t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
                     if (method.GetCustomAttribute<PacketListener>() != null)
@@ -214,6 +215,36 @@ namespace SocketNetworking.Shared
                         networkObjectCache.Invokables.Add(tuple);
                     }
                 }
+                List<INetworkSyncVar> syncVars = new List<INetworkSyncVar>();
+                FieldInfo[] fields = t.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+                foreach (FieldInfo field in fields)
+                {
+                    object value = field.GetValue(t);
+                    if (!(value is INetworkSyncVar syncVar))
+                    {
+                        continue;
+                    }
+                    if (string.IsNullOrEmpty(syncVar.Name))
+                    {
+                        syncVar.Name = field.Name;
+                    }
+                    syncVars.Add(syncVar);
+                }
+                //PropertyInfo[] properties = t.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+                //foreach (PropertyInfo property in properties)
+                //{
+                //    object value = property.GetValue(t);
+                //    if (!(value is INetworkSyncVar syncVar))
+                //    {
+                //        continue;
+                //    }
+                //    if (string.IsNullOrEmpty(syncVar.Name))
+                //    {
+                //        syncVar.Name = property.Name;
+                //    }
+                //    syncVars.Add(syncVar);
+                //}
+                networkObjectCache.SyncVars = syncVars;
             }
         }
 
@@ -506,7 +537,7 @@ namespace SocketNetworking.Shared
         public static NetworkObjectData GetNetworkObjectData(INetworkObject target)
         {
             Type typeOfObject = target.GetType();
-            MethodInfo[] allPacketListeners = typeOfObject.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(x => x.GetCustomAttribute(typeof(PacketListener)) != null).ToArray();
+            MethodInfo[] allPacketListeners = typeOfObject.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).Where(x => x.GetCustomAttribute(typeof(PacketListener)) != null).ToArray();
             Dictionary<Type, List<PacketListenerData>> result = new Dictionary<Type, List<PacketListenerData>>();
             if (target.NetworkID == 0)
             {
@@ -555,10 +586,40 @@ namespace SocketNetworking.Shared
                     result.Add(attribute.DefinedType, new List<PacketListenerData> { data });
                 }
             }
+            List<INetworkSyncVar> syncVars = new List<INetworkSyncVar>();
+            FieldInfo[] fields = target.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            foreach (FieldInfo field in fields)
+            {
+                object value = field.GetValue(target);
+                if(!(value is INetworkSyncVar syncVar))
+                {
+                    continue;
+                }
+                if(string.IsNullOrEmpty(syncVar.Name))
+                {
+                    syncVar.Name = field.Name;
+                }
+                syncVars.Add(syncVar);
+            }
+            //PropertyInfo[] properties = target.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            //foreach (PropertyInfo property in properties)
+            //{
+            //    object value = property.GetValue(target);
+            //    if (!(value is INetworkSyncVar syncVar))
+            //    {
+            //        continue;
+            //    }
+            //    if (string.IsNullOrEmpty(syncVar.Name))
+            //    {
+            //        syncVar.Name = property.Name;
+            //    }
+            //    syncVars.Add(syncVar);
+            //}
             NetworkObjectData networkObjectData = new NetworkObjectData
             {
                 Listeners = result,
-                TargetObject = target
+                TargetObject = target,
+                SyncVars = syncVars
             };
             return networkObjectData;
         }
@@ -1088,11 +1149,15 @@ namespace SocketNetworking.Shared
         public Dictionary<Type, List<PacketListenerData>> Listeners;
 
         public List<ValueTuple<MethodInfo, NetworkInvocable>> Invokables;
+
+        public List<INetworkSyncVar> SyncVars;
     }
 
     public struct NetworkObjectData
     {
         public Dictionary<Type, List<PacketListenerData>> Listeners;
+
+        public List<INetworkSyncVar> SyncVars;
 
         public INetworkObject TargetObject;
     }

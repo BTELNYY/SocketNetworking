@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.Shared
 {
-    public class NetworkSyncVar<T> : IEquatable<T>, ICloneable
+    public class NetworkSyncVar<T> : IEquatable<T>, ICloneable, INetworkSyncVar
     {
         public INetworkObject OwnerObject { get; }
-        
+
         /// <summary>
         /// Sets who is allowed to set the value of this Sync var.
         /// </summary>
@@ -26,7 +26,7 @@ namespace SocketNetworking.Shared
             }
             set
             {
-                if(SyncOwner != NetworkDirection.Any && NetworkManager.WhereAmIDirection != SyncOwner)
+                if (SyncOwner != NetworkDirection.Any && NetworkManager.WhereAmIDirection != SyncOwner)
                 {
                     return;
                 }
@@ -35,7 +35,22 @@ namespace SocketNetworking.Shared
             }
         }
 
-        internal void Set(T value)
+        public object ValueRaw
+        {
+            get
+            {
+                return Value;
+            }
+            set
+            {
+                if(value is T)
+                {
+                    Value = (T)value;
+                }
+            }
+        }
+
+        public void Set(T value)
         {
             value = Value;
         }
@@ -44,6 +59,20 @@ namespace SocketNetworking.Shared
         {
             SerializedData data = NetworkConvert.Serialize(value);
         }
+
+        public string Name
+        {
+            get
+            {
+                return _name;
+            }
+            set
+            {
+                _name = value;
+            }
+        }
+
+        string _name = string.Empty;
 
         public bool Equals(T other)
         {
@@ -67,6 +96,16 @@ namespace SocketNetworking.Shared
             OwnerObject = ownerObject;
             SyncOwner = syncDirection;
             Value = value;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, NetworkDirection syncOwner, T value, string name) : this(ownerObject, syncOwner, value)
+        {
+            _name = name;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, T value, string name) : this(ownerObject, value)
+        {
+            _name = name;
         }
     }
 }

@@ -58,6 +58,7 @@
     <Compile Include="Server\MixedNetworkServer.cs" />
     <Compile Include="Server\TcpNetworkServer.cs" />
     <Compile Include="Server\UdpNetworkServer.cs" />
+    <Compile Include="Shared\INetworkSyncVar.cs" />
     <Compile Include="Shared\NetworkHandle.cs" />
     <Compile Include="Shared\NetworkSyncVar.cs" />
     <Compile Include="Transports\NetworkTransport.cs" />
