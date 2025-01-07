@@ -1,4 +1,6 @@
-﻿using SocketNetworking.PacketSystem;
+﻿using SocketNetworking.Client;
+using SocketNetworking.PacketSystem;
+using SocketNetworking.PacketSystem.Packets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,11 +16,11 @@ namespace SocketNetworking.Shared
         /// <summary>
         /// Sets who is allowed to set the value of this Sync var.
         /// </summary>
-        public NetworkDirection SyncOwner { get; }
+        public OwnershipMode SyncOwner { get; }
 
         T value = default(T);
 
-        public T Value
+        public virtual T Value
         {
             get
             {
@@ -26,13 +28,22 @@ namespace SocketNetworking.Shared
             }
             set
             {
-                if (SyncOwner != NetworkDirection.Any && NetworkManager.WhereAmIDirection != SyncOwner)
+ 
+                this.value = value;
+            }
+        }
+
+        public virtual void NetworkSet(object value, NetworkClient who)
+        {
+            if(SyncOwner != OwnershipMode.Public)
+            {
+                if(NetworkManager.WhereAmI == ClientLocation.Local && SyncOwner == OwnershipMode.Client && who.ClientID != OwnerObject.OwnerClientID)
                 {
                     return;
                 }
-                this.value = value;
-                Sync();
             }
+            Value = (T)value;
+            Sync();
         }
 
         public object ValueRaw
@@ -41,16 +52,9 @@ namespace SocketNetworking.Shared
             {
                 return Value;
             }
-            set
-            {
-                if(value is T)
-                {
-                    Value = (T)value;
-                }
-            }
         }
 
-        public void Set(T value)
+        public virtual void Set(T value, NetworkClient who)
         {
             value = Value;
         }
@@ -58,6 +62,12 @@ namespace SocketNetworking.Shared
         void Sync()
         {
             SerializedData data = NetworkConvert.Serialize(value);
+            SyncVarData syncVarData = new SyncVarData()
+            {
+                NetworkIDTarget = OwnerObject.NetworkID,
+                Data = data,
+                TargetVar = Name,
+            };
         }
 
         public string Name
@@ -84,21 +94,29 @@ namespace SocketNetworking.Shared
             return new NetworkSyncVar<T>(OwnerObject, SyncOwner, value);
         }
 
-        public NetworkSyncVar(INetworkObject onwer, T value)
+        public void RawSet(object value, NetworkClient who)
         {
-            OwnerObject = onwer;
-            Value = value;
-            SyncOwner = NetworkDirection.Server;
+            if(value is T t)
+            {
+                Set(t, who);
+            }
         }
 
-        public NetworkSyncVar(INetworkObject ownerObject, NetworkDirection syncDirection, T value)
+        public NetworkSyncVar(INetworkObject owner, T value)
+        {
+            OwnerObject = owner;
+            Value = value;
+            SyncOwner = OwnershipMode.Server;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncDirection, T value)
         {
             OwnerObject = ownerObject;
             SyncOwner = syncDirection;
             Value = value;
         }
 
-        public NetworkSyncVar(INetworkObject ownerObject, NetworkDirection syncOwner, T value, string name) : this(ownerObject, syncOwner, value)
+        public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner, T value, string name) : this(ownerObject, syncOwner, value)
         {
             _name = name;
         }

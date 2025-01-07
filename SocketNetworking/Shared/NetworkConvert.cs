@@ -11,6 +11,7 @@ using System.Reflection;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
+using System.CodeDom;
 
 namespace SocketNetworking.Shared
 {

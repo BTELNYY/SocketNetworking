@@ -22,6 +22,7 @@ namespace SocketNetworking.Shared
         NetworkInvocationResult,
         EncryptionPacket,
         CustomPacket,
+        SyncVarUpdate,
     }
 
     /// <summary>

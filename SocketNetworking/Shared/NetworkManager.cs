@@ -18,6 +18,7 @@ using System.Security;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Server;
+using System.Runtime.CompilerServices;
 
 namespace SocketNetworking.Shared
 {
@@ -736,6 +737,39 @@ namespace SocketNetworking.Shared
                         continue;
                     }
                 }
+            }
+        }
+
+
+        //being called externally
+        public static void UpdateSyncVars(SyncVarUpdate packet, NetworkClient runner)
+        {
+            foreach(SyncVarData data in packet.Data)
+            {
+                if(!(NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == data.NetworkIDTarget) is INetworkObject obj))
+                {
+                    Log.GlobalWarning($"No such Network Object with ID '{data.NetworkIDTarget}'");
+                    continue;
+                }
+                NetworkObjectData networkObjectData = NetworkObjects[obj];
+                if(!(networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar) is INetworkSyncVar syncVar))
+                {
+                    Log.GlobalWarning($"No such Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName}");
+                    continue;
+                }
+                if(syncVar.SyncOwner != OwnershipMode.Public)
+                {
+                    if(syncVar.SyncOwner == OwnershipMode.Client && WhereAmI == ClientLocation.Remote)
+                    {
+                        if(runner.ClientID != syncVar.OwnerObject.OwnerClientID)
+                        {
+                            return;
+                        }
+                    }
+                }
+                object value = NetworkConvert.Deserialize(data.Data, out int read);
+                syncVar.RawSet(value, runner);
+                Log.GlobalDebug($"Updated {syncVar.Name} on {obj.GetType().FullName}. Read {read} bytes as the value.");
             }
         }
 

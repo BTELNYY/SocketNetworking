@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Client;
+using SocketNetworking.Shared;
+using SocketNetworking.Attributes;
 
 namespace SocketNetworking.PacketSystem
 {
@@ -29,7 +31,7 @@ namespace SocketNetworking.PacketSystem
         int NetworkID { get; }
 
         /// <summary>
-        /// If this is false, the object is never updated.
+        /// If this is false, the object is never updated. This includes <see cref="INetworkSyncVar"/> fields, <see cref="PacketListener>"/> and <see cref="NetworkInvocable"/> methods.
         /// </summary>
         bool IsEnabled { get; }
 
