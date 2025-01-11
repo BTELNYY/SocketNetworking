@@ -1,31 +1,38 @@
-﻿using SocketNetworking.PacketSystem;
+﻿using SocketNetworking.Attributes;
+using SocketNetworking.Misc;
+using SocketNetworking.PacketSystem;
+using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Server;
+using SocketNetworking.Shared;
+using SocketNetworking.Transports;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using SocketNetworking.Attributes;
-using System.Reflection;
-using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.Exceptions;
-using System.Runtime.InteropServices;
 using System.Net;
-using System.Diagnostics;
-using System.Security.Policy;
-using System.Collections.Concurrent;
-using System.Web;
-using SocketNetworking.Misc;
-using System.Runtime.CompilerServices;
-using SocketNetworking.Transports;
-using SocketNetworking.Shared;
-using SocketNetworking.Server;
+using System.Threading;
 
 namespace SocketNetworking.Client
 {
     public class NetworkClient
     {
+
+        static NetworkClient instance;
+
+        /// <summary>
+        /// Gets the local singleton for the <see cref="NetworkClient"/>. Can only be called on the client, multiple <see cref="NetworkClient"/>s on the local context are not allowed.
+        /// </summary>
+        public static NetworkClient LocalClient
+        {
+            get
+            {
+                if(NetworkManager.WhereAmI == ClientLocation.Remote)
+                {
+                    throw new InvalidOperationException("Cannot get local client from the server.");
+                }
+                return instance;
+            }
+        }
 
         /// <summary>
         /// Forcefully remove client on destruction
@@ -37,6 +44,7 @@ namespace SocketNetworking.Client
             {
                 Clients.Remove(this);
             }
+            instance = null;
         }
 
         public NetworkClient()
@@ -46,6 +54,9 @@ namespace SocketNetworking.Client
             Init();
         }
 
+        /// <summary>
+        /// Called on the server and client when a client is created.
+        /// </summary>
         public virtual void Init()
         {
 
@@ -155,6 +166,9 @@ namespace SocketNetworking.Client
 
         private NetworkTransport _transport;
 
+        /// <summary>
+        /// The <see cref="NetworkTransport"/> that is being used primarily.
+        /// </summary>
         public virtual NetworkTransport Transport
         {
             get
@@ -215,6 +229,9 @@ namespace SocketNetworking.Client
 
         private bool _ready = false;
 
+        /// <summary>
+        /// Determines the ready state of the <see cref="NetworkClient"/>, this has no effect on library logic but can be useful for applications using the library.
+        /// </summary>
         public bool Ready
         {
             get
@@ -299,11 +316,21 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Determines if the client is connected to anything.
+        /// </summary>
         public bool IsConnected
         {
             get
             {
                 return CurrentConnectionState == ConnectionState.Connected || CurrentConnectionState == ConnectionState.Handshake;
+            }
+            set
+            {
+                if(IsConnected)
+                {
+                    Disconnect();
+                }
             }
         }
 
@@ -342,6 +369,9 @@ namespace SocketNetworking.Client
 
         private EncryptionState _encryptionState = EncryptionState.Disabled;
 
+        /// <summary>
+        /// Determines the <see cref="Shared.EncryptionState"/> of the current client.
+        /// </summary>
         public EncryptionState EncryptionState
         {
             get
@@ -381,8 +411,15 @@ namespace SocketNetworking.Client
             return true;
         }
 
+        /// <summary>
+        /// Forces the server to begin encryption with the local client. If the client fails to handshake in time, they will be disconnected. Calling this method on the local client or with encryption active does nothing.
+        /// </summary>
         public void ServerBeginEncryption()
         {
+            if(CurrnetClientLocation != ClientLocation.Remote || EncryptionState > EncryptionState.Disabled)
+            {
+                return;
+            }
             EncryptionPacket packet = new EncryptionPacket();
             packet.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
             packet.PublicKey = EncryptionManager.MyPublicKey;
@@ -498,6 +535,11 @@ namespace SocketNetworking.Client
         /// </summary>
         public virtual void InitLocalClient()
         {
+            if (instance != null && instance != this)
+            {
+                throw new InvalidOperationException("Having several active clients is not allowed.");
+            }
+            instance = this;
             _clientLocation = ClientLocation.Local;
             ClientConnected += OnLocalClientConnected;
         }
@@ -692,11 +734,26 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="target"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <param name="maxTimeMs"></param>
+        /// <returns></returns>
         public T NetworkInvoke<T>(object target, string methodName, object[] args, float maxTimeMs = 5000)
         {
             return NetworkManager.NetworkInvoke<T>(target, this, methodName, args, maxTimeMs);
         }
 
+        /// <summary>
+        /// Preforms a non-blocking Network Invocation (Like an RPC)
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
         public void NetworkInvoke(object target, string methodName, object[] args)
         {
             NetworkManager.NetworkInvoke(target, this, methodName, args);
@@ -739,10 +796,25 @@ namespace SocketNetworking.Client
             }
         }
 
+
+        /// <summary>
+        /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value. This will try to find the method on the current <see cref="NetworkClient"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <param name="maxTimeMs"></param>
+        /// <returns></returns>
         public T NetworkInvoke<T>(string methodName, object[] args, float maxTimeMs = 5000)
         {
             return NetworkManager.NetworkInvoke<T>(this, this, methodName, args, maxTimeMs);
         }
+
+        /// <summary>
+        /// Preforms a non-blocking Network Invocation (Like an RPC). This will try to find the method on the current <see cref="NetworkClient"/>
+        /// </summary>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
         public void NetworkInvoke(string methodName, object[] args)
         {
             NetworkManager.NetworkInvoke(this, this, methodName, args);
@@ -1167,6 +1239,10 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Called before serialization, if the base is not called, the <see cref="Packet.Source"/> will be null.
+        /// </summary>
+        /// <param name="packet"></param>
         protected virtual void PreparePacket(ref Packet packet)
         {
             packet.Source = Transport.LocalEndPoint;
@@ -1177,6 +1253,11 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Serializes the packet. This method also applies Encryption as per <see cref="EncryptionState"/> and flags according to <see cref="Packet.Flags"/>
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
         protected virtual byte[] SerializePacket(Packet packet)
         {
             int currentEncryptionState = (int)EncryptionState;
@@ -1255,6 +1336,11 @@ namespace SocketNetworking.Client
             return fullBytes;
         }
 
+        /// <summary>
+        /// Called when deserializing the packet, preforms all functions needed to get the proper packet object and queue it for processing.
+        /// </summary>
+        /// <param name="fullPacket"></param>
+        /// <param name="endpoint"></param>
         protected virtual void Deserialize(byte[] fullPacket, IPEndPoint endpoint)
         {
             PacketHeader header = Packet.ReadPacketHeader(fullPacket);
@@ -1314,6 +1400,9 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Method handling all <see cref="NetworkTransport"/> reading IO.
+        /// </summary>
         protected virtual void PacketReaderThreadMethod()
         {
             Log.GlobalInfo($"Client thread started, ID {ClientID}");

@@ -393,7 +393,7 @@ namespace SocketNetworking.Server
         /// <param name="packet">
         /// The <see cref="Packet"/> to send.
         /// </param>
-        static void SendToReady(Packet packet)
+        public static void SendToReady(Packet packet)
         {
             if (!Active)
             {
@@ -415,7 +415,7 @@ namespace SocketNetworking.Server
         /// <param name="target">
         /// The <see cref="INetworkObject"/> which is the target.
         /// </param>
-        static void SendToReady(Packet packet, INetworkObject target)
+        public static void SendToReady(Packet packet, INetworkObject target)
         {
             if (!Active)
             {
@@ -443,6 +443,11 @@ namespace SocketNetworking.Server
             {
                 client.NetworkInvoke(obj, methodName, args);
             }
+        }
+
+        public void NetworkSpawn(INetworkSpawnable spawnable)
+        {
+
         }
     }
 

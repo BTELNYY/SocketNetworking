@@ -8,12 +8,12 @@ using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Attributes;
 
-namespace SocketNetworking.PacketSystem
+namespace SocketNetworking.Shared
 {
     /// <summary>
     /// All NetworkObjects should implement this interface. Note that Client/Server authority isn't handled, all packets are sent to this object regardless of source.
     /// </summary>
-    public interface INetworkObject
+    public interface INetworkObject : INetworkSpawnable
     {
         /// <summary>
         /// The <see cref="NetworkClient.ClientID"/> of the current owner.

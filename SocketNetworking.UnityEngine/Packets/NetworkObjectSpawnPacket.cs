@@ -1,6 +1,7 @@
 ﻿using SocketNetworking.Attributes;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

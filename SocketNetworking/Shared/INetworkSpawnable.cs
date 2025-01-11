@@ -1,0 +1,33 @@
+﻿using SocketNetworking.Client;
+using SocketNetworking.PacketSystem.Packets;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SocketNetworking.Shared
+{
+    public interface INetworkSpawnable
+    {
+        /// <summary>
+        /// Called on the server when a <see cref="NetworkClient"/> spawns the object on the local machine.
+        /// </summary>
+        /// <param name="spawner"></param>
+        void OnNetworkSpawned(NetworkClient spawner);
+
+        /// <summary>
+        /// Called on the client when the object has finished being spawned and the spawn response has been sent to the server.
+        /// </summary>
+        void OnLocalSpawned(ObjectSpawnPacket packet);
+
+        /// <summary>
+        /// Determines if the object can be spawned.
+        /// </summary>
+        bool Spawnable { get; }
+
+        void RecieveExtraData(byte[] extraData);
+
+        byte[] SendExtraData();
+    }
+}
