@@ -12,6 +12,7 @@ using SocketNetworking.Shared;
 using System.Reflection;
 using SocketNetworking.PacketSystem;
 using System.Threading;
+using System.IO.Ports;
 
 namespace SocketNetworking.Server
 {
@@ -63,6 +64,12 @@ namespace SocketNetworking.Server
                     continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();
+                if (Clients.Count >= MaximumClients)
+                {
+                    //Do not accept.
+                    socket.Close();
+                    continue;
+                }
                 TcpTransport tcpTransport = new TcpTransport();
                 tcpTransport.Client = socket;
                 socket.NoDelay = true;

@@ -688,6 +688,33 @@ namespace SocketNetworking.Client
             }
         }
 
+        void StartClient()
+        {
+            if (CurrnetClientLocation == ClientLocation.Remote)
+            {
+                Log.GlobalError("Can't start client on remote, started by constructor.");
+                return;
+            }
+            if (ClientStarted)
+            {
+                Log.GlobalError("Can't start client, already started.");
+                return;
+            }
+            Log.GlobalInfo("Starting client!");
+            _packetReaderThread?.Abort();
+            _packetReaderThread = new Thread(PacketReaderThreadMethod);
+            _packetSenderThread?.Abort();
+            _packetSenderThread = new Thread(PacketSenderThreadMethod);
+            _clientActive = true;
+            _shuttingDown = false;
+            _packetReaderThread.Start();
+            _packetSenderThread.Start();
+            _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
+            _toSendPackets = new ConcurrentQueue<Packet>();
+            ClientConnected?.Invoke();
+            Clients.Add(this);
+        }
+
         #endregion
 
         #region Packet Sending
@@ -846,34 +873,6 @@ namespace SocketNetworking.Client
 
         #endregion
 
-        void StartClient()
-        {
-            if(CurrnetClientLocation == ClientLocation.Remote)
-            {
-                Log.GlobalError("Can't start client on remote, started by constructor.");
-                return;
-            }
-            if (ClientStarted)
-            {
-                Log.GlobalError("Can't start client, already started.");
-                return;
-            }
-            Log.GlobalInfo("Starting client!");
-            _packetReaderThread?.Abort();
-            _packetReaderThread = new Thread(PacketReaderThreadMethod);
-            _packetSenderThread?.Abort();
-            _packetSenderThread = new Thread(PacketSenderThreadMethod);
-            _clientActive = true;
-            _shuttingDown = false;
-            _packetReaderThread.Start();
-            _packetSenderThread.Start();
-            _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
-            _toSendPackets = new ConcurrentQueue<Packet>();
-            ClientConnected?.Invoke();
-            Clients.Add(this);
-        }
-
-
         #region Sending/Recieving
 
         #region Sending
@@ -1008,23 +1007,28 @@ namespace SocketNetworking.Client
             return fullBytes;
         }
 
+        void PacketSenderThreadMethod()
+        {
+            while (true)
+            {
+                RawWriter();
+            }
+        }
+
+        protected virtual void RawWriter()
+        {
+            if (_manualPacketSend)
+            {
+                return;
+            }
+            SendNextPacketInternal();
+        }
+
         #endregion
 
         #region Recieving
 
         protected ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
-
-        void PacketSenderThreadMethod()
-        {
-            while (true)
-            {
-                if (_manualPacketSend)
-                {
-                    continue;
-                }
-                SendNextPacketInternal();
-            }
-        }
 
         /// <summary>
         /// Method handling all <see cref="NetworkTransport"/> reading IO.
@@ -1034,114 +1038,125 @@ namespace SocketNetworking.Client
             Log.GlobalInfo($"Client thread started, ID {ClientID}");
             //int waitingSize = 0;
             //byte[] prevPacketFragment = { };
-            byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
-            Transport.BufferSize = Packet.MaxPacketSize;
-            int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined.
             while (true)
             {
-            Packet: // this is for breaking a nested loop further down. thanks C#
                 if (_shuttingDown)
                 {
                     Log.GlobalInfo("Shutting down loop");
                     break;
                 }
-                if (!IsTransportConnected)
-                {
-                    Log.GlobalDebug("Disconnected!");
-                    StopClient();
-                    return;
-                }
-                /*if(TcpClient.ReceiveBufferSize == 0)
-                {
-                    continue;
-                }*/
-                /*if (!NetworkStream.DataAvailable)
-                {
-                    //Log.Debug("Nothing to read on stream");
-                    continue;
-                }*/
-                //Log.Debug(TcpClient.ReceiveBufferSize.ToString());
-                if (fillSize < sizeof(int))
-                {
-                    // we dont have enough data to read the length data
-                    //Log.Debug($"Trying to read bytes to get length (we need at least 4 we have {fillSize})!");
-                    int count = 0;
-                    try
-                    {
-                        int tempFillSize = fillSize;
-                        //(byte[], Exception) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
-                        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(0, buffer.Length - fillSize);
-                        count = transportRead.Item1.Length;
-                        buffer = Transport.Buffer;
-                        //count = NetworkStream.Read(tempBuffer, 0, buffer.Length - fillSize);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.GlobalError(ex.ToString());
-                        continue;
-                    }
-                    fillSize += count;
-                    //Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
-                    continue;
-                }
-                int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
-                bodySize = IPAddress.NetworkToHostOrder(bodySize);
-                if (bodySize == 0)
-                {
-                    Log.GlobalWarning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
-                    fillSize = 0;
-                    continue;
-                }
-                fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
-                // read the rest of the whole packet
-                if (bodySize > Packet.MaxPacketSize || bodySize < 0)
-                {
-                    CurrentConnectionState = ConnectionState.Disconnected;
-                    string s = string.Empty;
-                    for (int i = 0; i < buffer.Length; i++)
-                    {
-                        s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
-                    }
-                    Log.GlobalError("Body Size is corrupted! Raw: " + s);
-                }
-                while (fillSize < bodySize)
-                {
-                    //Log.Debug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
-                    if (fillSize == buffer.Length)
-                    {
-                        // The buffer is too full, and we are fucked (oh shit)
-                        Log.GlobalError("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
-                        Disconnect("Illegal Packet Size");
-                        break;
-                    }
-                    int count;
-                    try
-                    {
-                        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
-                        count = transportRead.Item1.Length;
-                        buffer = Transport.Buffer;
-                        //count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.GlobalError(ex.ToString());
-                        goto Packet;
-                    }
-                    fillSize += count;
-                }
-                // we now know we have enough bytes to read at least one whole packet;
-                byte[] fullPacket = ShiftOut(ref buffer, bodySize + sizeof(int));
-                if ((fillSize -= bodySize) < 0)
-                {
-                    fillSize = 0;
-                }
-                //fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
-                //Log.Debug($"Read full packet with size: {fullPacket.Length}");
-
-                Deserialize(fullPacket, Transport.Peer);
+                RawReader();
             }
             Log.GlobalInfo("Shutting down client, Closing socket.");
             Transport.Close();
+        }
+
+        /// <summary>
+        /// Method which reads actual data and proccesses it from the Network I/O, this is a blocking, single read method, it will not attempt to keep reading if there is not data on the <see cref="Transport"/>.
+        /// </summary>
+        protected virtual void RawReader()
+        {
+            if(!Transport.DataAvailable)
+            {
+                return;
+            }
+            byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
+            Transport.BufferSize = Packet.MaxPacketSize;
+            int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined.
+            // this is for breaking a nested loop further down. thanks C#
+            if (!IsTransportConnected)
+            {
+                Log.GlobalDebug("Disconnected!");
+                StopClient();
+                return;
+            }
+            /*if(TcpClient.ReceiveBufferSize == 0)
+            {
+                continue;
+            }*/
+            /*if (!NetworkStream.DataAvailable)
+            {
+                //Log.Debug("Nothing to read on stream");
+                continue;
+            }*/
+            //Log.Debug(TcpClient.ReceiveBufferSize.ToString());
+            if (fillSize < sizeof(int))
+            {
+                // we dont have enough data to read the length data
+                //Log.Debug($"Trying to read bytes to get length (we need at least 4 we have {fillSize})!");
+                int count = 0;
+                try
+                {
+                    int tempFillSize = fillSize;
+                    //(byte[], Exception) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
+                    (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(0, buffer.Length - fillSize);
+                    count = transportRead.Item1.Length;
+                    buffer = Transport.Buffer;
+                    //count = NetworkStream.Read(tempBuffer, 0, buffer.Length - fillSize);
+                }
+                catch (Exception ex)
+                {
+                    Log.GlobalError(ex.ToString());
+                    return;
+                }
+                fillSize += count;
+                //Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
+                return;
+            }
+            int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
+            bodySize = IPAddress.NetworkToHostOrder(bodySize);
+            if (bodySize == 0)
+            {
+                Log.GlobalWarning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
+                fillSize = 0;
+                return;
+            }
+            fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
+                                     // read the rest of the whole packet
+            if (bodySize > Packet.MaxPacketSize || bodySize < 0)
+            {
+                CurrentConnectionState = ConnectionState.Disconnected;
+                string s = string.Empty;
+                for (int i = 0; i < buffer.Length; i++)
+                {
+                    s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
+                }
+                Log.GlobalError("Body Size is corrupted! Raw: " + s);
+            }
+            while (fillSize < bodySize)
+            {
+                //Log.Debug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
+                if (fillSize == buffer.Length)
+                {
+                    // The buffer is too full, and we are fucked (oh shit)
+                    Log.GlobalError("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
+                    Disconnect("Illegal Packet Size");
+                    break;
+                }
+                int count;
+                try
+                {
+                    (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
+                    count = transportRead.Item1.Length;
+                    buffer = Transport.Buffer;
+                    //count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
+                }
+                catch (Exception ex)
+                {
+                    Log.GlobalError(ex.ToString());
+                    return;
+                }
+                fillSize += count;
+            }
+            // we now know we have enough bytes to read at least one whole packet;
+            byte[] fullPacket = ShiftOut(ref buffer, bodySize + sizeof(int));
+            if ((fillSize -= bodySize) < 0)
+            {
+                fillSize = 0;
+            }
+            //fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
+            //Log.Debug($"Read full packet with size: {fullPacket.Length}");
+            Deserialize(fullPacket, Transport.Peer);
         }
 
         /// <summary>
@@ -1528,6 +1543,22 @@ namespace SocketNetworking.Client
 
         #endregion
 
+        /// <summary>
+        /// Reads the next packet and handles it. (Non-blocking)
+        /// </summary>
+        internal void ReadNext()
+        {
+            RawReader();
+        }
+
+        /// <summary>
+        /// Writes the next packet. (Blocking)
+        /// </summary>
+        internal void WriteNext()
+        {
+            RawWriter();
+        }
+
         #endregion
 
         protected void HandlePacket(PacketHeader header, byte[] fullPacket)
@@ -1557,7 +1588,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected struct ReadPacketInfo
+        public struct ReadPacketInfo
         {
             public PacketHeader Header;
             public byte[] Data;

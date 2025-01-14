@@ -11,6 +11,8 @@ using SocketNetworking.Misc;
 using SocketNetworking.Transports;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using System.Collections.Concurrent;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace SocketNetworking.Server
 {
@@ -173,6 +175,24 @@ namespace SocketNetworking.Server
         public static bool DefaultReady = true;
 
         /// <summary>
+        /// How many threads should the server spawn to handle clients? (Formula is, <see cref="MaximumClients"/> divided by <see cref="DefaultThreads"/> to see your Client to Thread ratio)
+        /// </summary>
+        public static int DefaultThreads = 4;
+
+        /// <summary>
+        /// Amount of concurrent connections total, anyone else will be ignored.
+        /// </summary>
+        public static int MaximumClients = 100;
+
+        public static int ClientsPerThread
+        {
+            get
+            {
+                return MaximumClients / DefaultThreads;
+            }
+        }
+
+        /// <summary>
         /// What type should network clients be created in? Note that the type must inherit from <see cref="NetworkClient"/>. This type should not have any class constructors.
         /// </summary>
         public static Type ClientType = typeof(NetworkClient);
@@ -183,8 +203,6 @@ namespace SocketNetworking.Server
         public static bool AllowClientSelfReady = true;
 
         public static Thread ServerThread;
-
-        public static Thread ServerUdpThread;
 
         private static NetworkServer _serverInstance;
 
@@ -208,6 +226,7 @@ namespace SocketNetworking.Server
 
         private static readonly Dictionary<int, NetworkClient> _clients = new Dictionary<int, NetworkClient>();
 
+        private static RoundRobin<ClientHandler> handlers = new RoundRobin<ClientHandler>();
 
         public void StartServer()
         {
@@ -218,23 +237,34 @@ namespace SocketNetworking.Server
             }
             _serverState = ServerState.Started;
             NetworkServer server = GetServer();
-            if (!server.ValidateClient())
+            if (!server.Validate())
             {
                 return;
             }
             _serverInstance = server;
+            handlers.Capacity = DefaultThreads;
+            for(int i = 0; i < DefaultThreads; i++)
+            {
+                handlers.Add(new ClientHandler());
+            }
             ServerThread = new Thread(server.ServerStartThread);
             ServerThread.Start();
             ServerStarted?.Invoke();
             _serverState = ServerState.NotReady;
         }
 
-        protected virtual bool ValidateClient()
+        
+
+        protected virtual bool Validate()
         {
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
             {
                 Log.GlobalError("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
                 return false;
+            }
+            if(MaximumClients % DefaultThreads != 0)
+            {
+                Log.GlobalWarning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
             }
             return true;
         }
@@ -256,6 +286,8 @@ namespace SocketNetworking.Server
             {
                 NetworkClient cursedClient = (NetworkClient)Convert.ChangeType(client, ClientType);
                 _clients.Add(clientId, cursedClient);
+                ClientHandler handler = handlers.Next();
+                handler.AddClient(cursedClient);
                 Log.GlobalDebug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
             }
         }
@@ -448,6 +480,80 @@ namespace SocketNetworking.Server
         public void NetworkSpawn(INetworkSpawnable spawnable)
         {
 
+        }
+    }
+
+
+    public class ClientHandler
+    {
+        public Thread Thread { get; }
+
+        /// <summary>
+        /// Not thread safe.
+        /// </summary>
+        public HashSet<NetworkClient> Clients { get; }
+
+        public ClientHandler(IEnumerable<NetworkClient> clients)
+        {
+            Thread = new Thread(Run);
+            Clients = new HashSet<NetworkClient>(clients);
+        }
+
+        public int CurrentClientCount
+        {
+            get
+            {
+                return Clients.Count;
+            }
+        }
+
+        public void AddClient(NetworkClient client)
+        {
+            lock(_lock)
+            {
+                Clients.Add(client);
+            }
+        }
+
+        public void RemoveClient(NetworkClient client)
+        {
+            lock(_lock)
+            {
+                Clients.Remove(client);
+            }
+        }
+
+        public ClientHandler() : this(new List<NetworkClient>()) { }
+
+        bool die = false;
+
+        public void Start()
+        {
+            Thread.Start();
+        }
+
+        public void Stop()
+        {
+            die = true;
+            Thread.Abort();
+        }
+
+        object _lock = new object();
+
+        void Run()
+        {
+            while(true)
+            {
+                if (die) return;
+                lock (_lock)
+                {
+                    foreach (NetworkClient client in Clients)
+                    {
+                        client.ReadNext();
+                        client.WriteNext();
+                    }
+                }
+            }
         }
     }
 

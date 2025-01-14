@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace SocketNetworking.Server
 {
@@ -45,6 +46,10 @@ namespace SocketNetworking.Server
                     break;
                 }
                 if (!ShouldAcceptConnections)
+                {
+                    continue;
+                }
+                if(Clients.Count >= MaximumClients)
                 {
                     continue;
                 }

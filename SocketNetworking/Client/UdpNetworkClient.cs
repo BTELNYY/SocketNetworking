@@ -84,26 +84,19 @@ namespace SocketNetworking.Client
             Send(packet, peer);
         }
 
-        protected override void PacketReaderThreadMethod()
+        protected override void RawReader()
         {
-            while (true)
+            if (!IsTransportConnected)
             {
-                if (_shuttingDown)
-                {   
-                    break;
-                }
-                if (!IsTransportConnected)
-                {
-                    StopClient();
-                    return;
-                }
-                if(!UdpTransport.DataAvailable)
-                {
-                    continue;
-                }
-                (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
-                Deserialize(packet.Item1, packet.Item3);
+                StopClient();
+                return;
             }
+            if (!UdpTransport.DataAvailable)
+            {
+                return;
+            }
+            (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
+            Deserialize(packet.Item1, packet.Item3);
         }
     }
 }
