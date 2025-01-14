@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,6 +20,10 @@ namespace SocketNetworking.Transports
 
         public byte[] Buffer { get; private set; } = new byte[] { };
 
+        public abstract bool DataAvailable { get; }
+
+        public abstract int DataAmountAvailable { get; }
+
         public void FlushBuffer()
         {
             Buffer = new byte[BufferSize];
@@ -30,6 +35,7 @@ namespace SocketNetworking.Transports
 
         public abstract IPAddress PeerAddress { get; }
 
+        public abstract Socket Socket { get; }
 
         public abstract int PeerPort { get; }
 

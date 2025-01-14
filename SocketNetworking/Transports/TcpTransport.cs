@@ -31,6 +31,18 @@ namespace SocketNetworking.Transports
 
         public TcpClient Client { get; set; } = new TcpClient();
 
+        public override Socket Socket => Client.Client;
+
+        public override bool DataAvailable
+        {
+            get
+            {
+                return Client.Available > 0;
+            }
+        }
+
+        public override int DataAmountAvailable => Client.Available;
+
         public override Exception Connect(string hostname, int port)
         {
             if(Client == null)

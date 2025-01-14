@@ -87,6 +87,36 @@ namespace SocketNetworking.Transports
 
         ConcurrentQueue<byte[]> _receivedBytes = new ConcurrentQueue<byte[]>();
 
+        public override bool DataAvailable
+        {
+            get
+            {
+                if(IsServerMode)
+                {
+                    return _receivedBytes.Count > 0;
+                }
+                else
+                {
+                    return Client.Available > 0;
+                }
+            }
+        }
+
+        public override int DataAmountAvailable
+        {
+            get
+            {
+                if(IsServerMode)
+                {
+                    return _receivedBytes.ElementAt(0).Length;
+                }
+                else
+                {
+                    return Client.Available;
+                }
+            }
+        }
+
         public IPEndPoint BroadcastEndpoint
         {
             get
@@ -106,6 +136,8 @@ namespace SocketNetworking.Transports
                 Client.EnableBroadcast = value;
             }
         }
+
+        public override Socket Socket => Client.Client;
 
         public UdpClient Client { get; set; } = new UdpClient();
 

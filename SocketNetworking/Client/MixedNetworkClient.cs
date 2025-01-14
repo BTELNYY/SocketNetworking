@@ -142,6 +142,10 @@ namespace SocketNetworking.Client
                 {
                     continue;
                 }
+                if(!UdpTransport.DataAvailable)
+                {
+                    continue;
+                }
                 (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
                 if(packet.Item2 != null)
                 { 

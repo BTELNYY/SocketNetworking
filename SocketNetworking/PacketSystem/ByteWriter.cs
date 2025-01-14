@@ -40,6 +40,11 @@ namespace SocketNetworking.PacketSystem
 
         public ByteWriter() { }
 
+        public ByteWriter(byte[] existingData)
+        {
+            _workingSetData = existingData;
+        }
+
         ~ByteWriter()
         {
             _workingSetData = null;

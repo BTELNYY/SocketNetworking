@@ -97,6 +97,10 @@ namespace SocketNetworking.Client
                     StopClient();
                     return;
                 }
+                if(!UdpTransport.DataAvailable)
+                {
+                    continue;
+                }
                 (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
                 Deserialize(packet.Item1, packet.Item3);
             }

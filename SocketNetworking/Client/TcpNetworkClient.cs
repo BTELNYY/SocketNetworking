@@ -82,6 +82,10 @@ namespace SocketNetworking.Client
                     StopClient();
                     return;
                 }
+                if(!Transport.DataAvailable)
+                {
+                    continue;
+                }
                 /*if(TcpClient.ReceiveBufferSize == 0)
                 {
                     continue;

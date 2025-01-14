@@ -145,6 +145,8 @@ namespace SocketNetworking.Client
 
         #endregion
 
+        #region Properties
+
         /// <summary>
         /// Only has instances on the local client. Use <see cref="NetworkServer.ConnectedClients"/> for server side clients.
         /// </summary>
@@ -385,58 +387,6 @@ namespace SocketNetworking.Client
             }
         }
 
-        /// <summary>
-        /// Requests encryption from the remote server.
-        /// </summary>
-        /// <returns>
-        /// <see langword="false"/> if the remote server has its encryption state as <see cref="ServerEncryptionMode.Disabled"/>, true otherwise.
-        /// </returns>
-        public bool ClientRequestEncryption()
-        {
-            return NetworkInvoke<bool>(nameof(ServerGetEncryptionRequest), new object[] { });
-        }
-
-        [NetworkInvocable(NetworkDirection.Client)]
-        private bool ServerGetEncryptionRequest()
-        {
-            if(NetworkServer.EncryptionMode == ServerEncryptionMode.Disabled)
-            {
-                return false;
-            }
-            if(NetworkServer.EncryptionMode == ServerEncryptionMode.Required)
-            {
-                return true;
-            }
-            ServerBeginEncryption();
-            return true;
-        }
-
-        /// <summary>
-        /// Forces the server to begin encryption with the local client. If the client fails to handshake in time, they will be disconnected. Calling this method on the local client or with encryption active does nothing.
-        /// </summary>
-        public void ServerBeginEncryption()
-        {
-            if(CurrnetClientLocation != ClientLocation.Remote || EncryptionState > EncryptionState.Disabled)
-            {
-                return;
-            }
-            EncryptionPacket packet = new EncryptionPacket();
-            packet.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
-            packet.PublicKey = EncryptionManager.MyPublicKey;
-            _encryptionState = EncryptionState.Handshake;
-            Send(packet);
-            CallbackTimer<NetworkClient> timer = new CallbackTimer<NetworkClient>((x) => 
-            {
-                int encryptionState = (int)x.EncryptionState;
-                if(encryptionState < 2)
-                {
-                    x.Disconnect("Failed Encryption Handshake.");
-                }
-            }, this, 10f);
-            timer.Start();
-        }
-
-
         private bool _clientActive = false;
 
         private string _clientPassword = "DefaultPassword";
@@ -509,6 +459,84 @@ namespace SocketNetworking.Client
         protected bool _shuttingDown = false;
 
         /// <summary>
+        /// Returns the amount of <see cref="Packet"/>s left to read, this is always zero if <see cref="NetworkClient.ManualPacketHandle"/> is false
+        /// </summary>
+        public int PacketsLeftToRead
+        {
+            get
+            {
+                return _toReadPackets.Count;
+            }
+        }
+
+        /// <summary>
+        /// Returns the amount of Packets left to send.
+        /// </summary>
+        public int PacketsLeftToSend
+        {
+            get
+            {
+                return _toSendPackets.Count;
+            }
+        }
+
+        #endregion
+
+
+        /// <summary>
+        /// Requests encryption from the remote server.
+        /// </summary>
+        /// <returns>
+        /// <see langword="false"/> if the remote server has its encryption state as <see cref="ServerEncryptionMode.Disabled"/>, true otherwise.
+        /// </returns>
+        public bool ClientRequestEncryption()
+        {
+            return NetworkInvoke<bool>(nameof(ServerGetEncryptionRequest), new object[] { });
+        }
+
+        [NetworkInvocable(NetworkDirection.Client)]
+        private bool ServerGetEncryptionRequest()
+        {
+            if (NetworkServer.EncryptionMode == ServerEncryptionMode.Disabled)
+            {
+                return false;
+            }
+            if (NetworkServer.EncryptionMode == ServerEncryptionMode.Required)
+            {
+                return true;
+            }
+            ServerBeginEncryption();
+            return true;
+        }
+
+        /// <summary>
+        /// Forces the server to begin encryption with the local client. If the client fails to handshake in time, they will be disconnected. Calling this method on the local client or with encryption active does nothing.
+        /// </summary>
+        public void ServerBeginEncryption()
+        {
+            if (CurrnetClientLocation != ClientLocation.Remote || EncryptionState > EncryptionState.Disabled)
+            {
+                return;
+            }
+            EncryptionPacket packet = new EncryptionPacket();
+            packet.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
+            packet.PublicKey = EncryptionManager.MyPublicKey;
+            _encryptionState = EncryptionState.Handshake;
+            Send(packet);
+            CallbackTimer<NetworkClient> timer = new CallbackTimer<NetworkClient>((x) =>
+            {
+                int encryptionState = (int)x.EncryptionState;
+                if (encryptionState < 2)
+                {
+                    x.Disconnect("Failed Encryption Handshake.");
+                }
+            }, this, 10f);
+            timer.Start();
+        }
+
+        #region Init
+
+        /// <summary>
         /// Used when initializing a <see cref="NetworkClient"/> object on the server. Do not call this on the local client.
         /// </summary>
         /// <param name="clientId">
@@ -544,6 +572,9 @@ namespace SocketNetworking.Client
             ClientConnected += OnLocalClientConnected;
         }
 
+        #endregion
+
+        #region Connection Management
 
         /// <summary>
         /// Attempts to connect an IP and port. Note that if this operation fails, nothing is started, meaning you can call this method again without extra cleanup. Calling this method however, instantly drops the current socket. Do NOT call this if your client is already connected. Can only be run on the Local client.
@@ -591,6 +622,75 @@ namespace SocketNetworking.Client
             StartClient();
             return true;
         }
+
+        /// <summary>
+        /// Send a disconnect message to the other party and kill local client
+        /// </summary>
+        /// <param name="message">
+        /// A <see cref="string"/> which to send as a message to the other party.
+        /// </param>
+        public virtual void Disconnect(string message)
+        {
+            if (!IsConnected || !IsTransportConnected)
+            {
+                return;
+            }
+            ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
+            {
+                State = ConnectionState.Disconnected,
+                Reason = message
+            };
+            SendImmediate(connectionUpdatePacket);
+            _connectionState = ConnectionState.Disconnected;
+            NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
+            ConnectionError?.Invoke(errorData);
+            ClientDisconnected?.Invoke();
+            if (CurrnetClientLocation == ClientLocation.Remote)
+            {
+                Log.GlobalInfo($"Disconnecting Client {ClientID} for " + message);
+                StopClient();
+            }
+            if (CurrnetClientLocation == ClientLocation.Local)
+            {
+                Log.GlobalInfo("Disconnecting from server. Reason: " + message);
+                StopClient();
+            }
+        }
+
+        /// <summary>
+        /// Disconnects the connection with the reason "Disconnected"
+        /// </summary>
+        public void Disconnect()
+        {
+            Disconnect("Disconnected");
+        }
+
+        /// <summary>
+        /// Stops the client, removing the Thread and closing the socket
+        /// </summary>
+        public virtual void StopClient()
+        {
+            NetworkManager.SendDisconnectedPulse(this);
+            if (CurrnetClientLocation == ClientLocation.Remote)
+            {
+                NetworkServer.RemoveClient(ClientID);
+            }
+            _connectionState = ConnectionState.Disconnected;
+            Transport?.Close();
+            _shuttingDown = true;
+            _packetReaderThread?.Abort();
+            _packetSenderThread?.Abort();
+            _packetReaderThread = null;
+            _packetSenderThread = null;
+            if (Clients.Contains(this))
+            {
+                Clients.Remove(this);
+            }
+        }
+
+        #endregion
+
+        #region Packet Sending
 
         /// <summary>
         /// Sends the next <see cref="Packet"/> from the send queue. If <see cref="ManualPacketSend"/> is false, this method does nothing.
@@ -669,70 +769,9 @@ namespace SocketNetworking.Client
             Send(packet);
         }
 
-        /// <summary>
-        /// Send a disconnect message to the other party and kill local client
-        /// </summary>
-        /// <param name="message">
-        /// A <see cref="string"/> which to send as a message to the other party.
-        /// </param>
-        public virtual void Disconnect(string message)
-        {
-            if (!IsConnected || !IsTransportConnected)
-            {
-                return;
-            }
-            ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
-            {
-                State = ConnectionState.Disconnected,
-                Reason = message
-            };
-            SendImmediate(connectionUpdatePacket);
-            _connectionState = ConnectionState.Disconnected;
-            NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
-            ConnectionError?.Invoke(errorData);
-            ClientDisconnected?.Invoke();
-            if (CurrnetClientLocation == ClientLocation.Remote)
-            {
-                Log.GlobalInfo($"Disconnecting Client {ClientID} for " + message);
-                StopClient();
-            }
-            if (CurrnetClientLocation == ClientLocation.Local)
-            {
-                Log.GlobalInfo("Disconnecting from server. Reason: " + message);
-                StopClient();
-            }
-        }
+        #endregion
 
-        /// <summary>
-        /// Disconnects the connection with the reason "Disconnected"
-        /// </summary>
-        public void Disconnect()
-        {
-            Disconnect("Disconnected");
-        }
-
-        /// <summary>
-        /// Stops the client, removing the Thread and closing the socket
-        /// </summary>
-        public virtual void StopClient()
-        {
-            NetworkManager.SendDisconnectedPulse(this);
-            if (CurrnetClientLocation == ClientLocation.Remote)
-            {
-                NetworkServer.RemoveClient(ClientID);
-            }
-            _connectionState = ConnectionState.Disconnected;
-            Transport?.Close();
-            _shuttingDown = true;
-            _packetReaderThread?.Abort();
-            _packetSenderThread?.Abort();
-            _packetReaderThread = null;
-            _packetSenderThread = null;
-            if (Clients.Contains(this))
-            {
-                Clients.Remove(this);
-            }
-        }
+        #region Network Invoke
 
         /// <summary>
         /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value.
@@ -760,44 +799,6 @@ namespace SocketNetworking.Client
         }
 
         /// <summary>
-        /// Returns the amount of <see cref="Packet"/>s left to read, this is always zero if <see cref="NetworkClient.ManualPacketHandle"/> is false
-        /// </summary>
-        public int PacketsLeftToRead
-        {
-            get
-            {
-                return _toReadPackets.Count;
-            }
-        }
-
-        /// <summary>
-        /// Returns the amount of Packets left to send.
-        /// </summary>
-        public int PacketsLeftToSend
-        {
-            get
-            {
-                return _toSendPackets.Count;
-            }
-        }
-
-        /// <summary>
-        /// Handles the next <see cref="Packet"/> from the read queue. This method does nothing if <see cref="ManualPacketHandle"/> is false
-        /// </summary>
-        public void HandleNextPacket()
-        {
-            if (!ManualPacketHandle)
-            {
-                return;
-            }
-            if (_toReadPackets.TryDequeue(out ReadPacketInfo result))
-            {
-                HandlePacket(result.Header, result.Data);
-            }
-        }
-
-
-        /// <summary>
         /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value. This will try to find the method on the current <see cref="NetworkClient"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -820,6 +821,9 @@ namespace SocketNetworking.Client
             NetworkManager.NetworkInvoke(this, this, methodName, args);
         }
 
+        #endregion
+
+        #region Internal Events
 
         void OnLocalClientConnected()
         {
@@ -839,6 +843,8 @@ namespace SocketNetworking.Client
             }
             CurrentConnectionState = ConnectionState.Handshake;
         }
+
+        #endregion
 
         void StartClient()
         {
@@ -868,347 +874,13 @@ namespace SocketNetworking.Client
         }
 
 
-        protected static byte[] ShiftOut(ref byte[] input, int count)
-        {
-            byte[] output = new byte[count];
-            // copy the first N elements to output
-            Buffer.BlockCopy(input, 0, output, 0, count);
-            // copy the back of the array forward (removing the elements we copied to output)
-            // ie with count 2: [1, 2, 3, 4] -> [3, 4, 3, 4]
-            // we dont update the end of the array to fill with zeros, because we dont need to (we just call it undefined behavior)
-            Buffer.BlockCopy(input, count, input, 0, count);
-            return output;
-        }
+        #region Sending/Recieving
 
-        /// <summary>
-        /// Only called on the server.
-        /// </summary>
-        protected virtual void HandleRemoteClient(PacketHeader header, byte[] data)
-        {
-            switch (header.Type)
-            {
-                case PacketType.CustomPacket:
-                    NetworkManager.TriggerPacketListeners(header, data, this);
-                    break;
-                case PacketType.ConnectionStateUpdate:
-                    ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
-                    connectionUpdatePacket.Deserialize(data);
-                    if (connectionUpdatePacket.State == ConnectionState.Disconnected)
-                    {
-                        //ruh roh
-                        NetworkErrorData errorData = new NetworkErrorData("Disconnected by local client. Reason: " + connectionUpdatePacket.Reason, false);
-                        ConnectionError?.Invoke(errorData);
-                        Log.GlobalError($"Disconnecting {ClientID} for " + connectionUpdatePacket.Reason);
-                        StopClient();
-                    }
-                    if (connectionUpdatePacket.State == ConnectionState.Handshake)
-                    {
-                        _connectionState = ConnectionState.Handshake;
-                    }
-                    if (connectionUpdatePacket.State == ConnectionState.Connected)
-                    {
-                        _connectionState = ConnectionState.Connected;
-                        NetworkManager.SendConnectedPulse(this);
-                    }
-                    ClientConnectionStateChanged?.Invoke(this);
-                    ConnectionStateUpdated?.Invoke(_connectionState);
-                    break;
-                case PacketType.ReadyStateUpdate:
-                    ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
-                    readyStateUpdatePacket.Deserialize(data);
-                    if (NetworkServer.AllowClientSelfReady)
-                    {
-                        Ready = readyStateUpdatePacket.Ready;
-                    }
-                    break;
-                case PacketType.ClientData:
-                    ClientDataPacket clientDataPacket = new ClientDataPacket();
-                    clientDataPacket.Deserialize(data);
-                    if(clientDataPacket.Configuration.Protocol != NetworkServer.ServerConfiguration.Protocol)
-                    {
-                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Protocol} Got: {clientDataPacket.Configuration.Protocol}");
-                        break;
-                    }
-                    if(clientDataPacket.Configuration.Version != NetworkServer.ServerConfiguration.Version)
-                    {
-                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
-                        break;
-                    }
-                    if((clientDataPacket.PasswordHash != NetworkServer.ServerPassword.GetStringHash()) && NetworkServer.UseServerPassword)
-                    {
-                        Disconnect("Incorrect Server Password");
-                        break;
-                    }
-                    ServerDataPacket serverDataPacket = new ServerDataPacket
-                    {
-                        YourClientID = _clientId,
-                        Configuration = NetworkServer.ServerConfiguration,
-                        CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized
-                    };
-                    Send(serverDataPacket);
-                    CurrentConnectionState = ConnectionState.Connected;
-                    if(NetworkServer.EncryptionMode == ServerEncryptionMode.Required)
-                    {
-                        ServerBeginEncryption();
-                    }
-                    if (NetworkServer.DefaultReady)
-                    {
-                        Ready = true;
-                    }
-                    break;
-                case PacketType.NetworkInvocation:
-                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
-                    networkInvocationPacket.Deserialize(data);
-                    Log.GlobalDebug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
-                    try
-                    {
-                        NetworkManager.NetworkInvoke(networkInvocationPacket, this);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.GlobalWarning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
-                        NetworkInvocationResultPacket errorPacket = new NetworkInvocationResultPacket();
-                        errorPacket.Success = false;
-                        errorPacket.ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message;
-                        errorPacket.Result = SerializedData.NullData;
-                        errorPacket.CallbackID = networkInvocationPacket.CallbackID;
-                        errorPacket.IgnoreResult = false;
-                        Send(errorPacket);
-                    }
-                    break;
-                case PacketType.NetworkInvocationResult:
-                    NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
-                    networkInvocationResultPacket.Deserialize(data);
-                    Log.GlobalDebug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
-                    NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
-                    break;
-                case PacketType.EncryptionPacket:
-                    EncryptionPacket encryptionPacket = new EncryptionPacket();
-                    encryptionPacket.Deserialize(data);
-                    Log.GlobalInfo($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
-                    switch (encryptionPacket.EncryptionFunction)
-                    {
-                        case EncryptionFunction.None:
-                            break;
-                        case EncryptionFunction.AsymmetricalKeySend:
-                            EncryptionManager.OthersPublicKey = encryptionPacket.PublicKey;
-                            EncryptionPacket gotYourPublicKey = new EncryptionPacket();
-                            gotYourPublicKey.EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve;
-                            Send(gotYourPublicKey);
-                            EncryptionState = EncryptionState.AsymmetricalReady;
-                            Log.GlobalInfo($"Got Asymmetrical Encryption Key, ID: {ClientID}");
-                            EncryptionPacket sendSymKey = new EncryptionPacket();
-                            sendSymKey.EncryptionFunction = EncryptionFunction.SymmetricalKeySend;
-                            sendSymKey.SymKey = EncryptionManager.SharedAesKey.Item1;
-                            sendSymKey.SymIV = EncryptionManager.SharedAesKey.Item2;
-                            Send(sendSymKey);
-                            break;
-                        case EncryptionFunction.SymmetricalKeySend:
-                            Disconnect("Illegal encryption handshake: Cannot send own symmetry key, wait for server.");
-                            break;
-                        case EncryptionFunction.AsymmetricalKeyRecieve:
-                            Log.GlobalInfo($"Client Got Asymmetrical Encryption Key, ID: {ClientID}");
-                            break;
-                        case EncryptionFunction.SymetricalKeyRecieve:
-                            EncryptionState = EncryptionState.SymmetricalReady;
-                            Log.GlobalInfo($"Client Got Symmetrical Encryption Key, ID: {ClientID}");
-                            EncryptionPacket updateEncryptionStateFinal = new EncryptionPacket();
-                            updateEncryptionStateFinal.EncryptionFunction = EncryptionFunction.UpdateEncryptionStatus;
-                            updateEncryptionStateFinal.State = EncryptionState.Encrypted;
-                            //Send(updateEncryptionStateFinal);
-                            break;
-                        default:
-                            Log.GlobalError($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
-                            break;
-                    }
-                    break;
-                default:
-                    Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
-                    Disconnect("Client Sent an Unknown packet with PacketID " + header.Type.ToString());
-                    break;
-            }
-        }
-        
-        /// <summary>
-        /// Only called on the client.
-        /// </summary>
-        protected virtual void HandleLocalClient(PacketHeader header, byte[] data)
-        {
-            switch (header.Type)
-            {
-                case PacketType.CustomPacket:
-                    NetworkManager.TriggerPacketListeners(header, data, this);
-                    break;
-                case PacketType.ReadyStateUpdate:
-                    ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
-                    readyStateUpdatePacket.Deserialize(data);
-                    _ready = readyStateUpdatePacket.Ready;
-                    ReadyStateChanged?.Invoke(!_ready, _ready);
-                    ClientReadyStateChanged?.Invoke(this);
-                    NetworkManager.SendReadyPulse(this, Ready);
-                    Log.GlobalInfo("New Client Ready State: " + _ready.ToString());
-                    break;
-                case PacketType.ServerData:
-                    ServerDataPacket serverDataPacket = new ServerDataPacket();
-                    serverDataPacket.Deserialize(data);
-                    _clientId = serverDataPacket.YourClientID;
-                    Log.GlobalInfo("New Client ID: " + _clientId.ToString());
-                    if (serverDataPacket.Configuration.Protocol != ClientConfiguration.Protocol || serverDataPacket.Configuration.Version != ClientConfiguration.Version)
-                    {
-                        Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
-                        break;
-                    }
-                    Dictionary<int, string> NewPacketPairs = serverDataPacket.CustomPacketAutoPairs;
-                    List<Type> homelessPackets = new List<Type>();
-                    foreach(int i in NewPacketPairs.Keys)
-                    {
-                        Type t = Type.GetType(NewPacketPairs[i]);
-                        if(t == null)
-                        {
-                            Log.GlobalError($"Can't find packet with fullname {NewPacketPairs[i]}, this will cause more errors later!");
-                            continue;
-                        }
-                        if (NetworkManager.AdditionalPacketTypes.ContainsKey(i))
-                        {
-                            if (!NetworkManager.IsDynamicAllocatedPacket(t))
-                            {
-                                Log.GlobalError("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
-                                continue;
-                            }
-                            if (homelessPackets.Contains(t))
-                            {
-                                homelessPackets.Remove(t);
-                            }
-                            else
-                            {
-                                homelessPackets.Add(NetworkManager.AdditionalPacketTypes[i]);
-                            }
-                            NetworkManager.AdditionalPacketTypes[i] = t;
-                        }
-                        else
-                        {
-                            NetworkManager.AdditionalPacketTypes.Add(i, t);
-                        }
-                    }
-                    string built = "\n";
-                    foreach(int i in NetworkManager.AdditionalPacketTypes.Keys)
-                    {
-                        built += $"ID: {i}, Fullname: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
-                    }
-                    Log.GlobalInfo("Finished re-writing dynamic packets: " + built);
-                    break;
-                case PacketType.ConnectionStateUpdate:
-                    ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
-                    connectionUpdatePacket.Deserialize(data);
-                    Log.GlobalInfo("New connection state: " + connectionUpdatePacket.State.ToString());
-                    if(connectionUpdatePacket.State == ConnectionState.Disconnected)
-                    {
-                        //ruh roh
-                        NetworkErrorData errorData = new NetworkErrorData("Disconnected by remote client. Reason: " + connectionUpdatePacket.Reason, false);
-                        ConnectionError?.Invoke(errorData);
-                        Log.GlobalError("Disconnected: " + connectionUpdatePacket.Reason);
-                        StopClient();
-                    }
-                    if(connectionUpdatePacket.State == ConnectionState.Handshake)
-                    {
-                        _connectionState = ConnectionState.Handshake;
-                    }
-                    if(connectionUpdatePacket.State == ConnectionState.Connected)
-                    {
-                        _connectionState = ConnectionState.Connected;
-                        NetworkManager.SendConnectedPulse(this);
-                    }
-                    ClientConnectionStateChanged?.Invoke(this);
-                    ConnectionStateUpdated?.Invoke(_connectionState);
-                    break;
-                case PacketType.NetworkInvocation:
-                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
-                    networkInvocationPacket.Deserialize(data);
-                    Log.GlobalDebug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
-                    try
-                    {
-                        NetworkManager.NetworkInvoke(networkInvocationPacket, this);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.GlobalWarning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
-                        NetworkInvocationResultPacket errorPacket = new NetworkInvocationResultPacket();
-                        errorPacket.Success = false;
-                        errorPacket.ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message;
-                        errorPacket.Result = SerializedData.NullData;
-                        errorPacket.CallbackID = networkInvocationPacket.CallbackID;
-                        errorPacket.IgnoreResult = false;
-                        Send(errorPacket);
-                    }
-                    break;
-                case PacketType.NetworkInvocationResult:
-                    NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
-                    networkInvocationResultPacket.Deserialize(data);
-                    Log.GlobalDebug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
-                    NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
-                    break;
-                case PacketType.EncryptionPacket:
-                    EncryptionPacket encryptionPacket = new EncryptionPacket();
-                    encryptionPacket.Deserialize(data);
-                    EncryptionPacket encryptionRecieve = new EncryptionPacket();
-                    Log.GlobalInfo($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
-                    switch (encryptionPacket.EncryptionFunction)
-                    {
-                        case EncryptionFunction.None:
-                            break;
-                        case EncryptionFunction.AsymmetricalKeySend:
-                            EncryptionManager.OthersPublicKey = encryptionPacket.PublicKey;
-                            EncryptionPacket gotYourPublicKey = new EncryptionPacket();
-                            gotYourPublicKey.EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve;
-                            Log.GlobalInfo("Got Servers Public key, Sending mine.");
-                            Send(gotYourPublicKey);
-                            EncryptionState = EncryptionState.AsymmetricalReady;
-                            encryptionRecieve.PublicKey = EncryptionManager.MyPublicKey;
-                            encryptionRecieve.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
-                            Send(encryptionRecieve);
-                            break;
-                        case EncryptionFunction.SymmetricalKeySend:
-                            Log.GlobalInfo($"Got servers symetrical key. Key Length: {encryptionPacket.SymKey.Length}");
-                            EncryptionManager.SharedAesKey = new Tuple<byte[], byte[]>(encryptionPacket.SymKey, encryptionPacket.SymIV);
-                            EncryptionPacket gotYourSymmetricalKey = new EncryptionPacket();
-                            gotYourSymmetricalKey.EncryptionFunction = EncryptionFunction.SymetricalKeyRecieve;
-                            EncryptionState = EncryptionState.SymmetricalReady;
-                            Send(gotYourSymmetricalKey);
-                            break;
-                        case EncryptionFunction.AsymmetricalKeyRecieve:
-                            EncryptionState = EncryptionState.AsymmetricalReady;
-                            Log.GlobalInfo("Server got my Asymmetrical key.");
-                            break;
-                        case EncryptionFunction.SymetricalKeyRecieve:
-                            Log.GlobalError("Server should not be recieving my symmetrical key!");
-                            break;
-                        default:
-                            Log.GlobalError($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
-                            break;
-                    }
-                    break;
-                default:
-                    Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
-                    Disconnect("Server Sent an Unknown packet with PacketID " + header.Type.ToString());
-                    break;
-            }
-        }
-
-        protected ConcurrentQueue<Packet> _toSendPackets = new ConcurrentQueue<Packet>();
-
-        void PacketSenderThreadMethod()
-        {
-            while (true)
-            {
-                if (_manualPacketSend)
-                {
-                    continue;
-                }
-                SendNextPacketInternal();
-            }
-        }
+        #region Sending
 
         protected object streamLock = new object();
+
+        protected ConcurrentQueue<Packet> _toSendPackets = new ConcurrentQueue<Packet>();
 
         protected virtual void SendNextPacketInternal()
         {
@@ -1225,7 +897,7 @@ namespace SocketNetworking.Client
                 {
                     Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                     Exception ex = Transport.Send(fullBytes, packet.Destination);
-                    if(ex != null)
+                    if (ex != null)
                     {
                         throw ex;
                     }
@@ -1323,7 +995,7 @@ namespace SocketNetworking.Client
                 Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetBytes.Length + 4}");
                 return null;
             }
-            if(written < (packetFull.Length + 4))
+            if (written < (packetFull.Length + 4))
             {
                 Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetBytes.Length + 4}");
             }
@@ -1334,6 +1006,142 @@ namespace SocketNetworking.Client
                 return null;
             }
             return fullBytes;
+        }
+
+        #endregion
+
+        #region Recieving
+
+        protected ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
+
+        void PacketSenderThreadMethod()
+        {
+            while (true)
+            {
+                if (_manualPacketSend)
+                {
+                    continue;
+                }
+                SendNextPacketInternal();
+            }
+        }
+
+        /// <summary>
+        /// Method handling all <see cref="NetworkTransport"/> reading IO.
+        /// </summary>
+        protected virtual void PacketReaderThreadMethod()
+        {
+            Log.GlobalInfo($"Client thread started, ID {ClientID}");
+            //int waitingSize = 0;
+            //byte[] prevPacketFragment = { };
+            byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
+            Transport.BufferSize = Packet.MaxPacketSize;
+            int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined.
+            while (true)
+            {
+            Packet: // this is for breaking a nested loop further down. thanks C#
+                if (_shuttingDown)
+                {
+                    Log.GlobalInfo("Shutting down loop");
+                    break;
+                }
+                if (!IsTransportConnected)
+                {
+                    Log.GlobalDebug("Disconnected!");
+                    StopClient();
+                    return;
+                }
+                /*if(TcpClient.ReceiveBufferSize == 0)
+                {
+                    continue;
+                }*/
+                /*if (!NetworkStream.DataAvailable)
+                {
+                    //Log.Debug("Nothing to read on stream");
+                    continue;
+                }*/
+                //Log.Debug(TcpClient.ReceiveBufferSize.ToString());
+                if (fillSize < sizeof(int))
+                {
+                    // we dont have enough data to read the length data
+                    //Log.Debug($"Trying to read bytes to get length (we need at least 4 we have {fillSize})!");
+                    int count = 0;
+                    try
+                    {
+                        int tempFillSize = fillSize;
+                        //(byte[], Exception) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
+                        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(0, buffer.Length - fillSize);
+                        count = transportRead.Item1.Length;
+                        buffer = Transport.Buffer;
+                        //count = NetworkStream.Read(tempBuffer, 0, buffer.Length - fillSize);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.GlobalError(ex.ToString());
+                        continue;
+                    }
+                    fillSize += count;
+                    //Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
+                    continue;
+                }
+                int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
+                bodySize = IPAddress.NetworkToHostOrder(bodySize);
+                if (bodySize == 0)
+                {
+                    Log.GlobalWarning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
+                    fillSize = 0;
+                    continue;
+                }
+                fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
+                // read the rest of the whole packet
+                if (bodySize > Packet.MaxPacketSize || bodySize < 0)
+                {
+                    CurrentConnectionState = ConnectionState.Disconnected;
+                    string s = string.Empty;
+                    for (int i = 0; i < buffer.Length; i++)
+                    {
+                        s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
+                    }
+                    Log.GlobalError("Body Size is corrupted! Raw: " + s);
+                }
+                while (fillSize < bodySize)
+                {
+                    //Log.Debug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
+                    if (fillSize == buffer.Length)
+                    {
+                        // The buffer is too full, and we are fucked (oh shit)
+                        Log.GlobalError("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
+                        Disconnect("Illegal Packet Size");
+                        break;
+                    }
+                    int count;
+                    try
+                    {
+                        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
+                        count = transportRead.Item1.Length;
+                        buffer = Transport.Buffer;
+                        //count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.GlobalError(ex.ToString());
+                        goto Packet;
+                    }
+                    fillSize += count;
+                }
+                // we now know we have enough bytes to read at least one whole packet;
+                byte[] fullPacket = ShiftOut(ref buffer, bodySize + sizeof(int));
+                if ((fillSize -= bodySize) < 0)
+                {
+                    fillSize = 0;
+                }
+                //fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
+                //Log.Debug($"Read full packet with size: {fullPacket.Length}");
+
+                Deserialize(fullPacket, Transport.Peer);
+            }
+            Log.GlobalInfo("Shutting down client, Closing socket.");
+            Transport.Close();
         }
 
         /// <summary>
@@ -1400,125 +1208,327 @@ namespace SocketNetworking.Client
             }
         }
 
+        #region Handle Packets
+
         /// <summary>
-        /// Method handling all <see cref="NetworkTransport"/> reading IO.
+        /// Only called on the server.
         /// </summary>
-        protected virtual void PacketReaderThreadMethod()
+        protected virtual void HandleRemoteClient(PacketHeader header, byte[] data)
         {
-            Log.GlobalInfo($"Client thread started, ID {ClientID}");
-            //int waitingSize = 0;
-            //byte[] prevPacketFragment = { };
-            byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
-            Transport.BufferSize = Packet.MaxPacketSize;
-            int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined.
-            while (true)
+            switch (header.Type)
             {
-            Packet: // this is for breaking a nested loop further down. thanks C#
-                if (_shuttingDown)
-                {
-                    Log.GlobalInfo("Shutting down loop");
+                case PacketType.CustomPacket:
+                    NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
-                }
-                if (!IsTransportConnected)
-                {
-                    Log.GlobalDebug("Disconnected!");
-                    StopClient();
-                    return;
-                }
-                /*if(TcpClient.ReceiveBufferSize == 0)
-                {
-                    continue;
-                }*/
-                /*if (!NetworkStream.DataAvailable)
-                {
-                    //Log.Debug("Nothing to read on stream");
-                    continue;
-                }*/
-                //Log.Debug(TcpClient.ReceiveBufferSize.ToString());
-                if (fillSize < sizeof(int))
-                {
-                    // we dont have enough data to read the length data
-                    //Log.Debug($"Trying to read bytes to get length (we need at least 4 we have {fillSize})!");
-                    int count = 0;
-                    try
+                case PacketType.ConnectionStateUpdate:
+                    ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
+                    connectionUpdatePacket.Deserialize(data);
+                    if (connectionUpdatePacket.State == ConnectionState.Disconnected)
                     {
-                        int tempFillSize = fillSize;
-                        //(byte[], Exception) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
-                        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(0, buffer.Length - fillSize);
-                        count = transportRead.Item1.Length;
-                        buffer = Transport.Buffer;
-                        //count = NetworkStream.Read(tempBuffer, 0, buffer.Length - fillSize);
+                        //ruh roh
+                        NetworkErrorData errorData = new NetworkErrorData("Disconnected by local client. Reason: " + connectionUpdatePacket.Reason, false);
+                        ConnectionError?.Invoke(errorData);
+                        Log.GlobalError($"Disconnecting {ClientID} for " + connectionUpdatePacket.Reason);
+                        StopClient();
                     }
-                    catch(Exception ex)
+                    if (connectionUpdatePacket.State == ConnectionState.Handshake)
                     {
-                        Log.GlobalError(ex.ToString());
-                        continue;
+                        _connectionState = ConnectionState.Handshake;
                     }
-                    fillSize += count;
-                    //Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
-                    continue;
-                }
-                int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
-                bodySize = IPAddress.NetworkToHostOrder(bodySize);
-                if (bodySize == 0)
-                {
-                    Log.GlobalWarning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
-                    fillSize = 0;
-                    continue;
-                }
-                fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
-                // read the rest of the whole packet
-                if(bodySize > Packet.MaxPacketSize || bodySize < 0)
-                {
-                    CurrentConnectionState = ConnectionState.Disconnected;
-                    string s = string.Empty;
-                    for(int i = 0; i < buffer.Length; i++)
+                    if (connectionUpdatePacket.State == ConnectionState.Connected)
                     {
-                        s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
+                        _connectionState = ConnectionState.Connected;
+                        NetworkManager.SendConnectedPulse(this);
                     }
-                    Log.GlobalError("Body Size is corrupted! Raw: " + s);
-                }
-                while (fillSize < bodySize)
-                {
-                    //Log.Debug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
-                    if (fillSize == buffer.Length)
+                    ClientConnectionStateChanged?.Invoke(this);
+                    ConnectionStateUpdated?.Invoke(_connectionState);
+                    break;
+                case PacketType.ReadyStateUpdate:
+                    ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
+                    readyStateUpdatePacket.Deserialize(data);
+                    if (NetworkServer.AllowClientSelfReady)
                     {
-                        // The buffer is too full, and we are fucked (oh shit)
-                        Log.GlobalError("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
-                        Disconnect("Illegal Packet Size");
+                        Ready = readyStateUpdatePacket.Ready;
+                    }
+                    break;
+                case PacketType.ClientData:
+                    ClientDataPacket clientDataPacket = new ClientDataPacket();
+                    clientDataPacket.Deserialize(data);
+                    if (clientDataPacket.Configuration.Protocol != NetworkServer.ServerConfiguration.Protocol)
+                    {
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Protocol} Got: {clientDataPacket.Configuration.Protocol}");
                         break;
                     }
-                    int count;
+                    if (clientDataPacket.Configuration.Version != NetworkServer.ServerConfiguration.Version)
+                    {
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
+                        break;
+                    }
+                    if ((clientDataPacket.PasswordHash != NetworkServer.ServerPassword.GetStringHash()) && NetworkServer.UseServerPassword)
+                    {
+                        Disconnect("Incorrect Server Password");
+                        break;
+                    }
+                    ServerDataPacket serverDataPacket = new ServerDataPacket
+                    {
+                        YourClientID = _clientId,
+                        Configuration = NetworkServer.ServerConfiguration,
+                        CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized
+                    };
+                    Send(serverDataPacket);
+                    CurrentConnectionState = ConnectionState.Connected;
+                    if (NetworkServer.EncryptionMode == ServerEncryptionMode.Required)
+                    {
+                        ServerBeginEncryption();
+                    }
+                    if (NetworkServer.DefaultReady)
+                    {
+                        Ready = true;
+                    }
+                    break;
+                case PacketType.NetworkInvocation:
+                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
+                    networkInvocationPacket.Deserialize(data);
+                    Log.GlobalDebug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
                     {
-                        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
-                        count = transportRead.Item1.Length;
-                        buffer = Transport.Buffer;
-                        //count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
+                        NetworkManager.NetworkInvoke(networkInvocationPacket, this);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
-                        Log.GlobalError(ex.ToString());
-                        goto Packet;
+                        Log.GlobalWarning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
+                        NetworkInvocationResultPacket errorPacket = new NetworkInvocationResultPacket();
+                        errorPacket.Success = false;
+                        errorPacket.ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message;
+                        errorPacket.Result = SerializedData.NullData;
+                        errorPacket.CallbackID = networkInvocationPacket.CallbackID;
+                        errorPacket.IgnoreResult = false;
+                        Send(errorPacket);
                     }
-                    fillSize += count;
-                }
-                // we now know we have enough bytes to read at least one whole packet;
-                byte[] fullPacket = ShiftOut(ref buffer, bodySize + sizeof(int));
-                if((fillSize -= bodySize) < 0)
-                {
-                    fillSize = 0;
-                }
-                //fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
-                //Log.Debug($"Read full packet with size: {fullPacket.Length}");
-
-                Deserialize(fullPacket, Transport.Peer);
+                    break;
+                case PacketType.NetworkInvocationResult:
+                    NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
+                    networkInvocationResultPacket.Deserialize(data);
+                    Log.GlobalDebug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
+                    NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
+                    break;
+                case PacketType.EncryptionPacket:
+                    EncryptionPacket encryptionPacket = new EncryptionPacket();
+                    encryptionPacket.Deserialize(data);
+                    Log.GlobalInfo($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
+                    switch (encryptionPacket.EncryptionFunction)
+                    {
+                        case EncryptionFunction.None:
+                            break;
+                        case EncryptionFunction.AsymmetricalKeySend:
+                            EncryptionManager.OthersPublicKey = encryptionPacket.PublicKey;
+                            EncryptionPacket gotYourPublicKey = new EncryptionPacket();
+                            gotYourPublicKey.EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve;
+                            Send(gotYourPublicKey);
+                            EncryptionState = EncryptionState.AsymmetricalReady;
+                            Log.GlobalInfo($"Got Asymmetrical Encryption Key, ID: {ClientID}");
+                            EncryptionPacket sendSymKey = new EncryptionPacket();
+                            sendSymKey.EncryptionFunction = EncryptionFunction.SymmetricalKeySend;
+                            sendSymKey.SymKey = EncryptionManager.SharedAesKey.Item1;
+                            sendSymKey.SymIV = EncryptionManager.SharedAesKey.Item2;
+                            Send(sendSymKey);
+                            break;
+                        case EncryptionFunction.SymmetricalKeySend:
+                            Disconnect("Illegal encryption handshake: Cannot send own symmetry key, wait for server.");
+                            break;
+                        case EncryptionFunction.AsymmetricalKeyRecieve:
+                            Log.GlobalInfo($"Client Got Asymmetrical Encryption Key, ID: {ClientID}");
+                            break;
+                        case EncryptionFunction.SymetricalKeyRecieve:
+                            EncryptionState = EncryptionState.SymmetricalReady;
+                            Log.GlobalInfo($"Client Got Symmetrical Encryption Key, ID: {ClientID}");
+                            EncryptionPacket updateEncryptionStateFinal = new EncryptionPacket();
+                            updateEncryptionStateFinal.EncryptionFunction = EncryptionFunction.UpdateEncryptionStatus;
+                            updateEncryptionStateFinal.State = EncryptionState.Encrypted;
+                            //Send(updateEncryptionStateFinal);
+                            break;
+                        default:
+                            Log.GlobalError($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
+                            break;
+                    }
+                    break;
+                default:
+                    Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
+                    Disconnect("Client Sent an Unknown packet with PacketID " + header.Type.ToString());
+                    break;
             }
-            Log.GlobalInfo("Shutting down client, Closing socket.");
-            Transport.Close();
         }
 
-        protected ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
+        /// <summary>
+        /// Only called on the client.
+        /// </summary>
+        protected virtual void HandleLocalClient(PacketHeader header, byte[] data)
+        {
+            switch (header.Type)
+            {
+                case PacketType.CustomPacket:
+                    NetworkManager.TriggerPacketListeners(header, data, this);
+                    break;
+                case PacketType.ReadyStateUpdate:
+                    ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
+                    readyStateUpdatePacket.Deserialize(data);
+                    _ready = readyStateUpdatePacket.Ready;
+                    ReadyStateChanged?.Invoke(!_ready, _ready);
+                    ClientReadyStateChanged?.Invoke(this);
+                    NetworkManager.SendReadyPulse(this, Ready);
+                    Log.GlobalInfo("New Client Ready State: " + _ready.ToString());
+                    break;
+                case PacketType.ServerData:
+                    ServerDataPacket serverDataPacket = new ServerDataPacket();
+                    serverDataPacket.Deserialize(data);
+                    _clientId = serverDataPacket.YourClientID;
+                    Log.GlobalInfo("New Client ID: " + _clientId.ToString());
+                    if (serverDataPacket.Configuration.Protocol != ClientConfiguration.Protocol || serverDataPacket.Configuration.Version != ClientConfiguration.Version)
+                    {
+                        Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
+                        break;
+                    }
+                    Dictionary<int, string> NewPacketPairs = serverDataPacket.CustomPacketAutoPairs;
+                    List<Type> homelessPackets = new List<Type>();
+                    foreach (int i in NewPacketPairs.Keys)
+                    {
+                        Type t = Type.GetType(NewPacketPairs[i]);
+                        if (t == null)
+                        {
+                            Log.GlobalError($"Can't find packet with fullname {NewPacketPairs[i]}, this will cause more errors later!");
+                            continue;
+                        }
+                        if (NetworkManager.AdditionalPacketTypes.ContainsKey(i))
+                        {
+                            if (!NetworkManager.IsDynamicAllocatedPacket(t))
+                            {
+                                Log.GlobalError("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
+                                continue;
+                            }
+                            if (homelessPackets.Contains(t))
+                            {
+                                homelessPackets.Remove(t);
+                            }
+                            else
+                            {
+                                homelessPackets.Add(NetworkManager.AdditionalPacketTypes[i]);
+                            }
+                            NetworkManager.AdditionalPacketTypes[i] = t;
+                        }
+                        else
+                        {
+                            NetworkManager.AdditionalPacketTypes.Add(i, t);
+                        }
+                    }
+                    string built = "\n";
+                    foreach (int i in NetworkManager.AdditionalPacketTypes.Keys)
+                    {
+                        built += $"ID: {i}, Fullname: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
+                    }
+                    Log.GlobalInfo("Finished re-writing dynamic packets: " + built);
+                    break;
+                case PacketType.ConnectionStateUpdate:
+                    ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
+                    connectionUpdatePacket.Deserialize(data);
+                    Log.GlobalInfo("New connection state: " + connectionUpdatePacket.State.ToString());
+                    if (connectionUpdatePacket.State == ConnectionState.Disconnected)
+                    {
+                        //ruh roh
+                        NetworkErrorData errorData = new NetworkErrorData("Disconnected by remote client. Reason: " + connectionUpdatePacket.Reason, false);
+                        ConnectionError?.Invoke(errorData);
+                        Log.GlobalError("Disconnected: " + connectionUpdatePacket.Reason);
+                        StopClient();
+                    }
+                    if (connectionUpdatePacket.State == ConnectionState.Handshake)
+                    {
+                        _connectionState = ConnectionState.Handshake;
+                    }
+                    if (connectionUpdatePacket.State == ConnectionState.Connected)
+                    {
+                        _connectionState = ConnectionState.Connected;
+                        NetworkManager.SendConnectedPulse(this);
+                    }
+                    ClientConnectionStateChanged?.Invoke(this);
+                    ConnectionStateUpdated?.Invoke(_connectionState);
+                    break;
+                case PacketType.NetworkInvocation:
+                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
+                    networkInvocationPacket.Deserialize(data);
+                    Log.GlobalDebug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
+                    try
+                    {
+                        NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.GlobalWarning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
+                        NetworkInvocationResultPacket errorPacket = new NetworkInvocationResultPacket();
+                        errorPacket.Success = false;
+                        errorPacket.ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message;
+                        errorPacket.Result = SerializedData.NullData;
+                        errorPacket.CallbackID = networkInvocationPacket.CallbackID;
+                        errorPacket.IgnoreResult = false;
+                        Send(errorPacket);
+                    }
+                    break;
+                case PacketType.NetworkInvocationResult:
+                    NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
+                    networkInvocationResultPacket.Deserialize(data);
+                    Log.GlobalDebug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
+                    NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
+                    break;
+                case PacketType.EncryptionPacket:
+                    EncryptionPacket encryptionPacket = new EncryptionPacket();
+                    encryptionPacket.Deserialize(data);
+                    EncryptionPacket encryptionRecieve = new EncryptionPacket();
+                    Log.GlobalInfo($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
+                    switch (encryptionPacket.EncryptionFunction)
+                    {
+                        case EncryptionFunction.None:
+                            break;
+                        case EncryptionFunction.AsymmetricalKeySend:
+                            EncryptionManager.OthersPublicKey = encryptionPacket.PublicKey;
+                            EncryptionPacket gotYourPublicKey = new EncryptionPacket();
+                            gotYourPublicKey.EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve;
+                            Log.GlobalInfo("Got Servers Public key, Sending mine.");
+                            Send(gotYourPublicKey);
+                            EncryptionState = EncryptionState.AsymmetricalReady;
+                            encryptionRecieve.PublicKey = EncryptionManager.MyPublicKey;
+                            encryptionRecieve.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
+                            Send(encryptionRecieve);
+                            break;
+                        case EncryptionFunction.SymmetricalKeySend:
+                            Log.GlobalInfo($"Got servers symetrical key. Key Length: {encryptionPacket.SymKey.Length}");
+                            EncryptionManager.SharedAesKey = new Tuple<byte[], byte[]>(encryptionPacket.SymKey, encryptionPacket.SymIV);
+                            EncryptionPacket gotYourSymmetricalKey = new EncryptionPacket();
+                            gotYourSymmetricalKey.EncryptionFunction = EncryptionFunction.SymetricalKeyRecieve;
+                            EncryptionState = EncryptionState.SymmetricalReady;
+                            Send(gotYourSymmetricalKey);
+                            break;
+                        case EncryptionFunction.AsymmetricalKeyRecieve:
+                            EncryptionState = EncryptionState.AsymmetricalReady;
+                            Log.GlobalInfo("Server got my Asymmetrical key.");
+                            break;
+                        case EncryptionFunction.SymetricalKeyRecieve:
+                            Log.GlobalError("Server should not be recieving my symmetrical key!");
+                            break;
+                        default:
+                            Log.GlobalError($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
+                            break;
+                    }
+                    break;
+                default:
+                    Log.GlobalError($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
+                    Disconnect("Server Sent an Unknown packet with PacketID " + header.Type.ToString());
+                    break;
+            }
+        }
+
+        #endregion
+
+        #endregion
+
+        #endregion
 
         protected void HandlePacket(PacketHeader header, byte[] fullPacket)
         {
@@ -1532,11 +1542,38 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Handles the next <see cref="Packet"/> from the read queue. This method does nothing if <see cref="ManualPacketHandle"/> is false
+        /// </summary>
+        public void HandleNextPacket()
+        {
+            if (!ManualPacketHandle)
+            {
+                return;
+            }
+            if (_toReadPackets.TryDequeue(out ReadPacketInfo result))
+            {
+                HandlePacket(result.Header, result.Data);
+            }
+        }
+
         protected struct ReadPacketInfo
         {
             public PacketHeader Header;
             public byte[] Data;
-        }        
+        }
+
+        protected static byte[] ShiftOut(ref byte[] input, int count)
+        {
+            byte[] output = new byte[count];
+            // copy the first N elements to output
+            Buffer.BlockCopy(input, 0, output, 0, count);
+            // copy the back of the array forward (removing the elements we copied to output)
+            // ie with count 2: [1, 2, 3, 4] -> [3, 4, 3, 4]
+            // we dont update the end of the array to fill with zeros, because we dont need to (we just call it undefined behavior)
+            Buffer.BlockCopy(input, count, input, 0, count);
+            return output;
+        }
     }
 
     public struct NetworkErrorData
