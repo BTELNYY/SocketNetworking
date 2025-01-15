@@ -22,8 +22,8 @@ namespace SocketNetworking.ExampleServer
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
             MixedNetworkServer server = new MixedNetworkServer();
             NetworkServer.ClientType = typeof(TestClient);
-            NetworkServer.HandshakeTime = 10f;
-            NetworkServer.EncryptionMode = ServerEncryptionMode.Required;
+            NetworkServer.Config.HandshakeTime = 10f;
+            NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
             NetworkServer.ClientConnected += OnClientConnected;
             server.StartServer();
             Thread t = new Thread(SpamThread);

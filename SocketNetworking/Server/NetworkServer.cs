@@ -37,7 +37,7 @@ namespace SocketNetworking.Server
         protected static void InvokeClientDisconnected(int id)
         {
             ClientDisconnected?.Invoke(id);
-        }
+        } 
 
         public static event Action ServerStarted;
 
@@ -61,7 +61,7 @@ namespace SocketNetworking.Server
             {
                 return _serverState;
             }
-        } 
+        }
 
         public static bool HasServerStarted
         {
@@ -124,78 +124,17 @@ namespace SocketNetworking.Server
             }
         }
 
-        /// <summary>
-        /// The Servers <see cref="ServerEncryptionMode"/>.
-        /// </summary>
-        public static ServerEncryptionMode EncryptionMode = ServerEncryptionMode.Request;
-
-        /// <summary>
-        /// Should the server accept the connection, then instantly disconnect the client with a message?
-        /// </summary>
-        public static bool AutoDisconnectClients = false;
-
-        /// <summary>
-        /// Message to auto disconnect clients with
-        /// </summary>
-        public static string AutoDisconnectMessage = "Server is not ready!";
-
-        /// <summary>
-        /// Should the server be currently accepting connections? if this is set to false, the server will not reply to socket requests.
-        /// </summary>
-        public static bool ShouldAcceptConnections = true;
-
-        /// <summary>
-        /// How long should the server wait for the client to complete the handshake?
-        /// </summary>
-        public static float HandshakeTime = 10f;
-
-        /// <summary>
-        /// The server password, this will never be sent accross the network.
-        /// </summary>
-        public static string ServerPassword = "default";
-
-        /// <summary>
-        /// Should the server check for client passwords?
-        /// </summary>
-        public static bool UseServerPassword = false;
-
-        /// <summary>
-        /// What port should the server start on?
-        /// </summary>
-        public static int Port = 7777;
-
-        /// <summary>
-        /// What IP should the server bind to?
-        /// </summary>
-        public static string BindIP = "0.0.0.0";
-
-        /// <summary>
-        /// Should the server Auto-Ready Clients when the the <see cref="NetworkClient.CurrentConnectionState"/> becomes <see cref="ConnectionState.Connected"/>?
-        /// </summary>
-        public static bool DefaultReady = true;
-
-        /// <summary>
-        /// How many threads should the server spawn to handle clients? (Formula is, <see cref="MaximumClients"/> divided by <see cref="DefaultThreads"/> to see your Client to Thread ratio)
-        /// </summary>
-        public static int DefaultThreads = 4;
-
-        /// <summary>
-        /// Amount of concurrent connections total, anyone else will be ignored.
-        /// </summary>
-        public static int MaximumClients = 100;
-
-        public static int ClientsPerThread
-        {
-            get
-            {
-                return MaximumClients / DefaultThreads;
-            }
-        }
+        public static NetworkServerConfig Config { get; set; } = new NetworkServerConfig();
 
         /// <summary>
         /// What type should network clients be created in? Note that the type must inherit from <see cref="NetworkClient"/>. This type should not have any class constructors.
         /// </summary>
         public static Type ClientType = typeof(NetworkClient);
+
+        /// <summary>
+        /// Should the server be currently accepting connections? if this is set to false, the server will not reply to socket requests.
+        /// </summary>
+        public bool ShouldAcceptConnections = true;
 
         /// <summary>
         /// Should clients be able to set themselves as ready using <see cref="SocketNetworking.PacketSystem.Packets.ReadyStateUpdatePacket"/>?
@@ -242,10 +181,12 @@ namespace SocketNetworking.Server
                 return;
             }
             _serverInstance = server;
-            handlers.Capacity = DefaultThreads;
-            for(int i = 0; i < DefaultThreads; i++)
+            handlers.Capacity = Config.DefaultThreads;
+            for(int i = 0; i < Config.DefaultThreads; i++)
             {
-                handlers.Add(new ClientHandler());
+                ClientHandler handler = new ClientHandler();
+                handlers.Add(handler);
+                handler.Start();
             }
             ServerThread = new Thread(server.ServerStartThread);
             ServerThread.Start();
@@ -254,7 +195,6 @@ namespace SocketNetworking.Server
         }
 
         
-
         protected virtual bool Validate()
         {
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
@@ -262,7 +202,7 @@ namespace SocketNetworking.Server
                 Log.GlobalError("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
                 return false;
             }
-            if(MaximumClients % DefaultThreads != 0)
+            if(Config.MaximumClients % Config.DefaultThreads != 0)
             {
                 Log.GlobalWarning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
             }
@@ -399,7 +339,6 @@ namespace SocketNetworking.Server
             }
         }
 
-
         /// <summary>
         /// Disconnects all clients who aren't ready.
         /// </summary>
@@ -484,7 +423,7 @@ namespace SocketNetworking.Server
     }
 
 
-    public class ClientHandler
+    public class ClientHandler : IRoundRobinData<ClientHandler>
     {
         public Thread Thread { get; }
 
@@ -506,6 +445,10 @@ namespace SocketNetworking.Server
                 return Clients.Count;
             }
         }
+
+        public bool AllowChoosing => CurrentClientCount < NetworkServer.Config.ClientsPerThread;
+
+        public bool AllowSorting => true;
 
         public void AddClient(NetworkClient client)
         {
@@ -554,6 +497,11 @@ namespace SocketNetworking.Server
                     }
                 }
             }
+        }
+
+        public int CompareTo(ClientHandler other)
+        {
+            return CurrentClientCount - other.CurrentClientCount;
         }
     }
 

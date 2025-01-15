@@ -54,10 +54,12 @@
     <Compile Include="Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Exceptions\NetworkInvocationException.cs" />
     <Compile Include="Exceptions\NetworkSerializationException.cs" />
+    <Compile Include="Misc\IRoundRobinData.cs" />
     <Compile Include="Misc\ObjectPool.cs" />
     <Compile Include="Misc\RoundRobin.cs" />
     <Compile Include="PacketSystem\Packets\ObjectSpawnPacket.cs" />
     <Compile Include="PacketSystem\Packets\SyncVarUpdate.cs" />
+    <Compile Include="Server\NetworkServerConfig.cs" />
     <Compile Include="Server\MixedNetworkServer.cs" />
     <Compile Include="Server\TcpNetworkServer.cs" />
     <Compile Include="Server\UdpNetworkServer.cs" />

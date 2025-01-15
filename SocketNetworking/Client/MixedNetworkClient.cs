@@ -74,9 +74,10 @@ namespace SocketNetworking.Client
         }
 
         protected override void SendNextPacketInternal()
-        {   
+        {
             if (_toSendPackets.IsEmpty)
             {
+                //Log.GlobalDebug("Nothing to send.");
                 return;
             }
             lock (streamLock)

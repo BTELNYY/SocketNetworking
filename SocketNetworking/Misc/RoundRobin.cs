@@ -13,13 +13,53 @@ namespace SocketNetworking.Misc
 
         int _nextIndex = 0;
 
+        public bool IsRoundRobinExtension
+        {
+            get
+            {
+                return typeof(T).IsSubclassDeep(typeof(IRoundRobinData<T>));
+            }
+        }
+
         public T Next()
         {
-            if(_nextIndex >= _list.Count)
+            T value = _list[_nextIndex];
+            if(value is IRoundRobinData<T> val && val.AllowSorting)
             {
-                _nextIndex = 0;
+                if (IsRoundRobinExtension)
+                {
+                    _list.Sort();
+                    _nextIndex = 0;
+                }
+                IRoundRobinData<T> robinData;
+                while (true)
+                {
+                    robinData = _list[_nextIndex] as IRoundRobinData<T>;
+                    if(robinData.AllowChoosing)
+                    {
+                        break;
+                    }
+                    if(_nextIndex >= _list.Count)
+                    {
+                        break;
+                    }
+                    _nextIndex++;
+                }
+                if(robinData == null)
+                {
+                    throw new InvalidOperationException("No suitable value found.");
+                }
+
+                return (T)robinData;
             }
-            return _list[_nextIndex++];
+            else
+            {
+                if (_nextIndex >= _list.Count)
+                {
+                    _nextIndex = 0;
+                }
+                return _list[_nextIndex++];
+            }
         }
 
         public int Capacity

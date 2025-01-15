@@ -497,11 +497,11 @@ namespace SocketNetworking.Client
         [NetworkInvocable(NetworkDirection.Client)]
         private bool ServerGetEncryptionRequest()
         {
-            if (NetworkServer.EncryptionMode == ServerEncryptionMode.Disabled)
+            if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
             {
                 return false;
             }
-            if (NetworkServer.EncryptionMode == ServerEncryptionMode.Required)
+            if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
             {
                 return true;
             }
@@ -552,10 +552,10 @@ namespace SocketNetworking.Client
             _clientLocation = ClientLocation.Remote;
             ClientConnected += OnRemoteClientConnected;
             ClientConnected?.Invoke();
-            _packetReaderThread = new Thread(PacketReaderThreadMethod);
-            _packetReaderThread.Start();
-            _packetSenderThread = new Thread(PacketSenderThreadMethod);
-            _packetSenderThread.Start();
+            //_packetReaderThread = new Thread(PacketReaderThreadMethod);
+            //_packetReaderThread.Start();
+            //_packetSenderThread = new Thread(PacketSenderThreadMethod);
+            //_packetSenderThread.Start();
         }
 
         /// <summary>
@@ -1058,6 +1058,7 @@ namespace SocketNetworking.Client
         {
             if(!Transport.DataAvailable)
             {
+                Log.GlobalDebug("No data available.");
                 return;
             }
             byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
@@ -1279,7 +1280,7 @@ namespace SocketNetworking.Client
                         Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
                         break;
                     }
-                    if ((clientDataPacket.PasswordHash != NetworkServer.ServerPassword.GetStringHash()) && NetworkServer.UseServerPassword)
+                    if ((clientDataPacket.PasswordHash != NetworkServer.Config.ServerPassword.GetStringHash()) && NetworkServer.Config.UseServerPassword)
                     {
                         Disconnect("Incorrect Server Password");
                         break;
@@ -1292,11 +1293,11 @@ namespace SocketNetworking.Client
                     };
                     Send(serverDataPacket);
                     CurrentConnectionState = ConnectionState.Connected;
-                    if (NetworkServer.EncryptionMode == ServerEncryptionMode.Required)
+                    if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
                     {
                         ServerBeginEncryption();
                     }
-                    if (NetworkServer.DefaultReady)
+                    if (NetworkServer.Config.DefaultReady)
                     {
                         Ready = true;
                     }
@@ -1549,6 +1550,7 @@ namespace SocketNetworking.Client
         internal void ReadNext()
         {
             RawReader();
+            //Log.GlobalDebug("Reader ran");
         }
 
         /// <summary>
@@ -1557,6 +1559,7 @@ namespace SocketNetworking.Client
         internal void WriteNext()
         {
             RawWriter();
+            //Log.GlobalDebug("Writer ran");
         }
 
         #endregion

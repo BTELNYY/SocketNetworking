@@ -22,10 +22,10 @@ namespace SocketNetworking.Server
         protected override void ServerStartThread()
         {
             Log.GlobalInfo("Server starting...");
-            TcpListener serverSocket = new TcpListener(IPAddress.Parse(BindIP), Port);
+            TcpListener serverSocket = new TcpListener(IPAddress.Parse(Config.BindIP), Config.Port);
             serverSocket.Start();
             Log.GlobalInfo("Socket Started.");
-            Log.GlobalInfo($"Listening on {BindIP}:{Port}");
+            Log.GlobalInfo($"Listening on {Config.BindIP}:{Config.Port}");
             int counter = 0;
             InvokeServerReady();
             _serverState = ServerState.Ready;
@@ -62,7 +62,7 @@ namespace SocketNetworking.Server
                     {
                         x.Disconnect("Failed to handshake in time.");
                     }
-                }, client, HandshakeTime);
+                }, client, Config.HandshakeTime);
                 callback.Start();
                 InvokeClientConnected(counter);
                 counter++;

@@ -21,7 +21,7 @@ namespace SocketNetworking.Server
         {
             get
             {
-                return new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.First(), Port);
+                return new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.First(), Config.Port);
             }
         }
 
@@ -33,9 +33,9 @@ namespace SocketNetworking.Server
         protected override void ServerStartThread()
         {
             Log.GlobalInfo("Server starting...");
-            Log.GlobalInfo($"Listening on {BindIP}:{Port}");
+            Log.GlobalInfo($"Listening on {Config.BindIP}:{Config.Port}");
             int counter = 0;
-            IPEndPoint listener = new IPEndPoint(IPAddress.Any, Port);
+            IPEndPoint listener = new IPEndPoint(IPAddress.Any, Config.Port);
             UdpClient udpClient = new UdpClient(listener);
             InvokeServerReady();
             _serverState = ServerState.Ready;
@@ -49,7 +49,7 @@ namespace SocketNetworking.Server
                 {
                     continue;
                 }
-                if(Clients.Count >= MaximumClients)
+                if(Clients.Count >= Config.MaximumClients)
                 {
                     continue;
                 }
@@ -76,7 +76,7 @@ namespace SocketNetworking.Server
                         {
                             x.Disconnect("Failed to handshake in time.");
                         }
-                    }, client, HandshakeTime);
+                    }, client, Config.HandshakeTime);
                     callback.Start();
                     InvokeClientConnected(counter);
                     counter++;

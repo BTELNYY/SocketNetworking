@@ -28,7 +28,7 @@ namespace SocketNetworking.Server
         {
             get
             {
-                return new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.First(), Port);
+                return new IPEndPoint(Dns.GetHostEntry(Dns.GetHostName()).AddressList.First(), Config.Port);
             }
         }
 
@@ -40,10 +40,10 @@ namespace SocketNetworking.Server
         protected override void ServerStartThread()
         {
             Log.GlobalInfo("Server starting...");
-            TcpListener serverSocket = new TcpListener(IPAddress.Parse(BindIP), Port);
+            TcpListener serverSocket = new TcpListener(IPAddress.Parse(Config.BindIP), Config.Port);
             serverSocket.Start();
             Log.GlobalInfo("Mixed Client Started.");
-            Log.GlobalInfo($"Listening on {BindIP}:{Port} (TCP)");
+            Log.GlobalInfo($"Listening on {Config.BindIP}:{Config.Port} (TCP)");
             UdpReader = new Thread(AcceptUDP);
             UdpReader.Start();
             int counter = 0;
@@ -64,7 +64,7 @@ namespace SocketNetworking.Server
                     continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();
-                if (Clients.Count >= MaximumClients)
+                if (Clients.Count >= Config.MaximumClients)
                 {
                     //Do not accept.
                     socket.Close();
@@ -80,7 +80,7 @@ namespace SocketNetworking.Server
                 AddClient(client, counter);
                 _awaitingUDPConnection.Add(client);
                 CallbackTimer<MixedNetworkClient> callback = new CallbackTimer<MixedNetworkClient>((x) =>
-                {  
+                {
                     if (x == null)
                     {
                         return;
@@ -93,7 +93,7 @@ namespace SocketNetworking.Server
                     {
                         x.Disconnect("Failed to handshake in time.");
                     }
-                }, client, HandshakeTime);
+                }, client, Config.HandshakeTime);
                 callback.Start();
                 InvokeClientConnected(counter);
                 counter++;
@@ -105,8 +105,8 @@ namespace SocketNetworking.Server
         void AcceptUDP()
         {
             Log.GlobalInfo("UDP Server starting...");
-            Log.GlobalInfo($"Listening on {BindIP}:{Port} (UDP)");
-            IPEndPoint listener = new IPEndPoint(IPAddress.Any, Port);
+            Log.GlobalInfo($"Listening on {Config.BindIP}:{Config.Port} (UDP)");
+            IPEndPoint listener = new IPEndPoint(IPAddress.Any, Config.Port);
             UdpClient udpClient = new UdpClient(listener);
             _serverState = ServerState.Ready;
             while (true)
