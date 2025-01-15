@@ -76,36 +76,22 @@ namespace SocketNetworking.Client
             if (!Transport.DataAvailable)
             {
                 //Log.GlobalDebug("No data available (TCP)");
-                //return;
+                return;
             }
-            //byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
             Transport.BufferSize = Packet.MaxPacketSize;
-            //int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined.
             if (!IsTransportConnected)
             {
                 Log.GlobalDebug("Disconnected!");
                 StopClient();
                 return;
             }
-            /*if(TcpClient.ReceiveBufferSize == 0)
-            {
-                continue;
-            }*/
-            /*if (!NetworkStream.DataAvailable)
-            {
-                //Log.Debug("Nothing to read on stream");
-                continue;
-            }*/
-            //Log.Debug(TcpClient.ReceiveBufferSize.ToString());
             if (fillSize < sizeof(int))
             {
                 // we dont have enough data to read the length data
-                //Log.Debug($"Trying to read bytes to get length (we need at least 4 we have {fillSize})!");
                 int count = 0;
                 try
                 {
                     int tempFillSize = fillSize;
-                    //(byte[], Exception) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
                     if (TcpNoDelay)
                     {
                         (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(0, buffer.Length - fillSize);
@@ -118,7 +104,6 @@ namespace SocketNetworking.Client
                         count = transportRead.Item1.Length;
                         buffer = Transport.Buffer;
                     }
-                    //count = NetworkStream.Read(tempBuffer, 0, buffer.Length - fillSize);
                 }
                 catch (Exception ex)
                 {
@@ -126,14 +111,12 @@ namespace SocketNetworking.Client
                     return;
                 }
                 fillSize += count;
-                //Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
                 return;
             }
             int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
             bodySize = IPAddress.NetworkToHostOrder(bodySize);
             if (bodySize == 0)
             {
-                //Log.GlobalWarning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
                 fillSize = 0;
                 return;
             }
@@ -166,7 +149,6 @@ namespace SocketNetworking.Client
                     (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
                     count = transportRead.Item1.Length;
                     buffer = Transport.Buffer;
-                    //count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
                 }
                 catch (Exception ex)
                 {

@@ -57,6 +57,9 @@ namespace SocketNetworking.Transports
         /// </summary>
         public abstract IPEndPoint LocalEndPoint { get; }
 
+        /// <summary>
+        /// The <see cref="IPAddress"/> or <see cref="Peer"/>.
+        /// </summary>
         public abstract IPAddress PeerAddress { get; }
 
         /// <summary>
