@@ -67,6 +67,7 @@ namespace SocketNetworking.Server
                 if (Clients.Count >= Config.MaximumClients)
                 {
                     //Do not accept.
+                    Log.GlobalInfo("Rejected a client becuase the server is full.");
                     socket.Close();
                     continue;
                 }

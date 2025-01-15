@@ -37,11 +37,11 @@ namespace SocketNetworking.Transports
         {
             get
             {
-                return Client.Available > 0;
+                return Stream.CanRead && Socket.Available > 0;
             }
         }
 
-        public override int DataAmountAvailable => Client.Available;
+        public override int DataAmountAvailable => Socket.Available;
 
         public override Exception Connect(string hostname, int port)
         {

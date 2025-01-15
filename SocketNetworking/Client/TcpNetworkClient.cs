@@ -60,19 +60,31 @@ namespace SocketNetworking.Client
             }
         }
 
+        public override void Init()
+        {
+            base.Init();
+            buffer = new byte[Packet.MaxPacketSize];
+            fillSize = 0;
+        }
+
+        byte[] buffer = new byte[Packet.MaxPacketSize];
+
+        int fillSize = 0;
+
         protected override void RawReader()
         {
-            byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
+            if (!Transport.DataAvailable)
+            {
+                //Log.GlobalDebug("No data available (TCP)");
+                //return;
+            }
+            //byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
             Transport.BufferSize = Packet.MaxPacketSize;
-            int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined.
+            //int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined.
             if (!IsTransportConnected)
             {
                 Log.GlobalDebug("Disconnected!");
                 StopClient();
-                return;
-            }
-            if (!Transport.DataAvailable)
-            {
                 return;
             }
             /*if(TcpClient.ReceiveBufferSize == 0)

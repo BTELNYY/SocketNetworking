@@ -103,6 +103,7 @@ namespace SocketNetworking.Client
                     {
                         ex = Transport.Send(fullBytes, packet.Destination);
                     }
+                    Log.GlobalDebug("Packet sent!");
                     if (ex != null)
                     {
                         throw ex;
@@ -143,7 +144,7 @@ namespace SocketNetworking.Client
                 {
                     continue;
                 }
-                if(!UdpTransport.DataAvailable)
+                if (!UdpTransport.DataAvailable)
                 {
                     continue;
                 }

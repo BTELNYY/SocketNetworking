@@ -54,6 +54,7 @@
     <Compile Include="Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Exceptions\NetworkInvocationException.cs" />
     <Compile Include="Exceptions\NetworkSerializationException.cs" />
+    <Compile Include="Misc\ClientHandler.cs" />
     <Compile Include="Misc\IRoundRobinData.cs" />
     <Compile Include="Misc\ObjectPool.cs" />
     <Compile Include="Misc\RoundRobin.cs" />
