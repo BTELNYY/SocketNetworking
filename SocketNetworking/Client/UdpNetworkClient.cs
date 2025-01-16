@@ -95,7 +95,12 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
+            (byte[], Exception, IPEndPoint) packet = Transport.Receive(0, 0);
+            if(packet.Item1 == null)
+            {
+                Log.GlobalWarning("Transport recieved a null byte array.");
+                return;
+            }
             Deserialize(packet.Item1, packet.Item3);
         }
     }

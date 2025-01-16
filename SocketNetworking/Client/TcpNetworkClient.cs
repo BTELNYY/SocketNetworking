@@ -73,6 +73,8 @@ namespace SocketNetworking.Client
 
         protected override void RawReader()
         {
+            base.RawReader();
+            return;
             if (!Transport.DataAvailable)
             {
                 //Log.GlobalDebug("No data available (TCP)");
@@ -94,13 +96,13 @@ namespace SocketNetworking.Client
                     int tempFillSize = fillSize;
                     if (TcpNoDelay)
                     {
-                        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(0, buffer.Length - fillSize);
+                        (byte[], Exception, IPEndPoint) transportRead = TcpTransport.ClassicReceive(0, buffer.Length - fillSize);
                         count = transportRead.Item1.Length;
                         buffer = Transport.Buffer;
                     }
                     else
                     {
-                        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
+                        (byte[], Exception, IPEndPoint) transportRead = TcpTransport.ClassicReceive(fillSize, buffer.Length - fillSize);
                         count = transportRead.Item1.Length;
                         buffer = Transport.Buffer;
                     }
@@ -146,7 +148,7 @@ namespace SocketNetworking.Client
                 try
                 {
 
-                    (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
+                    (byte[], Exception, IPEndPoint) transportRead = TcpTransport.ClassicReceive(fillSize, buffer.Length - fillSize);
                     count = transportRead.Item1.Length;
                     buffer = Transport.Buffer;
                 }
@@ -158,7 +160,7 @@ namespace SocketNetworking.Client
                 fillSize += count;
             }
             // we now know we have enough bytes to read at least one whole packet;
-            byte[] fullPacket = ShiftOut(ref buffer, bodySize + sizeof(int));
+            byte[] fullPacket = Utils.ShiftOut(ref buffer, bodySize + sizeof(int));
             if ((fillSize -= bodySize) < 0)
             {
                 fillSize = 0;
