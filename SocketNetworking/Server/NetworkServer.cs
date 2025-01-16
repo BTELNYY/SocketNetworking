@@ -227,7 +227,7 @@ namespace SocketNetworking.Server
                 NetworkClient cursedClient = (NetworkClient)Convert.ChangeType(client, ClientType);
                 _clients.Add(clientId, cursedClient);
                 ClientHandler handler = handlers.Next();
-                //handler.AddClient(cursedClient);
+                handler.AddClient(cursedClient);
                 Log.GlobalDebug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
             }
         }

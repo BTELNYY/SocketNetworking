@@ -119,6 +119,11 @@ namespace SocketNetworking.Client
         /// Called when a packet is ready to send, this event is never called if <see cref="NetworkClient.ManualPacketSend"/> is set to false.
         /// </summary>
         public event Action<Packet> PacketReadyToSend;
+
+        /// <summary>
+        /// Called when the Client ID is changed on the server or client, note that it is only invoked on the server when the <see cref="ServerDataPacket"/> has already been sent, meaning the client should be aware of its own <see cref="ClientID"/>, assuming packets arrive in order.
+        /// </summary>
+        public event Action ClientIdUpdated;
         #endregion
 
         #region Static Events
@@ -552,10 +557,10 @@ namespace SocketNetworking.Client
             _clientLocation = ClientLocation.Remote;
             ClientConnected += OnRemoteClientConnected;
             ClientConnected?.Invoke();
-            _packetReaderThread = new Thread(PacketReaderThreadMethod);
-            _packetReaderThread.Start();
-            _packetSenderThread = new Thread(PacketSenderThreadMethod);
-            _packetSenderThread.Start();
+            //_packetReaderThread = new Thread(PacketReaderThreadMethod);
+            //_packetReaderThread.Start();
+            //_packetSenderThread = new Thread(PacketSenderThreadMethod);
+            //_packetSenderThread.Start();
         }
 
         /// <summary>
@@ -989,15 +994,11 @@ namespace SocketNetworking.Client
             Log.GlobalDebug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
             writer.WriteInt(packetFull.Length);
             writer.Write(packetFull);
-            int written = packetFull.Length + 4;
-            if (written > (packetFull.Length + 4))
+            int written = writer.DataLength;
+            if(written != (packetFull.Length + 4))
             {
-                Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetBytes.Length + 4}");
+                Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetFull.Length + 4}");
                 return null;
-            }
-            if (written < (packetFull.Length + 4))
-            {
-                Log.GlobalError($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetBytes.Length + 4}");
             }
             byte[] fullBytes = writer.Data;
             if (fullBytes.Length > Packet.MaxPacketSize)
@@ -1052,9 +1053,7 @@ namespace SocketNetworking.Client
 
         /// <summary>
         /// Method which reads actual data and proccesses it from the Network I/O, this is a blocking, single read method, it will not attempt to keep reading if there is not data on the <see cref="Transport"/>.
-        /// This method is not implemented. on the base <see cref="NetworkClient"/> class.
         /// </summary>
-        /// <exception cref="NotImplementedException"></exception>
         protected virtual void RawReader()
         {
             if (!IsTransportConnected)
@@ -1310,6 +1309,7 @@ namespace SocketNetworking.Client
                     };
                     Send(serverDataPacket);
                     CurrentConnectionState = ConnectionState.Connected;
+                    ClientIdUpdated?.Invoke();
                     if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
                     {
                         ServerBeginEncryption();
@@ -1421,6 +1421,7 @@ namespace SocketNetworking.Client
                         Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
                         break;
                     }
+                    ClientIdUpdated?.Invoke();
                     Dictionary<int, string> NewPacketPairs = serverDataPacket.CustomPacketAutoPairs;
                     List<Type> homelessPackets = new List<Type>();
                     foreach (int i in NewPacketPairs.Keys)

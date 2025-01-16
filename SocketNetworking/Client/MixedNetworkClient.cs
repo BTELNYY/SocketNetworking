@@ -118,63 +118,45 @@ namespace SocketNetworking.Client
             }
         }
 
-        private Thread _udpThread = null;
-
-        public Thread UdpThread
+        protected override void RawReader()
         {
-            get
+            base.RawReader();
+            if (_shuttingDown)
             {
-                if(_udpThread == null)
-                {
-                    _udpThread = new Thread(UdpReaderThread);
-                }
-                return _udpThread;
+                return;
             }
-        }
-
-        void UdpReaderThread()
-        {
-            while (true)
+            if (!UdpTransport.IsConnected)
             {
-                if (_shuttingDown)
-                {
-                    break;
-                }
-                if (!UdpTransport.IsConnected)
-                {
-                    continue;
-                }
-                if (!UdpTransport.DataAvailable)
-                {
-                    continue;
-                }
-                (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
-                if(packet.Item2 != null)
-                { 
-                    Log.GlobalError(packet.Item2.ToString());
-                    continue;
-                }
-                if(packet.Item1.Length == 0)
-                {
-                    continue;
-                }
-                Deserialize(packet.Item1, packet.Item3);
+                return;
             }
+            if (!UdpTransport.DataAvailable)
+            {
+                return;
+            }
+            (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
+            if (packet.Item2 != null)
+            {
+                Log.GlobalError(packet.Item2.ToString());
+                return;
+            }
+            if (packet.Item1.Length == 0)
+            {
+                return;
+            }
+            Deserialize(packet.Item1, packet.Item3);
         }
 
         public override void InitRemoteClient(int clientId, NetworkTransport socket)
         {
-            base.ClientConnected += MixedNetworkClient_ClientConnected;
+            base.ClientIdUpdated += MixedNetworkClient_ClientIdUpdated;
             base.InitRemoteClient(clientId, socket);
         }
 
-        private void MixedNetworkClient_ClientConnected()
+        private void MixedNetworkClient_ClientIdUpdated()
         {
             Random random = new Random();
             InitialUDPKey = random.Next(int.MinValue, int.MaxValue);
             ServerSendUDPInfo(InitialUDPKey);
-            _udpThread = new Thread(UdpReaderThread);
-            _udpThread.Start();
         }
 
         private void ServerSendUDPInfo(int passKey)
@@ -196,8 +178,6 @@ namespace SocketNetworking.Client
                 ByteWriter writer = new ByteWriter();
                 writer.WriteInt(ClientID);
                 writer.WriteInt(InitialUDPKey);
-                _udpThread = new Thread(UdpReaderThread);
-                _udpThread.Start();
                 UdpTransport.Send(writer.Data);
             }
         }

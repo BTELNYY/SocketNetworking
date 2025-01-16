@@ -233,7 +233,7 @@ namespace SocketNetworking.Transports
 
         public override Exception Send(byte[] data, IPEndPoint destination)
         {
-            Log.GlobalDebug($"Sending data on: {LocalEndPoint.Address}:{LocalEndPoint.Port}, To: {destination.Address}:{destination.Port}");
+            //Log.GlobalDebug($"Sending data on: {LocalEndPoint.Address}:{LocalEndPoint.Port}, To: {destination.Address}:{destination.Port}");
             try
             {
                 if (_hasConnected)
