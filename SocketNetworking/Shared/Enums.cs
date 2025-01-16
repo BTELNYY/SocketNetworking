@@ -120,6 +120,25 @@ namespace SocketNetworking.Shared
     }
 
     /// <summary>
+    /// Determines where a <see cref="INetworkObject"/> can be "seen" from, or be visible on the network
+    /// </summary>
+    public enum ObjectVisibilityMode : byte
+    {
+        /// <summary>
+        /// Only the server has this object. Clients do not receive information about it. (Spawning a <see cref="INetworkObject"/> will set this to <see cref="Everyone"/>
+        /// </summary>
+        ServerOnly,
+        /// <summary>
+        /// Only the <see cref="INetworkObject.OwnerClientID"/> and the Server can see this object.
+        /// </summary>
+        OwnerAndServer,
+        /// <summary>
+        /// Everyone can see this object.
+        /// </summary>
+        Everyone,
+    }
+
+    /// <summary>
     /// Mode of the network invocation. <see cref="Listener"/> is for packet listenrs, <see cref="RemoteProcedureCall"/> is for Network Invocations.
     /// </summary>
     public enum InvocationMode

@@ -19,7 +19,7 @@ namespace SocketNetworking.Shared
         /// <summary>
         /// Called on the client when the object has finished being spawned and the spawn response has been sent to the server.
         /// </summary>
-        void OnLocalSpawned(ObjectSpawnPacket packet);
+        void OnLocalSpawned(ObjectManagePacket packet);
 
         /// <summary>
         /// Determines if the object can be spawned.

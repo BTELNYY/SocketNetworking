@@ -350,7 +350,7 @@ namespace SocketNetworking.UnityEngine.Components
             
         }
 
-        public virtual void OnLocalSpawned(ObjectSpawnPacket packet)
+        public virtual void OnLocalSpawned(ObjectManagePacket packet)
         {
             
         }

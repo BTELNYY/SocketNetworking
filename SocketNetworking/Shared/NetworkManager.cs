@@ -27,7 +27,7 @@ namespace SocketNetworking.Shared
         public static readonly Type[] AcceptedMethodArugments = new Type[]
         {
             typeof(CustomPacket),
-            typeof(NetworkClient),
+            typeof(NetworkHandle),
         };
 
         public static readonly Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
@@ -177,7 +177,7 @@ namespace SocketNetworking.Shared
                             {
                                 Type methodType = method.GetParameters()[i].ParameterType;
                                 Type acceptedType = AcceptedMethodArugments[i];
-                                if (!methodType.IsSubclassOf(acceptedType))
+                                if (!methodType.IsSubclassDeep(acceptedType))
                                 {
                                     Log.GlobalWarning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
                                     methodArgsFailed = true;
@@ -561,7 +561,7 @@ namespace SocketNetworking.Shared
                 {
                     Type methodType = method.GetParameters()[i].ParameterType;
                     Type acceptedType = AcceptedMethodArugments[i];
-                    if (!methodType.IsSubclassOf(acceptedType))
+                    if (!methodType.IsSubclassDeep(acceptedType))
                     {
                         Log.GlobalWarning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
                         methodArgsFailed = true;

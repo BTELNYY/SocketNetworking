@@ -16,14 +16,19 @@ namespace SocketNetworking.Shared
     public interface INetworkObject : INetworkSpawnable
     {
         /// <summary>
-        /// The <see cref="NetworkClient.ClientID"/> of the current owner.
+        /// The <see cref="NetworkClient.ClientID"/> of the current owner. This must not be a live property, Do NOT use the setter to update it networkside. Use <see cref="NetworkObjectExtensions.NetworkSetOwner(INetworkObject, int)"/> to set this network wide.
         /// </summary>
         int OwnerClientID { get; set; }
 
         /// <summary>
-        /// Determines the objects ownership mode. <see cref="OwnershipMode.Client"/> = the <see cref="OwnerClientID"/> owns the object. <see cref="OwnershipMode.Server"/> = the Server owns the object. <see cref="OwnershipMode.Public"/> = Everybody owns the object.
+        /// Determines the objects ownership mode. <see cref="OwnershipMode.Client"/> = the <see cref="OwnerClientID"/> owns the object. <see cref="OwnershipMode.Server"/> = the Server owns the object. <see cref="OwnershipMode.Public"/> = Everybody owns the object. This must not be a live property, Do NOT use the setter to update it networkside. Use <see cref="NetworkObjectExtensions.NetworkSetOwnershipMode(INetworkObject, OwnershipMode)"/> to set this network wide.
         /// </summary>
         OwnershipMode OwnershipMode { get; set; }
+
+        /// <summary>
+        /// Determines the object visibility. This must not be a live property, Do NOT use the setter to update it networkside.
+        /// </summary>
+        ObjectVisibilityMode ObjectVisibilityMode { get; set; }
 
         /// <summary>
         /// The network ID of the object. This should be the same on the client and server.
@@ -65,7 +70,7 @@ namespace SocketNetworking.Shared
         void OnDisconnected(NetworkClient client);
     }
 
-    public enum OwnershipMode
+    public enum OwnershipMode : byte
     {
         Client,
         Server,
