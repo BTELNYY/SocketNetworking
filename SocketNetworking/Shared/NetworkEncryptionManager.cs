@@ -11,6 +11,14 @@ namespace SocketNetworking.Shared
     {
         public const int KEY_SIZE = 2048;
 
+        public static int MaxBytesForAsym
+        {
+            get
+            {
+                return ((KEY_SIZE - 384) / 8) + 37;
+            }
+        }
+
         public Dictionary<IPEndPoint, string> OthersRSAKeys = new Dictionary<IPEndPoint, string>();
 
         public void RegisterRSA(IPEndPoint endPoint, string publicKey)
@@ -73,6 +81,8 @@ namespace SocketNetworking.Shared
             }
             set
             {
+                SharedAes = new AesCryptoServiceProvider();
+                SharedAes.Padding = PaddingMode.PKCS7;
                 SharedAes.Key = value.Item1;
                 SharedAes.IV = value.Item2;
             }
@@ -99,6 +109,7 @@ namespace SocketNetworking.Shared
             SharedAes = new AesCryptoServiceProvider();
             SharedAes.GenerateIV();
             SharedAes.GenerateKey();
+            SharedAes.Padding = PaddingMode.PKCS7;
             RSA rsa = RSA.Create(KEY_SIZE);
             MyRSA = new RSACryptoServiceProvider(KEY_SIZE);
             MyRSA.ImportParameters(rsa.ExportParameters(true));
@@ -110,18 +121,14 @@ namespace SocketNetworking.Shared
             if (useSymmetry)
             {
                 Aes aes = new AesCryptoServiceProvider();
+                aes.Padding = PaddingMode.PKCS7;
                 aes.Key = OthersAesKeys[to].Item1;
                 aes.IV = OthersAesKeys[to].Item2;
-                using (MemoryStream stream = new MemoryStream(data))
-                {
-                    using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write))
-                    {
-                        cryptoStream.Write(data, 0, data.Length);
-                        byte[] output = new byte[cryptoStream.Length];
-                        cryptoStream.Read(output, 0, output.Length);
-                        return output;
-                    };
-                };
+                MemoryStream stream = new MemoryStream(data);
+                CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write);
+                cryptoStream.Write(data, 0, data.Length);
+                cryptoStream.FlushFinalBlock();
+                return stream.ToArray();
             }
             else
             {
@@ -140,16 +147,13 @@ namespace SocketNetworking.Shared
             if (useSymmetry)
             {
                 Aes aes = new AesCryptoServiceProvider();
+                aes.Padding = PaddingMode.PKCS7;
                 aes.Key = OthersAesKeys[from].Item1;
                 aes.IV = OthersAesKeys[from].Item2;
-                byte[] outputBytes = data;
-                using (MemoryStream memoryStream = new MemoryStream(outputBytes))
-                {
-                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Read))
-                    {
-                        cryptoStream.Read(outputBytes, 0, outputBytes.Length);
-                    }
-                }
+                byte[] outputBytes = new byte[] { };
+                MemoryStream stream = new MemoryStream(data);
+                CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Read);
+                cryptoStream.Read(outputBytes, 0, outputBytes.Length);
                 return outputBytes;
             }
             else
@@ -170,16 +174,11 @@ namespace SocketNetworking.Shared
         {
             if (useSymmetry)
             {
-                using (MemoryStream stream = new MemoryStream(data))
-                {
-                    using (CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write))
-                    {
-                        cryptoStream.Write(data, 0, data.Length);
-                        byte[] output = new byte[cryptoStream.Length];
-                        cryptoStream.Read(output, 0, output.Length);
-                        return output;
-                    };
-                };
+                MemoryStream stream = new MemoryStream();
+                CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write);
+                cryptoStream.Write(data, 0, data.Length);
+                cryptoStream.FlushFinalBlock();
+                return stream.ToArray();
             }
             else
             {
@@ -196,13 +195,9 @@ namespace SocketNetworking.Shared
             if (useSymmetry)
             {
                 byte[] outputBytes = data;
-                using (MemoryStream memoryStream = new MemoryStream(outputBytes))
-                {
-                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, SharedAes.CreateDecryptor(), CryptoStreamMode.Read))
-                    {
-                        cryptoStream.Read(outputBytes, 0, outputBytes.Length);
-                    }
-                }
+                MemoryStream stream = new MemoryStream(data);
+                CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateDecryptor(), CryptoStreamMode.Read);
+                cryptoStream.Read(outputBytes, 0, outputBytes.Length);
                 return outputBytes;
             }
             else

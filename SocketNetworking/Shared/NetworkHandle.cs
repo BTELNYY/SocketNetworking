@@ -33,7 +33,7 @@ namespace SocketNetworking.Shared
         {
             get
             {
-                return InvocationPacket.Flags.HasFlag(PacketFlags.AsymtreicalEncrypted) || InvocationPacket.Flags.HasFlag(PacketFlags.SymetricalEncrypted);
+                return InvocationPacket.Flags.HasFlag(PacketFlags.AsymetricalEncrypted) || InvocationPacket.Flags.HasFlag(PacketFlags.SymetricalEncrypted);
             }
         }
     }

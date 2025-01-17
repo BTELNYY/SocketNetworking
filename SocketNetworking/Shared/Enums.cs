@@ -43,9 +43,9 @@ namespace SocketNetworking.Shared
         /// <summary>
         /// Uses the RSA Algorithim at send to encrypt data. RSA has a limit to the size of the data it can encrypt. Not Compatible with <see cref="PacketFlags.SymetricalEncrypted"/>
         /// </summary>
-        AsymtreicalEncrypted = 2,
+        AsymetricalEncrypted = 2,
         /// <summary>
-        /// Uses Symetrical Encryption to send data, note that this can only be used once the full encryptoin handshake has been completed. Not Compatible with <see cref="PacketFlags.AsymtreicalEncrypted"/>
+        /// Uses Symetrical Encryption to send data, note that this can only be used once the full encryptoin handshake has been completed. Not Compatible with <see cref="PacketFlags.AsymetricalEncrypted"/>
         /// </summary>
         SymetricalEncrypted = 4,
         /// <summary>
@@ -53,7 +53,7 @@ namespace SocketNetworking.Shared
         /// </summary>
         Priority = 8,
         /// <summary>
-        /// Tells the library to not Encrypt this packet at all, if combined with <see cref="PacketFlags.AsymtreicalEncrypted"/> or <see cref="PacketFlags.SymetricalEncrypted"/>, the encryption flags are ignored.
+        /// Tells the library to not Encrypt this packet at all, if combined with <see cref="PacketFlags.AsymetricalEncrypted"/> or <see cref="PacketFlags.SymetricalEncrypted"/>, the encryption flags are ignored.
         /// </summary>
         DoNotEncrypt = 16,
     }

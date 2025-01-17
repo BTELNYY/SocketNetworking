@@ -71,7 +71,7 @@ namespace SocketNetworking.PacketSystem
         /// </returns>
         public bool ValidateFlags()
         {
-            if(Flags.HasFlag(PacketFlags.AsymtreicalEncrypted) && Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            if(Flags.HasFlag(PacketFlags.AsymetricalEncrypted) && Flags.HasFlag(PacketFlags.SymetricalEncrypted))
             {
                 return false;
             }
@@ -215,9 +215,9 @@ namespace SocketNetworking.PacketSystem
             {
                 return new PacketHeader();
             }
-            if(data.Length < HeaderLength + 1)
+            if(data.Length < HeaderLength)
             {
-                throw new ArgumentOutOfRangeException("data", $"Data must be at least {HeaderLength + 1} bytes long!");
+                throw new ArgumentOutOfRangeException("data", $"Data must be at least {HeaderLength} bytes long!");
             }
             ByteReader reader = new ByteReader(data);
             int size = reader.ReadInt();
