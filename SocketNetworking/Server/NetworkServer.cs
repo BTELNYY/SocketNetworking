@@ -237,11 +237,17 @@ namespace SocketNetworking.Server
             if (_clients.ContainsKey(clientId))
             {
                 ClientDisconnected?.Invoke(clientId);
+                ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(_clients[clientId]));
+                if(handler == null)
+                {
+                    Log.GlobalError("Unable to find the handler responsible for Client ID " + clientId);
+                }
+                handler.RemoveClient(_clients[clientId]);
                 _clients.Remove(clientId);
             }
             else
             {
-                Log.GlobalWarning("Can't remove client: ID not found.");
+                Log.GlobalWarning($"Can't remove client ID {clientId}, not found!");
             }
         }
 

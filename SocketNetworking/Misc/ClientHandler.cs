@@ -16,12 +16,12 @@ namespace SocketNetworking.Misc
         /// <summary>
         /// Not thread safe.
         /// </summary>
-        public HashSet<NetworkClient> Clients { get; }
+        public List<NetworkClient> Clients { get; }
 
         public ClientHandler(IEnumerable<NetworkClient> clients)
         {
             Thread = new Thread(Run);
-            Clients = new HashSet<NetworkClient>(clients);
+            Clients = new List<NetworkClient>(clients);
         }
 
         public int CurrentClientCount
@@ -52,6 +52,14 @@ namespace SocketNetworking.Misc
             }
         }
 
+        public bool HasClient(NetworkClient client)
+        {
+            lock(_lock)
+            {
+                return Clients.Contains(client);
+            }
+        }
+
         public ClientHandler() : this(new List<NetworkClient>()) { }
 
         bool die = false;
@@ -76,8 +84,9 @@ namespace SocketNetworking.Misc
                 if (die) return;
                 lock (_lock)
                 {
-                    foreach (NetworkClient client in Clients)
+                    for (int i = 0; i < Clients.Count; i++)
                     {
+                        NetworkClient client = Clients[i];
                         client.ReadNext();
                         client.WriteNext();
                     }

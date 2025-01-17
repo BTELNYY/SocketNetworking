@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Threading;
+using SocketNetworking.PacketSystem.Packets;
 
 namespace SocketNetworking.Shared
 {
@@ -110,6 +111,7 @@ namespace SocketNetworking.Shared
             SharedAes.GenerateIV();
             SharedAes.GenerateKey();
             SharedAes.Padding = PaddingMode.PKCS7;
+            Log.GlobalInfo($"Generating new Keys. Key: {string.Join("-", SharedAes.Key)}, IV: {string.Join("-", SharedAes.IV)}");
             RSA rsa = RSA.Create(KEY_SIZE);
             MyRSA = new RSACryptoServiceProvider(KEY_SIZE);
             MyRSA.ImportParameters(rsa.ExportParameters(true));

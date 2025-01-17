@@ -43,10 +43,10 @@ namespace SocketNetworking.ExampleServer
                 {
                     if (c is TestClient client && c.Ready)
                     {
-                        client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
+                        //client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
                         ExampleCustomPacket packet = new ExampleCustomPacket();
                         packet.Data = "test";
-                        packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
+                        packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, false);
                         c.Send(packet);
                     }
                     continue;

@@ -496,6 +496,7 @@ namespace SocketNetworking.Client
 
         #endregion
 
+        #region Encryption
 
         /// <summary>
         /// Requests encryption from the remote server.
@@ -547,6 +548,8 @@ namespace SocketNetworking.Client
             }, this, 10f);
             timer.Start();
         }
+
+        #endregion
 
         #region Init
 
@@ -692,10 +695,10 @@ namespace SocketNetworking.Client
             _connectionState = ConnectionState.Disconnected;
             Transport?.Close();
             _shuttingDown = true;
-            _packetReaderThread?.Abort();
-            _packetSenderThread?.Abort();
-            _packetReaderThread = null;
-            _packetSenderThread = null;
+            //_packetReaderThread?.Abort();
+            //_packetSenderThread?.Abort();
+            //_packetReaderThread = null;
+            //_packetSenderThread = null;
             if (Clients.Contains(this))
             {
                 Clients.Remove(this);
@@ -1553,7 +1556,7 @@ namespace SocketNetworking.Client
                             Send(encryptionRecieve);
                             break;
                         case EncryptionFunction.SymmetricalKeySend:
-                            Log.GlobalInfo($"Got servers symetrical key. Key Length: {encryptionPacket.SymKey.Length}");
+                            Log.GlobalInfo($"Got servers symetrical key. Key: {string.Join("-", encryptionPacket.SymKey)}, IV: {string.Join("-", encryptionPacket.SymIV)}");
                             EncryptionManager.SharedAesKey = new Tuple<byte[], byte[]>(encryptionPacket.SymKey, encryptionPacket.SymIV);
                             EncryptionPacket gotYourSymmetricalKey = new EncryptionPacket();
                             gotYourSymmetricalKey.EncryptionFunction = EncryptionFunction.SymetricalKeyRecieve;

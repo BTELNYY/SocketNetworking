@@ -487,7 +487,7 @@ namespace SocketNetworking.Shared
         {
             ByteReader reader = new ByteReader(data);
             TypeFullName = reader.ReadString();
-            this.Assmebly = reader.ReadString();
+            Assmebly = reader.ReadString();
             DataNull = reader.ReadBool();
             Data = reader.ReadByteArray();
             return reader.ReadBytes;
