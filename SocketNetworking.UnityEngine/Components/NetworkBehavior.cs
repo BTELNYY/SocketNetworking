@@ -182,6 +182,8 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual bool Spawnable => true;
 
+        public ObjectVisibilityMode ObjectVisibilityMode { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         [NetworkInvocable(NetworkDirection.Server)]
         private void UpdateOwnershipModeRpc(OwnershipMode mode)
         {
