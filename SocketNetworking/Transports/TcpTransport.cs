@@ -66,14 +66,14 @@ namespace SocketNetworking.Transports
             }
         }
 
-        public override (byte[], Exception, IPEndPoint) Receive(int offset, int size)
+        public override (byte[], Exception, IPEndPoint) Receive()
         {
             try
             {
                 //Stream.Read(Buffer, offset, size);
                 lock(_lock)
                 {
-                    Buffer = Receive();
+                    Buffer = ReceiveInternal();
                 }
                 return (Buffer, null, Peer);
             }
@@ -83,6 +83,7 @@ namespace SocketNetworking.Transports
             }
         }
 
+        [Obsolete("Use Receive(int, int) instead.")]
         public (byte[], Exception, IPEndPoint) ClassicReceive(int offset, int size)
         {
             try
@@ -107,7 +108,7 @@ namespace SocketNetworking.Transports
         /// Attempts to read a full packet. (this blocks the TCP connection until it can be read)
         /// </summary>
         /// <returns></returns>
-        private byte[] Receive()
+        private byte[] ReceiveInternal()
         {
             while(true)
             {

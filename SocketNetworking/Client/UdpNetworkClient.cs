@@ -95,7 +95,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            (byte[], Exception, IPEndPoint) packet = Transport.Receive(0, 0);
+            (byte[], Exception, IPEndPoint) packet = Transport.Receive();
             if(packet.Item1 == null)
             {
                 Log.GlobalWarning("Transport recieved a null byte array.");

@@ -133,7 +133,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive(0, 0);
+            (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive();
             if (packet.Item2 != null)
             {
                 Log.GlobalError(packet.Item2.ToString());

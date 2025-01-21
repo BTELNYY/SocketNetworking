@@ -191,7 +191,7 @@ namespace SocketNetworking.Transports
             }
         }
 
-        public override (byte[], Exception, IPEndPoint) Receive(int offset, int size)
+        public override (byte[], Exception, IPEndPoint) Receive()
         {
             if (IsServerMode)
             {

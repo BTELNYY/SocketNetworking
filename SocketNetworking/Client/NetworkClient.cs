@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 
 namespace SocketNetworking.Client
@@ -976,6 +977,12 @@ namespace SocketNetworking.Client
             byte[] packetBytes = packet.Serialize().Data;
             byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
             byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
+            StringBuilder hex = new StringBuilder(packetBytes.Length * 2);
+            foreach (byte b in packetBytes)
+            {
+                hex.AppendFormat("{0:x2}", b);
+            }
+            Log.GlobalDebug("Raw Serialized Packet: \n" + hex.ToString());
             if (packet.Flags.HasFlag(PacketFlags.Compressed))
             {
                 Log.GlobalDebug("Compressing the packet.");
@@ -1030,6 +1037,12 @@ namespace SocketNetworking.Client
                 Log.GlobalError("Packet too large!");
                 return null;
             }
+            StringBuilder hex1 = new StringBuilder(fullBytes.Length * 2);
+            foreach (byte b in fullBytes)
+            {
+                hex1.AppendFormat("{0:x2}", b);
+            }
+            Log.GlobalDebug("Full Packet: \n" + hex1.ToString());
             return fullBytes;
         }
 
@@ -1089,7 +1102,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            (byte[], Exception, IPEndPoint) packet = Transport.Receive(0, 0);
+            (byte[], Exception, IPEndPoint) packet = Transport.Receive();
             if (packet.Item1 == null)
             {
                 Log.GlobalWarning("Transport recieved a null byte array.");
@@ -1207,6 +1220,12 @@ namespace SocketNetworking.Client
         /// <param name="endpoint"></param>
         protected virtual void Deserialize(byte[] fullPacket, IPEndPoint endpoint)
         {
+            StringBuilder hex = new StringBuilder(fullPacket.Length * 2);
+            foreach (byte b in fullPacket)
+            {
+                hex.AppendFormat("{0:x2}", b);
+            }
+            Log.GlobalDebug(hex.ToString());
             PacketHeader header = Packet.ReadPacketHeader(fullPacket);
             if (header.Type == PacketType.CustomPacket && NetworkManager.GetCustomPacketByID(header.CustomPacketID) == null)
             {
@@ -1247,6 +1266,12 @@ namespace SocketNetworking.Client
                 Log.GlobalWarning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
             }
             fullPacket = headerBytes.Concat(packetBytes).ToArray();
+            StringBuilder hex1 = new StringBuilder(fullPacket.Length * 2);
+            foreach (byte b in fullPacket)
+            {
+                hex1.AppendFormat("{0:x2}", b);
+            }
+            Log.GlobalDebug("Raw Deserialized Packet: \n" + hex1.ToString());
             PacketRead?.Invoke(header, fullPacket);
             if (ManualPacketHandle)
             {

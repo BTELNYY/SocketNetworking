@@ -106,7 +106,7 @@ namespace SocketNetworking.Transports
         /// <param name="offset"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public abstract (byte[], Exception, IPEndPoint) Receive(int offset, int size);
+        public abstract (byte[], Exception, IPEndPoint) Receive();
 
         /// <summary>
         /// Closes the transport.
