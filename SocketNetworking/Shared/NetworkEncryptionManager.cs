@@ -177,6 +177,7 @@ namespace SocketNetworking.Shared
             if (useSymmetry)
             {
                 MemoryStream stream = new MemoryStream();
+                SharedAes.Padding = PaddingMode.PKCS7;
                 CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write);
                 cryptoStream.Write(data, 0, data.Length);
                 cryptoStream.FlushFinalBlock();
@@ -196,10 +197,13 @@ namespace SocketNetworking.Shared
         {
             if (useSymmetry)
             {
-                byte[] outputBytes = data;
-                MemoryStream stream = new MemoryStream(data);
-                CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateDecryptor(), CryptoStreamMode.Read);
-                cryptoStream.Read(outputBytes, 0, outputBytes.Length);
+                MemoryStream stream = new MemoryStream();
+                SharedAes.Padding = PaddingMode.PKCS7;
+                using (CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateDecryptor(), CryptoStreamMode.Write))
+                {
+                    cryptoStream.Write(data, 0, data.Length);
+                }
+                byte[] outputBytes = stream.ToArray();
                 return outputBytes;
             }
             else
