@@ -111,7 +111,7 @@ namespace SocketNetworking.Transports
         private byte[] ReceiveInternal()
         {
             while(true)
-            {
+            {  
                 if (!IsConnected)
                 {
                     Log.GlobalWarning("Tcp Transport is not connecting but is trying to read.");
@@ -135,7 +135,7 @@ namespace SocketNetworking.Transports
                 }
                 int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
                 bodySize = IPAddress.NetworkToHostOrder(bodySize);
-                Log.GlobalDebug($"{bodySize}");
+                //Log.GlobalDebug($"{bodySize}");
                 if (bodySize == 0)
                 {
                     fillSize = 0;
@@ -159,7 +159,7 @@ namespace SocketNetworking.Transports
                 }
                 while (fillSize < bodySize)
                 {
-                    Log.GlobalDebug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
+                    //Log.GlobalDebug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
                     if (fillSize == buffer.Length)
                     {
                         // The buffer is too full, and we are fucked (oh shit)
