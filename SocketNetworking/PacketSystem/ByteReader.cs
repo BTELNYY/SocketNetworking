@@ -214,8 +214,8 @@ namespace SocketNetworking.PacketSystem
             int lenghtOfString = ReadInt();
             int expectedBytes = _workingSetData.Length - lenghtOfString;
             byte[] stringArray = _workingSetData.Take(lenghtOfString).ToArray();
-            string result = Encoding.UTF8.GetString(stringArray, 0, stringArray.Length);
             Remove(stringArray.Length);
+            string result = Encoding.UTF8.GetString(stringArray, 0, stringArray.Length);
             if(_workingSetData.Length != expectedBytes)
             {
                 throw new InvalidOperationException("StringReader stole more bytes then it should have!");
