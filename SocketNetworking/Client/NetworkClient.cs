@@ -918,7 +918,7 @@ namespace SocketNetworking.Client
                     {
                         throw ex;
                     }
-                    Log.GlobalDebug("Packet sent!");
+                    //Log.GlobalDebug("Packet sent!");
                 }
                 catch (Exception ex)
                 {
@@ -953,18 +953,18 @@ namespace SocketNetworking.Client
             int currentEncryptionState = (int)EncryptionState;
             if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
             {
-                Log.GlobalDebug("Encrypting using SYMMETRICAL");
+                //Log.GlobalDebug("Encrypting using SYMMETRICAL");
                 packet.Flags = packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
             }
             else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
             {
-                Log.GlobalDebug("Encrypting using ASYMMETRICAL");
+                //Log.GlobalDebug("Encrypting using ASYMMETRICAL");
                 packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymetricalEncrypted, true);
             }
             else
             {
                 //Ensure the packet isnt ecnrypted if we don't support it.
-                Log.GlobalDebug("Encryption is not supported at this moment, ensuring it isn't flagged as being enabled on this packet.");
+                //Log.GlobalDebug("Encryption is not supported at this moment, ensuring it isn't flagged as being enabled on this packet.");
                 packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymetricalEncrypted, false);
                 packet.Flags = packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, false);
             }
@@ -985,7 +985,7 @@ namespace SocketNetworking.Client
             //Log.GlobalDebug("Raw Serialized Packet: \n" + hex.ToString());
             if (packet.Flags.HasFlag(PacketFlags.Compressed))
             {
-                Log.GlobalDebug("Compressing the packet.");
+                //Log.GlobalDebug("Compressing the packet.");
                 packetDataBytes = packetDataBytes.Compress();
             }
             if (packet.Flags.HasFlag(PacketFlags.AsymetricalEncrypted))

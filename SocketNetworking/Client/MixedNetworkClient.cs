@@ -103,7 +103,7 @@ namespace SocketNetworking.Client
                     {
                         ex = Transport.Send(fullBytes, packet.Destination);
                     }
-                    Log.GlobalDebug("Packet sent!");
+                    //Log.GlobalDebug("Packet sent!");
                     if (ex != null)
                     {
                         throw ex;
