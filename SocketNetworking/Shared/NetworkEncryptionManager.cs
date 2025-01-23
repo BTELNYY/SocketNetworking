@@ -111,7 +111,7 @@ namespace SocketNetworking.Shared
             SharedAes.GenerateIV();
             SharedAes.GenerateKey();
             SharedAes.Padding = PaddingMode.PKCS7;
-            Log.GlobalInfo($"Generating new Keys. Key: {string.Join("-", SharedAes.Key)}, IV: {string.Join("-", SharedAes.IV)}");
+            //Log.GlobalInfo($"Generating new Keys. Key: {string.Join("-", SharedAes.Key)}, IV: {string.Join("-", SharedAes.IV)}");
             RSA rsa = RSA.Create(KEY_SIZE);
             MyRSA = new RSACryptoServiceProvider(KEY_SIZE);
             MyRSA.ImportParameters(rsa.ExportParameters(true));
@@ -152,10 +152,12 @@ namespace SocketNetworking.Shared
                 aes.Padding = PaddingMode.PKCS7;
                 aes.Key = OthersAesKeys[from].Item1;
                 aes.IV = OthersAesKeys[from].Item2;
-                byte[] outputBytes = new byte[] { };
                 MemoryStream stream = new MemoryStream(data);
-                CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Read);
-                cryptoStream.Read(outputBytes, 0, outputBytes.Length);
+                using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Write))
+                {
+                    cryptoStream.Write(data, 0, data.Length);
+                }
+                byte[] outputBytes = stream.ToArray();
                 return outputBytes;
             }
             else
