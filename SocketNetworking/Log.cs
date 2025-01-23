@@ -140,6 +140,17 @@ namespace SocketNetworking
             Invoke(data);
         }
 
+        public static void Global(string message, LogSeverity severity)
+        {
+            LogData data = new LogData()
+            {
+                Message = message,
+                Severity = severity,
+                CallerType = GetCallerType(),
+            };
+            Invoke(data);
+        }
+
         private static void Invoke(LogData data)
         {
             if(hiddenSeverities.Contains(data.Severity))

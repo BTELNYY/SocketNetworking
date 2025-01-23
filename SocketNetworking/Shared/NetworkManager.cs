@@ -351,12 +351,213 @@ namespace SocketNetworking.Shared
             }
         }
 
+        #region Network Objects
 
         private static readonly Dictionary<INetworkObject, NetworkObjectData> NetworkObjects = new Dictionary<INetworkObject, NetworkObjectData>();
+
+        private static readonly List<NetworkObjectSpawner> NetworkObjectSpawners = new List<NetworkObjectSpawner>();
+
+        public delegate INetworkSpawnable NetworkObjectSpawnerDelegate(ObjectManagePacket packet, NetworkHandle handle);
+
+        public static bool RegisterSpawner(Type type, NetworkObjectSpawnerDelegate spawner, bool allowSubclasses)
+        {
+            if(NetworkObjectSpawners.Any(x => x.TargetType == type))
+            {
+                Log.GlobalError("Can't register that spawner: The type is already registered.");
+                return false;
+            }
+            NetworkObjectSpawner spawnerStruct = new NetworkObjectSpawner()
+            {
+                Spawner = spawner,
+                AllowSubclasses = allowSubclasses,
+                TargetType = type
+            };
+            NetworkObjectSpawners.Add(spawnerStruct);
+            return true;
+        }
+
+        public static bool UnregisterSpawner(Type type, NetworkObjectSpawnerDelegate spawnerDelegate)
+        {
+            NetworkObjectSpawner spawner = NetworkObjectSpawners.FirstOrDefault(x => x.TargetType == type && x.Spawner == spawnerDelegate);
+            if (spawner == default(NetworkObjectSpawner))
+            {
+                Log.GlobalError("Can't unregister that spawner: Not Found");
+                return false;
+            }
+            NetworkObjectSpawners.Remove(spawner);
+            return true;
+        }
+
+        internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
+        {
+            INetworkObject @object = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == packet.NetowrkIDTarget);
+            if(@object == default(INetworkObject) && packet.Action != ObjectManagePacket.ObjectManageAction.Create)
+            {
+                throw new KeyNotFoundException($"No such Network Object with ID {packet.NetowrkIDTarget}, Did you spawn it yet?");
+            }
+            if(packet.Action != ObjectManagePacket.ObjectManageAction.Create || packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate || packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy)
+            {
+                if (WhereAmI == ClientLocation.Remote)
+                {
+                    if (@object.OwnershipMode == OwnershipMode.Client && handle.Client.ClientID != @object.OwnerClientID)
+                    {
+                        throw new SecurityException("Attempted to modify an object you do not have permission over.");
+                    }
+                    if(@object.OwnershipMode == OwnershipMode.Public && !@object.AllowPublicModification)
+                    {
+                        throw new SecurityException("Attempted to modify a public object which is not accepting public modification.");
+                    }
+                    if(@object.OwnershipMode == OwnershipMode.Server)
+                    {
+                        throw new SecurityException("Attempted to modify a server controlled object.");
+                    }
+                }
+            }
+
+            switch(packet.Action)
+            {
+                case ObjectManagePacket.ObjectManageAction.Create:
+                    Type type = Assembly.Load(packet.AssmeblyName)?.GetType(packet.ObjectClassName);
+                    if(type == null)
+                    {
+                        throw new NullReferenceException("Cannot find type by name or assmebly.");
+                    }
+                    NetworkObjectSpawner spawner = null;
+                    int bestApprox = 0;
+                    foreach (NetworkObjectSpawner possibleSpawner in NetworkObjectSpawners)
+                    {
+                        if(possibleSpawner.AllowSubclasses)
+                        {
+                            int distance = type.HowManyClassesUp(possibleSpawner.TargetType);
+                            if(distance == -1)
+                            {
+                                continue;
+                            }
+                            if (distance < bestApprox)
+                            {
+                                bestApprox = distance;
+                                spawner = possibleSpawner;
+                            }
+                        }
+                        else
+                        {
+                            if(possibleSpawner.TargetType != type)
+                            {
+                                continue;
+                            }
+                            spawner = possibleSpawner;
+                            break;
+                        }
+                    }
+                    INetworkSpawnable spawnable;
+                    if (spawner == null)
+                    {
+                        spawnable = (INetworkSpawnable)Activator.CreateInstance(type);
+                    }
+                    else
+                    {
+                        spawnable = spawner.Spawner.Invoke(packet, handle);
+                    }
+                    if(spawnable == null)
+                    {
+                        throw new NullReferenceException($"Failed to spawn {type.FullName}");
+                    }
+                    if(spawnable is INetworkObject @obj)
+                    {
+                        obj.NetworkID = packet.NetowrkIDTarget;
+                        obj.OwnerClientID = packet.OwnerID;
+                        obj.OwnershipMode = packet.OwnershipMode;
+                        ObjectManagePacket creationConfirmation = new ObjectManagePacket()
+                        {
+                            NetowrkIDTarget = packet.NetowrkIDTarget,
+                            Action = ObjectManagePacket.ObjectManageAction.ConfirmCreate,
+                        };
+                        AddNetworkObject(@obj);
+                        handle.Client.Send(creationConfirmation);
+                        obj.OnLocalSpawned(packet);
+                    }
+                    break;
+                case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
+                    INetworkObject creationTarget = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == packet.NetowrkIDTarget);
+                    if(creationTarget == default(INetworkObject))
+                    {
+                        throw new NullReferenceException($"Can't find the object that was confirmed spawned. ID: {packet.NetowrkIDTarget}");
+                    }
+                    creationTarget.OnNetworkSpawned(handle.Client);
+                    SendCreatedPulse(handle.Client, creationTarget);
+                    break;
+                case ObjectManagePacket.ObjectManageAction.Destroy:
+                    INetworkObject destructionTarget = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == packet.NetowrkIDTarget);
+                    if (destructionTarget == default(INetworkObject))
+                    {
+                        throw new NullReferenceException($"Can't find the object that should be destroyed. ID: {packet.NetowrkIDTarget}");
+                    }
+                    SendDestroyedPulse(handle.Client, destructionTarget);
+                    RemoveNetworkObject(destructionTarget);
+                    destructionTarget.Destroy(handle.Client);
+                    ObjectManagePacket destroyConfirmPacket = new ObjectManagePacket()
+                    {
+                        NetowrkIDTarget = destructionTarget.NetworkID,
+                        Action = ObjectManagePacket.ObjectManageAction.ConfirmDestroy,
+                    };
+                    handle.Client.Send(destroyConfirmPacket);
+                    break;
+                case ObjectManagePacket.ObjectManageAction.ConfirmDestroy:
+                    SendDestroyedPulse(handle.Client, null);
+                    //Already should have destroyed the object.
+                    break;
+                case ObjectManagePacket.ObjectManageAction.Modify:
+                    INetworkObject modificationTarget = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == packet.NetowrkIDTarget);
+                    if(modificationTarget == default(INetworkObject))
+                    {
+                        throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetowrkIDTarget}");
+                    }
+                    modificationTarget.NetworkID = packet.NewNetworkID;
+                    modificationTarget.OwnerClientID = packet.OwnerID;
+                    modificationTarget.ObjectVisibilityMode = packet.ObjectVisibilityMode;
+                    modificationTarget.OwnershipMode = packet.OwnershipMode;
+                    modificationTarget.OnModified(handle.Client);
+                    SendModifiedPulse(handle.Client, modificationTarget);
+                    break;
+                case ObjectManagePacket.ObjectManageAction.ConfirmModify:
+                    INetworkObject modificationConfirmTarget = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == packet.NetowrkIDTarget);
+                    if (modificationConfirmTarget == default(INetworkObject))
+                    {
+                        throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetowrkIDTarget}");
+                    }
+                    modificationConfirmTarget.OnModified(handle.Client);
+                    SendModifiedPulse(handle.Client, modificationConfirmTarget);
+                    break;
+            }
+        }
 
         public static List<INetworkObject> GetNetworkObjects()
         {
             return NetworkObjects.Keys.ToList();
+        }
+
+        public static void SendModifiedPulse(NetworkClient client, INetworkObject modifiedObject)
+        {
+            foreach (INetworkObject networkObject in NetworkObjects.Keys)
+            {
+                networkObject.OnModified(modifiedObject, client);
+            }
+        }
+
+        public static void SendCreatedPulse(NetworkClient client, INetworkObject createdObject)
+        {
+            foreach (INetworkObject networkObject in NetworkObjects.Keys)
+            {
+                networkObject.OnCreated(createdObject, client);
+            }
+        }
+
+        public static void SendDestroyedPulse(NetworkClient client, INetworkObject destroyedObject)
+        {
+            foreach (INetworkObject networkObject in NetworkObjects.Keys)
+            {
+                networkObject.OnDestroyed(destroyedObject, client);
+            }
         }
 
         public static void SendReadyPulse(NetworkClient sender, bool isReady)
@@ -419,7 +620,7 @@ namespace SocketNetworking.Shared
         /// <returns>
         /// A Network ID which hasn't been used before.
         /// </returns>
-        public static int GetNextNetworkID()
+        public static int GetNextNetworkObjectID()
         {
             List<int> ids = NetworkObjects.Keys.Select(x => x.NetworkID).ToList();
             if (ids.Count == 0)
@@ -625,6 +826,9 @@ namespace SocketNetworking.Shared
             return networkObjectData;
         }
 
+        #endregion
+
+        #region Packet Listeners
 
         /// <summary>
         /// Updates all packet listeners.
@@ -740,9 +944,12 @@ namespace SocketNetworking.Shared
             }
         }
 
+        #endregion
+
+        #region Sync Vars
 
         //being called externally
-        public static void UpdateSyncVars(SyncVarUpdate packet, NetworkClient runner)
+        internal static void UpdateSyncVarsInternal(SyncVarUpdatePacket packet, NetworkClient runner)
         {
             foreach(SyncVarData data in packet.Data)
             {
@@ -772,6 +979,10 @@ namespace SocketNetworking.Shared
                 Log.GlobalDebug($"Updated {syncVar.Name} on {obj.GetType().FullName}. Read {read} bytes as the value.");
             }
         }
+
+        #endregion
+
+        #region Network Invoke
 
         private static List<int> NetworkInvocations = new List<int>();
 
@@ -1174,9 +1385,21 @@ namespace SocketNetworking.Shared
         {
             return NetworkInvoke<TResult>(target, sender, func.Method.Name, new object[] { });
         }
+
+        #endregion
     }
 
-    public struct NetworkObjectCache
+
+    public class NetworkObjectSpawner
+    {
+        public NetworkManager.NetworkObjectSpawnerDelegate Spawner;
+
+        public bool AllowSubclasses;
+
+        public Type TargetType;
+    }
+
+    public class NetworkObjectCache
     {
         public Type Target;
 
@@ -1187,7 +1410,7 @@ namespace SocketNetworking.Shared
         public List<INetworkSyncVar> SyncVars;
     }
 
-    public struct NetworkObjectData
+    public class NetworkObjectData
     {
         public Dictionary<Type, List<PacketListenerData>> Listeners;
 
@@ -1196,7 +1419,7 @@ namespace SocketNetworking.Shared
         public INetworkObject TargetObject;
     }
 
-    public struct PacketListenerData
+    public class PacketListenerData
     {
         public PacketListener Attribute;
 

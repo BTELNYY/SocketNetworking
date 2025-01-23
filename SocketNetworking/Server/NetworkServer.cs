@@ -421,15 +421,7 @@ namespace SocketNetworking.Server
                 client.NetworkInvoke(obj, methodName, args);
             }
         }
-
-        public void NetworkSpawn(INetworkSpawnable spawnable)
-        {
-
-        }
     }
-
-
-
 
     public enum ServerState 
     {

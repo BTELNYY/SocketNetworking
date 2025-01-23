@@ -98,7 +98,7 @@ namespace SocketNetworking.UnityEngine
             {
                 identity = clone.AddComponent<NetworkIdentity>();
             }
-            int newNetId = UnityNetworkManager.GetNextNetworkID();
+            int newNetId = UnityNetworkManager.GetNextNetworkObjectID();
             identity.SetNetworkID(newNetId);
             NetworkObjectSpawnPacket packet = new NetworkObjectSpawnPacket();
             packet.PrefabID = prefabId;
@@ -125,7 +125,7 @@ namespace SocketNetworking.UnityEngine
             {
                 identity = clone.AddComponent<NetworkIdentity>();
             }
-            int newNetId = UnityNetworkManager.GetNextNetworkID();
+            int newNetId = UnityNetworkManager.GetNextNetworkObjectID();
             identity.SetNetworkID(newNetId);
             NetworkObjectSpawnPacket packet = new NetworkObjectSpawnPacket();
             packet.PrefabID = prefabId;

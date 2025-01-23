@@ -26,19 +26,41 @@ namespace SocketNetworking.Shared
         OwnershipMode OwnershipMode { get; set; }
 
         /// <summary>
+        /// Determines if the <see cref="INetworkObject"/> can be modified (Have its <see cref="OwnershipMode"/> or <see cref="OwnerClientID"/> or <see cref="ObjectVisibilityMode"/> changed) while being marked as <see cref="OwnershipMode.Public"/>. It is recommended to keep this as false, instead, you should create a RPC call to claim the object.
+        /// </summary>
+        bool AllowPublicModification { get; }
+
+
+        /// <summary>
+        /// What should the library do if the owner of the object disconnects from the server?
+        /// </summary>
+        OwnershipMode FallBackIfOwnerDisconnects { get; }
+
+        /// <summary>
         /// Determines the object visibility. This must not be a live property, Do NOT use the setter to update it networkside.
         /// </summary>
         ObjectVisibilityMode ObjectVisibilityMode { get; set; }
 
         /// <summary>
-        /// The network ID of the object. This should be the same on the client and server.
+        /// The network ID of the object. This should be the same on the client and server. This must not be a live property, Do NOT use the setter to update it networkside.
         /// </summary>
-        int NetworkID { get; }
+        int NetworkID { get; set; }
 
         /// <summary>
         /// If this is false, the object is never updated. This includes <see cref="INetworkSyncVar"/> fields, <see cref="PacketListener>"/> and <see cref="NetworkInvocable"/> methods.
         /// </summary>
         bool IsEnabled { get; }
+
+        /// <summary>
+        /// Called on the server when a <see cref="NetworkClient"/> spawns the object on the local machine.
+        /// </summary>
+        /// <param name="spawner"></param>
+        void OnNetworkSpawned(NetworkClient spawner);
+
+        /// <summary>
+        /// Called when the object is being destroyed.
+        /// </summary>
+        void Destroy(NetworkClient client);
 
         /// <summary>
         /// This is called on the server and client when the object is added to the list of currently updated network objects.
@@ -50,6 +72,31 @@ namespace SocketNetworking.Shared
         /// </summary>
         /// <param name="removedObject"></param>
         void OnRemoved(INetworkObject removedObject);
+
+        /// <summary>
+        /// Called when the current object is modified.
+        /// </summary>
+        /// <param name="modifier"></param>
+        void OnModified(NetworkClient modifier);
+
+        /// <summary>
+        /// Called when an <see cref="INetworkObject"/> is modified.
+        /// </summary>
+        /// <param name="modifiedObject"></param>
+        /// <param name="modifier"></param>
+        void OnModified(INetworkObject modifiedObject, NetworkClient modifier);
+
+        /// <summary>
+        /// Called on the server and client when a <see cref="INetworkObject"/> is destroyed fully, being confirmed as destroyed by the server and client.
+        /// </summary>
+        /// <param name="destroyedObject"></param>
+        void OnDestroyed(INetworkObject destroyedObject, NetworkClient client);
+
+        /// <summary>
+        /// Called on the server and client when a <see cref="INetworkObject"/> is created fully, being confirmed as created by the server and client.
+        /// </summary>
+        /// <param name="createdObject"></param>
+        void OnCreated(INetworkObject createdObject, NetworkClient client);
 
         /// <summary>
         /// Called on the Server and Client when the <see cref="NetworkClient.Ready"/> property is set to true.

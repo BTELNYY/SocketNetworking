@@ -47,7 +47,7 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// This is unreliable. Do not use this to calculate any size.
         /// </summary>
-        public int Size = 0;
+        public int Size { get; set; } = 0;
 
         /// <summary>
         /// PacketType used to determine if the library should look for Listeners or handle internally.
@@ -81,7 +81,7 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// The NetworkID of the object which this packet is being sent to. 0 Means only sent to the other clients class.
         /// </summary>
-        public int NetowrkIDTarget = 0;
+        public int NetowrkIDTarget { get; set; } = 0;
 
         /// <summary>
         /// This will only be a value greater then 0 if <see cref="Type"/> is <see cref="PacketType.CustomPacket"/>

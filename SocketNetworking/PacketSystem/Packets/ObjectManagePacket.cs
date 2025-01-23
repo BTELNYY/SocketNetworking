@@ -9,7 +9,7 @@ namespace SocketNetworking.PacketSystem.Packets
 {
     public sealed class ObjectManagePacket : Packet
     {
-        public override PacketType Type => PacketType.ObjectSpawn;
+        public override PacketType Type => PacketType.ObjectManage;
 
         public ObjectManageAction Action { get; set; }
 
@@ -23,6 +23,8 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public ObjectVisibilityMode ObjectVisibilityMode { get; set; }
 
+        public int NewNetworkID { get; set; }
+
         public byte[] ExtraData { get; set; } = new byte[0];
 
         public override ByteWriter Serialize()
@@ -34,6 +36,7 @@ namespace SocketNetworking.PacketSystem.Packets
             writer.WriteByte((byte)OwnershipMode);
             writer.WriteInt(OwnerID);
             writer.WriteByte((byte)ObjectVisibilityMode);
+            writer.WriteInt(NewNetworkID);
             writer.WriteByteArray(ExtraData);
             return writer;
         }
@@ -47,6 +50,7 @@ namespace SocketNetworking.PacketSystem.Packets
             OwnershipMode = (OwnershipMode)reader.ReadByte();
             OwnerID = reader.ReadInt();
             ObjectVisibilityMode = (ObjectVisibilityMode)reader.ReadByte();
+            NewNetworkID = reader.ReadInt();
             ExtraData = reader.ReadByteArray();
             return reader;
         }
@@ -54,8 +58,11 @@ namespace SocketNetworking.PacketSystem.Packets
         public enum ObjectManageAction : byte
         {
             Create,
+            ConfirmCreate,
             Destroy,
+            ConfirmDestroy,
             Modify,
+            ConfirmModify,
         }
     }
 }

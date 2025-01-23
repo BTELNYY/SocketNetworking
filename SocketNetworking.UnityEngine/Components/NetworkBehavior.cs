@@ -184,6 +184,10 @@ namespace SocketNetworking.UnityEngine.Components
 
         public ObjectVisibilityMode ObjectVisibilityMode { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+        public bool AllowPublicModification => throw new NotImplementedException();
+
+        int INetworkObject.NetworkID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         [NetworkInvocable(NetworkDirection.Server)]
         private void UpdateOwnershipModeRpc(OwnershipMode mode)
         {
@@ -365,6 +369,31 @@ namespace SocketNetworking.UnityEngine.Components
         public virtual byte[] SendExtraData()
         {
             return new byte[0];
+        }
+
+        public void Destroy(NetworkClient client)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnModified(NetworkClient modifier)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnModified(INetworkObject modifiedObject, NetworkClient modifier)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnDestroyed(INetworkObject destroyedObject, NetworkClient client)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnCreated(INetworkObject createdObject, NetworkClient client)
+        {
+            throw new NotImplementedException();
         }
     }
 }

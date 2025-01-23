@@ -11,12 +11,6 @@ namespace SocketNetworking.Shared
     public interface INetworkSpawnable
     {
         /// <summary>
-        /// Called on the server when a <see cref="NetworkClient"/> spawns the object on the local machine.
-        /// </summary>
-        /// <param name="spawner"></param>
-        void OnNetworkSpawned(NetworkClient spawner);
-
-        /// <summary>
         /// Called on the client when the object has finished being spawned and the spawn response has been sent to the server.
         /// </summary>
         void OnLocalSpawned(ObjectManagePacket packet);

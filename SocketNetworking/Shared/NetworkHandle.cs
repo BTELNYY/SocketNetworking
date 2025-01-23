@@ -18,16 +18,25 @@ namespace SocketNetworking.Shared
         {
             Client = client ?? throw new ArgumentNullException(nameof(client));
             InvocationPacket = invocationPacket ?? throw new ArgumentNullException(nameof(invocationPacket));
-            InvocationMode = invocationPacket is NetworkInvocationPacket packet ? InvocationMode.RemoteProcedureCall : InvocationMode.Listener;
+            if(invocationPacket is NetworkInvocationPacket packet)
+            {
+                InvocationMode = InvocationMode.RemoteProcedureCall;
+            }
+            else if(invocationPacket is CustomPacket customPacket)
+            {
+                InvocationMode = InvocationMode.Listener;
+            }
+            else
+            {
+                InvocationMode = InvocationMode.InternalCall;
+            }
         }
 
-        internal NetworkHandle() { }
+        public NetworkClient Client { get; } 
 
-        public NetworkClient Client { get; internal set; } 
+        public Packet InvocationPacket { get; }
 
-        public Packet InvocationPacket { get; internal set; }
-
-        public InvocationMode InvocationMode { get; internal set; }
+        public InvocationMode InvocationMode { get; }
 
         public bool WasEncrypted
         {

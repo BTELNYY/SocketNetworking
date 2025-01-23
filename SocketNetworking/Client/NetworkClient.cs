@@ -1301,6 +1301,33 @@ namespace SocketNetworking.Client
                 case PacketType.CustomPacket:
                     NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
+                case PacketType.ObjectManage:
+                    ObjectManagePacket objectManagePacket = new ObjectManagePacket();
+                    objectManagePacket.Deserialize(data);
+                    NetworkHandle networkHandle = new NetworkHandle(this, objectManagePacket);
+                    try
+                    {
+                        NetworkManager.ModifyNetworkObjectLocal(objectManagePacket, networkHandle);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.GlobalError(ex.ToString());
+                        SendError(ex.Message, LogSeverity.Error);
+                    }
+                    break;
+                case PacketType.SyncVarUpdate:
+                    SyncVarUpdatePacket syncVarUpdate = new SyncVarUpdatePacket();
+                    syncVarUpdate.Deserialize(data);
+                    try
+                    {
+                        NetworkManager.UpdateSyncVarsInternal(syncVarUpdate, this);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.GlobalError(ex.ToString());
+                        SendError(ex.Message, LogSeverity.Error);
+                    }
+                    break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
                     connectionUpdatePacket.Deserialize(data);
@@ -1450,6 +1477,33 @@ namespace SocketNetworking.Client
             {
                 case PacketType.CustomPacket:
                     NetworkManager.TriggerPacketListeners(header, data, this);
+                    break;
+                case PacketType.ObjectManage:
+                    ObjectManagePacket objectManagePacket = new ObjectManagePacket();
+                    objectManagePacket.Deserialize(data);
+                    NetworkHandle networkHandle = new NetworkHandle(this, objectManagePacket);
+                    try
+                    {
+                        NetworkManager.ModifyNetworkObjectLocal(objectManagePacket, networkHandle);
+                    }
+                    catch(Exception ex)
+                    {
+                        Log.GlobalError(ex.ToString());
+                        SendError(ex.Message, LogSeverity.Error);
+                    }
+                    break;
+                case PacketType.SyncVarUpdate:
+                    SyncVarUpdatePacket syncVarUpdate = new SyncVarUpdatePacket();
+                    syncVarUpdate.Deserialize(data);
+                    try
+                    {
+                        NetworkManager.UpdateSyncVarsInternal(syncVarUpdate, this);
+                    }
+                    catch(Exception ex)
+                    {
+                        Log.GlobalError(ex.ToString());
+                        SendError(ex.Message, LogSeverity.Error);
+                    }
                     break;
                 case PacketType.ReadyStateUpdate:
                     ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket();
@@ -1660,6 +1714,22 @@ namespace SocketNetworking.Client
             {
                 HandlePacket(result.Header, result.Data);
             }
+        }
+
+        /// <summary>
+        /// Sends a log message to the other side of the <see cref="NetworkTransport"/>.
+        /// </summary>
+        /// <param name="error"></param>
+        /// <param name="severity"></param>
+        public void SendError(string error, LogSeverity severity)
+        {
+            NetworkInvoke(nameof(GetError), new object[] { error, severity });
+        }
+
+        [NetworkInvocable(NetworkDirection.Any)]
+        private void GetError(NetworkHandle handle, LogSeverity level, string err)
+        {
+            Log.Global(err, level);
         }
 
         public struct ReadPacketInfo
