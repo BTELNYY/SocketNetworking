@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
@@ -24,7 +25,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteWriter writer = base.Serialize();
             writer.WriteInt(CallbackID);
-            writer.Write<SerializedData>(Result);
+            writer.WritePacketSerialized<SerializedData>(Result);
             writer.WriteBool(Success);
             writer.WriteString(ErrorMessage);
             writer.WriteBool(IgnoreResult);
@@ -35,7 +36,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteReader reader = base.Deserialize(data);
             CallbackID = reader.ReadInt();
-            Result = reader.Read<SerializedData>();
+            Result = reader.ReadPacketSerialized<SerializedData>();
             Success = reader.ReadBool();
             ErrorMessage = reader.ReadString();
             IgnoreResult = reader.ReadBool();

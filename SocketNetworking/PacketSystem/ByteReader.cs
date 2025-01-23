@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.PacketSystem
 {
@@ -16,6 +18,7 @@ namespace SocketNetworking.PacketSystem
     {
         /// <summary>
         /// Represents the original untouched data fed into the class. This data is not changed by any method.
+        /// Meaning, This is the original data you gave in the constructor.
         /// </summary>
         public byte[] RawData { get; private set; }
 
@@ -30,6 +33,9 @@ namespace SocketNetworking.PacketSystem
             }
         }
 
+        /// <summary>
+        /// Is the buffer empty?
+        /// </summary>
         public bool IsEmpty 
         { 
             get
@@ -92,13 +98,38 @@ namespace SocketNetworking.PacketSystem
             return Read(length);
         }
 
-        public T Read<T>() where T : IPacketSerializable
+        public T ReadPacketSerialized<T>() where T : IPacketSerializable
         {
             IPacketSerializable serializable = (IPacketSerializable)Activator.CreateInstance(typeof(T));
             int bytesUsed = serializable.Deserialize(_workingSetData);
             Remove(bytesUsed);
             return (T)serializable;
         }
+
+        public K ReadWrapper<T, K>() where T : TypeWrapper<K>
+        {
+            byte[] bytes = ReadByteArray();
+            TypeWrapper<K> wrapper = (TypeWrapper<K>)Activator.CreateInstance(typeof(T));
+            ValueTuple<K, int> result = wrapper.Deserialize(bytes);
+            //Remove(result.Item2);
+            return result.Item1;
+        }
+
+        public T ReadWrapper<T>()
+        {
+            Type type = typeof(T);
+            if (!NetworkManager.TypeToTypeWrapper.ContainsKey(type))
+            {
+                throw new InvalidOperationException("No type wrapper for type: " + type.FullName);
+            }
+            byte[] bytes = ReadByteArray();
+            object typeWrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
+            MethodInfo deserializer = typeWrapper.GetType().GetMethod("Deserialize");
+            ValueTuple<T, int> result = (ValueTuple<T, int>)deserializer.Invoke(typeWrapper, new object[] { bytes });
+            //Remove(result.Item2);
+            return result.Item1;
+        }
+
 
         public byte ReadByte()
         {
@@ -183,8 +214,8 @@ namespace SocketNetworking.PacketSystem
             int lenghtOfString = ReadInt();
             int expectedBytes = _workingSetData.Length - lenghtOfString;
             byte[] stringArray = _workingSetData.Take(lenghtOfString).ToArray();
-            string result = Encoding.UTF8.GetString(stringArray, 0, stringArray.Length);
             Remove(stringArray.Length);
+            string result = Encoding.UTF8.GetString(stringArray, 0, stringArray.Length);
             if(_workingSetData.Length != expectedBytes)
             {
                 throw new InvalidOperationException("StringReader stole more bytes then it should have!");

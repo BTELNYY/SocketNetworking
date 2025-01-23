@@ -2,13 +2,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.PacketSystem
 {
+    /// <summary>
+    /// Provides buffer manipulation methods.
+    /// </summary>
     public class ByteWriter
     {
+        /// <summary>
+        /// The current length of the buffer.
+        /// </summary>
         public int DataLength
         {
             get
@@ -17,6 +25,9 @@ namespace SocketNetworking.PacketSystem
             }
         }
 
+        /// <summary>
+        /// The written data buffer.
+        /// </summary>
         public byte[] Data
         {
             get
@@ -29,15 +40,39 @@ namespace SocketNetworking.PacketSystem
 
         public ByteWriter() { }
 
+        public ByteWriter(byte[] existingData)
+        {
+            _workingSetData = existingData;
+        }
+
         ~ByteWriter()
         {
             _workingSetData = null;
         }
 
-        public void Write<T>(IPacketSerializable serializable)
+        public void WritePacketSerialized<T>(IPacketSerializable serializable)
         {
             byte[] data = serializable.Serialize();
             Write(data);
+        }
+
+        public void WriteWrapper(object any)
+        {
+            Type type = any.GetType();
+            if (!NetworkManager.TypeToTypeWrapper.ContainsKey(type))
+            {
+                throw new InvalidOperationException("No type wrapper for type: " + type.FullName);
+            }
+            object wrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
+            MethodInfo serializer = wrapper.GetType().GetMethod("Serialize");
+            byte[] result = (byte[])serializer.Invoke(wrapper, new object[] { any });
+            WriteByteArray(result);
+        }
+
+        public void WriteWrapper<T, K>(T value) where T : TypeWrapper<K>
+        {
+            byte[] data = value.Serialize();
+            WriteByteArray(data);
         }
 
         public void Write(byte[] data)

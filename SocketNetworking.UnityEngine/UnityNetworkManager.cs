@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using SocketNetworking.UnityEngine.Components;
+using SocketNetworking.Server;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.UnityEngine
 {

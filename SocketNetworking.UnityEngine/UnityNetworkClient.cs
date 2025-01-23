@@ -9,12 +9,15 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
+using SocketNetworking.Server;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.UnityEngine
 {
     public class UnityNetworkClient : NetworkClient
     {
-        [PacketListener(typeof(NetworkObjectDestroyPacket), PacketDirection.Server)]
+        [PacketListener(typeof(NetworkObjectDestroyPacket), NetworkDirection.Server)]
         public void OnServerDestroyObject(NetworkObjectDestroyPacket packet, UnityNetworkClient client)
         {
             NetworkIdentity identity = UnityNetworkManager.GetNetworkIdentity(packet.NetowrkIDTarget);
@@ -24,7 +27,7 @@ namespace SocketNetworking.UnityEngine
             }
         }
 
-        [PacketListener(typeof(NetworkObjectSpawnPacket), PacketDirection.Server)]
+        [PacketListener(typeof(NetworkObjectSpawnPacket), NetworkDirection.Server)]
         public void OnServerSpawnObject(NetworkObjectSpawnPacket packet, UnityNetworkClient client)
         {
             GameObject prefab = UnityNetworkManager.GetPrefabByID(packet.PrefabID);
@@ -55,7 +58,7 @@ namespace SocketNetworking.UnityEngine
             Send(returnPacket);
         }
 
-        [PacketListener(typeof(NetworkObjectSpawnedPacket), PacketDirection.Client)]
+        [PacketListener(typeof(NetworkObjectSpawnedPacket), NetworkDirection.Client)]
         public void OnClientSpawnedObject(NetworkObjectSpawnedPacket packet, UnityNetworkClient client)
         {
             foreach(NetworkBehavior behavior in UnityNetworkManager.GetNetworkBehaviors().Where(x => x.NetworkID == packet.SpawnedNetworkID))

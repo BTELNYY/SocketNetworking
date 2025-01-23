@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Attributes;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
@@ -13,7 +14,7 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public ConnectionState State  = ConnectionState.Disconnected;
 
-        public string Reason  = "No comment";
+        public string Reason  = "";
 
         public override ByteReader Deserialize(byte[] data)
         {

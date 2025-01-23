@@ -8,6 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using SocketNetworking.Attributes;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
+using SocketNetworking.Server;
 
 namespace SocketNetworking.UnityEngine.Components
 {
@@ -50,7 +53,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
 
-        [NetworkInvocable(PacketDirection.Server)]
+        [NetworkInvocable(NetworkDirection.Server)]
         private void ClientSetNetId(int id)
         {
             _netId = id;
@@ -130,7 +133,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         private int _ownerClientID = -1;
 
-        [NetworkInvocable(PacketDirection.Server)]
+        [NetworkInvocable(NetworkDirection.Server)]
         private void UpdateOwnerClientIDRpc(int id)
         {
             _ownerClientID = id;
@@ -155,7 +158,7 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(ServerProccessChangeOwnerCommand), new object[] { newOwner });
         }
 
-        [NetworkInvocable(PacketDirection.Client)]
+        [NetworkInvocable(NetworkDirection.Client)]
         private void ServerProccessChangeOwnerCommand(int newOwner)
         {
             OwnerClientID = newOwner;
@@ -177,7 +180,11 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        [NetworkInvocable(PacketDirection.Server)]
+        public virtual bool Spawnable => true;
+
+        public ObjectVisibilityMode ObjectVisibilityMode { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        [NetworkInvocable(NetworkDirection.Server)]
         private void UpdateOwnershipModeRpc(OwnershipMode mode)
         {
             _ownershipMode = mode;
@@ -338,6 +345,26 @@ namespace SocketNetworking.UnityEngine.Components
                     NetworkManager.NetworkInvoke(this, UnityNetworkManager.GameNetworkClient, methodName, args);
                 }
             }
+        }
+
+        public virtual void OnNetworkSpawned(NetworkClient spawner)
+        {
+            
+        }
+
+        public virtual void OnLocalSpawned(ObjectManagePacket packet)
+        {
+            
+        }
+
+        public virtual void RecieveExtraData(byte[] extraData)
+        {
+            
+        }
+
+        public virtual byte[] SendExtraData()
+        {
+            return new byte[0];
         }
     }
 }

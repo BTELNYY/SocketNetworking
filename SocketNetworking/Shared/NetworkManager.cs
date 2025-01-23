@@ -15,15 +15,19 @@ using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using SocketNetworking.Misc;
 using System.Security;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
+using SocketNetworking.Server;
+using System.Runtime.CompilerServices;
 
-namespace SocketNetworking
+namespace SocketNetworking.Shared
 {
     public class NetworkManager
     {
         public static readonly Type[] AcceptedMethodArugments = new Type[]
         {
             typeof(CustomPacket),
-            typeof(NetworkClient),
+            typeof(NetworkHandle),
         };
 
         public static readonly Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
@@ -111,6 +115,19 @@ namespace SocketNetworking
             }
         }
 
+        public static NetworkDirection WhereAmIDirection
+        {
+            get
+            {
+                return LocationToDirection(WhereAmI);
+            }
+        }
+
+        public static NetworkDirection LocationToDirection(ClientLocation location)
+        {
+            return (NetworkDirection)location;
+        }
+
         public static Dictionary<Type, NetworkObjectCache> TypeCache = new Dictionary<Type, NetworkObjectCache>();
 
         public static Dictionary<Type, Type> TypeToTypeWrapper = new Dictionary<Type, Type>();
@@ -123,14 +140,14 @@ namespace SocketNetworking
         {
             ImportCustomPackets(target);
             List<Type> applicableTypes = target.GetTypes().ToList();
-            foreach(Type t in applicableTypes)
+            foreach (Type t in applicableTypes)
             {
                 if (TypeCache.ContainsKey(t) || TypeToTypeWrapper.ContainsValue(t))
                 {
                     continue;
                 }
                 Type baseType = t.BaseType;
-                if (t.IsSubclassOfRawGeneric(typeof(TypeWrapper<>)))
+                if (t.IsSubclassDeep(typeof(TypeWrapper<>)))
                 {
                     object obj = Activator.CreateInstance(t);
                     MethodInfo method = obj.GetType().GetMethod(nameof(TypeWrapper<object>.GetContainedType));
@@ -144,9 +161,10 @@ namespace SocketNetworking
                 networkObjectCache.Target = t;
                 networkObjectCache.Invokables = new List<(MethodInfo, NetworkInvocable)>();
                 networkObjectCache.Listeners = new Dictionary<Type, List<PacketListenerData>>();
-                foreach(MethodInfo method in t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                networkObjectCache.SyncVars = new List<INetworkSyncVar>();
+                foreach (MethodInfo method in t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
-                    if(method.GetCustomAttribute<PacketListener>() != null)
+                    if (method.GetCustomAttribute<PacketListener>() != null)
                     {
                         if (method.GetParameters().Length < AcceptedMethodArugments.Length)
                         {
@@ -159,7 +177,7 @@ namespace SocketNetworking
                             {
                                 Type methodType = method.GetParameters()[i].ParameterType;
                                 Type acceptedType = AcceptedMethodArugments[i];
-                                if (!methodType.IsSubclassOf(acceptedType))
+                                if (!methodType.IsSubclassDeep(acceptedType))
                                 {
                                     Log.GlobalWarning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
                                     methodArgsFailed = true;
@@ -187,7 +205,7 @@ namespace SocketNetworking
                             }
                         }
                     }
-                    if(method.GetCustomAttribute<NetworkInvocable>() != null)
+                    if (method.GetCustomAttribute<NetworkInvocable>() != null)
                     {
                         ValueTuple<MethodInfo, NetworkInvocable> tuple = (method, method.GetCustomAttribute<NetworkInvocable>());
                         if (networkObjectCache.Invokables.Contains(tuple))
@@ -198,9 +216,39 @@ namespace SocketNetworking
                         networkObjectCache.Invokables.Add(tuple);
                     }
                 }
+                List<INetworkSyncVar> syncVars = new List<INetworkSyncVar>();
+                FieldInfo[] fields = t.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+                foreach (FieldInfo field in fields)
+                {
+                    object value = field.GetValue(t);
+                    if (!(value is INetworkSyncVar syncVar))
+                    {
+                        continue;
+                    }
+                    if (string.IsNullOrEmpty(syncVar.Name))
+                    {
+                        syncVar.Name = field.Name;
+                    }
+                    syncVars.Add(syncVar);
+                }
+                //PropertyInfo[] properties = t.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+                //foreach (PropertyInfo property in properties)
+                //{
+                //    object value = property.GetValue(t);
+                //    if (!(value is INetworkSyncVar syncVar))
+                //    {
+                //        continue;
+                //    }
+                //    if (string.IsNullOrEmpty(syncVar.Name))
+                //    {
+                //        syncVar.Name = property.Name;
+                //    }
+                //    syncVars.Add(syncVar);
+                //}
+                networkObjectCache.SyncVars = syncVars;
             }
         }
-    
+
         /// <summary>
         /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your netowrk objects.
         /// </summary>
@@ -490,7 +538,7 @@ namespace SocketNetworking
         public static NetworkObjectData GetNetworkObjectData(INetworkObject target)
         {
             Type typeOfObject = target.GetType();
-            MethodInfo[] allPacketListeners = typeOfObject.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(x => x.GetCustomAttribute(typeof(PacketListener)) != null).ToArray();
+            MethodInfo[] allPacketListeners = typeOfObject.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).Where(x => x.GetCustomAttribute(typeof(PacketListener)) != null).ToArray();
             Dictionary<Type, List<PacketListenerData>> result = new Dictionary<Type, List<PacketListenerData>>();
             if (target.NetworkID == 0)
             {
@@ -513,7 +561,7 @@ namespace SocketNetworking
                 {
                     Type methodType = method.GetParameters()[i].ParameterType;
                     Type acceptedType = AcceptedMethodArugments[i];
-                    if (!methodType.IsSubclassOf(acceptedType))
+                    if (!methodType.IsSubclassDeep(acceptedType))
                     {
                         Log.GlobalWarning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
                         methodArgsFailed = true;
@@ -539,10 +587,40 @@ namespace SocketNetworking
                     result.Add(attribute.DefinedType, new List<PacketListenerData> { data });
                 }
             }
+            List<INetworkSyncVar> syncVars = new List<INetworkSyncVar>();
+            FieldInfo[] fields = target.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            foreach (FieldInfo field in fields)
+            {
+                object value = field.GetValue(target);
+                if(!(value is INetworkSyncVar syncVar))
+                {
+                    continue;
+                }
+                if(string.IsNullOrEmpty(syncVar.Name))
+                {
+                    syncVar.Name = field.Name;
+                }
+                syncVars.Add(syncVar);
+            }
+            //PropertyInfo[] properties = target.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            //foreach (PropertyInfo property in properties)
+            //{
+            //    object value = property.GetValue(target);
+            //    if (!(value is INetworkSyncVar syncVar))
+            //    {
+            //        continue;
+            //    }
+            //    if (string.IsNullOrEmpty(syncVar.Name))
+            //    {
+            //        syncVar.Name = property.Name;
+            //    }
+            //    syncVars.Add(syncVar);
+            //}
             NetworkObjectData networkObjectData = new NetworkObjectData
             {
                 Listeners = result,
-                TargetObject = target
+                TargetObject = target,
+                SyncVars = syncVars
             };
             return networkObjectData;
         }
@@ -573,9 +651,10 @@ namespace SocketNetworking
             ByteReader reader = packet.Deserialize(data);
             if (reader.ReadBytes < header.Size)
             {
-                Log.GlobalWarning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read.");
+                Log.GlobalWarning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read. Actual: {reader.ReadBytes}, Header: {header.Size}");
             }
             object changedPacket = Convert.ChangeType(packet, packetType);
+            NetworkHandle handle = new NetworkHandle(runningClient, (Packet)changedPacket);
             if (header.NetworkIDTarget == 0)
             {
                 //Log.Debug("Handle Client-Client communication!");
@@ -587,31 +666,33 @@ namespace SocketNetworking
                     {
                         continue;
                     }
-                    PacketDirection packetDirection = listener.DefinedDirection;
+                    NetworkDirection packetDirection = listener.DefinedDirection;
                     Type listenerType = listener.DefinedType;
                     if (packetType != listenerType)
                     {
                         //Log.Debug("Type dont match!");
                         continue;
                     }
+                    object[] allParams = { changedPacket, runningClient, handle };
+                    object[] methodArgs = method.MatchParameters(allParams.ToList()).ToArray();
                     //Log.Debug("Checking packet direction");
                     //Log.Debug("Direction of client: " + clientLocation + " Listener direction: " + packetDirection);
-                    if (packetDirection == PacketDirection.Any)
+                    if (packetDirection == NetworkDirection.Any)
                     {
                         //Log.Debug("Invoking " + method.Name);
-                        method.Invoke(runningClient, new object[] { changedPacket, runningClient });
+                        method.Invoke(runningClient, methodArgs);
                         continue;
                     }
-                    if (packetDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
+                    if (packetDirection == NetworkDirection.Client && clientLocation == ClientLocation.Remote)
                     {
                         //Log.Debug("Invoking " + method.Name);
-                        method.Invoke(runningClient, new object[] { changedPacket, runningClient });
+                        method.Invoke(runningClient, methodArgs);
                         continue;
                     }
-                    if (packetDirection == PacketDirection.Server && clientLocation == ClientLocation.Local)
+                    if (packetDirection == NetworkDirection.Server && clientLocation == ClientLocation.Local)
                     {
                         //Log.Debug("Invoking " + method.Name);
-                        method.Invoke(runningClient, new object[] { changedPacket, runningClient });
+                        method.Invoke(runningClient, methodArgs);
                         continue;
                     }
                 }
@@ -640,22 +721,55 @@ namespace SocketNetworking
                 //Log.Debug($"Packet listeners for type {netObj.GetType().Name}: {packetListeners.Count}");
                 foreach (PacketListenerData packetListener in packetListeners)
                 {
-                    if (packetListener.Attribute.DefinedDirection == PacketDirection.Any)
+                    if (packetListener.Attribute.DefinedDirection == NetworkDirection.Any)
                     {
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
-                    if (packetListener.Attribute.DefinedDirection == PacketDirection.Client && clientLocation == ClientLocation.Remote)
+                    if (packetListener.Attribute.DefinedDirection == NetworkDirection.Client && clientLocation == ClientLocation.Remote)
                     {
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
-                    if (packetListener.Attribute.DefinedDirection == PacketDirection.Server && clientLocation == ClientLocation.Local)
+                    if (packetListener.Attribute.DefinedDirection == NetworkDirection.Server && clientLocation == ClientLocation.Local)
                     {
                         packetListener.AttachedMethod.Invoke(netObj, new object[] { changedPacket, runningClient });
                         continue;
                     }
                 }
+            }
+        }
+
+
+        //being called externally
+        public static void UpdateSyncVars(SyncVarUpdate packet, NetworkClient runner)
+        {
+            foreach(SyncVarData data in packet.Data)
+            {
+                if(!(NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == data.NetworkIDTarget) is INetworkObject obj))
+                {
+                    Log.GlobalWarning($"No such Network Object with ID '{data.NetworkIDTarget}'");
+                    continue;
+                }
+                NetworkObjectData networkObjectData = NetworkObjects[obj];
+                if(!(networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar) is INetworkSyncVar syncVar))
+                {
+                    Log.GlobalWarning($"No such Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName}");
+                    continue;
+                }
+                if(syncVar.SyncOwner != OwnershipMode.Public)
+                {
+                    if(syncVar.SyncOwner == OwnershipMode.Client && WhereAmI == ClientLocation.Remote)
+                    {
+                        if(runner.ClientID != syncVar.OwnerObject.OwnerClientID)
+                        {
+                            return;
+                        }
+                    }
+                }
+                object value = NetworkConvert.Deserialize(data.Data, out int read);
+                syncVar.RawSet(value, runner);
+                Log.GlobalDebug($"Updated {syncVar.Name} on {obj.GetType().FullName}. Read {read} bytes as the value.");
             }
         }
 
@@ -690,6 +804,24 @@ namespace SocketNetworking
             return packet;
         }
 
+        private static MethodInfo GetNetworkInvokeMethod(MethodInfo[] methods, Type[] arguments)
+        {
+            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
+            foreach (MethodInfo m in methods)
+            {
+                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
+                if (m.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)) && !arguments[0].IsSubclassDeep(typeof(NetworkClient)))
+                {
+                    m_args.RemoveAt(0);
+                }
+                if (m_args.ToArray().ArraysEqual(expectedArgs))
+                {
+                    return m;
+                }
+            }
+            return null;
+        }
+
         internal static void NetworkInvoke(NetworkInvocationResultPacket packet, NetworkClient reciever)
         {
             if (packet.IgnoreResult)
@@ -717,16 +849,16 @@ namespace SocketNetworking
             if (packet.NetworkObjectTarget != 0)
             {
                 List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkObjectTarget && x.GetType() == targetType).ToList();
-                if(netObjs.Count != 0)
+                if (netObjs.Count != 0)
                 {
                     targets.AddRange(netObjs);
                 }
             }
-            else if(targetType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+            else if (targetType.IsSubclassDeep(typeof(NetworkClient)))
             {
                 targets.Add(target);
             }
-            if(targets.Count == 0)
+            if (targets.Count == 0)
             {
                 throw new NetworkInvocationException("Unable to find any networkobjects with ID: " + packet.NetworkObjectTarget);
             }
@@ -736,31 +868,17 @@ namespace SocketNetworking
             }
             Type[] arguments = packet.Arguments.Select(x => x.Type).ToArray();
             MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToArray();
-            MethodInfo method = null;
-            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
-            foreach (MethodInfo m in methods)
-            {
-                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)) && !arguments[0].IsSubclassOfRawGeneric(typeof(NetworkClient)))
-                {
-                    m_args.RemoveAt(0);
-                }
-                if (m_args.ToArray().ArraysEqual(expectedArgs))
-                {
-                    method = m;
-                    break;
-                }
-            }
+            MethodInfo method = GetNetworkInvokeMethod(methods, arguments);
             if (method == null)
             {
                 throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
-            if (invocable.Direction == PacketDirection.Server && reciever.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == NetworkDirection.Server && reciever.CurrnetClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.Direction == PacketDirection.Client && reciever.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == NetworkDirection.Client && reciever.CurrnetClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
@@ -772,29 +890,29 @@ namespace SocketNetworking
                 }
                 if (target is INetworkObject owned)
                 {
-                    if(owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != reciever.ClientID)
+                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != reciever.ClientID)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if(owned.OwnershipMode == OwnershipMode.Server && reciever.CurrnetClientLocation != ClientLocation.Local)
+                    else if (owned.OwnershipMode == OwnershipMode.Server && reciever.CurrnetClientLocation != ClientLocation.Local)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if(owned.OwnershipMode == OwnershipMode.Public)
+                    else if (owned.OwnershipMode == OwnershipMode.Public)
                     {
                         //do nothing, everyone owns this object.
                     }
                 }
                 if (!(target is INetworkObject) && !(target is NetworkClient))
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
                     {
                         Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + packet.MethodName);
                     }
                 }
             }
             List<object> args = new List<object>();
-            if (method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+            if (method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
             {
                 args.Add(reciever);
             }
@@ -866,31 +984,17 @@ namespace SocketNetworking
             }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
             MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
-            MethodInfo method = null;
-            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
-            foreach (MethodInfo m in methods)
-            {
-                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
-                {
-                    m_args.RemoveAt(0);
-                }
-                if (m_args.ToArray().ArraysEqual(expectedArgs))
-                {
-                    method = m;
-                    break;
-                }
-            }
+            MethodInfo method = GetNetworkInvokeMethod(methods, arguments);
             if (method == null)
             {
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
-            if (invocable.Direction == PacketDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == NetworkDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.Direction == PacketDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == NetworkDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
@@ -917,7 +1021,7 @@ namespace SocketNetworking
                 }
                 if (!(target is INetworkObject) && !(target is NetworkClient))
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
+                    if (!method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
                     {
                         Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + methodName);
                     }
@@ -929,7 +1033,7 @@ namespace SocketNetworking
             packet.MethodName = methodName;
             foreach (var arg in args)
             {
-                SerializedData data = NetworkConvert.Serialize(arg);
+                SocketNetworking.Shared.SerializedData data = NetworkConvert.Serialize(arg);
                 packet.Arguments.Add(data);
             }
             packet.TargetType = targetType.FullName;
@@ -962,21 +1066,7 @@ namespace SocketNetworking
             }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
             MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == methodName).ToArray();
-            MethodInfo method = null;
-            string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
-            foreach (MethodInfo m in methods)
-            {
-                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassOfRawGeneric(typeof(NetworkClient)))
-                {
-                    m_args.RemoveAt(0);
-                }
-                if (m_args.ToArray().ArraysEqual(expectedArgs))
-                {
-                    method = m;
-                    break;
-                }
-            }
+            MethodInfo method = GetNetworkInvokeMethod(methods, arguments);
             if (method.ReturnType != typeof(T))
             {
                 throw new NetworkInvocationException("Cannot invoke method, return type is incorrect.", new InvalidCastException());
@@ -986,11 +1076,11 @@ namespace SocketNetworking
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvocable invocable = method.GetCustomAttribute<NetworkInvocable>();
-            if (invocable.Direction == PacketDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == NetworkDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
-            if (invocable.Direction == PacketDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == NetworkDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException("Attempted to invoke network method from incorrect direction.");
             }
@@ -1046,12 +1136,12 @@ namespace SocketNetworking
             NetworkResultAwaiter networkResultAwaiter = new NetworkResultAwaiter(callbackID);
             while (!networkResultAwaiter.HasResult)
             {
-                if (!sender.IsConnected)
+                if (!sender.IsTransportConnected)
                 {
                     Log.GlobalError($"NetworkInvoke on method {methodName} failed becuase the NetworkClient is not connected.");
                     break;
                 }
-                if(stopwatch.ElapsedMilliseconds > msTimeOut)
+                if (stopwatch.ElapsedMilliseconds > msTimeOut)
                 {
                     Log.GlobalError($"NetworkInvoke on method {methodName} timed out after {msTimeOut}ms of proccessing.");
                     break;
@@ -1059,7 +1149,7 @@ namespace SocketNetworking
             }
             Log.GlobalDebug($"NetowkInvoke on {methodName} successfully returned and took {stopwatch.ElapsedMilliseconds}ms");
             NetworkInvocationResultPacket resultPacket = networkResultAwaiter.ResultPacket;
-            if(resultPacket == null)
+            if (resultPacket == null)
             {
                 Log.GlobalError($"NetworkInvoke on method {methodName} failed remotely! Error: null");
                 return default;
@@ -1085,19 +1175,23 @@ namespace SocketNetworking
             return NetworkInvoke<TResult>(target, sender, func.Method.Name, new object[] { });
         }
     }
-    
+
     public struct NetworkObjectCache
     {
         public Type Target;
 
         public Dictionary<Type, List<PacketListenerData>> Listeners;
 
-        public List<ValueTuple<MethodInfo, NetworkInvocable>> Invokables;    
+        public List<ValueTuple<MethodInfo, NetworkInvocable>> Invokables;
+
+        public List<INetworkSyncVar> SyncVars;
     }
 
     public struct NetworkObjectData
     {
         public Dictionary<Type, List<PacketListenerData>> Listeners;
+
+        public List<INetworkSyncVar> SyncVars;
 
         public INetworkObject TargetObject;
     }

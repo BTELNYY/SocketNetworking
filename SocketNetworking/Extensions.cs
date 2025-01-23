@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 using System.Runtime.Serialization.Formatters.Binary;
 using SocketNetworking.PacketSystem;
 using System.Reflection;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
+using SocketNetworking.Server;
 
 namespace SocketNetworking
 {
@@ -243,7 +246,7 @@ namespace SocketNetworking
         /// <param name="toCheck"></param>
         /// <param name="generic"></param>
         /// <returns></returns>
-        public static bool IsSubclassOfRawGeneric(this Type toCheck, Type generic)
+        public static bool IsSubclassDeep(this Type toCheck, Type generic)
         {
             while (toCheck != null && toCheck != typeof(object))
             {
@@ -257,7 +260,7 @@ namespace SocketNetworking
             return false;
         }
 
-        public static T SetFlag<T>(this Enum value, T flag, bool set)
+        public static T SetFlag<T>(this T value, T flag, bool set) where T : Enum
         {
             Type underlyingType = Enum.GetUnderlyingType(value.GetType());
 
@@ -290,6 +293,11 @@ namespace SocketNetworking
             return activeFlags;
         }
 
+        public static string GetActiveFlagsString<T>(this T @enum) where T : Enum
+        {
+            return string.Join(", ", @enum.GetActiveFlags());
+        }
+
         public static IEnumerable<MethodInfo> GetMethodsDeep(this Type type, BindingFlags flags = BindingFlags.Default)
         {
             List<MethodInfo> list = new List<MethodInfo>();
@@ -311,6 +319,63 @@ namespace SocketNetworking
                 type = type.BaseType;
             }
             return list;
+        }
+
+        /// <summary>
+        /// Tries to match the parameters of an method to a given array of parameters. 
+        /// This method does not support methods which take several params of the same <see cref="Type"/>
+        /// </summary>
+        /// <param name="method">
+        /// The <see cref="MethodInfo"/> to try and match.
+        /// </param>
+        /// <param name="parameters">
+        /// The expected parameters.
+        /// </param>
+        /// <returns>
+        /// The properly ordered parameters for the <see cref="MethodInfo"/> or <see cref="null"/>
+        /// </returns>
+        public static IEnumerable<object> MatchParameters(this MethodInfo method, List<object> parameters)
+        {
+            if(method == null)
+            {
+                return null;
+            }
+            //Fuck... optional params...
+            if(!method.GetParameters().Any(x => x.IsOptional) && method.GetParameters().Length > parameters.Count)
+            {
+                return null;
+            }
+            object[] result = new object[method.GetParameters().Length];
+            for(int i = 0; i < method.GetParameters().Length; i++)
+            {
+                ParameterInfo parameter = method.GetParameters()[i];
+                int index = -1;
+                for (int j = 0; j < parameters.Count; j++)
+                {
+                    if (parameters[j].GetType().IsSubclassDeep(parameter.ParameterType))
+                    {
+                        index = j;
+                    }
+                }
+                //didnt find one
+                if(index == -1)
+                {
+                    if (parameter.IsOptional)
+                    {
+                        parameters[i] = parameter.DefaultValue;
+                    }
+                    else
+                    {
+                        //Failed to match param types.
+                        return null;
+                    }
+                }
+                result[i] = parameters[index];
+                parameters.Remove(index);
+                //reset index
+                index = -1;
+            }
+            return result;
         }
     }
 }

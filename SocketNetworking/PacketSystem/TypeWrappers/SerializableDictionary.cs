@@ -114,8 +114,8 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             int removeAmount = 0;
             ByteReader reader = new ByteReader(data);
             reader.ReadInt();
-            keys = reader.Read<SerializableList<TKey>>();
-            values = reader.Read<SerializableList<TValue>>();
+            keys = reader.ReadPacketSerialized<SerializableList<TKey>>();
+            values = reader.ReadPacketSerialized<SerializableList<TValue>>();
             removeAmount += reader.ReadBytes;
             return removeAmount;
         }
@@ -154,8 +154,8 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteInt(GetLength());
-            writer.Write<SerializableList<TKey>>(keys);
-            writer.Write<SerializableList<TValue>>(values);
+            writer.WritePacketSerialized<SerializableList<TKey>>(keys);
+            writer.WritePacketSerialized<SerializableList<TValue>>(values);
             return writer.Data;
         }
 

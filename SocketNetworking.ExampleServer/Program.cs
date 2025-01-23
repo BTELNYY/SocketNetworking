@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using SocketNetworking;
 using SocketNetworking.ExampleSharedData;
 using SocketNetworking.Misc;
+using SocketNetworking.Server;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.ExampleServer
 {
@@ -17,11 +20,12 @@ namespace SocketNetworking.ExampleServer
         {
             Log.OnLog += HandleNetworkLog;
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
+            MixedNetworkServer server = new MixedNetworkServer();
             NetworkServer.ClientType = typeof(TestClient);
-            NetworkServer.HandshakeTime = 10000f;
-            NetworkServer.EncryptionMode = ServerEncryptionMode.Required;
-            NetworkServer.StartServer();
+            NetworkServer.Config.HandshakeTime = 10f;
+            NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
             NetworkServer.ClientConnected += OnClientConnected;
+            server.StartServer();
             Thread t = new Thread(SpamThread);
             t.Start();
         }
@@ -33,14 +37,20 @@ namespace SocketNetworking.ExampleServer
             //stopwatch.Start();
             while (true)
             {
+                //break;
+                Thread.Sleep(1000);
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
-                    if (c is TestClient client)
+                    if (c is TestClient client && c.Ready)
                     {
                         client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
+                        ExampleCustomPacket packet = new ExampleCustomPacket();
+                        packet.Data = "test";
+                        packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, false);
+                        c.Send(packet);
                     }
                     continue;
-                    if (c.IsConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)
+                    if (c.IsTransportConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)
                     {
                         TestClient client2 = (TestClient)c;
                         client2.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());

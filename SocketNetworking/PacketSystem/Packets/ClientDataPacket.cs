@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Attributes;
 using SocketNetworking.Misc;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
@@ -30,7 +31,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteReader reader = base.Deserialize(data);
             PasswordHash = reader.ReadString();
-            Configuration = reader.Read<ProtocolConfiguration>();
+            Configuration = reader.ReadPacketSerialized<ProtocolConfiguration>();
             return reader;
         }
 
@@ -38,7 +39,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteWriter writer = base.Serialize();
             writer.WriteString(PasswordHash);
-            writer.Write<ProtocolConfiguration>(Configuration);
+            writer.WritePacketSerialized<ProtocolConfiguration>(Configuration);
             return writer;
         }
     }

@@ -31,7 +31,7 @@ namespace SocketNetworking.PacketSystem
         /// The full current data stream. Note that the whole stream is given here, as we don't know how much of it is used by your type.
         /// </param>
         /// <returns>
-        /// Number of bytes to remove from the byte array. (Number of bytes used)
+        /// Number of bytes that have been read.
         /// </returns>
         int Deserialize(byte[] data);
     }

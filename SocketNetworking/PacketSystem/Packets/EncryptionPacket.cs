@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
@@ -28,7 +29,12 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             if(EncryptionFunction == EncryptionFunction.SymmetricalKeySend)
             {
-                Flags = Flags.SetFlag(PacketFlags.AsymtreicalEncrypted, true);
+                Flags = Flags.SetFlag(PacketFlags.AsymetricalEncrypted, true);
+            }
+            else
+            {
+                Flags = Flags.SetFlag(PacketFlags.AsymetricalEncrypted, false);
+                Flags = Flags.SetFlag(PacketFlags.SymetricalEncrypted, false);
             }
             ByteWriter writer = base.Serialize();
             writer.WriteByte((byte)EncryptionFunction);

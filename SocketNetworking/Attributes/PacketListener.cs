@@ -7,11 +7,12 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.Attributes
 {
     /// <summary>
-    /// This attribute should be applied to all methods on <see cref="INetworkObject"/> objects which should listen for Packets. Note that the method should take specific arguments, the library will print a warning if it ignores the method becuase it has inproper arguments. The <see cref="PacketDirection"/> represents from where the packet must originate to be accepted, for example, if your method is using <see cref="PacketDirection.Server"/>, it will only accept packets sent by the server.
+    /// This attribute should be applied to all methods on <see cref="INetworkObject"/> objects which should listen for Packets. Note that the method should take specific arguments, the library will print a warning if it ignores the method becuase it has inproper arguments. The <see cref="NetworkDirection"/> represents from where the packet must originate to be accepted, for example, if your method is using <see cref="NetworkDirection.Server"/>, it will only accept packets sent by the server.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class PacketListener : Attribute
@@ -29,12 +30,12 @@ namespace SocketNetworking.Attributes
             }
         }
 
-        private readonly PacketDirection _direction;
+        private readonly NetworkDirection _direction;
 
         /// <summary>
         /// From where are you accepting packets from. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only
         /// </summary>
-        public PacketDirection DefinedDirection
+        public NetworkDirection DefinedDirection
         {
             get
             {
@@ -52,7 +53,7 @@ namespace SocketNetworking.Attributes
         /// From where are you accepting packets from. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only
         /// </param>
         /// <exception cref="InvalidOperationException"></exception>
-        public PacketListener(Type type, PacketDirection directionFromWhichPacketCanBeRecieved = PacketDirection.Any) 
+        public PacketListener(Type type, NetworkDirection directionFromWhichPacketCanBeRecieved = NetworkDirection.Any) 
         {
             if (!type.IsSubclassOf(typeof(CustomPacket)) || type.GetCustomAttribute(typeof(PacketDefinition)) == null)
             {

@@ -7,6 +7,9 @@ using System.Runtime.Remoting.Messaging;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Shared;
+using System.Net;
+using SocketNetworking.PacketSystem.TypeWrappers;
 
 namespace SocketNetworking.PacketSystem
 {
@@ -54,7 +57,11 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// <see cref="PacketFlags"/> are used to determine metadata about the packet, such as encryption status or compression. Default value is <see cref="PacketFlags.None"/>. Setting this value on the sender applies the flags in transit, setting these flags otherwise causes no effects.
         /// </summary>
-        public virtual PacketFlags Flags { get; set; } = PacketFlags.None;
+        public virtual PacketFlags Flags 
+        { 
+            get; 
+            set;
+        } = PacketFlags.None;
 
         /// <summary>
         /// Method ensures that the <see cref="PacketFlags"/> set in <see cref="Flags"/> are not conflicting. 
@@ -64,7 +71,7 @@ namespace SocketNetworking.PacketSystem
         /// </returns>
         public bool ValidateFlags()
         {
-            if(Flags.HasFlag(PacketFlags.AsymtreicalEncrypted) && Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            if(Flags.HasFlag(PacketFlags.AsymetricalEncrypted) && Flags.HasFlag(PacketFlags.SymetricalEncrypted))
             {
                 return false;
             }
@@ -82,6 +89,27 @@ namespace SocketNetworking.PacketSystem
         public virtual int CustomPacketID { get; private set; } = -1;
 
         /// <summary>
+        /// The Destination of the packet.
+        /// </summary>
+        public IPEndPoint Destination { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
+
+        /// <summary>
+        /// The source of the packet. This isn't trusted on the recieving client, so it will be overwritten.
+        /// </summary>
+        public IPEndPoint Source { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
+
+        /// <summary>
+        /// This method will validate the packet and modify it as needed. For example, it will change flags if need be, or the content if it isn't properly defined.
+        /// </summary>
+        /// <returns>
+        /// true if the validation suceeds, false otherwise.
+        /// </returns>
+        public virtual bool ValidatePacket()
+        {
+            return true;
+        }
+
+        /// <summary>
         /// Function called to serialize packets. Ensure you get the return type of this function becuase you'll need to add on to that array. creating a new array will cause issues.
         /// </summary>
         /// <returns>
@@ -94,6 +122,10 @@ namespace SocketNetworking.PacketSystem
             writer.WriteByte((byte)Flags);
             writer.WriteInt(NetowrkIDTarget);
             writer.WriteInt(CustomPacketID);
+            SerializableIPEndPoint destination = new SerializableIPEndPoint(Destination);
+            SerializableIPEndPoint source = new SerializableIPEndPoint(Source);
+            writer.WriteWrapper<SerializableIPEndPoint, IPEndPoint>(destination);
+            writer.WriteWrapper<SerializableIPEndPoint, IPEndPoint>(source);
             return writer;
         }
 
@@ -117,49 +149,14 @@ namespace SocketNetworking.PacketSystem
             Flags = (PacketFlags)reader.ReadByte();
             NetowrkIDTarget = reader.ReadInt();
             CustomPacketID = reader.ReadInt();
-            if(expectedLength != reader.DataLength)
-            {
-                throw new InvalidNetworkDataException("Packet Deserializer stole more bytes then it should!");
-            }
+            Destination = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
+            Source = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
+            //if (expectedLength != reader.DataLength)
+            //{
+            //    throw new InvalidNetworkDataException("Packet Deserializer stole more bytes then it should!");
+            //}
             return reader;
         }
-    }
-
-    /// <summary>
-    /// Structure which represents what kind of packet is being sent, Note that the only type the user should use is CustomPacket.
-    /// </summary>
-    public enum PacketType : byte
-    {
-        None,
-        ReadyStateUpdate,
-        ConnectionStateUpdate,
-        ClientData,
-        ServerData,
-        NetworkInvocation,
-        NetworkInvocationResult,
-        EncryptionPacket,
-        CustomPacket,
-    }
-
-    /// <summary>
-    /// <see cref="PacketFlags"/> are used to give metadata to packets for the sending method to interpert. For exmaple, flagging the packet as <see cref="PacketFlags.SymetricalEncrypted"/> will use the symmetrical key sent in the Encryption Handshake during connection time. Some flags cannot be used if the framework for them has not yet been implemented. (Handshake isn't complete, RSA/AES keys are not exchanged, or they are incorrect.)
-    /// </summary>
-    [Flags]
-    public enum PacketFlags : byte
-    {
-        None = 0,
-        /// <summary>
-        /// Uses GZIP Compression.
-        /// </summary>
-        Compressed = 1,
-        /// <summary>
-        /// Uses the RSA Algorithim at send to encrypt data. RSA has a limit to the size of the data it can encrypt. Not Compatible with <see cref="PacketFlags.SymetricalEncrypted"/>
-        /// </summary>
-        AsymtreicalEncrypted = 2,
-        /// <summary>
-        /// Uses Symetrical Encryption to send data, note that this can only be used once the full encryptoin handshake has been completed. Not Compatible with <see cref="PacketFlags.AsymtreicalEncrypted"/>
-        /// </summary>
-        SymetricalEncrypted = 4,
     }
 
     /// <summary>
@@ -214,9 +211,13 @@ namespace SocketNetworking.PacketSystem
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         public static PacketHeader GetHeader(byte[] data)
         {
-            if(data.Length < HeaderLength + 1)
+            if(data == null)
             {
-                throw new ArgumentOutOfRangeException("data", $"Data must be at least {HeaderLength + 1} bytes long!");
+                return new PacketHeader();
+            }
+            if(data.Length < HeaderLength)
+            {
+                throw new ArgumentOutOfRangeException("data", $"Data must be at least {HeaderLength} bytes long!");
             }
             ByteReader reader = new ByteReader(data);
             int size = reader.ReadInt();
