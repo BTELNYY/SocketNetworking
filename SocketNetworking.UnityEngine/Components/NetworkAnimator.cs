@@ -113,9 +113,9 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        public override void OnClientObjectCreated(UnityNetworkClient client)
+        public override void OnNetworkSpawned(NetworkClient spawner)
         {
-            base.OnClientObjectCreated(client);
+            base.OnNetworkSpawned(spawner);
             NetworkAnimatorSpeed = NetworkAnimatorSpeed;
             for (int i = -1; i < _animator.layerCount; i++)
             {

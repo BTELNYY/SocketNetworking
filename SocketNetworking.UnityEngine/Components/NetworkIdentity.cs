@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.PacketSystem.Packets;
 
 namespace SocketNetworking.UnityEngine.Components
 {
@@ -21,6 +22,10 @@ namespace SocketNetworking.UnityEngine.Components
             get
             {
                 return base.NetworkID;
+            }
+            set
+            {
+                base.NetworkID = value;
             }
         }
 
@@ -47,7 +52,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             foreach (NetworkObject obj in NetworkObjects)
             {
-                obj.UpdateOwnershipMode(OwnershipMode);
+                obj.OwnershipMode = OwnershipMode;
             }
         }
 
@@ -55,7 +60,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             foreach(NetworkObject obj in NetworkObjects)
             {
-                obj.UpdateOwnerClientId(OwnerClientID);
+                obj.OwnerClientID = OwnerClientID;
             }
         }
 
@@ -86,11 +91,11 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkObjects.Add(obj);
             if(NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                obj.ServerSetNetworkID(NetworkID);
+                obj.NetworkSetID(NetworkID);
             }
             if(NetworkManager.WhereAmI == ClientLocation.Local)
             {
-                obj.ClientSetNetworkID(NetworkID);
+                //obj.ClientSetNetworkID(NetworkID);
             }
         }
 
@@ -106,16 +111,19 @@ namespace SocketNetworking.UnityEngine.Components
             return NetworkObjects.Contains(obj);
         }
 
-        public override void OnObjectUpdateNetworkIDLocal(int newNetID)
+        public override void OnModify(ObjectManagePacket modifier, NetworkClient client)
         {
-            base.OnObjectUpdateNetworkIDLocal(newNetID);
-            foreach (var obj in NetworkObjects)
+            base.OnModify(modifier, client);
+            if(modifier.NewNetworkID != NetworkID)
             {
-                if (obj == null)
+                foreach (var obj in NetworkObjects)
                 {
-                    continue;
+                    if (obj == null)
+                    {
+                        continue;
+                    }
+                    obj.NetworkID = NetworkID;
                 }
-                obj.SetNetworkID(newNetID);
             }
         }
 

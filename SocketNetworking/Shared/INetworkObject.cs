@@ -52,15 +52,24 @@ namespace SocketNetworking.Shared
         bool IsEnabled { get; }
 
         /// <summary>
-        /// Called on the server when a <see cref="NetworkClient"/> spawns the object on the local machine.
+        /// Called on the client when the object has finished being spawned and the spawn response has been sent to the server.
         /// </summary>
-        /// <param name="spawner"></param>
         void OnNetworkSpawned(NetworkClient spawner);
 
         /// <summary>
-        /// Called when the object is being destroyed.
+        /// Called when the object is being destroyed by the peer.
         /// </summary>
-        void Destroy(NetworkClient client);
+        void OnClientDestroy(NetworkClient client);
+
+        /// <summary>
+        /// Called when the server issues the objects destruction.
+        /// </summary>
+        void OnServerDestroy();
+
+        /// <summary>
+        /// This method must actually destroy the object.
+        /// </summary>
+        void Destroy();
 
         /// <summary>
         /// This is called on the server and client when the object is added to the list of currently updated network objects.
@@ -85,6 +94,13 @@ namespace SocketNetworking.Shared
         /// <param name="modifiedObject"></param>
         /// <param name="modifier"></param>
         void OnModified(INetworkObject modifiedObject, NetworkClient modifier);
+
+        /// <summary>
+        /// Called before the object modifications are applied.
+        /// </summary>
+        /// <param name="modification"></param>
+        /// <param name="modifier"></param>
+        void OnModify(ObjectManagePacket modification, NetworkClient modifier);
 
         /// <summary>
         /// Called on the server and client when a <see cref="INetworkObject"/> is destroyed fully, being confirmed as destroyed by the server and client.

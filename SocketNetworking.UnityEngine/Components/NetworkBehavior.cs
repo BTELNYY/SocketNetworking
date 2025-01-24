@@ -24,186 +24,19 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        public virtual int NetworkID => _netId;
-
-        private int _netId = -1;
-
-        /// <summary>
-        /// Sets the objects <see cref="NetworkID"/> and tells all clients about it. Note that: The client must already know the old Network ID, so it is suggested you broadcast in some other way.
-        /// </summary>
-        /// <param name="id">
-        /// The new ID to set the <see cref="NetworkID"/> to.
-        /// </param>
-        public void ServerSetNetworkID(int id)
-        {
-            if(NetworkManager.WhereAmI != ClientLocation.Remote)
-            {
-                throw new InvalidOperationException("Tried to change the NetworkID on the client!");
-            }
-            _netId = id;
-            if (NetworkManager.IsRegistered(this))
-            {
-                NetworkManager.ModifyNetworkID(this);
-            }
-            else
-            {
-                RegisterObject();
-            }
-            NetworkInvoke(nameof(ClientSetNetId), new object[] { id }, true, false);
-        }
-
-
-        [NetworkInvocable(NetworkDirection.Server)]
-        private void ClientSetNetId(int id)
-        {
-            _netId = id;
-            if (NetworkManager.IsRegistered(this))
-            {
-                NetworkManager.ModifyNetworkID(this);
-            }
-            else
-            {
-                RegisterObject();
-            }
-            OnObjectUpdateNetworkIDLocal(id);
-        }
-
-        public void SetNetworkID(int id, bool local = false)
-        {
-            if (local)
-            {
-                _netId = id;
-                return;
-            }
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                ServerSetNetworkID(NetworkID);
-            }
-            if (NetworkManager.WhereAmI == ClientLocation.Local)
-            {
-                ClientSetNetworkID(NetworkID);
-            }
-        }
-
-        /// <summary>
-        /// Updates the local network id. Note that no check is done if the new ID is correct, so this method can desync if used incorrectly.
-        /// </summary>
-        /// <param name="id"></param>
-        public void ClientSetNetworkID(int id)
-        {
-            if(NetworkManager.WhereAmI != ClientLocation.Local)
-            {
-                throw new InvalidOperationException("Tried to change the local network ID on the server! Use ServerSetNetworkID() instead!");
-            }
-            _netId = id;
-            if (NetworkManager.IsRegistered(this))
-            {
-                NetworkManager.ModifyNetworkID(this);
-            }
-            else
-            {
-                RegisterObject();
-            }
-        }
-
-        public bool IsEnabled => base.enabled;
-
-        public int OwnerClientID
-        {
-            get
-            {
-                return _ownerClientID;
-            }
-            set
-            {
-                if(NetworkManager.WhereAmI != ClientLocation.Remote)
-                {
-                    return;
-                }
-                if (OwnershipMode == OwnershipMode.Server || OwnershipMode == OwnershipMode.Public)
-                {
-                    if(value != -1)
-                    {
-                        OwnershipMode = OwnershipMode.Client;
-                    }
-                }
-                NetworkServer.NetworkInvokeOnAll(this, nameof(UpdateOwnerClientIDRpc), new object[] { value });
-            }
-        }
-
-        private int _ownerClientID = -1;
-
-        [NetworkInvocable(NetworkDirection.Server)]
-        private void UpdateOwnerClientIDRpc(int id)
-        {
-            _ownerClientID = id;
-        }
-
-        /// <summary>
-        /// Updates the local value for the <see cref="OwnerClientID"/>, Note that this does NOT change the owner of this object on the server, and will cause desync if not used incorrectly.
-        /// </summary>
-        /// <param name="id"></param>
-        public void UpdateOwnerClientId(int id)
-        {
-            _ownerClientID = id;
-        }
-
-
-        /// <summary>
-        /// Changes the <see cref="OwnerClientID"/> of the current object, requires the Sender to be the owner of the current object.
-        /// </summary>
-        /// <param name="newOwner"></param>
-        public void ClientChangeOwner(int newOwner)
-        {
-            NetworkInvoke(nameof(ServerProccessChangeOwnerCommand), new object[] { newOwner });
-        }
-
-        [NetworkInvocable(NetworkDirection.Client)]
-        private void ServerProccessChangeOwnerCommand(int newOwner)
-        {
-            OwnerClientID = newOwner;
-        }
-
-        public OwnershipMode OwnershipMode
-        {
-            get
-            {
-                return _ownershipMode;
-            }
-            set
-            {
-                if (NetworkManager.WhereAmI != ClientLocation.Remote)
-                {
-                    return;
-                }
-                NetworkServer.NetworkInvokeOnAll(this, nameof(UpdateOwnershipModeRpc), new object[] { value });
-            }
-        }
+        public virtual bool IsEnabled => base.enabled;
 
         public virtual bool Spawnable => true;
 
-        public ObjectVisibilityMode ObjectVisibilityMode { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual ObjectVisibilityMode ObjectVisibilityMode { get; set; }
 
-        public bool AllowPublicModification => throw new NotImplementedException();
+        public virtual bool AllowPublicModification => false;
 
-        int INetworkObject.NetworkID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual int OwnerClientID { get; set; }
 
-        [NetworkInvocable(NetworkDirection.Server)]
-        private void UpdateOwnershipModeRpc(OwnershipMode mode)
-        {
-            _ownershipMode = mode;
-        }
+        public virtual OwnershipMode OwnershipMode { get; set; }
 
-        private OwnershipMode _ownershipMode = OwnershipMode.Server;
-
-        /// <summary>
-        /// Updates the local value for the <see cref="OwnershipMode"/>, Note that this does NOT change the Ownership mode of the server object. This will cause desync if used incorrectly.
-        /// </summary>
-        /// <param name="id"></param>
-        public void UpdateOwnershipMode(OwnershipMode mode)
-        {
-            _ownershipMode = mode;
-        }
+        public virtual int NetworkID { get; set; }
 
         public virtual void OnAdded(INetworkObject addedObject)
         {
@@ -234,23 +67,68 @@ namespace SocketNetworking.UnityEngine.Components
             
         }
 
-        /// <summary>
-        /// Called when <see cref="SetNetworkID(int)"/> is called.
-        /// </summary>
-        /// <param name="newNetID"></param>
-        public virtual void OnObjectUpdateNetworkIDLocal(int newNetID)
+
+        public virtual void OnNetworkSpawned(NetworkClient spawner)
         {
 
         }
 
-        /// <summary>
-        /// Called on the server when a client finishes creating the the prefab which is this object.
-        /// </summary>
-        /// <param name="client"></param>
-        public virtual void OnClientObjectCreated(UnityNetworkClient client)
+        public virtual void OnLocalSpawned(ObjectManagePacket packet)
         {
-            
+
         }
+
+        public virtual void RecieveExtraData(byte[] extraData)
+        {
+
+        }
+
+        public virtual byte[] SendExtraData()
+        {
+            return new byte[0];
+        }
+
+        public virtual void OnClientDestroy(NetworkClient client)
+        {
+
+        }
+
+        public virtual void OnModified(NetworkClient modifier)
+        {
+
+        }
+
+        public virtual void OnModified(INetworkObject modifiedObject, NetworkClient modifier)
+        {
+
+        }
+
+        public virtual void OnModify(ObjectManagePacket modifier, NetworkClient client)
+        {
+
+        }
+
+
+        public virtual void OnDestroyed(INetworkObject destroyedObject, NetworkClient client)
+        {
+
+        }
+
+        public virtual void OnCreated(INetworkObject createdObject, NetworkClient client)
+        {
+
+        }
+
+        public virtual void OnServerDestroy()
+        {
+
+        }
+
+        public virtual void Destroy()
+        {
+            GameObject.Destroy(this);
+        }
+
 
         /// <summary>
         /// Ensures the current script is registered as a network object
@@ -295,7 +173,6 @@ namespace SocketNetworking.UnityEngine.Components
             RegisterObject();
         }
 
-
         public virtual void NetworkInvoke(string methodName, object[] args)
         {
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
@@ -304,7 +181,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
             else if(NetworkManager.WhereAmI == ClientLocation.Local)
             {
-                if(UnityNetworkManager.GameNetworkClient == null)
+                if(NetworkClient.LocalClient == null)
                 {
                     throw new InvalidOperationException("Attempted to networkinvoke using a client when the game client is not set!");
                 }
@@ -349,51 +226,6 @@ namespace SocketNetworking.UnityEngine.Components
                     NetworkManager.NetworkInvoke(this, UnityNetworkManager.GameNetworkClient, methodName, args);
                 }
             }
-        }
-
-        public virtual void OnNetworkSpawned(NetworkClient spawner)
-        {
-            
-        }
-
-        public virtual void OnLocalSpawned(ObjectManagePacket packet)
-        {
-            
-        }
-
-        public virtual void RecieveExtraData(byte[] extraData)
-        {
-            
-        }
-
-        public virtual byte[] SendExtraData()
-        {
-            return new byte[0];
-        }
-
-        public void Destroy(NetworkClient client)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void OnModified(NetworkClient modifier)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void OnModified(INetworkObject modifiedObject, NetworkClient modifier)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void OnDestroyed(INetworkObject destroyedObject, NetworkClient client)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void OnCreated(INetworkObject createdObject, NetworkClient client)
-        {
-            throw new NotImplementedException();
         }
     }
 }

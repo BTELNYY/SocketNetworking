@@ -1312,7 +1312,7 @@ namespace SocketNetworking.Client
                     catch (Exception ex)
                     {
                         Log.GlobalError(ex.ToString());
-                        SendError(ex.Message, LogSeverity.Error);
+                        SendLog(ex.Message, LogSeverity.Error);
                     }
                     break;
                 case PacketType.SyncVarUpdate:
@@ -1325,7 +1325,7 @@ namespace SocketNetworking.Client
                     catch (Exception ex)
                     {
                         Log.GlobalError(ex.ToString());
-                        SendError(ex.Message, LogSeverity.Error);
+                        SendLog(ex.Message, LogSeverity.Error);
                     }
                     break;
                 case PacketType.ConnectionStateUpdate:
@@ -1489,7 +1489,7 @@ namespace SocketNetworking.Client
                     catch(Exception ex)
                     {
                         Log.GlobalError(ex.ToString());
-                        SendError(ex.Message, LogSeverity.Error);
+                        SendLog(ex.Message, LogSeverity.Error);
                     }
                     break;
                 case PacketType.SyncVarUpdate:
@@ -1502,7 +1502,7 @@ namespace SocketNetworking.Client
                     catch(Exception ex)
                     {
                         Log.GlobalError(ex.ToString());
-                        SendError(ex.Message, LogSeverity.Error);
+                        SendLog(ex.Message, LogSeverity.Error);
                     }
                     break;
                 case PacketType.ReadyStateUpdate:
@@ -1721,7 +1721,7 @@ namespace SocketNetworking.Client
         /// </summary>
         /// <param name="error"></param>
         /// <param name="severity"></param>
-        public void SendError(string error, LogSeverity severity)
+        public void SendLog(string error, LogSeverity severity)
         {
             NetworkInvoke(nameof(GetError), new object[] { error, severity });
         }

@@ -11,6 +11,7 @@ using UnityEngine;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using System.Data.SqlTypes;
 
 namespace SocketNetworking.UnityEngine
 {
@@ -99,11 +100,7 @@ namespace SocketNetworking.UnityEngine
                 identity = clone.AddComponent<NetworkIdentity>();
             }
             int newNetId = UnityNetworkManager.GetNextNetworkObjectID();
-            identity.SetNetworkID(newNetId);
-            NetworkObjectSpawnPacket packet = new NetworkObjectSpawnPacket();
-            packet.PrefabID = prefabId;
-            packet.NewNetworkID = newNetId;
-            SendToAll(packet);
+            identity.NetworkSpawn();
             return clone;
         }
 
@@ -126,20 +123,10 @@ namespace SocketNetworking.UnityEngine
                 identity = clone.AddComponent<NetworkIdentity>();
             }
             int newNetId = UnityNetworkManager.GetNextNetworkObjectID();
-            identity.SetNetworkID(newNetId);
-            NetworkObjectSpawnPacket packet = new NetworkObjectSpawnPacket();
-            packet.PrefabID = prefabId;
-            packet.NewNetworkID = newNetId;
-            if (owner == null)
-            {
-                packet.OwnerID = -1;
-            }
-            else
-            {
-                packet.OwnerID = owner.ClientID;
-            }
-            packet.OwnershipMode = ownership;
-            SendToAll(packet);
+            identity.NetworkID = newNetId;
+            identity.OwnerClientID = owner == null ? -1 : owner.ClientID;
+            identity.OwnershipMode = ownership;
+            identity.NetworkSpawn();
             return clone;
         }
 
@@ -156,19 +143,9 @@ namespace SocketNetworking.UnityEngine
                 Log.GlobalError("In order to network spawn existing gameobjects, the gameobjects must have a NetworkPrefab and NetworkIdentity component.");
                 return null;
             }
-            NetworkObjectSpawnPacket packet = new NetworkObjectSpawnPacket();
-            packet.PrefabID = prefab.PrefabID;
-            packet.NewNetworkID = identity.NetworkID;
-            if(owner == null)
-            {
-                packet.OwnerID = -1;
-            }
-            else
-            {
-                packet.OwnerID = owner.ClientID;
-            }
-            packet.OwnershipMode = ownership;
-            SendToAll(packet);
+            identity.OwnershipMode = ownership;
+            identity.OwnerClientID = owner == null ? -1 : owner.ClientID;
+            identity.NetworkSpawn();
             return gameObject;
         }
 

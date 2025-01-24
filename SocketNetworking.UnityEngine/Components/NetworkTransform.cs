@@ -189,9 +189,9 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        public override void OnClientObjectCreated(UnityNetworkClient client)
+        public override void OnNetworkSpawned(NetworkClient spawner)
         {
-            base.OnClientObjectCreated(client);
+            base.OnNetworkSpawned(spawner);
             NetworkPosition = transform.position;
             NetworkRotation = transform.rotation;
         }

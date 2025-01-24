@@ -476,6 +476,7 @@ namespace SocketNetworking.Shared
                         handle.Client.Send(creationConfirmation);
                         obj.OnLocalSpawned(packet);
                     }
+                    spawnable.RecieveExtraData(packet.ExtraData);
                     break;
                 case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
                     INetworkObject creationTarget = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == packet.NetowrkIDTarget);
@@ -494,13 +495,14 @@ namespace SocketNetworking.Shared
                     }
                     SendDestroyedPulse(handle.Client, destructionTarget);
                     RemoveNetworkObject(destructionTarget);
-                    destructionTarget.Destroy(handle.Client);
+                    destructionTarget.OnClientDestroy(handle.Client);
                     ObjectManagePacket destroyConfirmPacket = new ObjectManagePacket()
                     {
                         NetowrkIDTarget = destructionTarget.NetworkID,
                         Action = ObjectManagePacket.ObjectManageAction.ConfirmDestroy,
                     };
                     handle.Client.Send(destroyConfirmPacket);
+                    destructionTarget.Destroy();
                     break;
                 case ObjectManagePacket.ObjectManageAction.ConfirmDestroy:
                     SendDestroyedPulse(handle.Client, null);
@@ -512,6 +514,7 @@ namespace SocketNetworking.Shared
                     {
                         throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetowrkIDTarget}");
                     }
+                    modificationTarget.OnModify(packet, handle.Client);
                     modificationTarget.NetworkID = packet.NewNetworkID;
                     modificationTarget.OwnerClientID = packet.OwnerID;
                     modificationTarget.ObjectVisibilityMode = packet.ObjectVisibilityMode;
