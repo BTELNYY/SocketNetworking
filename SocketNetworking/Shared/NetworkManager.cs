@@ -391,7 +391,7 @@ namespace SocketNetworking.Shared
         internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
         {
             INetworkObject @object = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == packet.NetowrkIDTarget);
-            if(@object == default(INetworkObject) && packet.Action != ObjectManagePacket.ObjectManageAction.Create)
+            if (@object == default(INetworkObject) && packet.Action != ObjectManagePacket.ObjectManageAction.Create)
             {
                 throw new KeyNotFoundException($"No such Network Object with ID {packet.NetowrkIDTarget}, Did you spawn it yet?");
             }
@@ -417,66 +417,62 @@ namespace SocketNetworking.Shared
             switch(packet.Action)
             {
                 case ObjectManagePacket.ObjectManageAction.Create:
-                    Type type = Assembly.Load(packet.AssmeblyName)?.GetType(packet.ObjectClassName);
-                    if(type == null)
+                    Type objType = Assembly.Load(packet.AssmeblyName)?.GetType(packet.ObjectClassName);
+                    if(objType == null)
                     {
                         throw new NullReferenceException("Cannot find type by name or assmebly.");
                     }
-                    NetworkObjectSpawner spawner = null;
-                    int bestApprox = 0;
+                    NetworkObjectSpawner objSpawner = null;
+                    int bestApproxObj = 0;
                     foreach (NetworkObjectSpawner possibleSpawner in NetworkObjectSpawners)
                     {
                         if(possibleSpawner.AllowSubclasses)
                         {
-                            int distance = type.HowManyClassesUp(possibleSpawner.TargetType);
+                            int distance = objType.HowManyClassesUp(possibleSpawner.TargetType);
                             if(distance == -1)
                             {
                                 continue;
                             }
-                            if (distance < bestApprox)
+                            if (distance < bestApproxObj)
                             {
-                                bestApprox = distance;
-                                spawner = possibleSpawner;
+                                bestApproxObj = distance;
+                                objSpawner = possibleSpawner;
                             }
                         }
                         else
                         {
-                            if(possibleSpawner.TargetType != type)
+                            if(possibleSpawner.TargetType != objType)
                             {
                                 continue;
                             }
-                            spawner = possibleSpawner;
+                            objSpawner = possibleSpawner;
                             break;
                         }
                     }
-                    INetworkSpawnable spawnable;
-                    if (spawner == null)
+                    INetworkObject netObj;
+                    if (objSpawner == null)
                     {
-                        spawnable = (INetworkSpawnable)Activator.CreateInstance(type);
+                        netObj = (INetworkObject)Activator.CreateInstance(objType);
                     }
                     else
                     {
-                        spawnable = spawner.Spawner.Invoke(packet, handle);
+                        netObj = (INetworkObject)objSpawner.Spawner.Invoke(packet, handle);
                     }
-                    if(spawnable == null)
+                    if(netObj == null)
                     {
-                        throw new NullReferenceException($"Failed to spawn {type.FullName}");
+                        throw new NullReferenceException($"Failed to spawn {objType.FullName}");
                     }
-                    if(spawnable is INetworkObject @obj)
+                    netObj.NetworkID = packet.NetowrkIDTarget;
+                    netObj.OwnerClientID = packet.OwnerID;
+                    netObj.OwnershipMode = packet.OwnershipMode;
+                    ObjectManagePacket creationConfirmation = new ObjectManagePacket()
                     {
-                        obj.NetworkID = packet.NetowrkIDTarget;
-                        obj.OwnerClientID = packet.OwnerID;
-                        obj.OwnershipMode = packet.OwnershipMode;
-                        ObjectManagePacket creationConfirmation = new ObjectManagePacket()
-                        {
-                            NetowrkIDTarget = packet.NetowrkIDTarget,
-                            Action = ObjectManagePacket.ObjectManageAction.ConfirmCreate,
-                        };
-                        AddNetworkObject(@obj);
-                        handle.Client.Send(creationConfirmation);
-                        obj.OnLocalSpawned(packet);
-                    }
-                    spawnable.RecieveExtraData(packet.ExtraData);
+                        NetowrkIDTarget = packet.NetowrkIDTarget,
+                        Action = ObjectManagePacket.ObjectManageAction.ConfirmCreate,
+                    };
+                    AddNetworkObject(netObj);
+                    handle.Client.Send(creationConfirmation);
+                    netObj.OnLocalSpawned(packet);
                     break;
                 case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
                     INetworkObject creationTarget = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == packet.NetowrkIDTarget);
