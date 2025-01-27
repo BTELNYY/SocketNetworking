@@ -68,7 +68,7 @@ namespace SocketNetworking
                 Action = ObjectManagePacket.ObjectManageAction.Create,
                 AssmeblyName = obj.GetType().Assembly.FullName,
                 ObjectClassName = obj.GetType().FullName,
-                ExtraData = obj.SendExtraData(),
+                ExtraData = obj.SendExtraData().Data,
             };
             NetworkServer.SendToAll(packet);
             obj.OnLocalSpawned(packet);
@@ -134,7 +134,7 @@ namespace SocketNetworking
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
-                ExtraData = obj.SendExtraData(),
+                ExtraData = obj.SendExtraData().Data,
             };
             if(obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
             {

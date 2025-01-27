@@ -1,4 +1,5 @@
 ﻿using SocketNetworking.Client;
+using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
 using System;
 using System.Collections.Generic;
@@ -21,8 +22,8 @@ namespace SocketNetworking.Shared
         /// </summary>
         bool Spawnable { get; }
 
-        void RecieveExtraData(byte[] extraData);
+        ByteReader RecieveExtraData(byte[] extraData);
 
-        byte[] SendExtraData();
+        ByteWriter SendExtraData();
     }
 }

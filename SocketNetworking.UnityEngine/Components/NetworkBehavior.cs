@@ -26,6 +26,22 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual bool IsEnabled => base.enabled;
 
+        protected virtual void SetEnabled(bool enabled)
+        {
+            base.enabled = enabled;
+        }
+
+        public void NetworkSetEnabled(bool value)
+        {
+            NetworkInvoke(nameof(RecieveIsEnabled), new object[] { value });
+        }
+
+        [NetworkInvocable(NetworkDirection.Any)]
+        private void RecieveIsEnabled(NetworkHandle handle, bool value)
+        {
+            SetEnabled(value);
+        }
+
         public virtual bool Spawnable => true;
 
         public virtual ObjectVisibilityMode ObjectVisibilityMode { get; set; }
@@ -77,14 +93,14 @@ namespace SocketNetworking.UnityEngine.Components
 
         }
 
-        public virtual void RecieveExtraData(byte[] extraData)
+        public virtual ByteReader RecieveExtraData(byte[] extraData)
         {
-
+            return new ByteReader(extraData);
         }
 
-        public virtual byte[] SendExtraData()
+        public virtual ByteWriter SendExtraData()
         {
-            return new byte[0];
+            return new ByteWriter();
         }
 
         public virtual void OnClientDestroy(NetworkClient client)

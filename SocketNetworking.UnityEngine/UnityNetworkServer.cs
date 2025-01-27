@@ -17,6 +17,11 @@ namespace SocketNetworking.UnityEngine
 {
     public class UnityNetworkServer : NetworkServer
     {
+        public override void StopServer()
+        {
+            base.StopServer();
+            UnityNetworkManager.Init();
+        }
 
         public static void NetworkDestroy(NetworkObject identity)
         {

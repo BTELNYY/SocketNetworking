@@ -12,11 +12,34 @@ using SocketNetworking.UnityEngine.Components;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using JetBrains.Annotations;
+using SocketNetworking.PacketSystem.Packets;
 
 namespace SocketNetworking.UnityEngine
 {
     public class UnityNetworkManager : NetworkManager
     {
+        static bool _initted = false;
+
+        internal static void Init()
+        {
+            if (_initted)
+            {
+                return;
+            }
+            _initted = true;
+            RegisterSpawner(typeof(NetworkObject), Spawn, true);
+        }
+
+        private static INetworkSpawnable Spawn(ObjectManagePacket packet, NetworkHandle handle)
+        {
+            ByteReader reader = new ByteReader(packet.ExtraData);
+            UnityNetworkObject networkObject = reader.ReadPacketSerialized<UnityNetworkObject>();
+            GameObject prefab = GetPrefabByID(networkObject.PrefabID);
+            GameObject result = GameObject.Instantiate(prefab);
+            return result.GetComponent<NetworkIdentity>();
+        }
+
         private static Dictionary<GameObject, NetworkTransform> _transforms = new Dictionary<GameObject, NetworkTransform>();
 
         private static Dictionary<GameObject, NetworkAnimator> _animators = new Dictionary<GameObject, NetworkAnimator>();

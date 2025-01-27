@@ -26,5 +26,11 @@ namespace SocketNetworking.UnityEngine
                 return m_Dispatcher;
             }
         }
+
+        public override void Init()
+        {
+            base.Init();
+            UnityNetworkManager.Init();
+        }
     }
 }

@@ -167,7 +167,7 @@ namespace SocketNetworking.Server
 
         private static RoundRobin<ClientHandler> handlers = new RoundRobin<ClientHandler>();
 
-        public void StartServer()
+        public virtual void StartServer()
         {
             if (HasServerStarted)
             {
@@ -264,7 +264,7 @@ namespace SocketNetworking.Server
             }
         }
 
-        public void StopServer()
+        public virtual void StopServer()
         {
             if (!HasServerStarted)
             {
