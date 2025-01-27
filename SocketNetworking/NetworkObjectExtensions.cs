@@ -74,7 +74,7 @@ namespace SocketNetworking
             obj.OnLocalSpawned(packet);
         }
 
-        public static void NetworkDestroy(INetworkObject obj)
+        public static void NetworkDestroy(this INetworkObject obj)
         {
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
@@ -117,6 +117,10 @@ namespace SocketNetworking
         /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSpawn(this INetworkObject obj)
         {
+            if(!obj.Spawnable)
+            {
+                throw new InvalidOperationException("This object is not spawnable.");
+            }
             if(NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");

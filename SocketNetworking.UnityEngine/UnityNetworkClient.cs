@@ -17,6 +17,14 @@ namespace SocketNetworking.UnityEngine
 {
     public class UnityNetworkClient : NetworkClient
     {
-         
+        private UnityMainThreadDispatcher m_Dispatcher;
+
+        public UnityMainThreadDispatcher Dispatcher
+        {
+            get
+            {
+                return m_Dispatcher;
+            }
+        }
     }
 }

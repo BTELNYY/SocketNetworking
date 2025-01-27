@@ -67,7 +67,6 @@ namespace SocketNetworking.UnityEngine.Components
             
         }
 
-
         public virtual void OnNetworkSpawned(NetworkClient spawner)
         {
 
@@ -187,7 +186,7 @@ namespace SocketNetworking.UnityEngine.Components
                 }
                 else
                 {
-                    NetworkManager.NetworkInvoke(this, UnityNetworkManager.GameNetworkClient, methodName, args);
+                    NetworkManager.NetworkInvoke(this, NetworkClient.LocalClient, methodName, args);
                 }
             }
         }
@@ -217,13 +216,13 @@ namespace SocketNetworking.UnityEngine.Components
             else if(NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 Log.GlobalWarning("Trying to call a server-only method on the client. in this case, this is fine, but this may be uintended.");
-                if (UnityNetworkManager.GameNetworkClient == null)
+                if (NetworkClient.LocalClient == null)
                 {
                     throw new InvalidOperationException("Attempted to networkinvoke using a client when the game client is not set!");
                 }
                 else
                 {
-                    NetworkManager.NetworkInvoke(this, UnityNetworkManager.GameNetworkClient, methodName, args);
+                    NetworkManager.NetworkInvoke(this, NetworkClient.LocalClient, methodName, args);
                 }
             }
         }

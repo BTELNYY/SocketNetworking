@@ -21,8 +21,6 @@ namespace SocketNetworking.UnityEngine
 
         private static Dictionary<GameObject, NetworkAnimator> _animators = new Dictionary<GameObject, NetworkAnimator>();
 
-        private static Dictionary<GameObject, NetworkIdentity> _idetities = new Dictionary<GameObject, NetworkIdentity>();
-
         private static Dictionary<int, GameObject> _prefabSpawnIds = new Dictionary<int, GameObject>();
 
         public static List<NetworkBehavior> GetNetworkBehaviors()
@@ -44,7 +42,7 @@ namespace SocketNetworking.UnityEngine
         }
 
         /// <summary>
-        /// Registers a <see cref="GameObject"/> to be used as a prefab for <see cref="UnityNetworkServer.NetworkSpawn(int)"/> or <see cref="UnityNetworkServer.NetworkDestroy(NetworkIdentity)"/>. Note that this method MUST be run on both the client and server with the exact same IDs in order for this to work correctly.
+        /// Registers a <see cref="GameObject"/> to be used as a prefab.
         /// </summary>
         /// <param name="id">
         /// The ID of the prefab, cannot be a duplicate. Use <see cref="UnityNetworkManager.NextAvailablePrefabID"/> to get the next empty prefab ID
@@ -84,8 +82,6 @@ namespace SocketNetworking.UnityEngine
             }
         }
 
-        public static UnityNetworkClient GameNetworkClient { get; set; }
-
         public static void PrepareForUnity()
         {
             NetworkManager.ImportCustomPackets(Assembly.GetExecutingAssembly());
@@ -116,11 +112,6 @@ namespace SocketNetworking.UnityEngine
                 _animators.Add(obj.gameObject, (NetworkAnimator)obj);
                 return;
             }
-            if (obj.GetType() == typeof(NetworkIdentity))
-            {
-                _idetities.Add(obj.gameObject, (NetworkIdentity)obj);
-                return;
-            }
         }
 
         public static void Unregister(NetworkObject obj)
@@ -134,33 +125,6 @@ namespace SocketNetworking.UnityEngine
             {
                 _animators.Remove(obj.gameObject);
                 return;
-            }
-            if (obj.GetType() == typeof(NetworkIdentity))
-            {
-                _idetities.Remove(obj.gameObject);
-                return;
-            }
-        }
-
-        public static NetworkIdentity GetNetworkIdentity(GameObject gameObject)
-        {
-            if (_idetities.ContainsKey(gameObject))
-            {
-                return _idetities[gameObject];
-            }
-            return null;
-        }
-
-        public static NetworkIdentity GetNetworkIdentity(int netId)
-        {
-            List<NetworkIdentity> list = _idetities.Values.Where(x => x.NetworkID == netId).ToList();
-            if(list.Count == 0)
-            {
-                return null;
-            }
-            else
-            {
-                return list.First();
             }
         }
 

@@ -32,11 +32,6 @@ namespace SocketNetworking.Server
             }
         }
 
-        protected override NetworkServer GetServer()
-        {
-            return new MixedNetworkServer();
-        }
-
         protected override void ServerStartThread()
         {
             Log.GlobalInfo("Server starting...");

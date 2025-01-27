@@ -14,11 +14,6 @@ namespace SocketNetworking.Server
 {
     public class TcpNetworkServer : NetworkServer
     {
-        protected override NetworkServer GetServer()
-        {
-            return new TcpNetworkServer();
-        }
-
         protected override void ServerStartThread()
         {
             Log.GlobalInfo("Server starting...");

@@ -175,12 +175,11 @@ namespace SocketNetworking.Server
                 return;
             }
             _serverState = ServerState.Started;
-            NetworkServer server = GetServer();
-            if (!server.Validate())
+            if (!Validate())
             {
                 return;
             }
-            _serverInstance = server;
+            _serverInstance = this;
             handlers.Capacity = Config.DefaultThreads;
             for(int i = 0; i < Config.DefaultThreads; i++)
             {
@@ -188,7 +187,7 @@ namespace SocketNetworking.Server
                 handlers.Add(handler);
                 handler.Start();
             }
-            ServerThread = new Thread(server.ServerStartThread);
+            ServerThread = new Thread(ServerStartThread);
             ServerThread.Start();
             ServerStarted?.Invoke();
             _serverState = ServerState.NotReady;
@@ -207,11 +206,6 @@ namespace SocketNetworking.Server
                 Log.GlobalWarning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
             }
             return true;
-        }
-
-        protected virtual NetworkServer GetServer()
-        {
-            return new NetworkServer();
         }
 
         protected static void AddClient(NetworkClient client, int clientId)
@@ -270,7 +264,7 @@ namespace SocketNetworking.Server
             }
         }
 
-        public static void StopServer()
+        public void StopServer()
         {
             if (!HasServerStarted)
             {

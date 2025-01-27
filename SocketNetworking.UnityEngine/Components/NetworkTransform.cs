@@ -16,7 +16,7 @@ using SocketNetworking.Shared;
 
 namespace SocketNetworking.UnityEngine.Components
 {
-    public class NetworkTransform : NetworkComponent
+    public class NetworkTransform : NetworkObject
     {
         public void ServerSyncPositionAndRotation()
         {

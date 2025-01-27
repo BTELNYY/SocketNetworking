@@ -31,7 +31,7 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return true;
                 }
-                else if(OwnershipMode == OwnershipMode.Client && OwnerClientID == UnityNetworkManager.GameNetworkClient.ClientID)
+                else if(OwnershipMode == OwnershipMode.Client && OwnerClientID == NetworkClient.LocalClient.ClientID)
                 {
                     return true;
                 }
@@ -118,9 +118,9 @@ namespace SocketNetworking.UnityEngine.Components
             }
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
-                if(UnityNetworkManager.GameNetworkClient != null)
+                if(NetworkClient.LocalClient != null)
                 {
-                    UnityNetworkManager.GameNetworkClient.Send(packet, target);
+                    NetworkClient.LocalClient.Send(packet, target);
                 }
                 else
                 {
