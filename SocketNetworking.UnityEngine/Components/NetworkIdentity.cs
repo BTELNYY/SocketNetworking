@@ -10,17 +10,19 @@ using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {
-    public class NetworkIdentity : NetworkObject
+    public class NetworkIdentity : NetworkBehavior
     {
-        public UnityNetworkObject ObjectData
+        public override bool Spawnable => true;
+
+        public UnityNetworkBehavior ObjectData
         {
             get
             {
-                return new UnityNetworkObject()
+                return new UnityNetworkBehavior()
                 {
                     Name = gameObject.name,
                     Tree = new List<string>(),
-                    PrefabID = Prefab.PrefabID,
+                    PrefabID = this.PrefabID,
                 };
             }
             private set
@@ -29,24 +31,24 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        public NetworkPrefab Prefab;
+        public int PrefabID; 
 
         public override ByteReader RecieveExtraData(byte[] extraData)
         {
             ByteReader reader = base.RecieveExtraData(extraData);
-            ObjectData = reader.ReadPacketSerialized<UnityNetworkObject>();
+            ObjectData = reader.ReadPacketSerialized<UnityNetworkBehavior>();
             return reader;
         }
 
         public override ByteWriter SendExtraData()
         {
             ByteWriter writer = base.SendExtraData();
-            writer.WritePacketSerialized<UnityNetworkObject>(ObjectData);
+            writer.WritePacketSerialized<UnityNetworkBehavior>(ObjectData);
             return writer;
         }
     }
 
-    public struct UnityNetworkObject : IPacketSerializable
+    public struct UnityNetworkBehavior : IPacketSerializable
     {
         public string Name;
 

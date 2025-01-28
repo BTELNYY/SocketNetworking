@@ -14,7 +14,7 @@ using SocketNetworking.Shared;
 
 namespace SocketNetworking.UnityEngine.Components
 {
-    public class NetworkAnimator : NetworkObject
+    public class NetworkAnimator : NetworkBehavior
     {
         private Animator _animator;
 

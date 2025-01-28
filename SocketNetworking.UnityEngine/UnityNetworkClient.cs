@@ -12,25 +12,46 @@ using UnityEngine.UIElements;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using System.Security.Policy;
+using System.Collections;
 
 namespace SocketNetworking.UnityEngine
 {
-    public class UnityNetworkClient : NetworkClient
+    public class UnityNetworkClient : MixedNetworkClient
     {
-        private UnityMainThreadDispatcher m_Dispatcher;
+        public UnityNetworkClient()
+        {
+            UnityNetworkManager.Init();
+            _clientObject = new GameObject($"{ClientID}");
+            NetworkClientReference reference = _clientObject.AddComponent<NetworkClientReference>();
+            reference.NetworkClient = this;
+            GameObject.DontDestroyOnLoad(_clientObject);
+            UnityNetworkManager.Dispatcher.Enqueue(PacketHandle());
+            ManualPacketHandle = true;
+            ClientIdUpdated += UnityNetworkClient_ClientIdUpdated;
+        }
 
-        public UnityMainThreadDispatcher Dispatcher
+        private void UnityNetworkClient_ClientIdUpdated()
+        {
+            _clientObject.name = ClientID.ToString();
+        }
+
+        IEnumerator PacketHandle()
+        {
+            HandleNextPacket();
+            UnityNetworkManager.Dispatcher.Enqueue(PacketHandle());
+            yield return null;
+        }
+
+
+        private GameObject _clientObject;
+
+        public GameObject ClientObject
         {
             get
             {
-                return m_Dispatcher;
+                return _clientObject;
             }
-        }
-
-        public override void Init()
-        {
-            base.Init();
-            UnityNetworkManager.Init();
         }
     }
 }

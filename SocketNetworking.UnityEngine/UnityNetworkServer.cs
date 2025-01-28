@@ -23,7 +23,7 @@ namespace SocketNetworking.UnityEngine
             UnityNetworkManager.Init();
         }
 
-        public static void NetworkDestroy(NetworkObject identity)
+        public static void NetworkDestroy(NetworkBehavior identity)
         {
             if (!Active)
             {
@@ -32,7 +32,7 @@ namespace SocketNetworking.UnityEngine
             identity.NetworkDestroy();
         }
 
-        public static void NetworkSpawn(NetworkObject identity)
+        public static void NetworkSpawn(NetworkBehavior identity)
         {
             if (!Active)
             {

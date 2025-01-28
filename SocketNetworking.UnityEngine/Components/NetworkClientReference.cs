@@ -7,8 +7,8 @@ using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {
-    public class NetworkPrefab : MonoBehaviour
+    public class NetworkClientReference : MonoBehaviour
     {
-        public int PrefabID = 0;
+        public UnityNetworkClient NetworkClient;
     }
 }
