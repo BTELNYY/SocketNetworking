@@ -59,7 +59,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\NetworkInvocable.cs" />
+    <Compile Include="Attributes\NetworkInvokable.cs" />
     <Compile Include="Attributes\NetworkNonSerialized.cs" />
     <Compile Include="Attributes\NetworkSerialized.cs" />
     <Compile Include="Attributes\PacketDefinition.cs" />
@@ -94,8 +94,8 @@
     <Compile Include="Shared\NetworkManager.cs" />
     <Compile Include="Misc\NetworkResultAwaiter.cs" />
     <Compile Include="PacketSystem\Packets\EncryptionPacket.cs" />
-    <Compile Include="PacketSystem\Packets\NetworkInvocationPacket.cs" />
-    <Compile Include="PacketSystem\Packets\NetworkInvocationResultPacket.cs" />
+    <Compile Include="PacketSystem\Packets\NetworkInvokationPacket.cs" />
+    <Compile Include="PacketSystem\Packets\NetworkInvokationResultPacket.cs" />
     <Compile Include="PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
     <Compile Include="PacketSystem\Packets\ClientDataPacket.cs" />
     <Compile Include="PacketSystem\TypeWrapper.cs" />
