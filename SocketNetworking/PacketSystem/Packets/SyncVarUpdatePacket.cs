@@ -8,7 +8,7 @@ using SocketNetworking.Shared;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
-    public sealed class SyncVarUpdate : Packet
+    public sealed class SyncVarUpdatePacket : Packet
     {
         public override PacketType Type => PacketType.SyncVarUpdate;
 

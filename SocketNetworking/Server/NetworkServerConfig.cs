@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.Server
 {
@@ -52,6 +54,11 @@ namespace SocketNetworking.Server
         /// Should the server Auto-Ready Clients when the the <see cref="NetworkClient.CurrentConnectionState"/> becomes <see cref="ConnectionState.Connected"/>?
         /// </summary>
         public bool DefaultReady { get; set; } =  true;
+
+        /// <summary>
+        /// When true, will automatically begin syncing <see cref="INetworkObject"/>s by spawning them in. This will also call <see cref="INetworkObject.OnSync(NetworkClient)"/> on the objects before the spawn packet is sent.
+        /// </summary>
+        public bool AutoSync { get; set; } = true;
 
         /// <summary>
         /// How many threads should the server spawn to handle clients? (Formula is, <see cref="MaximumClients"/> divided by <see cref="DefaultThreads"/> to see your Client to Thread ratio)

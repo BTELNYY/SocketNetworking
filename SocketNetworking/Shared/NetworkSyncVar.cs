@@ -1,9 +1,12 @@
 ﻿using SocketNetworking.Client;
+using SocketNetworking.Exceptions;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -28,35 +31,19 @@ namespace SocketNetworking.Shared
             }
             set
             {
- 
                 this.value = value;
+                ValueRaw = value;
             }
         }
 
-        public virtual void NetworkSet(object value, NetworkClient who)
+        public object ValueRaw 
         {
-            if(SyncOwner != OwnershipMode.Public)
+            get => (object)Value;
+            set
             {
-                if(NetworkManager.WhereAmI == ClientLocation.Local && SyncOwner == OwnershipMode.Client && who.ClientID != OwnerObject.OwnerClientID)
-                {
-                    return;
-                }
+                this.value = (T)value;
+                Sync();
             }
-            Value = (T)value;
-            Sync();
-        }
-
-        public object ValueRaw
-        {
-            get
-            {
-                return Value;
-            }
-        }
-
-        public virtual void Set(T value, NetworkClient who)
-        {
-            value = Value;
         }
 
         void Sync()
@@ -68,6 +55,41 @@ namespace SocketNetworking.Shared
                 Data = data,
                 TargetVar = Name,
             };
+            SyncVarUpdatePacket packet = new SyncVarUpdatePacket()
+            {
+                Data = new List<SyncVarData> { syncVarData },
+            };
+            if(NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                if(NetworkClient.LocalClient == null)
+                {
+                    throw new InvalidOperationException("Tried to modify a SyncVar while the local client was null!");
+                }
+                if ((SyncOwner == OwnershipMode.Client && OwnerObject.OwnerClientID != NetworkClient.LocalClient.ClientID) || SyncOwner == OwnershipMode.Server)
+                {
+                    throw new InvalidOperationException("Tried to modify a SyncVar without permission.");
+                }
+                NetworkClient.LocalClient.Send(packet);
+            }
+            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                if(SyncOwner == OwnershipMode.Client)
+                {
+                    if(OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.OwnerAndServer)
+                    {
+                        NetworkClient owner = NetworkServer.GetClient(OwnerObject.OwnerClientID);
+                        if(owner == null)
+                        {
+                            throw new InvalidOperationException("Can't find the owner of this object!");
+                        }
+                        owner.Send(packet);
+                    }
+                }
+                else
+                {
+                    NetworkServer.SendToAll(packet);
+                }
+            }
         }
 
         public string Name
@@ -81,6 +103,8 @@ namespace SocketNetworking.Shared
                 _name = value;
             }
         }
+
+
 
         string _name = string.Empty;
 
@@ -98,7 +122,7 @@ namespace SocketNetworking.Shared
         {
             if(value is T t)
             {
-                Set(t, who);
+                value = t;
             }
         }
 

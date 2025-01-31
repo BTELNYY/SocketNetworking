@@ -1,4 +1,5 @@
 ﻿using SocketNetworking.Client;
+using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
 using System;
 using System.Collections.Generic;
@@ -11,14 +12,9 @@ namespace SocketNetworking.Shared
     public interface INetworkSpawnable
     {
         /// <summary>
-        /// Called on the server when a <see cref="NetworkClient"/> spawns the object on the local machine.
+        /// Called locally when the packet to spawn the object was recieved. Also called when the peer of the connection recieves the packet and spawns the object. However, spawner (in case this method is overriden in a <see cref="INetworkObject"/>) does not know the object was spawned succesfully yet, use <see cref="INetworkObject.OnNetworkSpawned(NetworkClient)"/> for this function.
         /// </summary>
         /// <param name="spawner"></param>
-        void OnNetworkSpawned(NetworkClient spawner);
-
-        /// <summary>
-        /// Called on the client when the object has finished being spawned and the spawn response has been sent to the server.
-        /// </summary>
         void OnLocalSpawned(ObjectManagePacket packet);
 
         /// <summary>
@@ -26,8 +22,8 @@ namespace SocketNetworking.Shared
         /// </summary>
         bool Spawnable { get; }
 
-        void RecieveExtraData(byte[] extraData);
+        ByteReader RecieveExtraData(byte[] extraData);
 
-        byte[] SendExtraData();
+        ByteWriter SendExtraData();
     }
 }

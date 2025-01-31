@@ -1,77 +1,43 @@
-﻿using System;
+﻿using SocketNetworking.Shared;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {
-    public class NetworkComponent : NetworkObject
+    public class NetworkComponent : NetworkBehavior
     {
         /// <summary>
-        /// Gets the network ID of the object. if a <see cref="NetworkIdentity"/> (or any subclass of it) is present, returns its NetworkID.
+        /// Use <see cref="NetworkIdentity"/> to spawn objects from prefabs.
         /// </summary>
-        public sealed override int NetworkID
-        {
-            get
-            {
-                if (Identity == null)
-                {
-                    return base.NetworkID;
-                }
-                else
-                {
-                    return Identity.NetworkID;
-                }
-            }
-        }
-
-        private NetworkIdentity _identity;
+        public override bool Spawnable => false;
 
         /// <summary>
-        /// All objects should have a <see cref="NetworkIdentity"/> attached to them or referenced somehow. This is not a hard coded requirement, but is suggested for larger systems (e.g. the player uses this to prevent having to make 80 NetIDs for one thing)
+        /// The <see cref="NetworkIdentity"/> of the current <see cref="GameObject"/>.
         /// </summary>
-        public NetworkIdentity Identity
-        {
-            get
-            {
-                return _identity;
-            }
-            set
-            {
-                if (value == null)
-                {
-                    _identity?.UnregisterObject(this);
-                    _identity = null;
-                    return;
-                }
-                if (_identity != value)
-                {
-                    _identity?.UnregisterObject(this);
-                    _identity = value;
-                    _identity.RegisterObject(this);
-                }
-                else
-                {
-                    _identity = value;
-                }
-            }
-        }
+        public NetworkIdentity Identity => _identity;
 
-        void Start()
+        private NetworkIdentity _identity = null;
+
+        public override int NetworkID { get => _identity.NetworkID; set => _identity.NetworkID = value; }
+
+        public override int OwnerClientID { get => _identity.OwnerClientID; set => _identity.OwnerClientID = value; }
+
+        public override bool Active { get => _identity.Active; set => _identity.Active = value; }
+
+        public override ObjectVisibilityMode ObjectVisibilityMode { get => _identity.ObjectVisibilityMode; set => _identity.ObjectVisibilityMode = value; }
+
+        public override OwnershipMode OwnershipMode { get => _identity.OwnershipMode; set => _identity.OwnershipMode = value; }
+
+        void Awake()
         {
-            NetworkIdentity identity = GetComponent<NetworkIdentity>();
-            if (Identity == null)
+            _identity = GetComponent<NetworkIdentity>();
+            if(Identity == null)
             {
-                if (identity != null)
-                {
-                    Identity = identity;
-                }
-                else
-                {
-                    Logger.Warning("Can't find Identity attached to this object!");
-                    return;
-                }
+                throw new InvalidOperationException("All Network Objects must have a NetowrkIdentity.");
             }
         }
     }
