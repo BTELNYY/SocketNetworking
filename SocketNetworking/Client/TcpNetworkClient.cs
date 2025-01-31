@@ -77,13 +77,13 @@ namespace SocketNetworking.Client
             return;
             if (!Transport.DataAvailable)
             {
-                //Log.GlobalDebug("No data available (TCP)");
+                //Log.Debug("No data available (TCP)");
                 return;
             }
             Transport.BufferSize = Packet.MaxPacketSize;
             if (!IsTransportConnected)
             {
-                Log.GlobalDebug("Disconnected!");
+                Log.Debug("Disconnected!");
                 StopClient();
                 return;
             }
@@ -109,7 +109,7 @@ namespace SocketNetworking.Client
                 }
                 catch (Exception ex)
                 {
-                    Log.GlobalError(ex.ToString());
+                    Log.Error(ex.ToString());
                     return;
                 }
                 fillSize += count;
@@ -132,7 +132,7 @@ namespace SocketNetworking.Client
                 {
                     s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
                 }
-                Log.GlobalError("Body Size is corrupted! Raw: " + s);
+                Log.Error("Body Size is corrupted! Raw: " + s);
             }
             while (fillSize < bodySize)
             {
@@ -140,7 +140,7 @@ namespace SocketNetworking.Client
                 if (fillSize == buffer.Length)
                 {
                     // The buffer is too full, and we are fucked (oh shit)
-                    Log.GlobalError("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
+                    Log.Error("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
                     Disconnect("Illegal Packet Size");
                     break;
                 }
@@ -154,7 +154,7 @@ namespace SocketNetworking.Client
                 }
                 catch (Exception ex)
                 {
-                    Log.GlobalError(ex.ToString());
+                    Log.Error(ex.ToString());
                     return;
                 }
                 fillSize += count;

@@ -71,7 +71,7 @@ namespace SocketNetworking
                 Severity = LogSeverity.Debug,
                 CallerType = GetCallerType(),
             };
-            Invoke(data);
+            InvokeInstance(data);
         }
 
         public static void GlobalInfo(string message)
@@ -93,7 +93,7 @@ namespace SocketNetworking
                 Severity = LogSeverity.Info,
                 CallerType = GetCallerType(),
             };
-            Invoke(data);
+            InvokeInstance(data);
         }
 
         public static void GlobalWarning(string message)
@@ -107,6 +107,16 @@ namespace SocketNetworking
             Invoke(data);
         }
 
+
+        public Log(string prefix)
+        {
+            Prefix = prefix;
+        }
+
+        public Log() { }
+
+        public string Prefix { get; set; } = "[Network]";
+
         public void Warning(string message)
         {
             LogData data = new LogData()
@@ -115,7 +125,7 @@ namespace SocketNetworking
                 Severity = LogSeverity.Warning,
                 CallerType = GetCallerType(),
             };
-            Invoke(data);
+            InvokeInstance(data);
         }
 
         public static void GlobalError(string message)
@@ -137,10 +147,23 @@ namespace SocketNetworking
                 Severity = LogSeverity.Error,
                 CallerType = GetCallerType(),
             };
-            Invoke(data);
+            InvokeInstance(data);
         }
 
-        public static void Global(string message, LogSeverity severity)
+        private void InvokeInstance(LogData data)
+        {
+            data.Message = Prefix + ": " + data.Message;
+            if (hiddenSeverities.Contains(data.Severity))
+            {
+                return;
+            }
+            else
+            {
+                OnLog?.Invoke(data);
+            }
+        }
+
+        public static void GlobalAny(string message, LogSeverity severity)
         {
             LogData data = new LogData()
             {
@@ -151,9 +174,21 @@ namespace SocketNetworking
             Invoke(data);
         }
 
+        public void Any(string message, LogSeverity severity)
+        {
+            LogData data = new LogData()
+            {
+                Message = message,
+                Severity = severity,
+                CallerType = GetCallerType(),
+            };
+            InvokeInstance(data);
+        }
+
         private static void Invoke(LogData data)
         {
-            if(hiddenSeverities.Contains(data.Severity))
+            data.Message = GetInstance().Prefix + ": " + data.Message;
+            if (hiddenSeverities.Contains(data.Severity))
             {
                 return;
             }

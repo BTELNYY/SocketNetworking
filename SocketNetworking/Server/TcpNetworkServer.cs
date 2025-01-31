@@ -16,11 +16,11 @@ namespace SocketNetworking.Server
     {
         protected override void ServerStartThread()
         {
-            Log.GlobalInfo("Server starting...");
+            Log.Info("Server starting...");
             TcpListener serverSocket = new TcpListener(IPAddress.Parse(Config.BindIP), Config.Port);
             serverSocket.Start();
-            Log.GlobalInfo("Socket Started.");
-            Log.GlobalInfo($"Listening on {Config.BindIP}:{Config.Port}");
+            Log.Info("Socket Started.");
+            Log.Info($"Listening on {Config.BindIP}:{Config.Port}");
             int counter = 0;
             InvokeServerReady();
             _serverState = ServerState.Ready;
@@ -43,7 +43,7 @@ namespace SocketNetworking.Server
                 tcpTransport.Client = socket;
                 socket.NoDelay = true;
                 IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
-                Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
+                Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
                 NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
                 client.InitRemoteClient(counter, tcpTransport);
                 AddClient(client, counter);
@@ -62,7 +62,7 @@ namespace SocketNetworking.Server
                 InvokeClientConnected(counter);
                 counter++;
             }
-            Log.GlobalInfo("Shutting down!");
+            Log.Info("Shutting down!");
             serverSocket.Stop();
         }
     }

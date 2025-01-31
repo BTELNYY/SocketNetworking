@@ -267,9 +267,9 @@ namespace SocketNetworking.UnityEngine.Components
         /// Preforms a send operation and syncs data across network, can be called on either client or server, method handles what happens.
         /// </summary>
         /// <param name="packet"></param>
-        public virtual void Send(Packet packet)
+        public virtual void Send(Packet packet, bool priority = false)
         {
-            Send(packet, this);
+            Send(packet, this, priority);
         }
 
         /// <summary>

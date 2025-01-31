@@ -117,10 +117,24 @@ namespace SocketNetworking.Server
             {
                 if (HasServerStarted)
                 {
-                    Log.GlobalError("Can't change server network configuration is the server is running. Stop it first.");
+                    Log.Error("Can't change server network configuration is the server is running. Stop it first.");
                     return;
                 }
                 _serverConfig = value;
+            }
+        }
+
+        static Log _log;
+
+        public static Log Log
+        {
+            get
+            {
+                if (_log == null)
+                {
+                    _log = new Log("[Server]");
+                }
+                return _log;
             }
         }
 
@@ -151,7 +165,7 @@ namespace SocketNetworking.Server
             {
                 if(_serverInstance == null)
                 {
-                    Log.GlobalError("Tried to get stopped server.");
+                    Log.Error("Tried to get stopped server.");
                     throw new InvalidOperationException("Attempted to access server instance when it isn't running.");
                 }
                 else
@@ -171,7 +185,7 @@ namespace SocketNetworking.Server
         {
             if (HasServerStarted)
             {
-                Log.GlobalError("Server already started!");
+                Log.Error("Server already started!");
                 return;
             }
             _serverState = ServerState.Started;
@@ -198,12 +212,12 @@ namespace SocketNetworking.Server
         {
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
             {
-                Log.GlobalError("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
+                Log.Error("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
                 return false;
             }
             if(Config.MaximumClients % Config.DefaultThreads != 0)
             {
-                Log.GlobalWarning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
+                Log.Warning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
             }
             return true;
         }
@@ -212,7 +226,7 @@ namespace SocketNetworking.Server
         {
             if (_clients.ContainsKey(clientId))
             {
-                Log.GlobalError("Something really got fucked up!");
+                Log.Error("Something really got fucked up!");
                 //we throw becuase the whole server will die if we cant add the client.
                 throw new InvalidOperationException("Client ID to add already taken!");
             }
@@ -222,7 +236,7 @@ namespace SocketNetworking.Server
                 _clients.Add(clientId, cursedClient);
                 ClientHandler handler = handlers.Next();
                 handler.AddClient(cursedClient);
-                Log.GlobalDebug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
+                Log.Debug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
             }
         }
 
@@ -234,14 +248,14 @@ namespace SocketNetworking.Server
                 ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(_clients[clientId]));
                 if(handler == null)
                 {
-                    Log.GlobalError("Unable to find the handler responsible for Client ID " + clientId);
+                    Log.Error("Unable to find the handler responsible for Client ID " + clientId);
                 }
                 handler.RemoveClient(_clients[clientId]);
                 _clients.Remove(clientId);
             }
             else
             {
-                Log.GlobalWarning($"Can't remove client ID {clientId}, not found!");
+                Log.Warning($"Can't remove client ID {clientId}, not found!");
             }
         }
 
@@ -268,7 +282,7 @@ namespace SocketNetworking.Server
         {
             if (!HasServerStarted)
             {
-                Log.GlobalError("Server already stopped.");
+                Log.Error("Server already stopped.");
             }
             foreach(NetworkClient client in _clients.Values)
             {
@@ -400,7 +414,7 @@ namespace SocketNetworking.Server
             }
         }
 
-        public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, bool readyOnly = false)
+        public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, bool readyOnly = false, bool priority = false)
         {
             if (!Active)
             {
