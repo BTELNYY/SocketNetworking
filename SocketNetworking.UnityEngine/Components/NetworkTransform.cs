@@ -75,7 +75,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        [NetworkInvocable]
+        [NetworkInvokable]
         private void GetNewNetworkPosition(SerializableVector3 position)
         {
             transform.position = position.Vector;
@@ -103,7 +103,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        [NetworkInvocable]
+        [NetworkInvokable]
         private void GetNewNetworkRotation(SerializableQuaternion rotation)
         {
             transform.rotation = rotation.Quaternion;
@@ -123,7 +123,7 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetNetworkRotation), new object[] { vector3, relativeTo });
         }
 
-        [NetworkInvocable]
+        [NetworkInvokable]
         private void GetNetworkRotation(SerializableVector3 euler, Space relativeTo)
         {
             transform.Rotate(euler.Vector, relativeTo);
@@ -143,7 +143,7 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetNetworkRotation), new object[] { vector3, angle, relativeTo });
         }
 
-        [NetworkInvocable]
+        [NetworkInvokable]
         private void GetNetworkRotation(SerializableVector3 euler, float angle, Space relativeTo)
         {
             transform.Rotate(euler.Vector, angle, relativeTo);
@@ -164,7 +164,7 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetNetworkRotation), new object[] { vecPoint, vecAxis, angle });
         }
 
-        [NetworkInvocable]
+        [NetworkInvokable]
         private void GetNetworkRotation(SerializableVector3 point, SerializableVector3 axis, float angle)
         {
             transform.RotateAround(point.Vector, axis.Vector, angle);
@@ -183,7 +183,7 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetNetworkTranslate), new object[] { new SerializableVector3(position), relativeTo });
         }
 
-        [NetworkInvocable]
+        [NetworkInvokable]
         private void GetNetworkTranslate(SerializableVector3 vector3, Space space)
         {
             transform.Translate(vector3.Vector, space);
@@ -202,7 +202,7 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetNetworkLookAt), new object[] { new SerializableVector3(position) });
         }
 
-        [NetworkInvocable]
+        [NetworkInvokable]
         private void GetNetworkLookAt(SerializableVector3 vector3)
         {
             transform.LookAt(vector3.Vector);

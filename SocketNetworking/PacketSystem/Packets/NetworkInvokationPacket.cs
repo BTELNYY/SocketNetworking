@@ -9,7 +9,7 @@ using SocketNetworking.Shared;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
-    public sealed class NetworkInvocationPacket : Packet
+    public sealed class NetworkInvokationPacket : Packet
     {
         public override PacketType Type => PacketType.NetworkInvocation;
 

@@ -164,7 +164,7 @@ namespace SocketNetworking.Client
             NetworkInvoke(nameof(ClientRecieveUDPInfo), new object[] { passKey });  
         }
 
-        [NetworkInvocable(NetworkDirection.Server)]
+        [NetworkInvokable(NetworkDirection.Server)]
         private void ClientRecieveUDPInfo(int passKey)
         {
             Exception ex = UdpTransport.Connect(Transport.PeerAddress.ToString(), Transport.Peer.Port);

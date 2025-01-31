@@ -516,7 +516,7 @@ namespace SocketNetworking.Client
             return NetworkInvoke<bool>(nameof(ServerGetEncryptionRequest), new object[] { });
         }
 
-        [NetworkInvocable(NetworkDirection.Client)]
+        [NetworkInvokable(NetworkDirection.Client)]
         private bool ServerGetEncryptionRequest()
         {
             if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
@@ -599,7 +599,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        [NetworkInvocable(Direction = NetworkDirection.Server)]
+        [NetworkInvokable(Direction = NetworkDirection.Server)]
         private void OnSyncBegin(NetworkHandle handle, int objCount)
         {
             Log.Info("Total of Network Objects that will be spawned automatically: " + objCount);
@@ -1445,7 +1445,7 @@ namespace SocketNetworking.Client
                     }
                     break;
                 case PacketType.NetworkInvocation:
-                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
+                    NetworkInvokationPacket networkInvocationPacket = new NetworkInvokationPacket();
                     networkInvocationPacket.Deserialize(data);
                     Log.Debug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
@@ -1455,7 +1455,7 @@ namespace SocketNetworking.Client
                     catch (Exception ex)
                     {
                         Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
-                        NetworkInvocationResultPacket errorPacket = new NetworkInvocationResultPacket();
+                        NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket();
                         errorPacket.Success = false;
                         errorPacket.ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message;
                         errorPacket.Result = SerializedData.NullData;
@@ -1465,7 +1465,7 @@ namespace SocketNetworking.Client
                     }
                     break;
                 case PacketType.NetworkInvocationResult:
-                    NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
+                    NetworkInvokationResultPacket networkInvocationResultPacket = new NetworkInvokationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
                     Log.Debug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
                     NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
@@ -1643,7 +1643,7 @@ namespace SocketNetworking.Client
                     ConnectionStateUpdated?.Invoke(_connectionState);
                     break;
                 case PacketType.NetworkInvocation:
-                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
+                    NetworkInvokationPacket networkInvocationPacket = new NetworkInvokationPacket();
                     networkInvocationPacket.Deserialize(data);
                     Log.Debug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
@@ -1653,7 +1653,7 @@ namespace SocketNetworking.Client
                     catch (Exception ex)
                     {
                         Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
-                        NetworkInvocationResultPacket errorPacket = new NetworkInvocationResultPacket();
+                        NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket();
                         errorPacket.Success = false;
                         errorPacket.ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message;
                         errorPacket.Result = SerializedData.NullData;
@@ -1663,7 +1663,7 @@ namespace SocketNetworking.Client
                     }
                     break;
                 case PacketType.NetworkInvocationResult:
-                    NetworkInvocationResultPacket networkInvocationResultPacket = new NetworkInvocationResultPacket();
+                    NetworkInvokationResultPacket networkInvocationResultPacket = new NetworkInvokationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
                     Log.Debug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
                     NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
@@ -1780,7 +1780,7 @@ namespace SocketNetworking.Client
             NetworkInvoke(nameof(GetError), new object[] { error, severity });
         }
 
-        [NetworkInvocable(NetworkDirection.Any)]
+        [NetworkInvokable(NetworkDirection.Any)]
         private void GetError(NetworkHandle handle, LogSeverity level, string err)
         {
             Log.Any(err, level);

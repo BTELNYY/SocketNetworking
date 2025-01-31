@@ -134,7 +134,7 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetPlayData), new object[] { hash, layer, normalizedTime });
         }
 
-        [NetworkInvocable]
+        [NetworkInvokable]
         private void GetPlayData(NetworkClient client, int hash, int layer, float normalizedTime)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
@@ -148,7 +148,7 @@ namespace SocketNetworking.UnityEngine.Components
             _animator.Play(hash, layer, normalizedTime);
         }
 
-        [NetworkInvocable]
+        [NetworkInvokable]
         private void GetPlayData(int hash, int layer, float normalizedTime)
         {
             _animator.Play(hash, layer, normalizedTime);

@@ -12,7 +12,7 @@ namespace SocketNetworking.Misc
     {
         public int CallbackID { get; private set; } = 0;
 
-        public NetworkInvocationResultPacket ResultPacket { get; private set; }
+        public NetworkInvokationResultPacket ResultPacket { get; private set; }
 
         public bool HasResult
         {
@@ -25,10 +25,10 @@ namespace SocketNetworking.Misc
         public NetworkResultAwaiter(int callBackID) 
         {
             CallbackID = callBackID;
-            NetworkManager.OnNetworkInvocationResult += NetworkInvocationResultArrived;
+            NetworkManager.OnNetworkInvokationResult += NetworkInvocationResultArrived;
         }
 
-        private void NetworkInvocationResultArrived(NetworkInvocationResultPacket obj)
+        private void NetworkInvocationResultArrived(NetworkInvokationResultPacket obj)
         {
             if(obj.CallbackID != CallbackID)
             {
@@ -41,13 +41,13 @@ namespace SocketNetworking.Misc
         {
             if(ResultPacket != null)
             {
-                NetworkManager.ConsumeNetworkInvocationResult(ResultPacket.CallbackID);
+                NetworkManager.ConsumeNetworkInvokationResult(ResultPacket.CallbackID);
             }
         }
 
         ~NetworkResultAwaiter()
         {
-            NetworkManager.OnNetworkInvocationResult -= NetworkInvocationResultArrived;
+            NetworkManager.OnNetworkInvokationResult -= NetworkInvocationResultArrived;
             CallbackID = 0;
             ResultPacket = null;
             Consume();

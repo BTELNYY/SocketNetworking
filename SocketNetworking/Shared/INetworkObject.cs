@@ -47,7 +47,7 @@ namespace SocketNetworking.Shared
         int NetworkID { get; set; }
 
         /// <summary>
-        /// If this is false, the object is never updated. This includes <see cref="INetworkSyncVar"/> fields, <see cref="PacketListener>"/> and <see cref="NetworkInvocable"/> methods.
+        /// If this is false, the object is never updated. This includes <see cref="INetworkSyncVar"/> fields, <see cref="PacketListener>"/> and <see cref="NetworkInvokable"/> methods.
         /// </summary>
         bool Active { get; set; }
 

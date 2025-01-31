@@ -12,7 +12,7 @@ namespace SocketNetworking.ExampleSharedData
 {
     public class TestClient : MixedNetworkClient
     {
-        [NetworkInvocable(NetworkDirection.Server)]
+        [NetworkInvokable(NetworkDirection.Server)]
         private TestResult SomeNetworkMethod(float someFloat, int someInt, ValueTuple<int, int> values)
         {
             Log.GlobalDebug($"{someFloat}, {someInt}, {values.Item1 + values.Item2}");

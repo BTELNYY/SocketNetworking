@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace SocketNetworking.Shared
 {
     /// <summary>
-    /// Relays information about who invoked a certain method via a <see cref="Attributes.PacketListener"/> or <see cref="Attributes.NetworkInvocable"/>.
+    /// Relays information about who invoked a certain method via a <see cref="Attributes.PacketListener"/> or <see cref="Attributes.NetworkInvokable"/>.
     /// </summary>
     public class NetworkHandle
     {
@@ -18,7 +18,7 @@ namespace SocketNetworking.Shared
         {
             Client = client ?? throw new ArgumentNullException(nameof(client));
             InvocationPacket = invocationPacket ?? throw new ArgumentNullException(nameof(invocationPacket));
-            if(invocationPacket is NetworkInvocationPacket packet)
+            if(invocationPacket is NetworkInvokationPacket packet)
             {
                 InvocationMode = InvocationMode.RemoteProcedureCall;
             }
