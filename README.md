@@ -23,6 +23,9 @@
   * In your Client, you will now need to create a new client object. If you have made a subclass, use that. However otherwise, use the `TcpNetworkClient` or `MixedNetworkClient`. (I do not suggest creating a `UdpNetworkClient` due to no protections existing for UDP traffic, it may not work at all, or very poorly.) Now, Call `NetworkClient.InitLocalClient()`. This object is now ready to be used, You can call `NetworkClient.Connect(string, int, string)` to connect to a remote resource.
   * In your Server, you will need to create a new server object. Servers are singletons, you cannot have more than one at a time. Match the protocol you chose on the client to the server, so TCP = TCP, Mixed = Mixed, etc. Now that you have your object, feel free to load in any configuration you'd like into `NetworkServer.Config`. After you are all done, Call `NetworkServer.StartServer()` to allow the server to listen for clients.
 
+#### Example Project Setup
+![image](https://github.com/user-attachments/assets/6eb43c32-3c1a-4e57-800d-312b4623151f)
+
 #### NetworkClient Setup
 ![image](https://github.com/user-attachments/assets/a55a07ab-7407-4525-9aa3-2d532bd97a2c)
 
