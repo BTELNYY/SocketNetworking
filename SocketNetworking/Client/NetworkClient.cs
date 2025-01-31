@@ -52,7 +52,7 @@ namespace SocketNetworking.Client
         {
             Log = new Log()
             {
-                Prefix = $"[Client {ClientID}]"
+                Prefix = $"[Client (No ID)]"
             };
             ClientCreated?.Invoke(this);
             _networkEncryptionManager = new NetworkEncryptionManager();

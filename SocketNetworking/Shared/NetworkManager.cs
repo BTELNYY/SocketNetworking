@@ -969,33 +969,44 @@ namespace SocketNetworking.Shared
         //being called externally
         internal static void UpdateSyncVarsInternal(SyncVarUpdatePacket packet, NetworkClient runner)
         {
+            List<SyncVarData> publicReplicated = new List<SyncVarData>();
             foreach(SyncVarData data in packet.Data)
             {
-                if(!(NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == data.NetworkIDTarget) is INetworkObject obj))
+                foreach(INetworkObject obj in NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget))
                 {
-                    Log.GlobalWarning($"No such Network Object with ID '{data.NetworkIDTarget}'");
-                    continue;
-                }
-                NetworkObjectData networkObjectData = NetworkObjects[obj];
-                if(!(networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar) is INetworkSyncVar syncVar))
-                {
-                    Log.GlobalWarning($"No such Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName}");
-                    continue;
-                }
-                if(syncVar.SyncOwner != OwnershipMode.Public)
-                {
-                    if(syncVar.SyncOwner == OwnershipMode.Client && WhereAmI == ClientLocation.Remote)
+                    NetworkObjectData networkObjectData = NetworkObjects[obj];
+                    if (!(networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar) is INetworkSyncVar syncVar))
                     {
-                        if(runner.ClientID != syncVar.OwnerObject.OwnerClientID)
+                        Log.GlobalWarning($"No such Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName}");
+                        continue;
+                    }
+                    if (syncVar.SyncOwner != OwnershipMode.Public)
+                    {
+                        if (syncVar.SyncOwner == OwnershipMode.Client && WhereAmI == ClientLocation.Remote)
                         {
-                            return;
+                            if (runner.ClientID != syncVar.OwnerObject.OwnerClientID)
+                            {
+                                return;
+                            }
+                        }
+                    }
+                    object value = NetworkConvert.Deserialize(data.Data, out int read);
+                    syncVar.RawSet(value, runner);
+                    Log.GlobalDebug($"Updated {syncVar.Name} on {obj.GetType().FullName}. Read {read} bytes as the value.");
+                    if (WhereAmI == ClientLocation.Remote && syncVar.OwnerObject.ObjectVisibilityMode != ObjectVisibilityMode.OwnerAndServer)
+                    {
+                        if(!publicReplicated.Any(x => x.NetworkIDTarget == data.NetworkIDTarget && x.TargetVar == data.TargetVar))
+                        {
+                            publicReplicated.Add(data);
                         }
                     }
                 }
-                object value = NetworkConvert.Deserialize(data.Data, out int read);
-                syncVar.RawSet(value, runner);
-                Log.GlobalDebug($"Updated {syncVar.Name} on {obj.GetType().FullName}. Read {read} bytes as the value.");
             }
+            SyncVarUpdatePacket replicatePacket = new SyncVarUpdatePacket()
+            {
+                Data = publicReplicated,
+            };
+            NetworkServer.SendToAll(replicatePacket);
         }
 
         #endregion
