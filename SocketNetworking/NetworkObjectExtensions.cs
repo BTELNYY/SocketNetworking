@@ -462,5 +462,19 @@ namespace SocketNetworking
             }
             obj.ObjectVisibilityMode = mode;
         }
+
+        /// <summary>
+        /// This method should never be called on spawned objects, isntead, call <see cref="NetworkSetID(INetworkObject, int)"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        public static void EnsureNetworkIDIsGiven(this INetworkObject obj)
+        {
+            if(obj.NetworkID != 0 && obj.NetworkID != -1)
+            {
+                return;
+            }
+            int id = NetworkManager.GetNextNetworkObjectID();
+            obj.NetworkID = id;
+        }
     }
 }

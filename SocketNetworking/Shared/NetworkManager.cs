@@ -367,6 +367,12 @@ namespace SocketNetworking.Shared
 
         private static readonly List<NetworkObjectSpawner> NetworkObjectSpawners = new List<NetworkObjectSpawner>();
 
+        /// <summary>
+        /// Allows for spawning of an <see cref="INetworkObject"/> controlled via external code. Note that <see cref="ObjectManagePacket"/> will be null if the <see cref="INetworkObject"/> type is the same as <see cref="NetworkServer.ClientAvatar"/>.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="handle"></param>
+        /// <returns></returns>
         public delegate INetworkSpawnable NetworkObjectSpawnerDelegate(ObjectManagePacket packet, NetworkHandle handle);
 
         public static bool RegisterSpawner(Type type, NetworkObjectSpawnerDelegate spawner, bool allowSubclasses)
@@ -398,6 +404,38 @@ namespace SocketNetworking.Shared
             return true;
         }
 
+        public static NetworkObjectSpawner GetBestSpawner(Type type)
+        {
+            NetworkObjectSpawner objSpawner = null;
+            int bestApproxObj = 0;
+            foreach (NetworkObjectSpawner possibleSpawner in NetworkObjectSpawners)
+            {
+                if (possibleSpawner.AllowSubclasses)
+                {
+                    int distance = type.HowManyClassesUp(possibleSpawner.TargetType);
+                    if (distance == -1)
+                    {
+                        continue;
+                    }
+                    if (distance < bestApproxObj)
+                    {
+                        bestApproxObj = distance;
+                        objSpawner = possibleSpawner;
+                    }
+                }
+                else
+                {
+                    if (possibleSpawner.TargetType != type)
+                    {
+                        continue;
+                    }
+                    objSpawner = possibleSpawner;
+                    break;
+                }
+            }
+            return objSpawner;
+        }
+
         internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
         {
             //Spawning
@@ -408,33 +446,7 @@ namespace SocketNetworking.Shared
                 {
                     throw new NullReferenceException("Cannot find type by name or assmebly.");
                 }
-                NetworkObjectSpawner objSpawner = null;
-                int bestApproxObj = 0;
-                foreach (NetworkObjectSpawner possibleSpawner in NetworkObjectSpawners)
-                {
-                    if (possibleSpawner.AllowSubclasses)
-                    {
-                        int distance = objType.HowManyClassesUp(possibleSpawner.TargetType);
-                        if (distance == -1)
-                        {
-                            continue;
-                        }
-                        if (distance < bestApproxObj)
-                        {
-                            bestApproxObj = distance;
-                            objSpawner = possibleSpawner;
-                        }
-                    }
-                    else
-                    {
-                        if (possibleSpawner.TargetType != objType)
-                        {
-                            continue;
-                        }
-                        objSpawner = possibleSpawner;
-                        break;
-                    }
-                }
+                NetworkObjectSpawner objSpawner = GetBestSpawner(objType);
                 INetworkObject netObj;
                 if (objSpawner == null)
                 {
@@ -466,21 +478,21 @@ namespace SocketNetworking.Shared
             foreach (INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetowrkIDTarget))
             {
                 //Security
-                if (packet.Action != ObjectManagePacket.ObjectManageAction.Create || packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate || packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy)
+                if (packet.Action != ObjectManagePacket.ObjectManageAction.Create && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy)
                 {
                     if (WhereAmI == ClientLocation.Remote)
                     {
                         if (@object.OwnershipMode == OwnershipMode.Client && handle.Client.ClientID != @object.OwnerClientID)
                         {
-                            throw new SecurityException("Attempted to modify an object you do not have permission over.");
+                            throw new SecurityException($"Attempted to modify an object you do not have permission over. Action: {packet.Action}");
                         }
                         if (@object.OwnershipMode == OwnershipMode.Public && !@object.AllowPublicModification)
                         {
-                            throw new SecurityException("Attempted to modify a public object which is not accepting public modification.");
+                            throw new SecurityException($"Attempted to modify a public object which is not accepting public modification. Action: {packet.Action}");
                         }
                         if (@object.OwnershipMode == OwnershipMode.Server)
                         {
-                            throw new SecurityException("Attempted to modify a server controlled object.");
+                            throw new SecurityException($"Attempted to modify a server controlled object. Action: {packet.Action}");
                         }
                     }
                 }
@@ -661,8 +673,7 @@ namespace SocketNetworking.Shared
         {
             if (networkObject.NetworkID == 0)
             {
-                Log.GlobalError($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
-                return false;
+                networkObject.EnsureNetworkIDIsGiven();
             }
             if (NetworkObjects.ContainsKey(networkObject))
             {

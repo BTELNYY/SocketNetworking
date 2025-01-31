@@ -146,6 +146,11 @@ namespace SocketNetworking.Server
         public static Type ClientType = typeof(NetworkClient);
 
         /// <summary>
+        /// The <see cref="INetworkObject"/> which will be spawned for new <see cref="NetworkClient"/>s who connect. By default, this object will have <see cref="INetworkObject.ObjectVisibilityMode"/> set to <see cref="ObjectVisibilityMode.Everyone"/> and <see cref="INetworkObject.OwnershipMode"/> set to <see cref="OwnershipMode.Client"/>.
+        /// </summary>
+        public static Type ClientAvatar = null;
+
+        /// <summary>
         /// Should the server be currently accepting connections? if this is set to false, the server will not reply to socket requests.
         /// </summary>
         public bool ShouldAcceptConnections = true;

@@ -162,7 +162,15 @@ namespace SocketNetworking.Client
 
         #region Properties
 
+        /// <summary>
+        /// Provdies the <see cref="SocketNetworking.Log"/> instance for this client. The <see cref="Log.Prefix"/> is set to contain the client ID for logging purposes.
+        /// </summary>
         public Log Log { get; }
+
+        /// <summary>
+        /// The Avatar of the <see cref="NetworkClient"/>. This can be specified in 
+        /// </summary>
+        public INetworkObject Avatar { get; private set; }
 
         /// <summary>
         /// Only has instances on the local client. Use <see cref="NetworkServer.ConnectedClients"/> for server side clients.
@@ -597,12 +605,47 @@ namespace SocketNetworking.Client
                 @object.OnSync(this);
                 @object.NetworkSpawn(this);
             }
+            if(NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkObject)))
+            {
+                INetworkObject result = null;
+                NetworkObjectSpawner spawner = NetworkManager.GetBestSpawner(NetworkServer.ClientAvatar);
+                if(spawner != null)
+                {
+                    result = (INetworkObject)spawner.Spawner.Invoke(null, new NetworkHandle(this));
+                }
+                else
+                {
+                    result = (INetworkObject)Activator.CreateInstance(NetworkServer.ClientAvatar);
+                }
+                if(result != null)
+                {
+                    result.OwnerClientID = ClientID;
+                    result.OwnershipMode = OwnershipMode.Client;
+                    result.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
+                    NetworkManager.AddNetworkObject(result);
+                    result.NetworkSpawn();
+                    NetworkInvoke(nameof(GetClientAvatar), new object[] { result.NetworkID });
+                }
+            }
         }
 
         [NetworkInvokable(Direction = NetworkDirection.Server)]
         private void OnSyncBegin(NetworkHandle handle, int objCount)
         {
             Log.Info("Total of Network Objects that will be spawned automatically: " + objCount);
+        }
+
+        [NetworkInvokable(Direction = NetworkDirection.Server)]
+        private void GetClientAvatar(NetworkHandle handle, int id)
+        {
+            Log.Info("New Client avatar has been specified. ID: " + id);
+            var result = NetworkManager.GetNetworkObjectByID(id);
+            if(result.Item1 == null)
+            {
+                Log.Warning("Got a client avatar, can't find the ID? ID: " + id);
+                return;
+            }
+            Avatar = result.Item1;
         }
 
         /// <summary>
@@ -1781,7 +1824,7 @@ namespace SocketNetworking.Client
         }
 
         [NetworkInvokable(NetworkDirection.Any)]
-        private void GetError(NetworkHandle handle, LogSeverity level, string err)
+        private void GetError(NetworkHandle handle, string err, LogSeverity level)
         {
             Log.Any(err, level);
         }
@@ -1791,6 +1834,9 @@ namespace SocketNetworking.Client
             public PacketHeader Header;
             public byte[] Data;
         }
+
+
+
     }
 
     public struct NetworkErrorData

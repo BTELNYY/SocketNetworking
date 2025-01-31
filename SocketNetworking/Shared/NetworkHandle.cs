@@ -32,6 +32,11 @@ namespace SocketNetworking.Shared
             }
         }
 
+        public NetworkHandle(NetworkClient client)
+        {
+            Client = client ?? throw new ArgumentNullException(nameof(client));
+        }
+
         public NetworkClient Client { get; } 
 
         public Packet InvocationPacket { get; }
