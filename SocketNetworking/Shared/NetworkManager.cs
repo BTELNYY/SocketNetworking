@@ -1036,16 +1036,20 @@ namespace SocketNetworking.Shared
         private static MethodInfo GetNetworkInvokeMethod(MethodInfo[] methods, Type[] arguments)
         {
             string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
-            foreach (MethodInfo m in methods)
+            foreach (MethodInfo curMethod in methods)
             {
-                List<string> m_args = m.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (m.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)) && !arguments[0].IsSubclassDeep(typeof(NetworkClient)))
+                List<string> methodArgs = curMethod.GetParameters().Select(y => y.ParameterType.FullName).ToList();
+                if (curMethod.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)) && !arguments[0].IsSubclassDeep(typeof(NetworkClient)))
                 {
-                    m_args.RemoveAt(0);
+                    methodArgs.RemoveAt(0);
                 }
-                if (m_args.ToArray().ArraysEqual(expectedArgs))
+                if (curMethod.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkHandle)) && !arguments[0].IsSubclassDeep(typeof(NetworkHandle)))
                 {
-                    return m;
+                    methodArgs.RemoveAt(0);
+                }
+                if (methodArgs.ToArray().ArraysEqual(expectedArgs))
+                {
+                    return curMethod;
                 }
             }
             return null;
@@ -1096,7 +1100,7 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Unable to find the Object this packet is referencing.");
             }
             Type[] arguments = packet.Arguments.Select(x => x.Type).ToArray();
-            MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToArray();
+            MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy).Where(x => x.GetCustomAttribute<NetworkInvocable>() != null && x.Name == packet.MethodName).ToArray();
             MethodInfo method = GetNetworkInvokeMethod(methods, arguments);
             if (method == null)
             {
@@ -1136,7 +1140,7 @@ namespace SocketNetworking.Shared
                 {
                     if (!method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
                     {
-                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + packet.MethodName);
+                        Log.GlobalWarning("Method marked secure on an object takes NetworkClient as its first argument, please replace this with NetworkHandle. Method: " + packet.MethodName);
                     }
                 }
             }
@@ -1144,6 +1148,11 @@ namespace SocketNetworking.Shared
             if (method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
             {
                 args.Add(reciever);
+            }
+            if (method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkHandle)))
+            {
+                NetworkHandle handle = new NetworkHandle(reciever, packet);
+                args.Add(handle);
             }
             foreach (SerializedData data in packet.Arguments)
             {
@@ -1250,9 +1259,9 @@ namespace SocketNetworking.Shared
                 }
                 if (!(target is INetworkObject) && !(target is NetworkClient))
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
+                    if (method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
                     {
-                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + methodName);
+                        Log.GlobalWarning("Method marked secure takes a NetworkClient as the first argument, please replace this with NetworkHandle. Method: " + methodName);
                     }
                 }
             }
@@ -1338,7 +1347,7 @@ namespace SocketNetworking.Shared
                 {
                     if (!method.GetParameters()[0].ParameterType.IsSubclassOf(typeof(NetworkClient)))
                     {
-                        Log.GlobalWarning("Method marked secure on an object which doesn't implement INetworkOwned and isn't a NetworkClient subclass does not take NetworkClient as its first argument. Consider: securing the method by adding the argument or adding INetworkOwned to the class defention, or move the method to a subclass of NetworkClient. Method: " + methodName);
+                        Log.GlobalWarning("Method marked secure on an object takes NetworkClient as the first argument, please replace this with NetworkHandle. : " + methodName);
                     }
                 }
             }

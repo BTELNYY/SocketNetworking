@@ -258,18 +258,18 @@ namespace SocketNetworking.Client
                     Log.GlobalWarning("Can't change ready state becuase the socket is not connected or the handshake isn't done.");
                     return;
                 }
-                if(CurrnetClientLocation == ClientLocation.Remote) 
+                ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket
+                {
+                    Ready = value
+                };
+                Send(readyStateUpdatePacket);
+                if (CurrnetClientLocation == ClientLocation.Remote) 
                 {
                     _ready = value;
                     ReadyStateChanged?.Invoke(!_ready, _ready);
                     ClientReadyStateChanged?.Invoke(this);
                     NetworkManager.SendReadyPulse(this, Ready);
                 }
-                ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket
-                {
-                    Ready = value
-                };
-                Send(readyStateUpdatePacket);
             }
         }
 
@@ -570,10 +570,32 @@ namespace SocketNetworking.Client
             _clientLocation = ClientLocation.Remote;
             ClientConnected += OnRemoteClientConnected;
             ClientConnected?.Invoke();
+            ReadyStateChanged += OnReadyStateChanged;
             //_packetReaderThread = new Thread(PacketReaderThreadMethod);
             //_packetReaderThread.Start();
             //_packetSenderThread = new Thread(PacketSenderThreadMethod);
             //_packetSenderThread.Start();
+        }
+
+        private void OnReadyStateChanged(bool oldState, bool newState)
+        {
+            if(!newState)
+            {
+                return;
+            }
+            List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
+            NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
+            foreach(INetworkObject @object in objects)
+            {
+                @object.OnSync(this);
+                @object.NetworkSpawn(this);
+            }
+        }
+
+        [NetworkInvocable(Direction = NetworkDirection.Server)]
+        private void OnSyncBegin(NetworkHandle handle, int objCount)
+        {
+            Log.GlobalInfo("Total of Network Objects that will be spawned automatically: " + objCount);
         }
 
         /// <summary>
@@ -1390,7 +1412,7 @@ namespace SocketNetworking.Client
                     {
                         ServerBeginEncryption();
                     }
-                    if (NetworkServer.Config.DefaultReady)
+                    else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
                     {
                         Ready = true;
                     }
@@ -1455,6 +1477,10 @@ namespace SocketNetworking.Client
                             updateEncryptionStateFinal.EncryptionFunction = EncryptionFunction.UpdateEncryptionStatus;
                             updateEncryptionStateFinal.State = EncryptionState.Encrypted;
                             Send(updateEncryptionStateFinal);
+                            if(NetworkServer.Config.DefaultReady == true)
+                            {
+                                Ready = true;
+                            }
                             break;
                         default:
                             Log.GlobalError($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");

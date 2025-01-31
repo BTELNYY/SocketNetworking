@@ -37,7 +37,7 @@ namespace SocketNetworking.ExampleServer
             //stopwatch.Start();
             while (true)
             {
-                //break;
+                break;
                 Thread.Sleep(1000);
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {

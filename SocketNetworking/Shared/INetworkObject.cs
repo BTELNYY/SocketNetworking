@@ -131,6 +131,12 @@ namespace SocketNetworking.Shared
         /// </summary>
         /// <param name="client"></param>
         void OnDisconnected(NetworkClient client);
+
+        /// <summary>
+        /// Called on the server when a client has begun the sync state of the connection, if its enabled.
+        /// </summary>
+        /// <param name="client"></param>
+        void OnSync(NetworkClient client);
     }
 
     public enum OwnershipMode : byte

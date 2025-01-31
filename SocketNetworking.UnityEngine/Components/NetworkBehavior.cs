@@ -48,6 +48,11 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual int NetworkID { get; set; }
 
+        public virtual void OnSync(NetworkClient client)
+        {
+
+        }
+
         public virtual void OnAdded(INetworkObject addedObject)
         {
             
