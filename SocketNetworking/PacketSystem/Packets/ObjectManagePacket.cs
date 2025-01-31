@@ -25,6 +25,8 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public int NewNetworkID { get; set; }
 
+        public bool Active { get; set; }
+
         public byte[] ExtraData { get; set; } = new byte[0];
 
         public override ByteWriter Serialize()
@@ -37,6 +39,7 @@ namespace SocketNetworking.PacketSystem.Packets
             writer.WriteInt(OwnerID);
             writer.WriteByte((byte)ObjectVisibilityMode);
             writer.WriteInt(NewNetworkID);
+            writer.WriteBool(Active);
             writer.WriteByteArray(ExtraData);
             return writer;
         }
@@ -51,6 +54,7 @@ namespace SocketNetworking.PacketSystem.Packets
             OwnerID = reader.ReadInt();
             ObjectVisibilityMode = (ObjectVisibilityMode)reader.ReadByte();
             NewNetworkID = reader.ReadInt();
+            Active = reader.ReadBool();
             ExtraData = reader.ReadByteArray();
             return reader;
         }

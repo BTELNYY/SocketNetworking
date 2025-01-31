@@ -14,6 +14,7 @@ using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using JetBrains.Annotations;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.UnityEngine.Utility;
 
 namespace SocketNetworking.UnityEngine
 {
@@ -62,6 +63,18 @@ namespace SocketNetworking.UnityEngine
             UnityNetworkBehavior NetworkBehavior = reader.ReadPacketSerialized<UnityNetworkBehavior>();
             GameObject prefab = GetPrefabByID(NetworkBehavior.PrefabID);
             GameObject result = GameObject.Instantiate(prefab);
+            List<string> trueTree = NetworkBehavior.Tree;
+            trueTree.RemoveAt(0);
+            trueTree.Reverse();
+            GameObject parent = Utility.Utility.FindByTree(trueTree);
+            if(parent == null)
+            {
+                Log.GlobalError("Can't find parent by tree! Tree: " + string.Join("/", trueTree));
+            }
+            else
+            {
+                result.transform.parent = parent.transform;
+            }
             return (INetworkSpawnable)result.GetComponent<NetworkIdentity>();
         }
 

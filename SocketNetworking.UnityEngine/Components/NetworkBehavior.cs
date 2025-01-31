@@ -24,22 +24,16 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        public virtual bool IsEnabled => base.enabled;
-
-        protected virtual void SetEnabled(bool enabled)
+        public virtual bool Active
         {
-            base.enabled = enabled;
-        }
-
-        public void NetworkSetEnabled(bool value)
-        {
-            NetworkInvoke(nameof(RecieveIsEnabled), new object[] { value });
-        }
-
-        [NetworkInvocable(NetworkDirection.Any)]
-        private void RecieveIsEnabled(NetworkHandle handle, bool value)
-        {
-            SetEnabled(value);
+            get
+            {
+                return gameObject.activeSelf;
+            }
+            set
+            {
+                gameObject.SetActive(value);
+            }
         }
 
         public virtual bool Spawnable => true;

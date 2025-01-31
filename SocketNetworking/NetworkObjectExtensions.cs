@@ -74,6 +74,23 @@ namespace SocketNetworking
             obj.OnLocalSpawned(packet);
         }
 
+        public static void NetworkSpawn(this INetworkSpawnable obj, NetworkClient target)
+        {
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                throw new InvalidOperationException("Only servers can spawn objects this way.");
+            }
+            ObjectManagePacket packet = new ObjectManagePacket()
+            {
+                Action = ObjectManagePacket.ObjectManageAction.Create,
+                AssmeblyName = obj.GetType().Assembly.FullName,
+                ObjectClassName = obj.GetType().FullName,
+                ExtraData = obj.SendExtraData().Data,
+            };
+            target.Send(packet);
+            obj.OnLocalSpawned(packet);
+        }
+
         public static void NetworkDestroy(this INetworkObject obj)
         {
             if (NetworkManager.WhereAmI == ClientLocation.Local)
@@ -88,6 +105,7 @@ namespace SocketNetworking
                 ObjectClassName = obj.GetType().FullName,
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
+                Active = obj.Active,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
             switch (obj.ObjectVisibilityMode)
@@ -134,6 +152,7 @@ namespace SocketNetworking
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
+                Active = obj.Active,
                 ExtraData = obj.SendExtraData().Data,
             };
             if(obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
@@ -161,6 +180,100 @@ namespace SocketNetworking
         }
 
         /// <summary>
+        /// Spawns the <see cref="INetworkObject"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static void NetworkSpawn(this INetworkObject obj, NetworkClient target)
+        {
+            if (!obj.Spawnable)
+            {
+                throw new InvalidOperationException("This object is not spawnable.");
+            }
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                throw new InvalidOperationException("Only servers can spawn objects this way.");
+            }
+            ObjectManagePacket packet = new ObjectManagePacket()
+            {
+                Action = ObjectManagePacket.ObjectManageAction.Create,
+                AssmeblyName = obj.GetType().Assembly.FullName,
+                OwnerID = obj.OwnerClientID,
+                ObjectClassName = obj.GetType().FullName,
+                NewNetworkID = obj.NetworkID,
+                OwnershipMode = obj.OwnershipMode,
+                ObjectVisibilityMode = obj.ObjectVisibilityMode,
+                Active = obj.Active,
+                ExtraData = obj.SendExtraData().Data,
+            };
+            if (obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
+            {
+                packet.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
+                obj.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
+            }
+            switch (obj.ObjectVisibilityMode)
+            {
+                case ObjectVisibilityMode.ServerOnly:
+                    break;
+                case ObjectVisibilityMode.OwnerAndServer:
+                    NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
+                    if (client == null)
+                    {
+                        throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
+                    }
+                    if(client.ClientID != target.ClientID)
+                    {
+                        throw new InvalidOperationException($"Can't spawn an object with a targetted client while the object is hidden to non-owner client and the targetted client is not the owner client.");
+                    }
+                    client.Send(packet);
+                    break;
+                case ObjectVisibilityMode.Everyone:
+                    target.Send(packet);
+                    break;
+            }
+            obj.OnLocalSpawned(packet);
+        }
+
+        public static void NetworkSetActive(this INetworkObject obj, bool state)
+        {
+            ObjectManagePacket packet = new ObjectManagePacket()
+            {
+                Action = ObjectManagePacket.ObjectManageAction.Modify,
+                AssmeblyName = obj.GetType().Assembly.FullName,
+                OwnerID = obj.OwnerClientID,
+                ObjectClassName = obj.GetType().FullName,
+                NewNetworkID = obj.NetworkID,
+                OwnershipMode = obj.OwnershipMode,
+                Active = state,
+                ObjectVisibilityMode = obj.ObjectVisibilityMode,
+            };
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                NetworkClient.LocalClient.Send(packet);
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                switch (obj.ObjectVisibilityMode)
+                {
+                    case ObjectVisibilityMode.ServerOnly:
+                        break;
+                    case ObjectVisibilityMode.OwnerAndServer:
+                        NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
+                        if (client == null)
+                        {
+                            throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
+                        }
+                        client.Send(packet);
+                        break;
+                    case ObjectVisibilityMode.Everyone:
+                        NetworkServer.SendToAll(packet, obj);
+                        break;
+                }
+            }
+            obj.Active = state;
+        }
+
+        /// <summary>
         /// Sets the <see cref="INetworkObject.OwnerClientID"/> network wide.
         /// </summary>
         /// <param name="obj"></param>
@@ -176,6 +289,7 @@ namespace SocketNetworking
                 ObjectClassName = obj.GetType().FullName,
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
+                Active = obj.Active,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
             if (NetworkManager.WhereAmI == ClientLocation.Local)
@@ -220,6 +334,7 @@ namespace SocketNetworking
                 ObjectClassName = obj.GetType().FullName,
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = mode,
+                Active = obj.Active,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
             if(NetworkManager.WhereAmI == ClientLocation.Local)
@@ -265,6 +380,7 @@ namespace SocketNetworking
                 ObjectClassName = obj.GetType().FullName,
                 NewNetworkID = newId,
                 OwnershipMode = obj.OwnershipMode,
+                Active = obj.Active,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
             if (NetworkManager.WhereAmI == ClientLocation.Local)
@@ -308,6 +424,7 @@ namespace SocketNetworking
                 OwnerID = obj.OwnerClientID,
                 ObjectClassName = obj.GetType().FullName,
                 OwnershipMode = obj.OwnershipMode,
+                Active = obj.Active,
                 NewNetworkID = obj.NetworkID,
                 ObjectVisibilityMode = mode,
             };

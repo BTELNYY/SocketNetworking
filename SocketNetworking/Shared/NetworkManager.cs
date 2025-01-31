@@ -355,6 +355,16 @@ namespace SocketNetworking.Shared
 
         private static readonly Dictionary<INetworkObject, NetworkObjectData> NetworkObjects = new Dictionary<INetworkObject, NetworkObjectData>();
 
+        public static (INetworkObject, NetworkObjectData) GetNetworkObjectByID(int id)
+        {
+            INetworkObject obj = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == id);
+            if (obj != null)
+            {
+                return (obj, NetworkObjects[obj]);
+            }
+            return (null, null);
+        }
+
         private static readonly List<NetworkObjectSpawner> NetworkObjectSpawners = new List<NetworkObjectSpawner>();
 
         public delegate INetworkSpawnable NetworkObjectSpawnerDelegate(ObjectManagePacket packet, NetworkHandle handle);
@@ -391,7 +401,7 @@ namespace SocketNetworking.Shared
         internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
         {
             //Spawning
-            if (packet.Action == ObjectManagePacket.ObjectManageAction.Create)
+            if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && GetNetworkObjectByID(packet.NetowrkIDTarget).Item1 == null)
             {
                 Type objType = Assembly.Load(packet.AssmeblyName)?.GetType(packet.ObjectClassName);
                 if (objType == null)
@@ -441,6 +451,7 @@ namespace SocketNetworking.Shared
                 netObj.NetworkID = packet.NetowrkIDTarget;
                 netObj.OwnerClientID = packet.OwnerID;
                 netObj.OwnershipMode = packet.OwnershipMode;
+                netObj.Active = packet.Active;
                 ObjectManagePacket creationConfirmation = new ObjectManagePacket()
                 {
                     NetowrkIDTarget = packet.NetowrkIDTarget,
@@ -514,6 +525,7 @@ namespace SocketNetworking.Shared
                         modificationTarget.OwnerClientID = packet.OwnerID;
                         modificationTarget.ObjectVisibilityMode = packet.ObjectVisibilityMode;
                         modificationTarget.OwnershipMode = packet.OwnershipMode;
+                        modificationTarget.Active = packet.Active;
                         modificationTarget.OnModified(handle.Client);
                         SendModifiedPulse(handle.Client, modificationTarget);
                         break;
@@ -908,7 +920,7 @@ namespace SocketNetworking.Shared
                 }
                 return;
             }
-            List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == header.NetworkIDTarget && x.IsEnabled).ToList();
+            List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == header.NetworkIDTarget && x.Active).ToList();
             if (objects.Count == 0)
             {
                 Log.GlobalWarning("Target NetworkID revealed no active objects registered!");

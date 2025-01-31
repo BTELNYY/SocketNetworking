@@ -49,10 +49,10 @@ namespace SocketNetworking.Shared
         /// <summary>
         /// If this is false, the object is never updated. This includes <see cref="INetworkSyncVar"/> fields, <see cref="PacketListener>"/> and <see cref="NetworkInvocable"/> methods.
         /// </summary>
-        bool IsEnabled { get; }
+        bool Active { get; set; }
 
         /// <summary>
-        /// Called on the client when the object has finished being spawned and the spawn response has been sent to the server.
+        /// Called on the object spanwer when the peer has finished spawning it.
         /// </summary>
         void OnNetworkSpawned(NetworkClient spawner);
 

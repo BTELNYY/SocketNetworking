@@ -21,7 +21,7 @@ namespace SocketNetworking.UnityEngine.Components
                 return new UnityNetworkBehavior()
                 {
                     Name = gameObject.name,
-                    Tree = new List<string>(),
+                    Tree = gameObject.GetTree().ToList(),
                     PrefabID = this.PrefabID,
                 };
             }

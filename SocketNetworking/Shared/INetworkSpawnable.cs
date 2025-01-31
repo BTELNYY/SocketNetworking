@@ -12,7 +12,7 @@ namespace SocketNetworking.Shared
     public interface INetworkSpawnable
     {
         /// <summary>
-        /// Called on the server when a <see cref="NetworkClient"/> spawns the object on the local machine.
+        /// Called locally when the packet to spawn the object was recieved. Also called when the peer of the connection recieves the packet and spawns the object. However, spawner (in case this method is overriden in a <see cref="INetworkObject"/>) does not know the object was spawned succesfully yet, use <see cref="INetworkObject.OnNetworkSpawned(NetworkClient)"/> for this function.
         /// </summary>
         /// <param name="spawner"></param>
         void OnLocalSpawned(ObjectManagePacket packet);

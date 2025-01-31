@@ -13,6 +13,7 @@ using SocketNetworking.UnityEngine.TypeWrappers;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.PacketSystem.Packets;
 
 namespace SocketNetworking.UnityEngine.Components
 {
@@ -22,6 +23,28 @@ namespace SocketNetworking.UnityEngine.Components
         {
             NetworkPosition = NetworkPosition;
             NetworkRotation = NetworkRotation;
+        }
+
+        public override void OnNetworkSpawned(NetworkClient spawner)
+        {
+            base.OnNetworkSpawned(spawner);
+            ServerSyncPositionAndRotation();
+        }
+
+        public override ByteWriter SendExtraData()
+        {
+            ByteWriter writer = base.SendExtraData();
+            writer.WriteVector3(NetworkPosition);
+            writer.WriteQuaternion(NetworkRotation);
+            return writer;
+        }
+
+        public override ByteReader RecieveExtraData(byte[] extraData)
+        {
+            ByteReader reader = base.RecieveExtraData(extraData);
+            transform.position = reader.ReadVector3();
+            transform.rotation = reader.ReadQuaternion();
+            return reader;
         }
 
         void Awake()
@@ -187,13 +210,6 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 NetworkLookAt(vector3.Vector);
             }
-        }
-
-        public override void OnNetworkSpawned(NetworkClient spawner)
-        {
-            base.OnNetworkSpawned(spawner);
-            NetworkPosition = transform.position;
-            NetworkRotation = transform.rotation;
         }
     }
 }
