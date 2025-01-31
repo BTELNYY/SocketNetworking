@@ -267,16 +267,16 @@ namespace SocketNetworking.UnityEngine.Components
         /// Preforms a send operation and syncs data across network, can be called on either client or server, method handles what happens.
         /// </summary>
         /// <param name="packet"></param>
-        public virtual void SendPacket(Packet packet)
+        public virtual void Send(Packet packet)
         {
-            SendPacket(packet, this);
+            Send(packet, this);
         }
 
         /// <summary>
         /// Preforms a send operation and syncs data across network, can be called on either client or server, method handles what happens.
         /// </summary>
         /// <param name="packet"></param>
-        public virtual void SendPacket(Packet packet, INetworkObject target)
+        public virtual void Send(Packet packet, INetworkObject target, bool priority)
         {
             if (NetworkID == -1)
             {
@@ -291,7 +291,7 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 if (NetworkClient.LocalClient != null)
                 {
-                    NetworkClient.LocalClient.Send(packet, target);
+                    NetworkClient.LocalClient.Send(packet, target, priority);
                 }
                 else
                 {
@@ -312,42 +312,6 @@ namespace SocketNetworking.UnityEngine.Components
             else if(NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 if(NetworkClient.LocalClient == null)
-                {
-                    throw new InvalidOperationException("Attempted to networkinvoke using a client when the game client is not set!");
-                }
-                else
-                {
-                    NetworkManager.NetworkInvoke(this, NetworkClient.LocalClient, methodName, args);
-                }
-            }
-        }
-
-        public virtual void NetworkInvoke(string methodName, object[] args, bool globalRpc, bool readyOnly)
-        {
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                if(globalRpc)
-                {
-                    UnityNetworkServer.NetworkInvokeOnAll(this, methodName, args, readyOnly);
-                }
-                else
-                {
-                    if(OwnershipMode != OwnershipMode.Client)
-                    {
-                        throw new InvalidOperationException("Attempted to NetworkInvoke using non-global rpc but the Ownership mode is set to something that isn't client!");
-                    }
-                    NetworkClient sender = NetworkServer.GetClient(OwnerClientID);
-                    if(sender == null)
-                    {
-                        throw new InvalidOperationException("Attempted to NetworkInvoke using non-global rpc but the Owner client by ID is not found!");
-                    }
-                    NetworkManager.NetworkInvoke(this, sender, methodName, args);
-                }
-            }
-            else if(NetworkManager.WhereAmI == ClientLocation.Local)
-            {
-                Log.GlobalWarning("Trying to call a server-only method on the client. in this case, this is fine, but this may be uintended.");
-                if (NetworkClient.LocalClient == null)
                 {
                     throw new InvalidOperationException("Attempted to networkinvoke using a client when the game client is not set!");
                 }

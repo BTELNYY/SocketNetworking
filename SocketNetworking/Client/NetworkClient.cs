@@ -772,9 +772,10 @@ namespace SocketNetworking.Client
         }
 
         /// <summary>
-        /// Forces the library to send the provided packet immediately.
+        /// Forces the library to send the provided packet immediately on the calling thread. This is not a good idea, and should not be used.
         /// </summary>
         /// <param name="packet"></param>
+        [Obsolete("This method is not thread safe. Use Send(Packet) instead.")]
         public void SendImmediate(Packet packet)
         {
             PreparePacket(ref packet);
@@ -797,12 +798,10 @@ namespace SocketNetworking.Client
         }
 
         /// <summary>
-        /// Sends any <see cref="Packet"/> down the network, If you don't specify a <see cref="Packet.Destination"/>, the packet will be sent to <see cref="NetworkTransport.Peer"/> as set by <see cref="Transport"/>
-        /// Note that this method doesn't check who it is sending it to, instead sending it to the current stream.
+        /// Queues a <see cref="Packet"/> to be sent through the <see cref="Transport"/>.
+        /// If <see cref="IsTransportConnected"/> is false, this method will return early, not sending anything.
         /// </summary>
-        /// <param name="packet">
-        /// The <see cref="Packet"/> to send down the stream.
-        /// </param>
+        /// <param name="packet"></param>
         public void Send(Packet packet)
         {
             if (!IsTransportConnected)
@@ -821,18 +820,39 @@ namespace SocketNetworking.Client
             }
         }
 
+
         /// <summary>
-        /// Overwrites the NetworkTarget of the given packet to the ID from <see cref="INetworkObject"/>
+        /// Sends a <see cref="Packet"/> as if directed from/to a <see cref="INetworkObject"/>. Internally calls <see cref="Send(Packet)"/>.
         /// </summary>
-        /// <param name="packet">
-        /// Packet to overwrite
-        /// </param>
-        /// <param name="sender">
-        /// ID to write
-        /// </param>
+        /// <param name="packet"></param>
+        /// <param name="sender"></param>
         public void Send(Packet packet, INetworkObject sender)
         {
             packet.NetowrkIDTarget = sender.NetworkID;
+            Send(packet);
+        }
+
+        /// <summary>
+        /// Sends a <see cref="Packet"/> with the <see cref="PacketFlags.Priority"/> flag set to the <paramref name="priority"/> value. Internally calls <see cref="Send(Packet)"/>
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="priority"></param>
+        public void Send(Packet packet, bool priority)
+        {
+            packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
+            Send(packet);
+        }
+
+        /// <summary>
+        /// Sends a <see cref="Packet"/> with the <see cref="PacketFlags.Priority"/> flag set to the <paramref name="priority"/> value, and the <see cref="Packet.NetowrkIDTarget"/> is set to the <see cref="INetworkObject.NetworkID"/> of the <paramref name="sender"/>. Internally calls <see cref="Send(Packet)"/>.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="sender"></param>
+        /// <param name="priority"></param>
+        public void Send(Packet packet, INetworkObject sender, bool priority)
+        {
+            packet.NetowrkIDTarget = sender.NetworkID;
+            packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
             Send(packet);
         }
 

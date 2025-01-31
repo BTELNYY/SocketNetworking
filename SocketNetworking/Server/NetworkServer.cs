@@ -287,12 +287,9 @@ namespace SocketNetworking.Server
         /// <summary>
         /// Sends a <see cref="Packet"/> to all connected clients.
         /// </summary>
-        /// <param name="packet">
-        /// The <see cref="Packet"/> to send.
-        /// </param>
-        /// <param name="toReadyOnly">
-        /// if this is true, only send to <see cref="NetworkClient.Ready"/> clients, otherwise send to everyone.
-        /// </param>
+        /// <param name="packet"></param>
+        /// <param name="toReadyOnly"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void SendToAll(Packet packet, bool toReadyOnly = false)
         {
             if (!Active)
@@ -313,15 +310,10 @@ namespace SocketNetworking.Server
         /// <summary>
         /// Sends a <see cref="Packet"/> to all connected clients.
         /// </summary>
-        /// <param name="packet">
-        /// The <see cref="Packet"/> to send.
-        /// </param>
-        /// <param name="toReadyOnly">
-        /// if this is true, only send to <see cref="NetworkClient.Ready"/> clients, otherwise send to everyone.
-        /// </param>
-        /// <param name="target">
-        /// The <see cref="INetworkObject"/> which is the target.
-        /// </param>
+        /// <param name="packet"></param>
+        /// <param name="target"></param>
+        /// <param name="toReadyOnly"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void SendToAll(Packet packet, INetworkObject target, bool toReadyOnly = false)
         {
             if (!Active)
@@ -337,6 +329,15 @@ namespace SocketNetworking.Server
             {
                 client.Send(packet, target);
             }
+        }
+
+        public static void SentToAll(Packet packet, INetworkObject target, bool priority, bool toReadyOnly = false)
+        {
+            if(priority)
+            {
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
+            }
+            SendToAll(packet, target, toReadyOnly);
         }
 
         /// <summary>

@@ -1200,7 +1200,7 @@ namespace SocketNetworking.Shared
         /// </param>
         /// <exception cref="NetworkInvocationException"></exception>
         /// <exception cref="SecurityException"></exception>
-        public static void NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args)
+        public static void NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args, bool priority = false)
         {
             if (target == null)
             {
@@ -1279,10 +1279,10 @@ namespace SocketNetworking.Shared
             NetworkInvocations.Add(callbackID);
             packet.CallbackID = callbackID;
             packet.IgnoreResult = true;
-            sender.Send(packet);
+            sender.Send(packet, priority);
         }
 
-        public static T NetworkInvoke<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000)
+        public static T NetworkInvoke<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000, bool priority = false)
         {
             if (target == null)
             {
@@ -1365,7 +1365,7 @@ namespace SocketNetworking.Shared
             int callbackID = NetworkInvocations.GetFirstEmptySlot();
             NetworkInvocations.Add(callbackID);
             packet.CallbackID = callbackID;
-            sender.Send(packet);
+            sender.Send(packet, priority);
             if (method.ReturnType == typeof(void))
             {
                 return default;
