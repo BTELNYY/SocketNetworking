@@ -43,8 +43,7 @@
 ![image](https://github.com/user-attachments/assets/306c98d2-9eb6-4e1e-8ae6-9000178ae979)
 
 #### A IPacketSerializable type
-![image](https://github.com/user-attachments/assets/db7aa3de-1e99-455b-83cb-1259423b8853)
-
+![image](https://github.com/user-attachments/assets/db43fd08-05a9-48d4-b5b4-5257403827b8)
 
 ### Making Custom Packets
  * Usually, the `NetworkInoke()` method within the network client can be used for Network objects, but if you want to, you can create custom packets. 
@@ -53,6 +52,9 @@
  * Ensure you override the `Serialize()` and `Deserialize()` methods, you **must** call the `base.Serialize()` and `base.Deserialize()` methods. 
  * If you make any modifications to the data contained in the packet that you yourself did not define, (eg parent class flags, values, etc) you must do so before calling the `base.Serialize()` function.
  * Packet custom IDs are handled automatically by the library, Do not rely on them being the same each time.
+
+#### A Custom Packet
+![image](https://github.com/user-attachments/assets/ff11c149-cc19-4ddb-8961-0a081e31a2fa)
 
  ### Making NetworkObjects
   * Create a class, and Inherit from `INetworkObject` or `NetworkObject` (interface vs class).
