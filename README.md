@@ -23,6 +23,13 @@
   * In your Client, you will now need to create a new client object. If you have made a subclass, use that. However otherwise, use the `TcpNetworkClient` or `MixedNetworkClient`. (I do not suggest creating a `UdpNetworkClient` due to no protections existing for UDP traffic, it may not work at all, or very poorly.) Now, Call `NetworkClient.InitLocalClient()`. This object is now ready to be used, You can call `NetworkClient.Connect(string, int, string)` to connect to a remote resource.
   * In your Server, you will need to create a new server object. Servers are singletons, you cannot have more than one at a time. Match the protocol you chose on the client to the server, so TCP = TCP, Mixed = Mixed, etc. Now that you have your object, feel free to load in any configuration you'd like into `NetworkServer.Config`. After you are all done, Call `NetworkServer.StartServer()` to allow the server to listen for clients.
 
+#### NetworkClient Setup
+![image](https://github.com/user-attachments/assets/a55a07ab-7407-4525-9aa3-2d532bd97a2c)
+
+#### NetworkServer Setup
+![image](https://github.com/user-attachments/assets/cd74364b-dc29-439e-887b-f20d3484fdf8)
+
+
 ## Importing Custom Content
  * Assumming you marked your TypeWrappers with the TypeWrapperAttribute, Custom Packets with the PacketDefinitionAttrbute and NetworkObjects, you can call `NetworkManager.ImportAssmebly(Assembly)` to have the library recognize your new content.
 
@@ -31,6 +38,13 @@
  * Inherit from `TypeWrapper<T>` where T is the type you wish to wrap.
  * Implement the `Serialize()` and `Deserialize()` methods as needed.
  * Make sure to write some unit tests!
+
+#### A TypeWrapper
+![image](https://github.com/user-attachments/assets/306c98d2-9eb6-4e1e-8ae6-9000178ae979)
+
+#### A IPacketSerializable type
+![image](https://github.com/user-attachments/assets/db7aa3de-1e99-455b-83cb-1259423b8853)
+
 
 ### Making Custom Packets
  * Usually, the `NetworkInoke()` method within the network client can be used for Network objects, but if you want to, you can create custom packets. 
@@ -53,7 +67,14 @@
  * To define one, you will need to create a new instance method on either the `NetworkClient` or a Registered `INetworkObject`. These methods have 2 parts, the method itself, and the attribute. The method itself can have any return type (assuming you can serialize it) and must have either a `NetworkHandle` or `NetworkClient` as its first parameter, all additional parameters can be anything serializable.
  * You will now need the attribute `NetworkInvokableAttribute`. The first parameter is the direction, this is important. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only.
 
+#### A NetworkInvoke method (above) and its caller (lower)
+![image](https://github.com/user-attachments/assets/e0526e01-ebf1-4d9c-a216-911d34304cfa)
+
+
 ### PacketListener
  * A Packet Listener is a method which allows the capture of packets addressed to the `INetworkObject` or `NetworkClient` its on.
  * To create one, create a method of any security level and have the arguments as the Packet you want to capture and a `NetworkHandle`.
  * Now place an attribute, The `PacketListenerAttribute`. You will need to provide a few arguments. First, the type of the Packet you are listening for. (Hint, use `typeof()`.) Secondly, you will need to specify the direction, it works the same as the NetworkInvokableAttribute. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only.
+
+#### A PacketListener
+![image](https://github.com/user-attachments/assets/9ae43a66-cb65-4c04-9b76-50ca7e195d39)
