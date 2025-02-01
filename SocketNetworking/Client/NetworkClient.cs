@@ -730,7 +730,7 @@ namespace SocketNetworking.Client
                 State = ConnectionState.Disconnected,
                 Reason = message
             };
-            SendImmediate(connectionUpdatePacket);
+            Send(connectionUpdatePacket);
             _connectionState = ConnectionState.Disconnected;
             NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
             ConnectionError?.Invoke(errorData);

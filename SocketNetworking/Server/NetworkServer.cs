@@ -13,6 +13,7 @@ using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Diagnostics;
 
 namespace SocketNetworking.Server
 {
@@ -212,7 +213,6 @@ namespace SocketNetworking.Server
             _serverState = ServerState.NotReady;
         }
 
-        
         protected virtual bool Validate()
         {
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))

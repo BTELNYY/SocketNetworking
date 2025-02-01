@@ -86,7 +86,9 @@
     <Compile Include="Server\UdpNetworkServer.cs" />
     <Compile Include="Shared\INetworkSpawnable.cs" />
     <Compile Include="Shared\INetworkSyncVar.cs" />
+    <Compile Include="Shared\NetworkAvatarBase.cs" />
     <Compile Include="Shared\NetworkHandle.cs" />
+    <Compile Include="Shared\NetworkObjectBase.cs" />
     <Compile Include="Shared\NetworkSyncVar.cs" />
     <Compile Include="Transports\NetworkTransport.cs" />
     <Compile Include="Shared\NetworkConvert.cs" />
