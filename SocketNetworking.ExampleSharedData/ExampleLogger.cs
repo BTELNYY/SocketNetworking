@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.ExampleSharedData
 {
-    public class NetworkLog
+    public class ExampleLogger
     {
         public static void HandleNetworkLog(LogData data)
         {

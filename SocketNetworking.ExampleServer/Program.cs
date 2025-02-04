@@ -18,7 +18,7 @@ namespace SocketNetworking.ExampleServer
     {
         public static void Main(string[] args)
         {
-            Log.OnLog += NetworkLog.HandleNetworkLog;
+            Log.OnLog += ExampleLogger.HandleNetworkLog;
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
             MixedNetworkServer server = new MixedNetworkServer();
             NetworkServer.ClientType = typeof(TestClient);
