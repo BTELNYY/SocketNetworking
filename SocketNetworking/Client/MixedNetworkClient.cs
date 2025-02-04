@@ -84,16 +84,16 @@ namespace SocketNetworking.Client
             {
                 _toSendPackets.TryDequeue(out Packet packet);
                 PreparePacket(ref packet);
-                Log.Debug($"Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
+                //Log.Debug($"Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
                 byte[] fullBytes = SerializePacket(packet);
                 if(fullBytes == null)
                 {
-                    Log.Debug($"Packet dropped before sending, serialization failure. ID: {packet.CustomPacketID}, Type: {packet.GetType().FullName}, Destination: {packet.Destination.ToString()}");
+                    //Log.Debug($"Packet dropped before sending, serialization failure. ID: {packet.CustomPacketID}, Type: {packet.GetType().FullName}, Destination: {packet.Destination.ToString()}");
                     return;
                 }
                 try
                 {
-                    Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    //Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                     Exception ex;
                     if (packet.Flags.HasFlag(PacketFlags.Priority))
                     {

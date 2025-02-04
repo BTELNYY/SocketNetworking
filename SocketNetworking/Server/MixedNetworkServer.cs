@@ -34,11 +34,11 @@ namespace SocketNetworking.Server
 
         protected override void ServerStartThread()
         {
-            Log.GlobalInfo("Server starting...");
+            Log.Info("Server starting...");
             TcpListener serverSocket = new TcpListener(IPAddress.Parse(Config.BindIP), Config.Port);
             serverSocket.Start();
-            Log.GlobalInfo("Mixed Client Started.");
-            Log.GlobalInfo($"Listening on {Config.BindIP}:{Config.Port} (TCP)");
+            Log.Info("Mixed Server Started.");
+            Log.Info($"Listening on {Config.BindIP}:{Config.Port} (TCP)");
             UdpReader = new Thread(AcceptUDP);
             UdpReader.Start();
             int counter = 0;
@@ -62,7 +62,7 @@ namespace SocketNetworking.Server
                 if (Clients.Count >= Config.MaximumClients)
                 {
                     //Do not accept.
-                    Log.GlobalInfo("Rejected a client becuase the server is full.");
+                    Log.Info("Rejected a client becuase the server is full.");
                     socket.Close();
                     continue;
                 }
@@ -70,7 +70,7 @@ namespace SocketNetworking.Server
                 tcpTransport.Client = socket;
                 socket.NoDelay = true;
                 IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
-                Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on TCP.");
+                Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on TCP.");
                 MixedNetworkClient client = (MixedNetworkClient)Activator.CreateInstance(ClientType);
                 client.InitRemoteClient(counter, tcpTransport);
                 AddClient(client, counter);
@@ -94,14 +94,14 @@ namespace SocketNetworking.Server
                 InvokeClientConnected(counter);
                 counter++;
             }
-            Log.GlobalInfo("Shutting down!");
+            Log.Info("Shutting down!");
             serverSocket.Stop();
         }
 
         void AcceptUDP()
         {
-            Log.GlobalInfo("UDP Server starting...");
-            Log.GlobalInfo($"Listening on {Config.BindIP}:{Config.Port} (UDP)");
+            Log.Info("UDP Server starting...");
+            Log.Info($"Listening on {Config.BindIP}:{Config.Port} (UDP)");
             IPEndPoint listener = new IPEndPoint(IPAddress.Any, Config.Port);
             UdpClient udpClient = new UdpClient(listener);
             _serverState = ServerState.Ready;
@@ -116,17 +116,17 @@ namespace SocketNetworking.Server
                     continue;
                 }
                 byte[] recieve = udpClient.Receive(ref listener);
-                ByteReader reader = new ByteReader(recieve);
-                int netId = reader.ReadInt();
-                int passKey = reader.ReadInt();
                 IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
                 if (!_udpClients.ContainsKey(remoteIpEndPoint))
                 {
-                    Log.GlobalInfo($"Connecting client {netId} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on UDP.");
+                    ByteReader reader = new ByteReader(recieve);
+                    int netId = reader.ReadInt();
+                    int passKey = reader.ReadInt();
+                    Log.Info($"Connecting client {netId} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on UDP.");
                     MixedNetworkClient client = _awaitingUDPConnection.Find(x => x.InitialUDPKey == passKey && x.ClientID == netId);
                     if(client == default(NetworkClient))
                     {
-                        Log.GlobalError($"There was an error finding the client with NetID: {netId} and Passkey: {passKey}");
+                        Log.Error($"There was an error finding the client with NetID: {netId} and Passkey: {passKey}");
                         continue;
                     }
                     UdpTransport transport = client.UdpTransport;
@@ -134,7 +134,6 @@ namespace SocketNetworking.Server
                     transport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
                     _udpClients.Add(remoteIpEndPoint, client as MixedNetworkClient);
                     //Dont read the first message since its not actually a packet, and just the client ID and the passkey.
-                    //transport.ServerRecieve(recieve);
                     _awaitingUDPConnection.Remove((MixedNetworkClient)client);
                 }
                 else
@@ -143,7 +142,7 @@ namespace SocketNetworking.Server
                     client.UdpTransport.ServerRecieve(recieve);
                 }
             }
-            Log.GlobalInfo("Shutting down UDP Server!");
+            Log.Info("Shutting down UDP Server!");
             return;
         }
     }

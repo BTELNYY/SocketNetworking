@@ -63,12 +63,34 @@ namespace SocketNetworking
             Invoke(data);
         }
 
+        public static void GlobalSuccess(string message)
+        {
+            LogData data = new LogData()
+            {
+                Message = message,
+                Severity = LogSeverity.Success,
+                CallerType = GetCallerType(),
+            };
+            Invoke(data);
+        }
+
         public void Debug(string message)
         {
             LogData data = new LogData()
             {
                 Message = message,
                 Severity = LogSeverity.Debug,
+                CallerType = GetCallerType(),
+            };
+            InvokeInstance(data);
+        }
+
+        public void Success(string message)
+        {
+            LogData data = new LogData()
+            {
+                Message = message,
+                Severity = LogSeverity.Success,
                 CallerType = GetCallerType(),
             };
             InvokeInstance(data);
@@ -218,6 +240,7 @@ namespace SocketNetworking
     {
         Debug,
         Info,
+        Success,
         Warning,
         Error
     }
