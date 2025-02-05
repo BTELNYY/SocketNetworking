@@ -27,11 +27,13 @@
 ![image](https://github.com/user-attachments/assets/6eb43c32-3c1a-4e57-800d-312b4623151f)
 
 #### NetworkClient Setup
-![image](https://github.com/user-attachments/assets/a55a07ab-7407-4525-9aa3-2d532bd97a2c)
+![image](https://github.com/user-attachments/assets/3446dafd-dfc7-4ca7-8cb4-30cee392a018)
 
 #### NetworkServer Setup
-![image](https://github.com/user-attachments/assets/cd74364b-dc29-439e-887b-f20d3484fdf8)
+![image](https://github.com/user-attachments/assets/09360e05-d3b8-4479-923e-474f831c5b84)
 
+#### ExampleLogger
+![image](https://github.com/user-attachments/assets/d90c5bff-12b3-4fed-8cc4-b26fed11915b)
 
 ## Importing Custom Content
  * Assumming you marked your TypeWrappers with the TypeWrapperAttribute, Custom Packets with the PacketDefinitionAttrbute and NetworkObjects, you can call `NetworkManager.ImportAssmebly(Assembly)` to have the library recognize your new content.
