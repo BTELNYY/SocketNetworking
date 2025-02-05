@@ -18,10 +18,11 @@ namespace SocketNetworking.ExampleServer
     {
         public static void Main(string[] args)
         {
-            Log.OnLog += HandleNetworkLog;
+            Log.OnLog += ExampleLogger.HandleNetworkLog;
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
             MixedNetworkServer server = new MixedNetworkServer();
             NetworkServer.ClientType = typeof(TestClient);
+            NetworkServer.ClientAvatar = typeof(NetworkObjectTest);
             NetworkServer.Config.HandshakeTime = 10f;
             NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
             NetworkServer.ClientConnected += OnClientConnected;
@@ -37,7 +38,7 @@ namespace SocketNetworking.ExampleServer
             //stopwatch.Start();
             while (true)
             {
-                //break;
+                break;
                 Thread.Sleep(1000);
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
@@ -70,34 +71,6 @@ namespace SocketNetworking.ExampleServer
         private static void OnClientConnected(int id)
         {
             TestClient client = (TestClient)NetworkServer.GetClient(id);
-        }
-
-        private static void HandleNetworkLog(LogData data)
-        {
-            ConsoleColor color = ConsoleColor.White;
-            switch (data.Severity)
-            {
-                case LogSeverity.Debug:
-                    color = ConsoleColor.Gray;
-                    break;
-                case LogSeverity.Info:
-                    color = ConsoleColor.White;
-                    break;
-                case LogSeverity.Warning:
-                    color = ConsoleColor.Yellow;
-                    break;
-                case LogSeverity.Error:
-                    color = ConsoleColor.Red;
-                    break;
-            }
-            WriteLineColor(data.Message, color);
-        }
-
-        public static void WriteLineColor(string msg, ConsoleColor color)
-        {
-            Console.ForegroundColor = color;
-            Console.WriteLine(msg);
-            Console.ResetColor();
         }
     }
 }

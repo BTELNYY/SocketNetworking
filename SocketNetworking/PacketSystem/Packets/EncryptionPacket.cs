@@ -42,7 +42,7 @@ namespace SocketNetworking.PacketSystem.Packets
             {
                 case EncryptionFunction.AsymmetricalKeySend:
                     writer.WriteString(PublicKey);
-                    Log.GlobalDebug("Wrote Key: " + PublicKey);
+                    //Log.GlobalDebug("Wrote Key: " + PublicKey);
                     break;
                 case EncryptionFunction.SymmetricalKeySend:
                     writer.WriteByteArray(SymIV);
@@ -66,7 +66,7 @@ namespace SocketNetworking.PacketSystem.Packets
             {
                 case EncryptionFunction.AsymmetricalKeySend:
                     PublicKey = reader.ReadString();
-                    Log.GlobalDebug("Read Key: " + PublicKey);
+                    //Log.GlobalDebug("Read Key: " + PublicKey);
                     break;
                 case EncryptionFunction.SymmetricalKeySend:
                     SymIV = reader.ReadByteArray();

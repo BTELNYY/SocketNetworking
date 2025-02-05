@@ -22,7 +22,7 @@ namespace SocketNetworking.Shared
         NetworkInvocationResult,
         EncryptionPacket,
         SyncVarUpdate,
-        ObjectSpawn,
+        ObjectManage,
         CustomPacket,
     }
 
@@ -143,7 +143,8 @@ namespace SocketNetworking.Shared
     /// </summary>
     public enum InvocationMode
     {
+        InternalCall,
         Listener,
-        RemoteProcedureCall
+        RemoteProcedureCall,
     }
 }

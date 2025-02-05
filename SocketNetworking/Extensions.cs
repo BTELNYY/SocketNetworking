@@ -20,33 +20,6 @@ namespace SocketNetworking
 {
     public static class Extensions
     {
-        /// <summary>
-        /// Invokes a network method on the current <see cref="INetworkObject"></see>, provide a <see cref="NetworkClient"/> which will get the network invoke.
-        /// </summary>
-        /// <param name="object"></param>
-        /// <param name="sender"></param>
-        /// <param name="methodName"></param>
-        /// <param name="args"></param>
-        public static void NetworkInvoke(this INetworkObject @object, NetworkClient sender, string methodName, object[] args)
-        {
-            NetworkManager.NetworkInvoke(@object, sender, methodName, args);
-        }
-
-        public static T NetworkInvoke<T>(this INetworkObject obj, NetworkClient sender, string methodName, object[] args, float timeOutMs = 5000f)
-        {
-            return NetworkManager.NetworkInvoke<T>(obj, sender, methodName, args, timeOutMs);
-        } 
-
-        /// <summary>
-        /// Invokes a method. Note that this can only be run on the server, as not NetworkClient is provided. Also note that this will work as all client RPC, meaning every client will get the invocation.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <param name="methodName"></param>
-        /// <param name="args"></param>
-        public static void NetworkInvoke(this INetworkObject obj, string methodName, object[] args)
-        {
-            NetworkServer.NetworkInvokeOnAll(obj, methodName, args);
-        }
 
         /// <summary>
         /// Removes a specific amount of elements from the start of the array.
@@ -258,6 +231,22 @@ namespace SocketNetworking
                 toCheck = toCheck.BaseType;
             }
             return false;
+        }
+
+        public static int HowManyClassesUp(this Type toCheck, Type generic)
+        {
+            int counter = -1;
+            while (toCheck != null && toCheck != typeof(object))
+            {
+                var cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
+                if (generic == cur)
+                {
+                    return counter + 1;
+                }
+                toCheck = toCheck.BaseType;
+                counter++;
+            }
+            return counter;
         }
 
         public static T SetFlag<T>(this T value, T flag, bool set) where T : Enum

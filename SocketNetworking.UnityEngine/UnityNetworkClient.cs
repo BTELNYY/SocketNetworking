@@ -12,58 +12,45 @@ using UnityEngine.UIElements;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using System.Security.Policy;
+using System.Collections;
 
 namespace SocketNetworking.UnityEngine
 {
-    public class UnityNetworkClient : NetworkClient
+    public class UnityNetworkClient : MixedNetworkClient
     {
-        [PacketListener(typeof(NetworkObjectDestroyPacket), NetworkDirection.Server)]
-        public void OnServerDestroyObject(NetworkObjectDestroyPacket packet, UnityNetworkClient client)
+        public UnityNetworkClient()
         {
-            NetworkIdentity identity = UnityNetworkManager.GetNetworkIdentity(packet.NetowrkIDTarget);
-            if(identity != null)
-            {
-                GameObject.Destroy(identity.gameObject);
-            }
+            UnityNetworkManager.Init();
+            _clientObject = new GameObject($"{ClientID}");
+            NetworkClientReference reference = _clientObject.AddComponent<NetworkClientReference>();
+            reference.NetworkClient = this;
+            GameObject.DontDestroyOnLoad(_clientObject);
+            UnityNetworkManager.Dispatcher.Enqueue(PacketHandle());
+            ManualPacketHandle = true;
+            ClientIdUpdated += UnityNetworkClient_ClientIdUpdated;
         }
 
-        [PacketListener(typeof(NetworkObjectSpawnPacket), NetworkDirection.Server)]
-        public void OnServerSpawnObject(NetworkObjectSpawnPacket packet, UnityNetworkClient client)
+        private void UnityNetworkClient_ClientIdUpdated()
         {
-            GameObject prefab = UnityNetworkManager.GetPrefabByID(packet.PrefabID);
-            if(prefab == null)
-            {
-                Log.GlobalError("Cannot find prefab by ID: " + packet.PrefabID);
-                return;
-            }
-            GameObject clone = GameObject.Instantiate(prefab);
-            NetworkIdentity networkIdentity = clone.GetComponent<NetworkIdentity>();
-            if(networkIdentity == null)
-            {
-                Log.GlobalError("NetworkPrefab is missing a NetworkIdentity! A new one has been created, ensure all prefabs have a NetworkIdenity on both the server and client.");
-                networkIdentity = clone.AddComponent<NetworkIdentity>();
-            }
-            foreach(NetworkComponent component in clone.GetComponents<NetworkComponent>())
-            {
-                component.Identity = networkIdentity;
-            }
-            networkIdentity.SetNetworkID(packet.NewNetworkID);
-            networkIdentity.UpdateOwnershipMode(packet.OwnershipMode);
-            networkIdentity.UpdateOwnerClientId(packet.OwnerID);
-            networkIdentity.SyncOwnerID();
-            networkIdentity.SyncOwnershipMode();
-            NetworkObjectSpawnedPacket returnPacket = new NetworkObjectSpawnedPacket();
-            returnPacket.SpawnedPrefabID = packet.PrefabID;
-            returnPacket.SpawnedNetworkID = packet.NewNetworkID;
-            Send(returnPacket);
+            _clientObject.name = ClientID.ToString();
         }
 
-        [PacketListener(typeof(NetworkObjectSpawnedPacket), NetworkDirection.Client)]
-        public void OnClientSpawnedObject(NetworkObjectSpawnedPacket packet, UnityNetworkClient client)
+        IEnumerator PacketHandle()
         {
-            foreach(NetworkBehavior behavior in UnityNetworkManager.GetNetworkBehaviors().Where(x => x.NetworkID == packet.SpawnedNetworkID))
+            HandleNextPacket();
+            UnityNetworkManager.Dispatcher.Enqueue(PacketHandle());
+            yield return null;
+        }
+
+
+        private GameObject _clientObject;
+
+        public GameObject ClientObject
+        {
+            get
             {
-                behavior.OnClientObjectCreated(client);
+                return _clientObject;
             }
         }
     }

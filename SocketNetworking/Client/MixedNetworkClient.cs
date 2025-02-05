@@ -77,23 +77,23 @@ namespace SocketNetworking.Client
         {
             if (_toSendPackets.IsEmpty)
             {
-                //Log.GlobalDebug("Nothing to send.");
+                //Log.Debug("Nothing to send.");
                 return;
             }
             lock (streamLock)
             {
                 _toSendPackets.TryDequeue(out Packet packet);
                 PreparePacket(ref packet);
-                Log.GlobalDebug($"Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
+                //Log.Debug($"Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
                 byte[] fullBytes = SerializePacket(packet);
                 if(fullBytes == null)
                 {
-                    Log.GlobalDebug($"Packet dropped before sending, serialization failure. ID: {packet.CustomPacketID}, Type: {packet.GetType().FullName}, Destination: {packet.Destination.ToString()}");
+                    //Log.Debug($"Packet dropped before sending, serialization failure. ID: {packet.CustomPacketID}, Type: {packet.GetType().FullName}, Destination: {packet.Destination.ToString()}");
                     return;
                 }
                 try
                 {
-                    Log.GlobalDebug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    //Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                     Exception ex;
                     if (packet.Flags.HasFlag(PacketFlags.Priority))
                     {
@@ -103,7 +103,7 @@ namespace SocketNetworking.Client
                     {
                         ex = Transport.Send(fullBytes, packet.Destination);
                     }
-                    //Log.GlobalDebug("Packet sent!");
+                    //Log.Debug("Packet sent!");
                     if (ex != null)
                     {
                         throw ex;
@@ -111,7 +111,7 @@ namespace SocketNetworking.Client
                 }
                 catch (Exception ex)
                 {
-                    Log.GlobalError("Failed to send packet! Error:\n" + ex.ToString());
+                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
                     NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
                     InvokeConnectionError(networkErrorData);
                 }
@@ -136,7 +136,7 @@ namespace SocketNetworking.Client
             (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive();
             if (packet.Item2 != null)
             {
-                Log.GlobalError(packet.Item2.ToString());
+                Log.Error(packet.Item2.ToString());
                 return;
             }
             if (packet.Item1.Length == 0)
@@ -164,7 +164,7 @@ namespace SocketNetworking.Client
             NetworkInvoke(nameof(ClientRecieveUDPInfo), new object[] { passKey });  
         }
 
-        [NetworkInvocable(NetworkDirection.Server)]
+        [NetworkInvokable(NetworkDirection.Server)]
         private void ClientRecieveUDPInfo(int passKey)
         {
             Exception ex = UdpTransport.Connect(Transport.PeerAddress.ToString(), Transport.Peer.Port);

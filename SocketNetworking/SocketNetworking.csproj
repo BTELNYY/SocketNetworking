@@ -59,7 +59,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\NetworkInvocable.cs" />
+    <Compile Include="Attributes\NetworkInvokable.cs" />
     <Compile Include="Attributes\NetworkNonSerialized.cs" />
     <Compile Include="Attributes\NetworkSerialized.cs" />
     <Compile Include="Attributes\PacketDefinition.cs" />
@@ -78,14 +78,17 @@
     <Compile Include="Misc\RoundRobin.cs" />
     <Compile Include="NetworkObjectExtensions.cs" />
     <Compile Include="PacketSystem\Packets\ObjectManagePacket.cs" />
-    <Compile Include="PacketSystem\Packets\SyncVarUpdate.cs" />
+    <Compile Include="PacketSystem\Packets\SyncVarUpdatePacket.cs" />
+    <Compile Include="PacketSystem\TypeWrappers\SerializableType.cs" />
     <Compile Include="Server\NetworkServerConfig.cs" />
     <Compile Include="Server\MixedNetworkServer.cs" />
     <Compile Include="Server\TcpNetworkServer.cs" />
     <Compile Include="Server\UdpNetworkServer.cs" />
     <Compile Include="Shared\INetworkSpawnable.cs" />
     <Compile Include="Shared\INetworkSyncVar.cs" />
+    <Compile Include="Shared\NetworkAvatarBase.cs" />
     <Compile Include="Shared\NetworkHandle.cs" />
+    <Compile Include="Shared\NetworkObjectBase.cs" />
     <Compile Include="Shared\NetworkSyncVar.cs" />
     <Compile Include="Transports\NetworkTransport.cs" />
     <Compile Include="Shared\NetworkConvert.cs" />
@@ -93,8 +96,8 @@
     <Compile Include="Shared\NetworkManager.cs" />
     <Compile Include="Misc\NetworkResultAwaiter.cs" />
     <Compile Include="PacketSystem\Packets\EncryptionPacket.cs" />
-    <Compile Include="PacketSystem\Packets\NetworkInvocationPacket.cs" />
-    <Compile Include="PacketSystem\Packets\NetworkInvocationResultPacket.cs" />
+    <Compile Include="PacketSystem\Packets\NetworkInvokationPacket.cs" />
+    <Compile Include="PacketSystem\Packets\NetworkInvokationResultPacket.cs" />
     <Compile Include="PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
     <Compile Include="PacketSystem\Packets\ClientDataPacket.cs" />
     <Compile Include="PacketSystem\TypeWrapper.cs" />

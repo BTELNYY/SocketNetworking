@@ -13,6 +13,7 @@ using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Diagnostics;
 
 namespace SocketNetworking.Server
 {
@@ -117,10 +118,24 @@ namespace SocketNetworking.Server
             {
                 if (HasServerStarted)
                 {
-                    Log.GlobalError("Can't change server network configuration is the server is running. Stop it first.");
+                    Log.Error("Can't change server network configuration is the server is running. Stop it first.");
                     return;
                 }
                 _serverConfig = value;
+            }
+        }
+
+        static Log _log;
+
+        public static Log Log
+        {
+            get
+            {
+                if (_log == null)
+                {
+                    _log = new Log("[Server]");
+                }
+                return _log;
             }
         }
 
@@ -130,6 +145,11 @@ namespace SocketNetworking.Server
         /// What type should network clients be created in? Note that the type must inherit from <see cref="NetworkClient"/>. This type should not have any class constructors.
         /// </summary>
         public static Type ClientType = typeof(NetworkClient);
+
+        /// <summary>
+        /// The <see cref="INetworkObject"/> which will be spawned for new <see cref="NetworkClient"/>s who connect. By default, this object will have <see cref="INetworkObject.ObjectVisibilityMode"/> set to <see cref="ObjectVisibilityMode.Everyone"/> and <see cref="INetworkObject.OwnershipMode"/> set to <see cref="OwnershipMode.Client"/>.
+        /// </summary>
+        public static Type ClientAvatar = null;
 
         /// <summary>
         /// Should the server be currently accepting connections? if this is set to false, the server will not reply to socket requests.
@@ -151,7 +171,7 @@ namespace SocketNetworking.Server
             {
                 if(_serverInstance == null)
                 {
-                    Log.GlobalError("Tried to get stopped server.");
+                    Log.Error("Tried to get stopped server.");
                     throw new InvalidOperationException("Attempted to access server instance when it isn't running.");
                 }
                 else
@@ -167,20 +187,19 @@ namespace SocketNetworking.Server
 
         private static RoundRobin<ClientHandler> handlers = new RoundRobin<ClientHandler>();
 
-        public void StartServer()
+        public virtual void StartServer()
         {
             if (HasServerStarted)
             {
-                Log.GlobalError("Server already started!");
+                Log.Error("Server already started!");
                 return;
             }
             _serverState = ServerState.Started;
-            NetworkServer server = GetServer();
-            if (!server.Validate())
+            if (!Validate())
             {
                 return;
             }
-            _serverInstance = server;
+            _serverInstance = this;
             handlers.Capacity = Config.DefaultThreads;
             for(int i = 0; i < Config.DefaultThreads; i++)
             {
@@ -188,37 +207,31 @@ namespace SocketNetworking.Server
                 handlers.Add(handler);
                 handler.Start();
             }
-            ServerThread = new Thread(server.ServerStartThread);
+            ServerThread = new Thread(ServerStartThread);
             ServerThread.Start();
             ServerStarted?.Invoke();
             _serverState = ServerState.NotReady;
         }
 
-        
         protected virtual bool Validate()
         {
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
             {
-                Log.GlobalError("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
+                Log.Error("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
                 return false;
             }
             if(Config.MaximumClients % Config.DefaultThreads != 0)
             {
-                Log.GlobalWarning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
+                Log.Warning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
             }
             return true;
-        }
-
-        protected virtual NetworkServer GetServer()
-        {
-            return new NetworkServer();
         }
 
         protected static void AddClient(NetworkClient client, int clientId)
         {
             if (_clients.ContainsKey(clientId))
             {
-                Log.GlobalError("Something really got fucked up!");
+                Log.Error("Something really got fucked up!");
                 //we throw becuase the whole server will die if we cant add the client.
                 throw new InvalidOperationException("Client ID to add already taken!");
             }
@@ -228,7 +241,7 @@ namespace SocketNetworking.Server
                 _clients.Add(clientId, cursedClient);
                 ClientHandler handler = handlers.Next();
                 handler.AddClient(cursedClient);
-                Log.GlobalDebug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
+                //Log.Debug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
             }
         }
 
@@ -240,14 +253,14 @@ namespace SocketNetworking.Server
                 ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(_clients[clientId]));
                 if(handler == null)
                 {
-                    Log.GlobalError("Unable to find the handler responsible for Client ID " + clientId);
+                    Log.Error("Unable to find the handler responsible for Client ID " + clientId);
                 }
                 handler.RemoveClient(_clients[clientId]);
                 _clients.Remove(clientId);
             }
             else
             {
-                Log.GlobalWarning($"Can't remove client ID {clientId}, not found!");
+                Log.Warning($"Can't remove client ID {clientId}, not found!");
             }
         }
 
@@ -270,11 +283,11 @@ namespace SocketNetworking.Server
             }
         }
 
-        public static void StopServer()
+        public virtual void StopServer()
         {
             if (!HasServerStarted)
             {
-                Log.GlobalError("Server already stopped.");
+                Log.Error("Server already stopped.");
             }
             foreach(NetworkClient client in _clients.Values)
             {
@@ -293,12 +306,9 @@ namespace SocketNetworking.Server
         /// <summary>
         /// Sends a <see cref="Packet"/> to all connected clients.
         /// </summary>
-        /// <param name="packet">
-        /// The <see cref="Packet"/> to send.
-        /// </param>
-        /// <param name="toReadyOnly">
-        /// if this is true, only send to <see cref="NetworkClient.Ready"/> clients, otherwise send to everyone.
-        /// </param>
+        /// <param name="packet"></param>
+        /// <param name="toReadyOnly"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void SendToAll(Packet packet, bool toReadyOnly = false)
         {
             if (!Active)
@@ -319,15 +329,10 @@ namespace SocketNetworking.Server
         /// <summary>
         /// Sends a <see cref="Packet"/> to all connected clients.
         /// </summary>
-        /// <param name="packet">
-        /// The <see cref="Packet"/> to send.
-        /// </param>
-        /// <param name="toReadyOnly">
-        /// if this is true, only send to <see cref="NetworkClient.Ready"/> clients, otherwise send to everyone.
-        /// </param>
-        /// <param name="target">
-        /// The <see cref="INetworkObject"/> which is the target.
-        /// </param>
+        /// <param name="packet"></param>
+        /// <param name="target"></param>
+        /// <param name="toReadyOnly"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void SendToAll(Packet packet, INetworkObject target, bool toReadyOnly = false)
         {
             if (!Active)
@@ -343,6 +348,15 @@ namespace SocketNetworking.Server
             {
                 client.Send(packet, target);
             }
+        }
+
+        public static void SentToAll(Packet packet, INetworkObject target, bool priority, bool toReadyOnly = false)
+        {
+            if(priority)
+            {
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
+            }
+            SendToAll(packet, target, toReadyOnly);
         }
 
         /// <summary>
@@ -405,7 +419,7 @@ namespace SocketNetworking.Server
             }
         }
 
-        public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, bool readyOnly = false)
+        public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, bool readyOnly = false, bool priority = false)
         {
             if (!Active)
             {
@@ -421,15 +435,7 @@ namespace SocketNetworking.Server
                 client.NetworkInvoke(obj, methodName, args);
             }
         }
-
-        public void NetworkSpawn(INetworkSpawnable spawnable)
-        {
-
-        }
     }
-
-
-
 
     public enum ServerState 
     {
