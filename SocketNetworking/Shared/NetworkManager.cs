@@ -19,6 +19,7 @@ using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Server;
 using System.Runtime.CompilerServices;
+using System.CodeDom;
 
 namespace SocketNetworking.Shared
 {
@@ -128,8 +129,6 @@ namespace SocketNetworking.Shared
             return (NetworkDirection)location;
         }
 
-        public static Dictionary<Type, NetworkObjectCache> TypeCache = new Dictionary<Type, NetworkObjectCache>();
-
         public static Dictionary<Type, Type> TypeToTypeWrapper = new Dictionary<Type, Type>();
 
         /// <summary>
@@ -142,110 +141,12 @@ namespace SocketNetworking.Shared
             List<Type> applicableTypes = target.GetTypes().ToList();
             foreach (Type t in applicableTypes)
             {
-                if (TypeCache.ContainsKey(t) || TypeToTypeWrapper.ContainsValue(t))
+                var data = GetNetworkObjectData(t);
+                if(data == null)
                 {
                     continue;
                 }
-                Type baseType = t.BaseType;
-                if (t.IsSubclassDeep(typeof(TypeWrapper<>)))
-                {
-                    object obj = Activator.CreateInstance(t);
-                    MethodInfo method = obj.GetType().GetMethod(nameof(TypeWrapper<object>.GetContainedType));
-                    Type targetType = (Type)method.Invoke(obj, null);
-                    if (!TypeToTypeWrapper.ContainsKey(targetType))
-                    {
-                        TypeToTypeWrapper.Add(targetType, t);
-                    }
-                }
-                NetworkObjectCache networkObjectCache = new NetworkObjectCache();
-                networkObjectCache.Target = t;
-                networkObjectCache.Invokables = new List<(MethodInfo, NetworkInvokable)>();
-                networkObjectCache.Listeners = new Dictionary<Type, List<PacketListenerData>>();
-                networkObjectCache.SyncVars = new List<INetworkSyncVar>();
-                foreach (MethodInfo method in t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-                {
-                    if (method.GetCustomAttribute<PacketListener>() != null)
-                    {
-                        if (method.GetParameters().Length < AcceptedMethodArugments.Length)
-                        {
-                            Log.GlobalWarning("Method " + method.Name + " was ignored becuase it doesn't have the proper amount of arguments");
-                        }
-                        else
-                        {
-                            bool methodArgsFailed = false;
-                            for (int i = 0; i < AcceptedMethodArugments.Length; i++)
-                            {
-                                Type methodType = method.GetParameters()[i].ParameterType;
-                                Type acceptedType = AcceptedMethodArugments[i];
-                                if (!methodType.IsSubclassDeep(acceptedType))
-                                {
-                                    Log.GlobalWarning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
-                                    methodArgsFailed = true;
-                                }
-                            }
-                            if (!methodArgsFailed)
-                            {
-                                PacketListener attribute = method.GetCustomAttribute<PacketListener>();
-                                PacketListenerData data = new PacketListenerData
-                                {
-                                    Attribute = attribute,
-                                    AttachedMethod = method
-                                };
-                                if (!networkObjectCache.Listeners.ContainsKey(attribute.DefinedType))
-                                {
-                                    networkObjectCache.Listeners.Add(attribute.DefinedType, new List<PacketListenerData>() { data });
-                                }
-                                else
-                                {
-                                    if (!networkObjectCache.Listeners[attribute.DefinedType].Contains(data))
-                                    {
-                                        networkObjectCache.Listeners[attribute.DefinedType].Add(data);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (method.GetCustomAttribute<NetworkInvokable>() != null)
-                    {
-                        ValueTuple<MethodInfo, NetworkInvokable> tuple = (method, method.GetCustomAttribute<NetworkInvokable>());
-                        if (networkObjectCache.Invokables.Contains(tuple))
-                        {
-                            Log.GlobalWarning($"Tried to cache duplicate! Type: {t.FullName}, Method: {method.Name}");
-                            continue;
-                        }
-                        networkObjectCache.Invokables.Add(tuple);
-                    }
-                }
-                List<INetworkSyncVar> syncVars = new List<INetworkSyncVar>();
-                FieldInfo[] fields = t.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-                foreach (FieldInfo field in fields)
-                {
-                    object value = field.GetValue(t);
-                    if (!(value is INetworkSyncVar syncVar))
-                    {
-                        continue;
-                    }
-                    if (string.IsNullOrEmpty(syncVar.Name))
-                    {
-                        syncVar.Name = field.Name;
-                    }
-                    syncVars.Add(syncVar);
-                }
-                //PropertyInfo[] properties = t.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-                //foreach (PropertyInfo property in properties)
-                //{
-                //    object value = property.GetValue(t);
-                //    if (!(value is INetworkSyncVar syncVar))
-                //    {
-                //        continue;
-                //    }
-                //    if (string.IsNullOrEmpty(syncVar.Name))
-                //    {
-                //        syncVar.Name = property.Name;
-                //    }
-                //    syncVars.Add(syncVar);
-                //}
-                networkObjectCache.SyncVars = syncVars;
+                PreCache.Add(data);
             }
         }
 
@@ -354,6 +255,8 @@ namespace SocketNetworking.Shared
         #region Network Objects
 
         private static readonly Dictionary<INetworkObject, NetworkObjectData> NetworkObjects = new Dictionary<INetworkObject, NetworkObjectData>();
+
+        private static readonly List<NetworkObjectData> PreCache = new List<NetworkObjectData>();
 
         public static (INetworkObject, NetworkObjectData) GetNetworkObjectByID(int id)
         {
@@ -759,99 +662,106 @@ namespace SocketNetworking.Shared
             return removed;
         }
 
+        public static NetworkObjectData GetNetworkObjectData(Type t)
+        {
+            if (PreCache.Any(x => x.TargetObject == t) || TypeToTypeWrapper.ContainsValue(t))
+            {
+                return PreCache.FirstOrDefault(x => x.TargetObject == t);
+            }
+            Type baseType = t.BaseType;
+            if (t.IsSubclassDeep(typeof(TypeWrapper<>)))
+            {
+                object obj = Activator.CreateInstance(t);
+                MethodInfo method = obj.GetType().GetMethod(nameof(TypeWrapper<object>.GetContainedType));
+                Type targetType = (Type)method.Invoke(obj, null);
+                if (!TypeToTypeWrapper.ContainsKey(targetType))
+                {
+                    TypeToTypeWrapper.Add(targetType, t);
+                }
+            }
+            NetworkObjectData networkObjectCache = new NetworkObjectData();
+            networkObjectCache.TargetObject = t;
+            networkObjectCache.Invokables = new List<(MethodInfo, NetworkInvokable)>();
+            networkObjectCache.Listeners = new Dictionary<Type, List<PacketListenerData>>();
+            networkObjectCache.SyncVars = new List<FieldInfo>();
+            foreach (MethodInfo method in t.GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                if (method.GetCustomAttribute<PacketListener>() != null)
+                {
+                    if (method.GetParameters().Length < AcceptedMethodArugments.Length)
+                    {
+                        Log.GlobalWarning("Method " + method.Name + " was ignored becuase it doesn't have the proper amount of arguments");
+                    }
+                    else
+                    {
+                        bool methodArgsFailed = false;
+                        for (int i = 0; i < AcceptedMethodArugments.Length; i++)
+                        {
+                            Type methodType = method.GetParameters()[i].ParameterType;
+                            Type acceptedType = AcceptedMethodArugments[i];
+                            if (!methodType.IsSubclassDeep(acceptedType))
+                            {
+                                Log.GlobalWarning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
+                                methodArgsFailed = true;
+                            }
+                        }
+                        if (!methodArgsFailed)
+                        {
+                            PacketListener attribute = method.GetCustomAttribute<PacketListener>();
+                            PacketListenerData data = new PacketListenerData
+                            {
+                                Attribute = attribute,
+                                AttachedMethod = method
+                            };
+                            if (!networkObjectCache.Listeners.ContainsKey(attribute.DefinedType))
+                            {
+                                networkObjectCache.Listeners.Add(attribute.DefinedType, new List<PacketListenerData>() { data });
+                            }
+                            else
+                            {
+                                if (!networkObjectCache.Listeners[attribute.DefinedType].Contains(data))
+                                {
+                                    networkObjectCache.Listeners[attribute.DefinedType].Add(data);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (method.GetCustomAttribute<NetworkInvokable>() != null)
+                {
+                    ValueTuple<MethodInfo, NetworkInvokable> tuple = (method, method.GetCustomAttribute<NetworkInvokable>());
+                    if (networkObjectCache.Invokables.Contains(tuple))
+                    {
+                        Log.GlobalWarning($"Tried to cache duplicate! Type: {t.FullName}, Method: {method.Name}");
+                        continue;
+                    }
+                    networkObjectCache.Invokables.Add(tuple);
+                }
+            }
+            List<FieldInfo> syncVars = new List<FieldInfo>();
+            FieldInfo[] fields = t.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            foreach (FieldInfo field in fields)
+            {
+                if (!field.FieldType.GetInterfaces().Contains(typeof(INetworkSyncVar)))
+                {
+                    continue;
+                }
+                syncVars.Add(field);
+            }
+            networkObjectCache.SyncVars = syncVars;
+            return networkObjectCache;
+        }
+
         /// <summary>
-        /// Finds all <see cref="PacketListener"/>s in a <see cref="INetworkObject"/> and creates a <see cref="NetworkObjectData"/> instance.
+        ///  Creates or finds a <see cref="NetworkObjectData"/> instance.
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
         public static NetworkObjectData GetNetworkObjectData(INetworkObject target)
         {
             Type typeOfObject = target.GetType();
-            MethodInfo[] allPacketListeners = typeOfObject.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).Where(x => x.GetCustomAttribute(typeof(PacketListener)) != null).ToArray();
-            Dictionary<Type, List<PacketListenerData>> result = new Dictionary<Type, List<PacketListenerData>>();
-            if (target.NetworkID == 0)
-            {
-                Log.GlobalError($"Network Object {target.GetType().Name} was ignored becuase NetworkTargetID 0 is reserved.");
-                return new NetworkObjectData()
-                {
-                    Listeners = new Dictionary<Type, List<PacketListenerData>>(),
-                    TargetObject = target
-                };
-            }
-            foreach (MethodInfo method in allPacketListeners)
-            {
-                if (method.GetParameters().Length < AcceptedMethodArugments.Length)
-                {
-                    Log.GlobalWarning("Method " + method.Name + " was ignored becuase it doesn't have the proper amount of arguments.");
-                    continue;
-                }
-                bool methodArgsFailed = false;
-                for (int i = 0; i < AcceptedMethodArugments.Length; i++)
-                {
-                    Type methodType = method.GetParameters()[i].ParameterType;
-                    Type acceptedType = AcceptedMethodArugments[i];
-                    if (!methodType.IsSubclassDeep(acceptedType))
-                    {
-                        Log.GlobalWarning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
-                        methodArgsFailed = true;
-                    }
-                }
-                if (methodArgsFailed == true)
-                {
-                    continue;
-                }
-                PacketListener attribute = method.GetCustomAttribute<PacketListener>();
-                PacketListenerData data = new PacketListenerData
-                {
-                    Attribute = attribute,
-                    AttachedMethod = method
-                };
-                //Log.Debug($"Add method: {method.Name}, Listens for: {attribute.DefinedType.Name}, From Direction: {attribute.DefinedDirection}");
-                if (result.ContainsKey(attribute.DefinedType))
-                {
-                    result[attribute.DefinedType].Add(data);
-                }
-                else
-                {
-                    result.Add(attribute.DefinedType, new List<PacketListenerData> { data });
-                }
-            }
-            List<INetworkSyncVar> syncVars = new List<INetworkSyncVar>();
-            FieldInfo[] fields = target.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-            foreach (FieldInfo field in fields)
-            {
-                object value = field.GetValue(target);
-                if(!(value is INetworkSyncVar syncVar))
-                {
-                    continue;
-                }
-                if(string.IsNullOrEmpty(syncVar.Name))
-                {
-                    syncVar.Name = field.Name;
-                }
-                syncVars.Add(syncVar);
-            }
-            //PropertyInfo[] properties = target.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-            //foreach (PropertyInfo property in properties)
-            //{
-            //    object value = property.GetValue(target);
-            //    if (!(value is INetworkSyncVar syncVar))
-            //    {
-            //        continue;
-            //    }
-            //    if (string.IsNullOrEmpty(syncVar.Name))
-            //    {
-            //        syncVar.Name = property.Name;
-            //    }
-            //    syncVars.Add(syncVar);
-            //}
-            NetworkObjectData networkObjectData = new NetworkObjectData
-            {
-                Listeners = result,
-                TargetObject = target,
-                SyncVars = syncVars
-            };
-            return networkObjectData;
+            NetworkObjectData data = GetNetworkObjectData(typeOfObject);
+            return data;
         }
         #endregion
 
@@ -1122,7 +1032,7 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Unable to find the Object this packet is referencing.");
             }
             Type[] arguments = packet.Arguments.Select(x => x.Type).ToArray();
-            MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy).Where(x => x.GetCustomAttribute<NetworkInvokable>() != null && x.Name == packet.MethodName).ToArray();
+            MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invokables.Select(x => x.Item1).ToArray();
             MethodInfo method = GetNetworkInvokeMethod(methods, arguments);
             if (method == null)
             {
@@ -1237,17 +1147,12 @@ namespace SocketNetworking.Shared
             {
                 throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
             }
-            Type targetType = target.GetType();
-            if (targetType == null)
-            {
-                throw new NetworkInvocationException($"Cannot find type: '{target.GetType()}'.", new NullReferenceException());
-            }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
-            MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvokable>() != null && x.Name == methodName).ToArray();
+            MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invokables.Select(x => x.Item1).ToArray();
             MethodInfo method = GetNetworkInvokeMethod(methods, arguments);
             if (method == null)
             {
-                throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
+                throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvokable invocable = method.GetCustomAttribute<NetworkInvokable>();
             if (invocable.Direction == NetworkDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
@@ -1288,7 +1193,7 @@ namespace SocketNetworking.Shared
                 }
             }
             NetworkInvokationPacket packet = new NetworkInvokationPacket();
-            packet.TargetTypeAssmebly = Assembly.GetAssembly(targetType).GetName().FullName;
+            packet.TargetTypeAssmebly = Assembly.GetAssembly(target.GetType()).GetName().FullName;
             packet.NetworkObjectTarget = targetID;
             packet.MethodName = methodName;
             foreach (var arg in args)
@@ -1296,7 +1201,7 @@ namespace SocketNetworking.Shared
                 SocketNetworking.Shared.SerializedData data = NetworkConvert.Serialize(arg);
                 packet.Arguments.Add(data);
             }
-            packet.TargetType = targetType.FullName;
+            packet.TargetType = target.GetType().FullName;
             int callbackID = NetworkInvokations.GetFirstEmptySlot();
             NetworkInvokations.Add(callbackID);
             packet.CallbackID = callbackID;
@@ -1319,13 +1224,8 @@ namespace SocketNetworking.Shared
             {
                 throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
             }
-            Type targetType = target.GetType();
-            if (targetType == null)
-            {
-                throw new NetworkInvocationException($"Cannot find type: '{target.GetType()}'.", new NullReferenceException());
-            }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
-            MethodInfo[] methods = targetType.GetMethodsDeep(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkInvokable>() != null && x.Name == methodName).ToArray();
+            MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invokables.Select(x => x.Item1).ToArray();
             MethodInfo method = GetNetworkInvokeMethod(methods, arguments);
             if (method.ReturnType != typeof(T))
             {
@@ -1333,7 +1233,7 @@ namespace SocketNetworking.Shared
             }
             if (method == null)
             {
-                throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
+                throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvokable invocable = method.GetCustomAttribute<NetworkInvokable>();
             if (invocable.Direction == NetworkDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
@@ -1374,7 +1274,7 @@ namespace SocketNetworking.Shared
                 }
             }
             NetworkInvokationPacket packet = new NetworkInvokationPacket();
-            packet.TargetTypeAssmebly = Assembly.GetAssembly(targetType).GetName().FullName;
+            packet.TargetTypeAssmebly = Assembly.GetAssembly(target.GetType()).GetName().FullName;
             packet.NetworkObjectTarget = targetID;
             packet.MethodName = methodName;
             packet.IgnoreResult = false;
@@ -1383,7 +1283,7 @@ namespace SocketNetworking.Shared
                 SerializedData data = NetworkConvert.Serialize(arg);
                 packet.Arguments.Add(data);
             }
-            packet.TargetType = targetType.FullName;
+            packet.TargetType = target.GetType().FullName;
             int callbackID = NetworkInvokations.GetFirstEmptySlot();
             NetworkInvokations.Add(callbackID);
             packet.CallbackID = callbackID;
@@ -1448,24 +1348,15 @@ namespace SocketNetworking.Shared
         public Type TargetType;
     }
 
-    public class NetworkObjectCache
-    {
-        public Type Target;
-
-        public Dictionary<Type, List<PacketListenerData>> Listeners;
-
-        public List<ValueTuple<MethodInfo, NetworkInvokable>> Invokables;
-
-        public List<INetworkSyncVar> SyncVars;
-    }
-
     public class NetworkObjectData
     {
         public Dictionary<Type, List<PacketListenerData>> Listeners;
 
-        public List<INetworkSyncVar> SyncVars;
+        public List<FieldInfo> SyncVars;
 
-        public INetworkObject TargetObject;
+        public List<ValueTuple<MethodInfo, NetworkInvokable>> Invokables;
+
+        public Type TargetObject;
     }
 
     public class PacketListenerData

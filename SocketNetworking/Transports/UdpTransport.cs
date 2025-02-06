@@ -80,12 +80,12 @@ namespace SocketNetworking.Transports
             _emulatedMe = me;
         }
 
-        public virtual void ServerRecieve(byte[] data)
+        public virtual void ServerRecieve(byte[] data, IPEndPoint endPoint)
         {
-            _receivedBytes.Enqueue(data);
+            _receivedBytes.Enqueue((data, endPoint));
         }
 
-        ConcurrentQueue<byte[]> _receivedBytes = new ConcurrentQueue<byte[]>();
+        ConcurrentQueue<ValueTuple<byte[], IPEndPoint>> _receivedBytes = new ConcurrentQueue<ValueTuple<byte[], IPEndPoint>>();
 
         public override bool DataAvailable
         {
@@ -108,7 +108,7 @@ namespace SocketNetworking.Transports
             {
                 if(IsServerMode)
                 {
-                    return _receivedBytes.ElementAt(0).Length;
+                    return _receivedBytes.ElementAt(0).Item1.Length;
                 }
                 else
                 {
@@ -183,6 +183,7 @@ namespace SocketNetworking.Transports
             {
                 Client.Connect(hostname, port);
                 _hasConnected = true;
+                _peer = new IPEndPoint(IPAddress.Parse(hostname), port);
                 return null;
             }
             catch (Exception ex)
@@ -199,9 +200,9 @@ namespace SocketNetworking.Transports
                 {
                     //do nothing.
                 }
-                _receivedBytes.TryDequeue(out byte[] result);
-                Log.GlobalDebug(result.Length.ToString() + " ServerMode");
-                return (result, null, _emulatedPeer);
+                _receivedBytes.TryDequeue(out var result);
+                Log.GlobalDebug(result.Item1.Length.ToString() + " ServerMode");
+                return (result.Item1, null, _emulatedPeer);
             }
             else
             {
@@ -246,7 +247,6 @@ namespace SocketNetworking.Transports
                 if (IsServerMode)
                 {
                     sent = Client.Send(data, data.Length, _emulatedPeer);
-                    return null;
                 }
                 else
                 {

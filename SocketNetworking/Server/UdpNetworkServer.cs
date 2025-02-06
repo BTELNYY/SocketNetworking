@@ -60,7 +60,7 @@ namespace SocketNetworking.Server
                     client.InitRemoteClient(counter, transport);
                     AddClient(client, counter);
                     _udpClients.Add(remoteIpEndPoint, client as UdpNetworkClient);
-                    transport.ServerRecieve(recieve);
+                    transport.ServerRecieve(recieve, remoteIpEndPoint);
                     CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                     {
                         if (x == null)
@@ -80,7 +80,7 @@ namespace SocketNetworking.Server
                 {
                     UdpNetworkClient client = _udpClients[remoteIpEndPoint];
                     UdpTransport transport = client.UdpTransport;
-                    transport.ServerRecieve(recieve);
+                    transport.ServerRecieve(recieve, remoteIpEndPoint);
                 }
             }
             Log.GlobalInfo("Shutting down!");

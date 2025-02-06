@@ -23,6 +23,7 @@ namespace SocketNetworking.Shared
         EncryptionPacket,
         SyncVarUpdate,
         ObjectManage,
+        KeepAlive,
         CustomPacket,
     }
 

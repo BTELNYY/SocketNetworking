@@ -85,6 +85,10 @@ namespace SocketNetworking.Client
                 _toSendPackets.TryDequeue(out Packet packet);
                 PreparePacket(ref packet);
                 //Log.Debug($"Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
+                if(packet.Flags.HasFlag(PacketFlags.Priority))
+                {
+                    packet.Destination = UdpTransport.Peer;
+                }
                 byte[] fullBytes = SerializePacket(packet);
                 if(fullBytes == null)
                 {
@@ -93,7 +97,7 @@ namespace SocketNetworking.Client
                 }
                 try
                 {
-                    //Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                     Exception ex;
                     if (packet.Flags.HasFlag(PacketFlags.Priority))
                     {
@@ -143,7 +147,14 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            Deserialize(packet.Item1, packet.Item3);
+            try
+            {
+                Deserialize(packet.Item1, packet.Item3);
+            }
+            catch(Exception ex)
+            {
+                Log.Warning($"Malformed Packet. Length: {packet.Item1.Length}, From: {packet.Item2}");
+            }
         }
 
         public override void InitRemoteClient(int clientId, NetworkTransport socket)
@@ -157,6 +168,7 @@ namespace SocketNetworking.Client
             Random random = new Random();
             InitialUDPKey = random.Next(int.MinValue, int.MaxValue);
             ServerSendUDPInfo(InitialUDPKey);
+            Log.Debug("Send Key and ID.");
         }
 
         private void ServerSendUDPInfo(int passKey)

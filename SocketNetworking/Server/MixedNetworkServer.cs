@@ -129,17 +129,17 @@ namespace SocketNetworking.Server
                         Log.Error($"There was an error finding the client with NetID: {netId} and Passkey: {passKey}");
                         continue;
                     }
-                    UdpTransport transport = client.UdpTransport;
-                    transport.Client = udpClient;
-                    transport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
-                    _udpClients.Add(remoteIpEndPoint, client as MixedNetworkClient);
+                    client.UdpTransport = new UdpTransport();
+                    client.UdpTransport.Client = udpClient;
+                    client.UdpTransport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
+                    _udpClients.Add(remoteIpEndPoint, client);
                     //Dont read the first message since its not actually a packet, and just the client ID and the passkey.
                     _awaitingUDPConnection.Remove((MixedNetworkClient)client);
                 }
                 else
                 {
                     MixedNetworkClient client = _udpClients[remoteIpEndPoint];
-                    client.UdpTransport.ServerRecieve(recieve);
+                    client.UdpTransport.ServerRecieve(recieve, remoteIpEndPoint);
                 }
             }
             Log.Info("Shutting down UDP Server!");
