@@ -95,7 +95,16 @@ namespace SocketNetworking
         {
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
-                throw new InvalidOperationException("Only servers can spawn objects this way.");
+                if(NetworkClient.LocalClient != null && !NetworkClient.LocalClient.IsConnected)
+                {
+                    Log.GlobalInfo($"Destroying object ID {obj.NetworkID} as the connection has been stopped.");
+                    obj.Destroy();
+                    return;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Only servers can spawn objects this way.");
+                }
             }
             ObjectManagePacket packet = new ObjectManagePacket()
             {

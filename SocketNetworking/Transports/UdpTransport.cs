@@ -201,7 +201,7 @@ namespace SocketNetworking.Transports
                     //do nothing.
                 }
                 _receivedBytes.TryDequeue(out var result);
-                Log.GlobalDebug(result.Item1.Length.ToString() + " ServerMode");
+                //Log.GlobalDebug(result.Item1.Length.ToString() + " ServerMode");
                 return (result.Item1, null, _emulatedPeer);
             }
             else
@@ -213,16 +213,16 @@ namespace SocketNetworking.Transports
                     if (AllowBroadcast)
                     {
                         peer = BroadcastEndpoint;
-                        Log.GlobalDebug("Waiting for BroadcastEndpoint");
+                        //Log.GlobalDebug("Waiting for BroadcastEndpoint");
                         read = Client.Receive(ref peer);
                     }
                     else
                     {
                         peer = Peer;
-                        Log.GlobalDebug($"Waiting for RemoteEndPoint. EndPoint: ${peer.Address}:{peer.Port}");
+                        //Log.GlobalDebug($"Waiting for RemoteEndPoint. EndPoint: ${peer.Address}:{peer.Port}");
                         read = Client.Receive(ref peer);
                     }
-                    Log.GlobalDebug(read.Length.ToString() + " ClientMode");
+                    //Log.GlobalDebug(read.Length.ToString() + " ClientMode");
                     return (read, null, peer);
                 }
                 catch (Exception ex)
@@ -252,7 +252,7 @@ namespace SocketNetworking.Transports
                 {
                     sent = Client.Send(data, data.Length, _peer);
                 }
-                Log.GlobalDebug("Bytes Sent: " + sent);
+                //Log.GlobalDebug("Bytes Sent: " + sent);
                 return null;
             }
             catch(Exception ex)

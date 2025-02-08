@@ -115,31 +115,49 @@ namespace SocketNetworking.Server
                 {
                     continue;
                 }
-                byte[] recieve = udpClient.Receive(ref listener);
-                IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
-                if (!_udpClients.ContainsKey(remoteIpEndPoint))
+                try
                 {
-                    ByteReader reader = new ByteReader(recieve);
-                    int netId = reader.ReadInt();
-                    int passKey = reader.ReadInt();
-                    Log.Info($"Connecting client {netId} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on UDP.");
-                    MixedNetworkClient client = _awaitingUDPConnection.Find(x => x.InitialUDPKey == passKey && x.ClientID == netId);
-                    if(client == default(NetworkClient))
+                    byte[] recieve = udpClient.Receive(ref listener);
+                    IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
+                    if (!_udpClients.ContainsKey(remoteIpEndPoint))
                     {
-                        Log.Error($"There was an error finding the client with NetID: {netId} and Passkey: {passKey}");
-                        continue;
+                        ByteReader reader = new ByteReader(recieve);
+                        int netId = reader.ReadInt();
+                        int passKey = reader.ReadInt();
+                        Log.Info($"Connecting client {netId} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on UDP.");
+                        MixedNetworkClient client = _awaitingUDPConnection.Find(x => x.InitialUDPKey == passKey && x.ClientID == netId);
+                        if (client == default(NetworkClient))
+                        {
+                            Log.Error($"There was an error finding the client with NetID: {netId} and Passkey: {passKey}");
+                            continue;
+                        }
+                        client.UdpTransport = new UdpTransport();
+                        client.UdpTransport.Client = udpClient;
+                        client.UdpTransport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
+                        _udpClients.Add(remoteIpEndPoint, client);
+                        //Dont read the first message since its not actually a packet, and just the client ID and the passkey.
+                        _awaitingUDPConnection.Remove((MixedNetworkClient)client);
                     }
-                    client.UdpTransport = new UdpTransport();
-                    client.UdpTransport.Client = udpClient;
-                    client.UdpTransport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
-                    _udpClients.Add(remoteIpEndPoint, client);
-                    //Dont read the first message since its not actually a packet, and just the client ID and the passkey.
-                    _awaitingUDPConnection.Remove((MixedNetworkClient)client);
+                    else
+                    {
+                        MixedNetworkClient client = _udpClients[remoteIpEndPoint];
+                        client.UDPFailures = 0;
+                        client.UdpTransport.ServerRecieve(recieve, remoteIpEndPoint);
+                    }
                 }
-                else
+                catch(Exception ex)
                 {
-                    MixedNetworkClient client = _udpClients[remoteIpEndPoint];
-                    client.UdpTransport.ServerRecieve(recieve, remoteIpEndPoint);
+                    //Log.Error(ex.ToString());
+                    if(_udpClients.ContainsKey(listener))
+                    {
+                        MixedNetworkClient client = _udpClients[listener];
+                        if(client.UDPFailures > 5)
+                        {
+                            client.Disconnect("UDP errors reached limit, You have failed to transmit valid packets.");
+                            continue;
+                        }
+                        client.UDPFailures++;
+                    }
                 }
             }
             Log.Info("Shutting down UDP Server!");

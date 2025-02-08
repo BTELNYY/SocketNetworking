@@ -1015,7 +1015,7 @@ namespace SocketNetworking.Client
                 byte[] fullBytes = SerializePacket(packet);
                 try
                 {
-                    Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    //Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                     Exception ex = Transport.Send(fullBytes, packet.Destination);
                     if (ex != null)
                     {

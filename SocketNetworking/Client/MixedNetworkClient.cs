@@ -22,6 +22,8 @@ namespace SocketNetworking.Client
             _networkEncryptionManager = new NetworkEncryptionManager();
         }
 
+        public int UDPFailures = 0;
+
         public int InitialUDPKey = 0;
 
         public override NetworkTransport Transport
@@ -97,7 +99,7 @@ namespace SocketNetworking.Client
                 }
                 try
                 {
-                    Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    //Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                     Exception ex;
                     if (packet.Flags.HasFlag(PacketFlags.Priority))
                     {
@@ -168,7 +170,7 @@ namespace SocketNetworking.Client
             Random random = new Random();
             InitialUDPKey = random.Next(int.MinValue, int.MaxValue);
             ServerSendUDPInfo(InitialUDPKey);
-            Log.Debug("Send Key and ID.");
+            //Log.Debug("Send Key and ID.");
         }
 
         private void ServerSendUDPInfo(int passKey)

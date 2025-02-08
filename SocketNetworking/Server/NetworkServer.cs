@@ -229,38 +229,46 @@ namespace SocketNetworking.Server
 
         protected static void AddClient(NetworkClient client, int clientId)
         {
-            if (_clients.ContainsKey(clientId))
+            lock(clientLock)
             {
-                Log.Error("Something really got fucked up!");
-                //we throw becuase the whole server will die if we cant add the client.
-                throw new InvalidOperationException("Client ID to add already taken!");
-            }
-            else
-            {
-                NetworkClient cursedClient = (NetworkClient)Convert.ChangeType(client, ClientType);
-                _clients.Add(clientId, cursedClient);
-                ClientHandler handler = handlers.Next();
-                handler.AddClient(cursedClient);
-                //Log.Debug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
+                if (_clients.ContainsKey(clientId))
+                {
+                    Log.Error("Something really got fucked up!");
+                    //we throw becuase the whole server will die if we cant add the client.
+                    throw new InvalidOperationException("Client ID to add already taken!");
+                }
+                else
+                {
+                    NetworkClient cursedClient = (NetworkClient)Convert.ChangeType(client, ClientType);
+                    _clients.Add(clientId, cursedClient);
+                    ClientHandler handler = handlers.Next();
+                    handler.AddClient(cursedClient);
+                    //Log.Debug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
+                }
             }
         }
 
+        static object clientLock = new object();
+
         public static void RemoveClient(int clientId)
         {
-            if (_clients.ContainsKey(clientId))
+            lock(clientLock)
             {
-                ClientDisconnected?.Invoke(clientId);
-                ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(_clients[clientId]));
-                if(handler == null)
+                if (_clients.ContainsKey(clientId))
                 {
-                    Log.Error("Unable to find the handler responsible for Client ID " + clientId);
+                    ClientDisconnected?.Invoke(clientId);
+                    ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(_clients[clientId]));
+                    if (handler == null)
+                    {
+                        Log.Error("Unable to find the handler responsible for Client ID " + clientId);
+                    }
+                    handler.RemoveClient(_clients[clientId]);
+                    _clients.Remove(clientId);
                 }
-                handler.RemoveClient(_clients[clientId]);
-                _clients.Remove(clientId);
-            }
-            else
-            {
-                Log.Warning($"Can't remove client ID {clientId}, not found!");
+                else
+                {
+                    Log.Warning($"Can't remove client ID {clientId}, not found!");
+                }
             }
         }
 
