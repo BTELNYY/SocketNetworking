@@ -243,7 +243,7 @@ namespace SocketNetworking.Server
                     _clients.Add(clientId, cursedClient);
                     ClientHandler handler = NextHanlder();
                     handler.AddClient(cursedClient);
-                    Log.Debug($"Handler Client count: {handler.CurrentClientCount}");
+                    //Log.Debug($"Handler Client count: {handler.CurrentClientCount}");
                     //Log.Debug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
                 }
             }
