@@ -38,8 +38,8 @@ namespace SocketNetworking.ExampleServer
             //stopwatch.Start();
             while (true)
             {
-                //break;
-                //Thread.Sleep(1000);
+                break;
+                Thread.Sleep(1000);
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
                     if (c is TestClient client && c.Ready)

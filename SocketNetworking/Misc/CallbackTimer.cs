@@ -24,6 +24,14 @@ namespace SocketNetworking.Misc
             _data = data;
         }
 
+        ~CallbackTimer() 
+        {
+            _thread?.Abort();
+            _thread = null;
+            _callback = null;
+            _data = default(T);
+        }
+
         public void Start()
         {
             if(_thread != null)
@@ -48,9 +56,9 @@ namespace SocketNetworking.Misc
         {
             Thread.Sleep(TimeSpan.FromSeconds(_delay));
             _callback.Invoke(_data);
+            _thread.Abort();
             _thread = null;
             _data = default;
-            _delay = 0f;
             _callback = null;
         }
     }

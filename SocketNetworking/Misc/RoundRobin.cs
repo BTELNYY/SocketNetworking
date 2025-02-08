@@ -17,7 +17,7 @@ namespace SocketNetworking.Misc
         {
             get
             {
-                return typeof(T).IsSubclassDeep(typeof(IRoundRobinData<T>));
+                return typeof(T).GetInterfaces().Any(x => x.GetType() == typeof(IRoundRobinData<T>));
             }
         }
 
@@ -30,6 +30,7 @@ namespace SocketNetworking.Misc
                 {
                     _list.Sort();
                     _nextIndex = 0;
+                    return _list[_nextIndex];
                 }
                 IRoundRobinData<T> robinData;
                 while (true)
@@ -49,7 +50,6 @@ namespace SocketNetworking.Misc
                 {
                     throw new InvalidOperationException("No suitable value found.");
                 }
-
                 return (T)robinData;
             }
             else
