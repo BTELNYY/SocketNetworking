@@ -73,9 +73,7 @@
     <Compile Include="Exceptions\NetworkInvocationException.cs" />
     <Compile Include="Exceptions\NetworkSerializationException.cs" />
     <Compile Include="Misc\ClientHandler.cs" />
-    <Compile Include="Misc\IRoundRobinData.cs" />
     <Compile Include="Misc\ObjectPool.cs" />
-    <Compile Include="Misc\RoundRobin.cs" />
     <Compile Include="NetworkObjectExtensions.cs" />
     <Compile Include="PacketSystem\Packets\KeepAlivePacket.cs" />
     <Compile Include="PacketSystem\Packets\ObjectManagePacket.cs" />
