@@ -12,6 +12,45 @@
  * The `NetworkClient` class is only known to the local client, and the server (which knows all of them). So on the server, you can find any client you want do whatever.
  * Packets are sent and recieved on seperate threads. On the local client, one thread is used to send packets, and another to recieve and handle them. This creates an issue if your application does not support multithreading! The fix is simple, use the `NetworkClient.ManualPacketHandle` property. this will prevent the Client recieve thread from handling the packet for you, it will simply queue it. On the server, a thread pool is used, a single thread handles reading and writing (recieving and sending) packets for multiple clients. You can always increase the amount of threads you use, however this will result in the program eating resources.
 
+## Features
+
+### Security
+
+#### Server-Client Encryption
+ * All communication between the server and client is encrypted before the `NetworkClient.Ready` state is set to true.
+ * You can make encryption optional or disable it with the `NetworkServerConfig.EncryptionMode` enum. The default is `Required`. `Request` will allow the client to request encryption, and `Disabled` will prevent encryption (Not recommended)
+ * The encryption system generates unique public/private keys per client as well as unique symmetrical keys per client. Both servers and clients generate keys (for those who want end-to-end encryption)
+ * Packet bodies are encrypted, but not the packet header. This contians very limited information (such as the packet type and destination object ID, as well as the sender and reciever, althought these can be changed before sending the packet.)
+ * Both UDP and TCP traffic is encrypted.
+
+#### Permissions/Client Access
+ * You can control what clients can see what objects, and who can change values or call Networked methods.
+ * See `INetworkObject` for details.
+ * All actions are validated locally and then on the remote reciever.
+
+### Communication/Ease of use
+
+#### SyncVars, NetworkObjects and NetworkInvoke
+ * All of these will be explained later, but in short hand, these allow you to write less netcode and more application code.
+ * NetworkInvoke is a RPC like system to call methods across the network.
+ * SyncVars allow you to synchronize value changes
+ * NetworkObjects allow you to organize and spawn in objects as needed.
+
+### Performance
+
+#### Caching
+ * All reflection targets are cached before use.
+ * Strings which are known on both clients (type names, assembly names) are hashed to avoid sending long strings
+ * All `INetworkObject` events are called in code (without reflection) to avoid delays
+ * Packet reading is done in a way to avoid waiting for the stream unless there actually is data to read, so the method is only blocking when a packet can be read.
+
+#### Threading
+ * Clients use 2 threads for Netcode, one to read, one to write
+ * Writiing is done via a queue on its own thread, so its non-blocking to you.
+ * Reading is done via a seperate queue, and optionally can be handled manually by your application via `NetworkClient.ManualPacketHandle`.
+ * Servers handle clients in a round robin thread configuration, where each thread handles a few clients, this can be changed in `NetworkServerConfig`.
+ * Server threads are allocated to ensure all threads have a similar amount of clients, as to avoid useless threads.
+
 ## Getting Started
  * The best project setup is 3 Projects: The Client project, the shared/library project, and the server project.
  * The client should handle your client code, UI, etc.
@@ -85,3 +124,4 @@
 
 #### A PacketListener
 ![image](https://github.com/user-attachments/assets/9ae43a66-cb65-4c04-9b76-50ca7e195d39)
+
