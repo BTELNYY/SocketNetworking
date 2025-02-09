@@ -13,7 +13,7 @@ namespace SocketNetworking.Server
         /// <summary>
         /// The Servers <see cref="ServerEncryptionMode"/>.
         /// </summary>
-        public ServerEncryptionMode EncryptionMode { get; set; } =  ServerEncryptionMode.Request;
+        public ServerEncryptionMode EncryptionMode { get; set; } =  ServerEncryptionMode.Required;
 
         /// <summary>
         /// Should the server accept the connection, then instantly disconnect the client with a message?
