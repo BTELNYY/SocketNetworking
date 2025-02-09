@@ -127,7 +127,17 @@ namespace SocketNetworking.Shared
 
         private static ConcurrentDictionary<ulong, Assembly> assemblyNames = new ConcurrentDictionary<ulong, Assembly>();
 
-        public static Assembly GetFromHash(ulong hash)
+        internal static bool HasAssemblyHash(Assembly assembly)
+        {
+            ulong hash = assembly.FullName.GetULongStringHash();
+            if (!assemblyNames.ContainsKey(hash))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        internal static Assembly GetAssemblyFromHash(ulong hash)
         {
             if(assemblyNames.ContainsKey(hash))
             {
@@ -136,7 +146,7 @@ namespace SocketNetworking.Shared
             return null;
         }
 
-        public static ulong GetHashFromAssembly(Assembly assembly)
+        internal static ulong GetHashFromAssembly(Assembly assembly)
         {
             ulong hash = assembly.FullName.GetULongStringHash();
             if(!assemblyNames.ContainsKey(hash))

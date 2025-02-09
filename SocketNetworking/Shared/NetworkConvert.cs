@@ -12,6 +12,7 @@ using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using System.CodeDom;
+using System.Configuration.Assemblies;
 
 namespace SocketNetworking.Shared
 {
@@ -461,13 +462,24 @@ namespace SocketNetworking.Shared
 
         private Assembly asmCache;
 
+        private ulong AssemblyHash;
+
+        public bool Hashed;
+
         public Type Type
         {
             get
             {
                 if(asmCache == null)
                 {
-                    asmCache = Assembly.Load(Assmebly);
+                    if(Hashed)
+                    {
+                        asmCache = NetworkManager.GetAssemblyFromHash(AssemblyHash);
+                    }
+                    else
+                    {
+                        asmCache = Assembly.Load(Assmebly);
+                    }
                 }
                 return asmCache.GetType(TypeFullName);
             }
@@ -476,6 +488,11 @@ namespace SocketNetworking.Shared
                 TypeFullName = value.FullName;
                 asmCache = Assembly.GetAssembly(value);
                 Assmebly = asmCache.GetName().FullName;
+                if(NetworkManager.HasAssemblyHash(asmCache))
+                {
+                    Hashed = true;
+                    AssemblyHash = NetworkManager.GetHashFromAssembly(asmCache);
+                }
             }
         }
 
@@ -487,7 +504,15 @@ namespace SocketNetworking.Shared
         {
             ByteReader reader = new ByteReader(data);
             TypeFullName = reader.ReadString();
-            Assmebly = reader.ReadString();
+            Hashed = reader.ReadBool();
+            if (Hashed)
+            {
+                AssemblyHash = reader.ReadULong();
+            }
+            else
+            {
+                Assmebly = reader.ReadString();
+            }
             DataNull = reader.ReadBool();
             Data = reader.ReadByteArray();
             return reader.ReadBytes;
@@ -506,7 +531,15 @@ namespace SocketNetworking.Shared
                 Type = typeof(void);
             }
             writer.WriteString(TypeFullName);
-            writer.WriteString(Assmebly);
+            writer.WriteBool(Hashed);
+            if(Hashed)
+            {
+                writer.WriteULong(AssemblyHash);
+            }
+            else
+            {
+                writer.WriteString(Assmebly);
+            }
             if(Data == null)
             {
                 writer.WriteBool(true);

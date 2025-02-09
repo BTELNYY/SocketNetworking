@@ -159,6 +159,8 @@ namespace SocketNetworking.Client
             }
         }
 
+        bool _udpConnected = false;
+
         public override void InitRemoteClient(int clientId, NetworkTransport socket)
         {
             base.ClientIdUpdated += MixedNetworkClient_ClientIdUpdated;
@@ -167,10 +169,14 @@ namespace SocketNetworking.Client
 
         private void MixedNetworkClient_ClientIdUpdated()
         {
+            if (_udpConnected)
+            {
+                return;
+            }
             Random random = new Random();
             InitialUDPKey = random.Next(int.MinValue, int.MaxValue);
             ServerSendUDPInfo(InitialUDPKey);
-            //Log.Debug("Send Key and ID.");
+            _udpConnected = true;
         }
 
         private void ServerSendUDPInfo(int passKey)
@@ -181,6 +187,10 @@ namespace SocketNetworking.Client
         [NetworkInvokable(NetworkDirection.Server)]
         private void ClientRecieveUDPInfo(int passKey)
         {
+            if(_udpConnected)
+            {
+                return;
+            }
             Exception ex = UdpTransport.Connect(Transport.PeerAddress.ToString(), Transport.Peer.Port);
             if (ex != null)
             {
@@ -188,6 +198,7 @@ namespace SocketNetworking.Client
             }
             else
             {
+                _udpConnected = true;
                 InitialUDPKey = passKey;
                 ByteWriter writer = new ByteWriter();
                 writer.WriteInt(ClientID);
