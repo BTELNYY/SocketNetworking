@@ -6,6 +6,7 @@ using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -124,6 +125,27 @@ namespace SocketNetworking.Shared
 
         public static Dictionary<Type, Type> TypeToTypeWrapper = new Dictionary<Type, Type>();
 
+        private static ConcurrentDictionary<ulong, Assembly> assemblyNames = new ConcurrentDictionary<ulong, Assembly>();
+
+        public static Assembly GetFromHash(ulong hash)
+        {
+            if(assemblyNames.ContainsKey(hash))
+            {
+                return assemblyNames[hash];
+            }
+            return null;
+        }
+
+        public static ulong GetHashFromAssembly(Assembly assembly)
+        {
+            ulong hash = assembly.FullName.GetULongStringHash();
+            if(!assemblyNames.ContainsKey(hash))
+            {
+                assemblyNames.TryAdd(hash, assembly);
+            }
+            return hash;
+        }
+
         /// <summary>
         /// Imports the target assembly, caching: <see cref="ITypeWrapper{T}"/>s, any methods with <see cref="NetworkInvokable"/> (which are on a class with <see cref="INetworkObject"/> implemented) and any <see cref="CustomPacket"/>s  
         /// </summary>
@@ -141,6 +163,7 @@ namespace SocketNetworking.Shared
                 }
                 PreCache.Add(data);
             }
+            GetHashFromAssembly(target);
         }
 
         /// <summary>

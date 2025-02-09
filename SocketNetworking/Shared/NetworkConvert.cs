@@ -452,7 +452,7 @@ namespace SocketNetworking.Shared
             return Deserialize<T>(sData, out int read);
         }
     }
-
+    
     public struct SerializedData : IPacketSerializable
     {
         private string TypeFullName;

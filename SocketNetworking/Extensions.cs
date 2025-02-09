@@ -140,6 +140,17 @@ namespace SocketNetworking
             return sb.ToString();
         }
 
+        public static ulong GetULongStringHash(this string read)
+        {
+            ulong hashedValue = 3074457345618258791ul;
+            for (int i = 0; i < read.Length; i++)
+            {
+                hashedValue += read[i];
+                hashedValue *= 3074457345618258799ul;
+            }
+            return hashedValue;
+        }
+
         public static byte[] GetHash(string inputString)
         {
             using (HashAlgorithm algorithm = SHA256.Create())
