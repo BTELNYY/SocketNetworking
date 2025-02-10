@@ -9,7 +9,7 @@
 ## Understanding the design
  * This is a complicated library, and you should understand how its meant to be used! The library is designed for Server/Client communication, so you should understand how to treat both sides of the connection. (Tip: If you are ever lost, `NetworkManager.WhereAmI` can help you!)
  * Servers are authoritive by default, meaning they have all the permission in the library. You can delegate permission to clients via various methods for the various functions in the library.
- * The `NetworkClient` class is only known to the local client, and the server (which knows all of them). So on the server, you can find any client you want do whatever.
+ * The `NetworkClient` class is only known to the local client, and the server (which knows all of them). So on the server, you can find any client you want.
  * Packets are sent and recieved on seperate threads. On the local client, one thread is used to send packets, and another to recieve and handle them. This creates an issue if your application does not support multithreading! The fix is simple, use the `NetworkClient.ManualPacketHandle` property. this will prevent the Client recieve thread from handling the packet for you, it will simply queue it. On the server, a thread pool is used, a single thread handles reading and writing (recieving and sending) packets for multiple clients. You can always increase the amount of threads you use, however this will result in the program eating resources.
 
 ## Features
@@ -19,7 +19,7 @@
 #### Server-Client Encryption
  * All communication between the server and client is encrypted before the `NetworkClient.Ready` state is set to true.
  * You can make encryption optional or disable it with the `NetworkServerConfig.EncryptionMode` enum. The default is `Required`. `Request` will allow the client to request encryption, and `Disabled` will prevent encryption (Not recommended)
- * The encryption system generates unique public/private keys per client as well as unique symmetrical keys per client. Both servers and clients generate keys (for those who want end-to-end encryption)
+ * The encryption system generates unique public/private keys per client as well as unique symmetrical keys per client. Both servers and clients generate keys (for those who want end-to-end encryption) (Better transport security to prevent MITM will be added soon.)
  * Packet bodies are encrypted, but not the packet header. This contians very limited information (such as the packet type and destination object ID, as well as the sender and reciever, althought these can be changed before sending the packet.)
  * Both UDP and TCP traffic is encrypted.
 
