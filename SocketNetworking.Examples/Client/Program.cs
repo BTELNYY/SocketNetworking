@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking;
-using SocketNetworking.ExampleSharedData;
+using SocketNetworking.Example.SharedData;
 using SocketNetworking.Transports;
 using SocketNetworking.Shared;
 using SocketNetworking.Client;
 
-namespace SocketNetworking.ExampleClient
+namespace SocketNetworking.Example.Client
 {
     public class Program
     {

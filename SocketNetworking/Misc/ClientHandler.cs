@@ -9,7 +9,7 @@ using SocketNetworking.Server;
 
 namespace SocketNetworking.Misc
 {
-    public class ClientHandler : IRoundRobinData<ClientHandler>
+    public class ClientHandler
     {
         public Thread Thread { get; }
 
@@ -31,10 +31,6 @@ namespace SocketNetworking.Misc
                 return Clients.Count;
             }
         }
-
-        public bool AllowChoosing => CurrentClientCount < NetworkServer.Config.ClientsPerThread;
-
-        public bool AllowSorting => true;
 
         public void AddClient(NetworkClient client)
         {
@@ -92,11 +88,6 @@ namespace SocketNetworking.Misc
                     }
                 }
             }
-        }
-
-        public int CompareTo(ClientHandler other)
-        {
-            return CurrentClientCount - other.CurrentClientCount;
         }
     }
 }

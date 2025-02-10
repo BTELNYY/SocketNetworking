@@ -6,13 +6,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking;
-using SocketNetworking.ExampleSharedData;
+using SocketNetworking.Example.SharedData;
 using SocketNetworking.Misc;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 
-namespace SocketNetworking.ExampleServer
+namespace SocketNetworking.Example.Server
 {
     public class Program
     {
@@ -47,8 +47,8 @@ namespace SocketNetworking.ExampleServer
                         client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
                         ExampleCustomPacket packet = new ExampleCustomPacket();
                         packet.Data = "test";
-                        packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, false);
-                        c.Send(packet);
+                        packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
+                        //c.Send(packet);
                     }
                     continue;
                     if (c.IsTransportConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)

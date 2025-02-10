@@ -897,7 +897,10 @@ namespace SocketNetworking.Client
         /// <param name="priority"></param>
         public void Send(Packet packet, bool priority)
         {
-            packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
+            if (priority)
+            {
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
+            }
             Send(packet);
         }
 
@@ -1208,7 +1211,14 @@ namespace SocketNetworking.Client
                 Log.Warning("Transport recieved a null byte array.");
                 return;
             }
-            Deserialize(packet.Item1, packet.Item3);
+            try
+            {
+                Deserialize(packet.Item1, packet.Item3);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"Malformed Packet. Size: {packet.Item1.Length}");
+            }
             //if(!Transport.DataAvailable)
             //{
             //    //Log.Debug("No data available.");
@@ -1847,9 +1857,6 @@ namespace SocketNetworking.Client
             public PacketHeader Header;
             public byte[] Data;
         }
-
-
-
     }
 
     public struct NetworkErrorData

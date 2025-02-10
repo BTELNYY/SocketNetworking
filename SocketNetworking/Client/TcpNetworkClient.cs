@@ -59,21 +59,5 @@ namespace SocketNetworking.Client
                 TcpTransport.Client.NoDelay = value;
             }
         }
-
-        public override void Init()
-        {
-            base.Init();
-            buffer = new byte[Packet.MaxPacketSize];
-            fillSize = 0;
-        }
-
-        byte[] buffer = new byte[Packet.MaxPacketSize];
-
-        int fillSize = 0;
-
-        protected override void RawReader()
-        {
-            base.RawReader();
-        }
     }
 }

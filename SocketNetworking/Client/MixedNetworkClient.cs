@@ -22,6 +22,8 @@ namespace SocketNetworking.Client
             _networkEncryptionManager = new NetworkEncryptionManager();
         }
 
+        public int UDPFailures = 0;
+
         public int InitialUDPKey = 0;
 
         public override NetworkTransport Transport
@@ -85,6 +87,10 @@ namespace SocketNetworking.Client
                 _toSendPackets.TryDequeue(out Packet packet);
                 PreparePacket(ref packet);
                 //Log.Debug($"Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
+                if(packet.Flags.HasFlag(PacketFlags.Priority))
+                {
+                    packet.Destination = UdpTransport.Peer;
+                }
                 byte[] fullBytes = SerializePacket(packet);
                 if(fullBytes == null)
                 {
@@ -143,8 +149,17 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            Deserialize(packet.Item1, packet.Item3);
+            try
+            {
+                Deserialize(packet.Item1, packet.Item3);
+            }
+            catch(Exception ex)
+            {
+                Log.Warning($"Malformed Packet. Length: {packet.Item1.Length}, From: {packet.Item2}");
+            }
         }
+
+        bool _udpConnected = false;
 
         public override void InitRemoteClient(int clientId, NetworkTransport socket)
         {
@@ -154,9 +169,14 @@ namespace SocketNetworking.Client
 
         private void MixedNetworkClient_ClientIdUpdated()
         {
+            if (_udpConnected)
+            {
+                return;
+            }
             Random random = new Random();
             InitialUDPKey = random.Next(int.MinValue, int.MaxValue);
             ServerSendUDPInfo(InitialUDPKey);
+            _udpConnected = true;
         }
 
         private void ServerSendUDPInfo(int passKey)
@@ -167,6 +187,10 @@ namespace SocketNetworking.Client
         [NetworkInvokable(NetworkDirection.Server)]
         private void ClientRecieveUDPInfo(int passKey)
         {
+            if(_udpConnected)
+            {
+                return;
+            }
             Exception ex = UdpTransport.Connect(Transport.PeerAddress.ToString(), Transport.Peer.Port);
             if (ex != null)
             {
@@ -174,6 +198,7 @@ namespace SocketNetworking.Client
             }
             else
             {
+                _udpConnected = true;
                 InitialUDPKey = passKey;
                 ByteWriter writer = new ByteWriter();
                 writer.WriteInt(ClientID);

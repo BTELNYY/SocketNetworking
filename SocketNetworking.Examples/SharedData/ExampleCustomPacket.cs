@@ -5,7 +5,7 @@ using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 
-namespace SocketNetworking.ExampleSharedData
+namespace SocketNetworking.Example.SharedData
 {
     [PacketDefinition]
     public class ExampleCustomPacket : CustomPacket

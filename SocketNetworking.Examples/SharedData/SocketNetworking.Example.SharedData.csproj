@@ -7,8 +7,8 @@
     <ProjectGuid>{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SocketNetworking.ExampleSharedData</RootNamespace>
-    <AssemblyName>SocketNetworking.ExampleSharedData</AssemblyName>
+    <RootNamespace>SocketNetworking.Example.SharedData</RootNamespace>
+    <AssemblyName>SocketNetworking.Example.SharedData</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -70,7 +70,7 @@
     <Compile Include="TestClient.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SocketNetworking\SocketNetworking.csproj">
+    <ProjectReference Include="..\..\SocketNetworking\SocketNetworking.csproj">
       <Project>{ab97887e-ef11-4ce3-83b6-7e91456cf035}</Project>
       <Name>SocketNetworking</Name>
     </ProjectReference>

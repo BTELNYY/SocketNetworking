@@ -76,18 +76,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SocketNetworking.ExampleClient\SocketNetworking.ExampleClient.csproj">
-      <Project>{604c49d0-f0d5-4ca4-a627-5b47df2d76a3}</Project>
-      <Name>SocketNetworking.ExampleClient</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SocketNetworking.ExampleServer\SocketNetworking.ExampleServer.csproj">
-      <Project>{f8cbb59a-172d-4bf6-bce7-9d53154f61b3}</Project>
-      <Name>SocketNetworking.ExampleServer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SocketNetworking.ExampleSharedData\SocketNetworking.ExampleSharedData.csproj">
-      <Project>{8d731ee2-ae7e-48a8-9a26-8f370d9fa1a2}</Project>
-      <Name>SocketNetworking.ExampleSharedData</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SocketNetworking.UnityEngine\SocketNetworking.UnityEngine.csproj">
       <Project>{b7a10214-8a6c-480f-b411-0508060c352d}</Project>
       <Name>SocketNetworking.UnityEngine</Name>
