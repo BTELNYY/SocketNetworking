@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F8CBB59A-172D-4BF6-BCE7-9D53154F61B3}</ProjectGuid>
+    <ProjectGuid>{604C49D0-F0D5-4CA4-A627-5B47DF2D76A3}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>SocketNetworking.ExampleServer</RootNamespace>
-    <AssemblyName>SocketNetworking.ExampleServer</AssemblyName>
+    <RootNamespace>SocketNetworking.Example.Client</RootNamespace>
+    <AssemblyName>SocketNetworking.Example.Client</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -70,11 +70,11 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SocketNetworking.ExampleSharedData\SocketNetworking.ExampleSharedData.csproj">
+    <ProjectReference Include="..\SharedData\SocketNetworking.Example.SharedData.csproj">
       <Project>{8d731ee2-ae7e-48a8-9a26-8f370d9fa1a2}</Project>
-      <Name>SocketNetworking.ExampleSharedData</Name>
+      <Name>SocketNetworking.Example.SharedData</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SocketNetworking\SocketNetworking.csproj">
+    <ProjectReference Include="..\..\SocketNetworking\SocketNetworking.csproj">
       <Project>{ab97887e-ef11-4ce3-83b6-7e91456cf035}</Project>
       <Name>SocketNetworking</Name>
     </ProjectReference>

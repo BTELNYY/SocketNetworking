@@ -8,7 +8,7 @@ using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Shared;
 
-namespace SocketNetworking.ExampleSharedData
+namespace SocketNetworking.Example.SharedData
 {
     public class NetworkObjectTest : NetworkAvatarBase
     {

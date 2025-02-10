@@ -8,7 +8,7 @@ using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 
-namespace SocketNetworking.ExampleSharedData
+namespace SocketNetworking.Example.SharedData
 {
     public class TestClient : MixedNetworkClient
     {

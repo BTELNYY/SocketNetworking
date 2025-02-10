@@ -7,7 +7,7 @@ using SocketNetworking.Attributes;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem.Packets;
 
-namespace SocketNetworking.ExampleSharedData
+namespace SocketNetworking.Example.SharedData
 {
     [PacketDefinition]
     public class SpamPacketTesting : CustomPacket

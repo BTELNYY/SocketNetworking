@@ -6,13 +6,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking;
-using SocketNetworking.ExampleSharedData;
+using SocketNetworking.Example.SharedData;
 using SocketNetworking.Misc;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 
-namespace SocketNetworking.ExampleServer
+namespace SocketNetworking.Example.Server
 {
     public class Program
     {
