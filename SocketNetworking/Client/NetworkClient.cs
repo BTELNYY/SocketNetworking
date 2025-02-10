@@ -572,6 +572,11 @@ namespace SocketNetworking.Client
             timer.Start();
         }
 
+        protected virtual void DoSSLUpgrade(ServerDataPacket packet)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
         #region Init
@@ -1679,6 +1684,10 @@ namespace SocketNetworking.Client
                         built += $"ID: {i}, Fullname: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
                     }
                     Log.Info("Finished re-writing dynamic packets: " + built);
+                    if(serverDataPacket.UpgradeToSSL)
+                    {
+                        DoSSLUpgrade(serverDataPacket);
+                    }
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();

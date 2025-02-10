@@ -15,11 +15,13 @@ namespace SocketNetworking.PacketSystem.Packets
     {
         public sealed override PacketType Type => PacketType.ServerData;
 
-        public int YourClientID = 0;
+        public int YourClientID { get; set; } = 0;
 
-        public ProtocolConfiguration Configuration = new ProtocolConfiguration();
+        public ProtocolConfiguration Configuration { get; set; } = new ProtocolConfiguration();
 
-        public Dictionary<int, string> CustomPacketAutoPairs = new Dictionary<int, string>();
+        public Dictionary<int, string> CustomPacketAutoPairs { get; set; } = new Dictionary<int, string>();
+
+        public bool UpgradeToSSL { get; set; } = false;
 
         public override ByteWriter Serialize()
         {
@@ -28,6 +30,7 @@ namespace SocketNetworking.PacketSystem.Packets
             writer.WritePacketSerialized<ProtocolConfiguration>(Configuration);
             SerializableDictionary<int, string> dict = new SerializableDictionary<int, string>(CustomPacketAutoPairs);
             writer.WritePacketSerialized<SerializableDictionary<string, int>>(dict);
+            writer.WriteBool(UpgradeToSSL);
             return writer;
         }
 
@@ -37,6 +40,7 @@ namespace SocketNetworking.PacketSystem.Packets
             YourClientID = reader.ReadInt();
             Configuration = reader.ReadPacketSerialized<ProtocolConfiguration>();
             CustomPacketAutoPairs = reader.ReadPacketSerialized<SerializableDictionary<int, string>>().ContainedDict;
+            UpgradeToSSL = reader.ReadBool();
             return reader;
         }
     }

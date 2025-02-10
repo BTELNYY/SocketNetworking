@@ -1,4 +1,5 @@
 ﻿using SocketNetworking.PacketSystem;
+using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Shared;
 using SocketNetworking.Transports;
 using System;
@@ -58,6 +59,11 @@ namespace SocketNetworking.Client
             {
                 TcpTransport.Client.NoDelay = value;
             }
+        }
+
+        protected override void DoSSLUpgrade(ServerDataPacket packet)
+        {
+            
         }
     }
 }

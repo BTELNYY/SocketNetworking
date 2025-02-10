@@ -44,6 +44,11 @@ namespace SocketNetworking.Transports
 
         private SslStream SslStream;
 
+        public void UpgradeToSSL()
+        {
+
+        }
+
         public Stream Stream
         {
             get
@@ -91,7 +96,6 @@ namespace SocketNetworking.Transports
         {
             try
             {
-                //Stream.Read(Buffer, offset, size);
                 lock(_lock)
                 {
                     Buffer = ReceiveInternal();
