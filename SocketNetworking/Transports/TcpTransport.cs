@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -52,6 +53,10 @@ namespace SocketNetworking.Transports
                 SslStream = new SslStream(Stream, false, ClientVerifyCert);
                 SslStream.AuthenticateAsClient(hostname);
             }
+            catch (AuthenticationException ex)
+            {
+                return false;
+            }
             catch (Exception ex)
             {
                 Log.GlobalError("SSL Auth failure! Error: " + ex.ToString());
@@ -67,6 +72,10 @@ namespace SocketNetworking.Transports
             {
                 SslStream = new SslStream(Stream, false, ServerVerifyCert);
                 SslStream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
+            }
+            catch (AuthenticationException ex)
+            {
+                return false;
             }
             catch (Exception ex)
             {

@@ -65,13 +65,21 @@ namespace SocketNetworking.Client
         protected override void ClientDoSSLUpgrade(ServerDataPacket packet)
         {
             Log.Info($"Trying to upgrade this TCP/IP connection to SSL...");
-            TcpTransport.ClientSSLUpgrade(ConnectedHostname);
+            if(!TcpTransport.ClientSSLUpgrade(ConnectedHostname))
+            {
+                Log.Info("SSL Failure, disconnecting...");
+                Disconnect();
+            }
         }
 
         protected override void ServerDoSSLUpgrade()
         {
             Log.Info($"Trying to upgrade this TCP/IP connection to SSL on Client {ClientID}...");
-            TcpTransport.ServerSSLUpgrade(NetworkServer.Config.Certificate);
+            if(!TcpTransport.ServerSSLUpgrade(NetworkServer.Config.Certificate))
+            {
+                Log.Info($"SSL Failure, disconnecting client...");
+                Disconnect();
+            }
         }
     }
 }

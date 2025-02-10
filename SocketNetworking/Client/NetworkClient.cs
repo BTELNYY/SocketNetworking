@@ -741,6 +741,7 @@ namespace SocketNetworking.Client
         {
             if (!IsConnected || !IsTransportConnected)
             {
+                StopClient();
                 return;
             }
             ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
@@ -781,7 +782,11 @@ namespace SocketNetworking.Client
             NetworkManager.SendDisconnectedPulse(this);
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
-                NetworkServer.RemoveClient(ClientID);
+                RemoteStopClient();
+            }
+            else
+            {
+                LocalStopClient();
             }
             _connectionState = ConnectionState.Disconnected;
             Transport?.Close();
@@ -794,6 +799,20 @@ namespace SocketNetworking.Client
             {
                 Clients.Remove(this);
             }
+            Log.Info("Closing Client!");
+        }
+
+        protected virtual void LocalStopClient()
+        {
+            _packetReaderThread?.Abort();
+            _packetSenderThread?.Abort();
+            _packetReaderThread = null;
+            _packetSenderThread = null;
+        }
+
+        protected virtual void RemoteStopClient()
+        {
+            NetworkServer.RemoveClient(ClientID);
         }
 
         void StartClient()
