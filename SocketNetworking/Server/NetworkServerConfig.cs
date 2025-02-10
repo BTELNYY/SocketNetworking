@@ -41,6 +41,11 @@ namespace SocketNetworking.Server
         public bool UseServerPassword { get; set; } =  false;
 
         /// <summary>
+        /// If not an empty string, will be used to prove server identity for <see cref="TcpNetworkClient"/> and <see cref="MixedNetworkClient"/> clients. This should be a path to the certificate.
+        /// </summary>
+        public string SSLCertificate { get; set; } = "";
+
+        /// <summary>
         /// What port should the server start on?
         /// </summary>
         public int Port { get; set; } =  7777;

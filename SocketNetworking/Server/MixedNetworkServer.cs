@@ -16,7 +16,7 @@ using System.IO.Ports;
 
 namespace SocketNetworking.Server
 {
-    public class MixedNetworkServer : NetworkServer
+    public class MixedNetworkServer : TcpNetworkServer
     {
         protected List<MixedNetworkClient> _awaitingUDPConnection = new List<MixedNetworkClient>();
 
@@ -66,8 +66,7 @@ namespace SocketNetworking.Server
                     socket.Close();
                     continue;
                 }
-                TcpTransport tcpTransport = new TcpTransport();
-                tcpTransport.Client = socket;
+                TcpTransport tcpTransport = new TcpTransport(socket);
                 socket.NoDelay = true;
                 IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                 Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on TCP.");

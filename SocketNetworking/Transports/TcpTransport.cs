@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.Transports
 {
@@ -16,6 +20,17 @@ namespace SocketNetworking.Transports
         {
             buffer = new byte[BufferSize];
         }
+
+        public TcpTransport(TcpClient client) : this()
+        {
+            Client = client;
+        }
+
+        public string CertificateString { get; private set; }
+
+        public X509Certificate Certificate { get; private set; }
+
+        public bool UsingSSL { get; private set; } = false;
 
         public override IPEndPoint Peer => Client.Client.RemoteEndPoint as IPEndPoint;
 
@@ -27,10 +42,16 @@ namespace SocketNetworking.Transports
 
         public override bool IsConnected => Client.Connected;
 
-        public NetworkStream Stream
+        private SslStream SslStream;
+
+        public Stream Stream
         {
             get
             {
+                if(UsingSSL)
+                {
+                    return SslStream;
+                }
                 return Client.GetStream();
             }
         }
