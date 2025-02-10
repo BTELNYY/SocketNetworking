@@ -1,5 +1,6 @@
 ﻿using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Transports;
 using System;
@@ -61,9 +62,16 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected override void DoSSLUpgrade(ServerDataPacket packet)
+        protected override void ClientDoSSLUpgrade(ServerDataPacket packet)
         {
-            
+            Log.Info($"Trying to upgrade this TCP/IP connection to SSL...");
+            TcpTransport.ClientSSLUpgrade(ConnectedHostname);
+        }
+
+        protected override void ServerDoSSLUpgrade()
+        {
+            Log.Info($"Trying to upgrade this TCP/IP connection to SSL on Client {ClientID}...");
+            TcpTransport.ServerSSLUpgrade(NetworkServer.Config.Certificate);
         }
     }
 }

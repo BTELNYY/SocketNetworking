@@ -28,9 +28,9 @@ namespace SocketNetworking.PacketSystem.Packets
             ByteWriter writer = base.Serialize();
             writer.WriteInt(YourClientID);
             writer.WritePacketSerialized<ProtocolConfiguration>(Configuration);
+            writer.WriteBool(UpgradeToSSL);
             SerializableDictionary<int, string> dict = new SerializableDictionary<int, string>(CustomPacketAutoPairs);
             writer.WritePacketSerialized<SerializableDictionary<string, int>>(dict);
-            writer.WriteBool(UpgradeToSSL);
             return writer;
         }
 
@@ -39,8 +39,8 @@ namespace SocketNetworking.PacketSystem.Packets
             ByteReader reader = base.Deserialize(data);
             YourClientID = reader.ReadInt();
             Configuration = reader.ReadPacketSerialized<ProtocolConfiguration>();
-            CustomPacketAutoPairs = reader.ReadPacketSerialized<SerializableDictionary<int, string>>().ContainedDict;
             UpgradeToSSL = reader.ReadBool();
+            CustomPacketAutoPairs = reader.ReadPacketSerialized<SerializableDictionary<int, string>>().ContainedDict;
             return reader;
         }
     }

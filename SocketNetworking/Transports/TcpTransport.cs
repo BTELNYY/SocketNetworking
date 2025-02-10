@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
+using SocketNetworking.Server;
 using SocketNetworking.Shared;
 
 namespace SocketNetworking.Transports
@@ -44,9 +45,69 @@ namespace SocketNetworking.Transports
 
         private SslStream SslStream;
 
-        public void UpgradeToSSL()
+        public bool ClientSSLUpgrade(string hostname)
         {
+            try
+            {
+                SslStream = new SslStream(Stream, false, ClientVerifyCert);
+                SslStream.AuthenticateAsClient(hostname);
+            }
+            catch (Exception ex)
+            {
+                Log.GlobalError("SSL Auth failure! Error: " + ex.ToString());
+                return false;
+            }
+            UsingSSL = true;
+            return true;
+        }
 
+        public bool ServerSSLUpgrade(X509Certificate certificate)
+        {
+            try
+            {
+                SslStream = new SslStream(Stream, false, ServerVerifyCert);
+                SslStream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
+            }
+            catch (Exception ex)
+            {
+                Log.GlobalError("SSL Auth failure! Error: " + ex.ToString());
+                return false;
+            }
+            Certificate = certificate;
+            UsingSSL = true;
+            return true;
+        }
+
+        protected virtual bool ServerVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            if(sslPolicyErrors == SslPolicyErrors.None || sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateNotAvailable))
+            {
+                return true;
+            }
+            Log.GlobalError($"SSL Policy Errors: {string.Join(", ", sslPolicyErrors.GetActiveFlags())}");
+            return false;
+        }
+
+        protected virtual bool ClientVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None)
+            {
+                Certificate = certificate;
+                return true;
+            }
+            if(sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateChainErrors))
+            {
+                foreach(var chainEntry in chain.ChainStatus)
+                {
+                    Log.GlobalInfo($"Chain Status: {string.Join(",", chainEntry.Status.GetActiveFlags())}. Description: {chainEntry.StatusInformation}");
+                    if (chainEntry.Status.HasFlag(X509ChainStatusFlags.UntrustedRoot))
+                    {
+                        Log.GlobalWarning("Untrusted root certificate detected.");
+                    }
+                }
+            }
+            Log.GlobalError($"SSL Policy Errors: {string.Join(", ", sslPolicyErrors.GetActiveFlags())}");
+            return false;
         }
 
         public Stream Stream
@@ -175,12 +236,13 @@ namespace SocketNetworking.Transports
                                          // read the rest of the whole packet
                 if (bodySize > Packet.MaxPacketSize || bodySize < 0)
                 {
+                    
                     string s = string.Empty;
                     for (int i = 0; i < buffer.Length; i++)
                     {
                         s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
                     }
-                    Log.GlobalError("Body Size is corrupted! Raw: " + s);
+                    //Log.GlobalError("Body Size is corrupted! Raw: " + s);
                 }
                 while (fillSize < bodySize)
                 {

@@ -233,7 +233,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Returns the connection IP
         /// </summary>
-        public string ConnectedIP
+        public string ConnectedHostname
         {
             get
             {
@@ -572,7 +572,12 @@ namespace SocketNetworking.Client
             timer.Start();
         }
 
-        protected virtual void DoSSLUpgrade(ServerDataPacket packet)
+        protected virtual void ClientDoSSLUpgrade(ServerDataPacket packet)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected virtual void ServerDoSSLUpgrade()
         {
             throw new NotImplementedException();
         }
@@ -838,14 +843,12 @@ namespace SocketNetworking.Client
         /// Forces the library to send the provided packet immediately on the calling thread. This is not a good idea, and should not be used.
         /// </summary>
         /// <param name="packet"></param>
-        [Obsolete("This method is not thread safe. Use Send(Packet) instead.")]
         public void SendImmediate(Packet packet)
         {
             PreparePacket(ref packet);
             byte[] fullBytes = SerializePacket(packet);
             try
             {
-                //Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                 Exception ex = Transport.Send(fullBytes, packet.Destination);
                 if (ex != null)
                 {
@@ -1496,11 +1499,17 @@ namespace SocketNetworking.Client
                     {
                         YourClientID = _clientId,
                         Configuration = NetworkServer.ServerConfiguration,
-                        CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized
+                        CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized,
+                        UpgradeToSSL = NetworkServer.Config.SSLCertificate != "",
                     };
-                    Send(serverDataPacket);
+                    //Send(serverDataPacket);
+                    SendImmediate(serverDataPacket);
                     CurrentConnectionState = ConnectionState.Connected;
                     ClientIdUpdated?.Invoke();
+                    if(serverDataPacket.UpgradeToSSL)
+                    {
+                        ServerDoSSLUpgrade();
+                    }
                     if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
                     {
                         ServerBeginEncryption();
@@ -1637,6 +1646,10 @@ namespace SocketNetworking.Client
                 case PacketType.ServerData:
                     ServerDataPacket serverDataPacket = new ServerDataPacket();
                     serverDataPacket.Deserialize(data);
+                    if (serverDataPacket.UpgradeToSSL)
+                    {
+                        ClientDoSSLUpgrade(serverDataPacket);
+                    }
                     _clientId = serverDataPacket.YourClientID;
                     Log.Prefix = $"[Client {_clientId}]";
                     Log.Info("New Client ID: " + _clientId.ToString());
@@ -1684,10 +1697,6 @@ namespace SocketNetworking.Client
                         built += $"ID: {i}, Fullname: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
                     }
                     Log.Info("Finished re-writing dynamic packets: " + built);
-                    if(serverDataPacket.UpgradeToSSL)
-                    {
-                        DoSSLUpgrade(serverDataPacket);
-                    }
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
