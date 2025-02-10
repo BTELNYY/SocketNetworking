@@ -572,12 +572,33 @@ namespace SocketNetworking.Client
             timer.Start();
         }
 
-        protected virtual void ClientDoSSLUpgrade(ServerDataPacket packet)
+        public void ServerTrySSL()
+        {
+            Log.Info("Trying SSL...");
+            bool sslResult = NetworkInvoke<bool>(nameof(ClientTrySSL), new object[] { });
+            if(sslResult)
+            {
+                ServerDoSSLUpgrade();
+            }
+            else
+            {
+                Log.Error($"SSL failure with client.");
+            }
+        }
+
+        [NetworkInvokable(NetworkDirection.Server)]
+        private bool ClientTrySSL(NetworkHandle handle)
+        {
+            Log.Info("Server requested SSL attempt.");
+            return ClientDoSSLUpgrade();
+        }
+
+        protected virtual bool ClientDoSSLUpgrade()
         {
             throw new NotImplementedException();
         }
 
-        protected virtual void ServerDoSSLUpgrade()
+        protected virtual bool ServerDoSSLUpgrade()
         {
             throw new NotImplementedException();
         }
@@ -924,10 +945,7 @@ namespace SocketNetworking.Client
         /// <param name="priority"></param>
         public void Send(Packet packet, bool priority)
         {
-            if (priority)
-            {
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
-            }
+            packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
             Send(packet);
         }
 
@@ -1244,7 +1262,7 @@ namespace SocketNetworking.Client
             }
             catch (Exception ex)
             {
-                Log.Warning($"Malformed Packet. Size: {packet.Item1.Length}");
+                Log.Warning($"Malformed Packet. Size: {packet.Item1.Length}, Error: {ex.ToString()}");
             }
             //if(!Transport.DataAvailable)
             //{
@@ -1521,13 +1539,13 @@ namespace SocketNetworking.Client
                         CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized,
                         UpgradeToSSL = NetworkServer.Config.SSLCertificate != "",
                     };
-                    //Send(serverDataPacket);
-                    SendImmediate(serverDataPacket);
+                    Send(serverDataPacket);
+                    //SendImmediate(serverDataPacket);
                     CurrentConnectionState = ConnectionState.Connected;
                     ClientIdUpdated?.Invoke();
                     if(serverDataPacket.UpgradeToSSL)
                     {
-                        ServerDoSSLUpgrade();
+                        ServerTrySSL();
                     }
                     if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
                     {
@@ -1665,10 +1683,6 @@ namespace SocketNetworking.Client
                 case PacketType.ServerData:
                     ServerDataPacket serverDataPacket = new ServerDataPacket();
                     serverDataPacket.Deserialize(data);
-                    if (serverDataPacket.UpgradeToSSL)
-                    {
-                        ClientDoSSLUpgrade(serverDataPacket);
-                    }
                     _clientId = serverDataPacket.YourClientID;
                     Log.Prefix = $"[Client {_clientId}]";
                     Log.Info("New Client ID: " + _clientId.ToString());

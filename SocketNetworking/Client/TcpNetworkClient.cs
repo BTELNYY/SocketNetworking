@@ -62,24 +62,26 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected override void ClientDoSSLUpgrade(ServerDataPacket packet)
+        protected override bool ClientDoSSLUpgrade()
         {
             Log.Info($"Trying to upgrade this TCP/IP connection to SSL...");
-            if(!TcpTransport.ClientSSLUpgrade(ConnectedHostname))
+            bool result = TcpTransport.ClientSSLUpgrade(ConnectedHostname);
+            if (!result)
             {
-                Log.Info("SSL Failure, disconnecting...");
-                Disconnect();
+                Log.Info("SSL Failure");
             }
+            return result;
         }
 
-        protected override void ServerDoSSLUpgrade()
+        protected override bool ServerDoSSLUpgrade()
         {
             Log.Info($"Trying to upgrade this TCP/IP connection to SSL on Client {ClientID}...");
-            if(!TcpTransport.ServerSSLUpgrade(NetworkServer.Config.Certificate))
+            bool result = TcpTransport.ServerSSLUpgrade(NetworkServer.Config.Certificate);
+            if (!result)
             {
                 Log.Info($"SSL Failure, disconnecting client...");
-                Disconnect();
             }
+            return result;
         }
     }
 }

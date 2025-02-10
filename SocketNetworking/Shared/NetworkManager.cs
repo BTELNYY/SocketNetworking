@@ -997,6 +997,10 @@ namespace SocketNetworking.Shared
             foreach (MethodInfo curMethod in methods)
             {
                 List<string> methodArgs = curMethod.GetParameters().Select(y => y.ParameterType.FullName).ToList();
+                if(!methodArgs.Any() && expectedArgs.Any())
+                {
+                    continue;
+                }
                 if (curMethod.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)) && !arguments[0].IsSubclassDeep(typeof(NetworkClient)))
                 {
                     methodArgs.RemoveAt(0);

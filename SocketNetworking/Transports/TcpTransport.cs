@@ -50,8 +50,9 @@ namespace SocketNetworking.Transports
         {
             try
             {
-                SslStream = new SslStream(Stream, false, ClientVerifyCert);
-                SslStream.AuthenticateAsClient(hostname);
+                var stream = new SslStream(Stream, false, ClientVerifyCert);
+                stream.AuthenticateAsClient(hostname);
+                SslStream = stream;
             }
             catch (AuthenticationException ex)
             {
@@ -70,8 +71,9 @@ namespace SocketNetworking.Transports
         {
             try
             {
-                SslStream = new SslStream(Stream, false, ServerVerifyCert);
-                SslStream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
+                var stream = new SslStream(Stream, false, ServerVerifyCert);
+                stream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
+                SslStream = stream;
             }
             catch (AuthenticationException ex)
             {
