@@ -50,7 +50,7 @@ namespace SocketNetworking.Transports
         {
             try
             {
-                var stream = new SslStream(Stream, false, ClientVerifyCert);
+                var stream = new SslStream(Stream, true, ClientVerifyCert);
                 stream.AuthenticateAsClient(hostname);
                 SslStream = stream;
             }
@@ -63,7 +63,6 @@ namespace SocketNetworking.Transports
                 Log.GlobalError("SSL Auth failure! Error: " + ex.ToString());
                 return false;
             }
-            UsingSSL = true;
             return true;
         }
 
@@ -71,7 +70,7 @@ namespace SocketNetworking.Transports
         {
             try
             {
-                var stream = new SslStream(Stream, false, ServerVerifyCert);
+                var stream = new SslStream(Stream, true, ServerVerifyCert);
                 stream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
                 SslStream = stream;
             }
@@ -85,8 +84,16 @@ namespace SocketNetworking.Transports
                 return false;
             }
             Certificate = certificate;
-            UsingSSL = true;
             return true;
+        }
+
+        public void SetSSLState(bool state)
+        {
+            if(SslStream == null)
+            {
+                return;
+            }
+            UsingSSL = true;
         }
 
         protected virtual bool ServerVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)

@@ -1543,10 +1543,6 @@ namespace SocketNetworking.Client
                     //SendImmediate(serverDataPacket);
                     CurrentConnectionState = ConnectionState.Connected;
                     ClientIdUpdated?.Invoke();
-                    if(serverDataPacket.UpgradeToSSL)
-                    {
-                        ServerTrySSL();
-                    }
                     if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
                     {
                         ServerBeginEncryption();
