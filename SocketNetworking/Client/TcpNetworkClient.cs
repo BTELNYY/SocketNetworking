@@ -64,7 +64,7 @@ namespace SocketNetworking.Client
 
         protected override void ConfirmSSL()
         {
-            Log.Info("SSL Connection successful. Confirming.");
+            Log.Success("SSL Succeeded.");
             TcpTransport.SetSSLState(true);
         }
 

@@ -1771,7 +1771,6 @@ namespace SocketNetworking.Client
                     ssLUpgradePacket.Deserialize(data);
                     if(ssLUpgradePacket.Continue)
                     {
-                        Log.Info("SSL Confirmed.");
                         ConfirmSSL();
                         break;
                     }
