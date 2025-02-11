@@ -77,6 +77,14 @@ namespace SocketNetworking.Client
 
         protected override void SendNextPacketInternal()
         {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (NoPacketSending)
+            {
+                return;
+            }
             if (_toSendPackets.IsEmpty)
             {
                 //Log.Debug("Nothing to send.");

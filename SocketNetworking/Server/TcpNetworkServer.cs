@@ -17,14 +17,14 @@ namespace SocketNetworking.Server
     {
         public override void StartServer()
         {
-            if (Config.SSLCertificate == "")
+            if (Config.CertificatePath == "")
             {
                 Log.Info("No SSL Certificate found, ignoring.");
             }
             else
             {
-                Log.Info($"Found an SSL Certificate: {Config.SSLCertificate}, Checking.");
-                var cert = X509Certificate.CreateFromCertFile(Config.SSLCertificate);
+                Log.Info($"Found an SSL Certificate: {Config.CertificatePath}, Checking.");
+                var cert = X509Certificate.CreateFromCertFile(Config.CertificatePath);
                 if (cert == null)
                 {
                     Log.Warning("Certificate couldn't be loaded.");

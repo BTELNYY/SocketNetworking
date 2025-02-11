@@ -89,11 +89,15 @@ namespace SocketNetworking.Transports
 
         public void SetSSLState(bool state)
         {
-            if(SslStream == null)
+            lock(_lock)
             {
-                return;
+                if (SslStream == null)
+                {
+                    Log.GlobalError("SSL Stream is null when trying to set SSL state!");
+                    return;
+                }
+                UsingSSL = true;
             }
-            UsingSSL = true;
         }
 
         protected virtual bool ServerVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)

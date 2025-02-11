@@ -19,6 +19,8 @@ namespace SocketNetworking.Client
             Transport = new TcpTransport();
         }
 
+        public override bool SupportsSSL => true;
+
         public override NetworkTransport Transport
         {
             get
