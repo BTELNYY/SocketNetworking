@@ -112,6 +112,7 @@
  * A Network Invocation is a call to run a method on another object somewhere.
  * To define one, you will need to create a new instance method on either the `NetworkClient` or a Registered `INetworkObject`. These methods have 2 parts, the method itself, and the attribute. The method itself can have any return type (assuming you can serialize it) and must have either a `NetworkHandle` or `NetworkClient` as its first parameter, all additional parameters can be anything serializable.
  * You will now need the attribute `NetworkInvokableAttribute`. The first parameter is the direction, this is important. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only.
+ * **WARNING** `NetworkInvoke<T>` is **thread blocking** do not call this on the packet reading thread as this will cause the application to lock up.
 
 #### A NetworkInvoke method (above) and its caller (lower)
 ![image](https://github.com/user-attachments/assets/e0526e01-ebf1-4d9c-a216-911d34304cfa)
