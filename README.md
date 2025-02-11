@@ -22,6 +22,7 @@
  * If SSL fails, the client will disconnect.
  * SSL Certificates should have the subject as the **connection address** of the server. (use a domain name if possible)
  * For example, if the client connected to `server.xyz`, the client will try to check `server.xyz` on the certificate. This also applies to raw IP addresses.
+ * Only supported on TCP and Mixed Network Client types. UDP Clients are not supported. (The UDP Communication for the `MixedNetworkClient` is protected through encryption provided with the library, as keys are only sent over SSL connections)
 
 #### Server-Client Encryption
  * All communication between the server and client is encrypted before the `NetworkClient.Ready` state is set to true.
