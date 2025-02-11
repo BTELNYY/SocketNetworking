@@ -14,7 +14,8 @@ namespace SocketNetworking.PacketSystem.Packets
         public sealed override PacketType Type => PacketType.ClientData;
 
         public ProtocolConfiguration Configuration { get; set; } = new ProtocolConfiguration();
-        
+
+        [Obsolete("Implement your own Authentication as this field is not encrypted when it is sent.")]
         public string PasswordHash { get; private set; } = "lol";
 
         public ClientDataPacket(string password) 

@@ -35,19 +35,6 @@ namespace SocketNetworking.Client
             }
         }
 
-        /// <summary>
-        /// Forcefully remove client on destruction
-        /// </summary>
-        ~NetworkClient() 
-        {
-            ClientDestroyed?.Invoke(ClientID);
-            if (Clients.Contains(this))
-            {
-                Clients.Remove(this);
-            }
-            instance = null;
-        }
-
         public NetworkClient()
         {
             Log = new Log()
@@ -60,13 +47,17 @@ namespace SocketNetworking.Client
         }
 
         /// <summary>
-        /// Called on the server and client when a client is created.
+        /// Forcefully remove client on destruction
         /// </summary>
-        public virtual void Init()
+        ~NetworkClient() 
         {
-
+            ClientDestroyed?.Invoke(ClientID);
+            if (Clients.Contains(this))
+            {
+                Clients.Remove(this);
+            }
+            instance = null;
         }
-
 
         #region Per Client (Non-Static) Events
         /// <summary>
@@ -395,7 +386,7 @@ namespace SocketNetworking.Client
                     State = value,
                     Reason = "Setter in remote."
                 };
-                Send(updatePacket);
+                SendImmediate(updatePacket);
                 _connectionState = value;
                 ConnectionStateUpdated?.Invoke(value);
                 ClientConnectionStateChanged?.Invoke(this);
@@ -630,6 +621,14 @@ namespace SocketNetworking.Client
         #endregion
 
         #region Init
+
+        /// <summary>
+        /// Called on the server and client when a client is created.
+        /// </summary>
+        public virtual void Init()
+        {
+
+        }
 
         /// <summary>
         /// Used when initializing a <see cref="NetworkClient"/> object on the server. Do not call this on the local client.
@@ -1885,6 +1884,8 @@ namespace SocketNetworking.Client
 
         #endregion
 
+        #region Packet Proccessing
+
         protected void HandlePacket(PacketHeader header, byte[] fullPacket)
         {
             if (CurrnetClientLocation == ClientLocation.Remote)
@@ -1912,6 +1913,10 @@ namespace SocketNetworking.Client
             }
         }
 
+        #endregion
+
+        #region Misc
+
         /// <summary>
         /// Sends a log message to the other side of the <see cref="NetworkTransport"/>.
         /// </summary>
@@ -1928,11 +1933,13 @@ namespace SocketNetworking.Client
             Log.Any(err, level);
         }
 
-        public struct ReadPacketInfo
-        {
-            public PacketHeader Header;
-            public byte[] Data;
-        }
+        #endregion
+    }
+
+    public struct ReadPacketInfo
+    {
+        public PacketHeader Header;
+        public byte[] Data;
     }
 
     public struct NetworkErrorData
