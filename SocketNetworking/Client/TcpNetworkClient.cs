@@ -62,7 +62,13 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected override bool ClientDoSSLUpgrade()
+        protected override void ConfirmSSL()
+        {
+            Log.Info("SSL Connection successful. Confirming.");
+            TcpTransport.SetSSLState(true);
+        }
+
+        protected override bool ClientTrySSLUpgrade()
         {
             Log.Info($"Trying to upgrade this TCP/IP connection to SSL...");
             bool result = TcpTransport.ClientSSLUpgrade(ConnectedHostname);
@@ -73,7 +79,7 @@ namespace SocketNetworking.Client
             return result;
         }
 
-        protected override bool ServerDoSSLUpgrade()
+        protected override bool ServerTrySSLUpgrade()
         {
             Log.Info($"Trying to upgrade this TCP/IP connection to SSL on Client {ClientID}...");
             bool result = TcpTransport.ServerSSLUpgrade(NetworkServer.Config.Certificate);

@@ -121,6 +121,7 @@ namespace SocketNetworking.Transports
                     if (chainEntry.Status.HasFlag(X509ChainStatusFlags.UntrustedRoot))
                     {
                         Log.GlobalWarning("Untrusted root certificate detected.");
+                        return true;
                     }
                 }
             }

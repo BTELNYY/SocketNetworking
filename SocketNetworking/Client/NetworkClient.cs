@@ -578,7 +578,7 @@ namespace SocketNetworking.Client
             bool sslResult = NetworkInvoke<bool>(nameof(ClientTrySSL), new object[] { });
             if(sslResult)
             {
-                ServerDoSSLUpgrade();
+                ServerTrySSLUpgrade();
             }
             else
             {
@@ -590,15 +590,20 @@ namespace SocketNetworking.Client
         private bool ClientTrySSL(NetworkHandle handle)
         {
             Log.Info("Server requested SSL attempt.");
-            return ClientDoSSLUpgrade();
+            return ClientTrySSLUpgrade();
         }
 
-        protected virtual bool ClientDoSSLUpgrade()
+        protected virtual void ConfirmSSL()
         {
             throw new NotImplementedException();
         }
 
-        protected virtual bool ServerDoSSLUpgrade()
+        protected virtual bool ClientTrySSLUpgrade()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected virtual bool ServerTrySSLUpgrade()
         {
             throw new NotImplementedException();
         }
@@ -1483,6 +1488,31 @@ namespace SocketNetworking.Client
                         SendLog(ex.Message, LogSeverity.Error);
                     }
                     break;
+                case PacketType.SSLUpgrade:
+                    SSLUpgradePacket sslUpgradePacket = new SSLUpgradePacket();
+                    sslUpgradePacket.Deserialize(data);
+                    if(sslUpgradePacket.Result)
+                    {
+                        SSLUpgradePacket sslUpgradeResponse = new SSLUpgradePacket()
+                        {
+                            Continue = true,
+                        };
+                        SendImmediate(sslUpgradeResponse);
+                        ConfirmSSL();
+                        if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
+                        {
+                            ServerBeginEncryption();
+                        }
+                        else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
+                        {
+                            Ready = true;
+                        }
+                    }
+                    else
+                    {
+                        Disconnect("SSL Handshake failure");
+                    }
+                    break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
                     connectionUpdatePacket.Deserialize(data);
@@ -1539,17 +1569,26 @@ namespace SocketNetworking.Client
                         CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized,
                         UpgradeToSSL = NetworkServer.Config.SSLCertificate != "",
                     };
-                    Send(serverDataPacket);
+                    SendImmediate(serverDataPacket);
                     //SendImmediate(serverDataPacket);
                     CurrentConnectionState = ConnectionState.Connected;
                     ClientIdUpdated?.Invoke();
-                    if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
+                    if(serverDataPacket.UpgradeToSSL)
                     {
-                        ServerBeginEncryption();
+                        SSLUpgradePacket upgradePacket = new SSLUpgradePacket();
+                        SendImmediate(upgradePacket);
+                        ServerTrySSLUpgrade();
                     }
-                    else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
+                    else
                     {
-                        Ready = true;
+                        if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
+                        {
+                            ServerBeginEncryption();
+                        }
+                        else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
+                        {
+                            Ready = true;
+                        }
                     }
                     break;
                 case PacketType.NetworkInvocation:
@@ -1726,6 +1765,29 @@ namespace SocketNetworking.Client
                         built += $"ID: {i}, Fullname: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
                     }
                     Log.Info("Finished re-writing dynamic packets: " + built);
+                    break;
+                case PacketType.SSLUpgrade:
+                    SSLUpgradePacket ssLUpgradePacket = new SSLUpgradePacket();
+                    ssLUpgradePacket.Deserialize(data);
+                    if(ssLUpgradePacket.Continue)
+                    {
+                        Log.Info("SSL Confirmed.");
+                        ConfirmSSL();
+                        break;
+                    }
+                    else
+                    {
+                        bool attemptResult = ClientTrySSLUpgrade();
+                        SSLUpgradePacket upgradepacketResult = new SSLUpgradePacket()
+                        {
+                            Result = attemptResult,
+                        };
+                        if (!attemptResult)
+                        {
+                            Disconnect("SSL Handshake failure");
+                        }
+                        Send(upgradepacketResult);
+                    }
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();

@@ -24,6 +24,7 @@ namespace SocketNetworking.Shared
         SyncVarUpdate,
         ObjectManage,
         KeepAlive,
+        SSLUpgrade,
         CustomPacket,
     }
 
