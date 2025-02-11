@@ -16,10 +16,17 @@
 
 ### Security
 
+#### SSL
+ * Provide a valid certificate path in `NetworkServerConfig.CertificatePath` for the server to advertise.
+ * SSL is done before encryption.
+ * If SSL fails, the client will disconnect.
+ * SSL Certificates should have the subject as the **connection address** of the server. (use a domain name if possible)
+ * For example, if the client connected to `server.xyz`, the client will try to check `server.xyz` on the certificate. This also applies to raw IP addresses.
+
 #### Server-Client Encryption
  * All communication between the server and client is encrypted before the `NetworkClient.Ready` state is set to true.
  * You can make encryption optional or disable it with the `NetworkServerConfig.EncryptionMode` enum. The default is `Required`. `Request` will allow the client to request encryption, and `Disabled` will prevent encryption (Not recommended)
- * The encryption system generates unique public/private keys per client as well as unique symmetrical keys per client. Both servers and clients generate keys (for those who want end-to-end encryption) (Better transport security to prevent MITM will be added soon.)
+ * The encryption system generates unique public/private keys per client as well as unique symmetrical keys per client. Both servers and clients generate keys (for those who want end-to-end encryption).
  * Packet bodies are encrypted, but not the packet header. This contians very limited information (such as the packet type and destination object ID, as well as the sender and reciever, althought these can be changed before sending the packet.)
  * Both UDP and TCP traffic is encrypted.
 
