@@ -5,6 +5,9 @@ using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Transports;
+using SocketNetworking.Shared.Messages;
+using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.SyncVars;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -41,7 +44,7 @@ namespace SocketNetworking.Client
                 Prefix = $"[Client (No ID)]"
             };
             ClientCreated?.Invoke(this);
-            _networkEncryptionManager = new NetworkEncryptionManager();
+            _networkEncryptionManager = new NetworkEncryption();
             Init();
         }
 
@@ -213,9 +216,9 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected NetworkEncryptionManager _networkEncryptionManager;
+        protected NetworkEncryption _networkEncryptionManager;
 
-        public NetworkEncryptionManager EncryptionManager
+        public NetworkEncryption EncryptionManager
         {
             get
             {
@@ -1212,9 +1215,9 @@ namespace SocketNetworking.Client
                     Log.Error("Encryption cannot be done at this point: Not ready.");
                     return null;
                 }
-                if(packetDataBytes.Length > NetworkEncryptionManager.MaxBytesForAsym)
+                if(packetDataBytes.Length > NetworkEncryption.MaxBytesForAsym)
                 {
-                    Log.Warning($"Packet is too large for RSA! Packet Size: {packetDataBytes.Length}, Max Packet Size: {NetworkEncryptionManager.MaxBytesForAsym}");
+                    Log.Warning($"Packet is too large for RSA! Packet Size: {packetDataBytes.Length}, Max Packet Size: {NetworkEncryption.MaxBytesForAsym}");
                 }
                 else
                 {

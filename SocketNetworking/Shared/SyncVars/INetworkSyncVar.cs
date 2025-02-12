@@ -1,7 +1,8 @@
 ﻿using SocketNetworking.Client;
 using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.NetworkObjects;
 
-namespace SocketNetworking.Shared
+namespace SocketNetworking.Shared.SyncVars
 {
     public interface INetworkSyncVar
     {

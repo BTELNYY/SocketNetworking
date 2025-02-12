@@ -15,6 +15,7 @@ using SocketNetworking.Shared;
 using JetBrains.Annotations;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.UnityEngine.Utility;
+using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.UnityEngine
 {

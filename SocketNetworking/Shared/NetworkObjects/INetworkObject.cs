@@ -5,10 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Client;
-using SocketNetworking.Shared;
+using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Attributes;
 
-namespace SocketNetworking.Shared
+namespace SocketNetworking.Shared.NetworkObjects
 {
     /// <summary>
     /// All NetworkObjects should implement this interface. Note that Client/Server authority isn't handled, all packets are sent to this object regardless of source.
@@ -137,12 +137,5 @@ namespace SocketNetworking.Shared
         /// </summary>
         /// <param name="client"></param>
         void OnSync(NetworkClient client);
-    }
-
-    public enum OwnershipMode : byte
-    {
-        Client,
-        Server,
-        Public
     }
 }

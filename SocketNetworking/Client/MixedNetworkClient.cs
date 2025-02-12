@@ -20,7 +20,7 @@ namespace SocketNetworking.Client
         public MixedNetworkClient()
         {
             Transport = new TcpTransport();
-            _networkEncryptionManager = new NetworkEncryptionManager();
+            _networkEncryptionManager = new NetworkEncryption();
         }
 
         public int UDPFailures = 0;

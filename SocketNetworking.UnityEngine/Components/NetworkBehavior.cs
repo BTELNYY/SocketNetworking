@@ -11,6 +11,7 @@ using SocketNetworking.Attributes;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Server;
+using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.UnityEngine.Components
 {

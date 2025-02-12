@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared;
 
 namespace SocketNetworking.Example.SharedData

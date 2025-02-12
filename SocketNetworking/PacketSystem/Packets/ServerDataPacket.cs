@@ -8,6 +8,7 @@ using SocketNetworking.Attributes;
 using SocketNetworking.PacketSystem.TypeWrappers;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Messages;
 
 namespace SocketNetworking.PacketSystem.Packets
 {

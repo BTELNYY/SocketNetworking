@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 

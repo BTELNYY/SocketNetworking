@@ -5,12 +5,13 @@ using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
 using System;
 using System.Collections.Generic;
+using SocketNetworking.Shared.NetworkObjects;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketNetworking.Shared
+namespace SocketNetworking.Shared.SyncVars
 {
     public class NetworkSyncVar<T> : IEquatable<T>, ICloneable, INetworkSyncVar
     {
