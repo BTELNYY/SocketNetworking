@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Attributes;
+using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared.NetworkObjects
 {
@@ -137,5 +138,17 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// </summary>
         /// <param name="client"></param>
         void OnSync(NetworkClient client);
+
+        /// <summary>
+        /// Called when a <see cref="INetworkSyncVar"/> is changed on this object.
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="what"></param>
+        void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what);
+
+        /// <summary>
+        /// Called when any <see cref="INetworkSyncVar"/> is changed.
+        /// </summary>
+        void OnSyncVarsChanged();
     }
 }

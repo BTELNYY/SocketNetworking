@@ -942,6 +942,7 @@ namespace SocketNetworking.Shared
                     }
                     object value = NetworkConvert.Deserialize(data.Data, out int read);
                     syncVar.RawSet(value, runner);
+                    syncVar.OwnerObject.OnSyncVarChanged(runner, syncVar);
                     //Log.Debug($"Updated {syncVar.Name} on {obj.GetType().FullName}. Read {read} bytes as the value.");
                     if (WhereAmI == ClientLocation.Remote && syncVar.OwnerObject.ObjectVisibilityMode != ObjectVisibilityMode.OwnerAndServer)
                     {
@@ -950,13 +951,17 @@ namespace SocketNetworking.Shared
                             publicReplicated.Add(data);
                         }
                     }
+                    obj.OnSyncVarsChanged();
                 }
             }
-            SyncVarUpdatePacket replicatePacket = new SyncVarUpdatePacket()
+            if(WhereAmI == ClientLocation.Remote)
             {
-                Data = publicReplicated,
-            };
-            NetworkServer.SendToAll(replicatePacket);
+                SyncVarUpdatePacket replicatePacket = new SyncVarUpdatePacket()
+                {
+                    Data = publicReplicated,
+                };
+                NetworkServer.SendToAll(replicatePacket);
+            }
         }
 
         #endregion

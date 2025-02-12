@@ -59,7 +59,7 @@ namespace SocketNetworking.Server
         protected static ServerState _serverState = ServerState.NotStarted;
 
         public static ServerState CurrentServerState 
-        { 
+        {
             get
             {
                 return _serverState;

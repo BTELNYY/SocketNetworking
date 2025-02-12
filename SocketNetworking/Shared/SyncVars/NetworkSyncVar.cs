@@ -85,6 +85,10 @@ namespace SocketNetworking.Shared.SyncVars
                         }
                         owner.Send(packet);
                     }
+                    else if(OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
+                    {
+                        NetworkServer.SendToAll(packet);
+                    }
                 }
                 else
                 {
@@ -130,7 +134,7 @@ namespace SocketNetworking.Shared.SyncVars
         public NetworkSyncVar(INetworkObject owner, T value)
         {
             OwnerObject = owner;
-            Value = value;
+            this.value = value;
             SyncOwner = OwnershipMode.Server;
         }
 
@@ -138,7 +142,7 @@ namespace SocketNetworking.Shared.SyncVars
         {
             OwnerObject = ownerObject;
             SyncOwner = syncDirection;
-            Value = value;
+            this.value = value;
         }
 
         public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner, T value, string name) : this(ownerObject, syncOwner, value)

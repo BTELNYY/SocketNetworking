@@ -8,15 +8,30 @@ using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Example.SharedData
 {
     public class NetworkObjectTest : NetworkAvatarBase
     {
+        public NetworkObjectTest()
+        {
+            Name = new NetworkSyncVar<string>(this, OwnershipMode.Client, "test");
+        }
+
+        public NetworkSyncVar<string> Name { get; set; }
+
         public override void OnNetworkSpawned(NetworkClient spawner)
         {
             base.OnNetworkSpawned(spawner);
             Log.GlobalInfo("Just got spawned by client " + spawner.ClientID);
+            Name.Value = "hey";
+        }
+
+        public override void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
+        {
+            base.OnSyncVarChanged(client, what);
+            Log.GlobalInfo($"SyncVar {what.Name} changed to {what.ValueRaw}");
         }
     }
 }
