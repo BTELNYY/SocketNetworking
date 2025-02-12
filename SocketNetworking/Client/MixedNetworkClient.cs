@@ -11,6 +11,7 @@ using SocketNetworking.Attributes;
 using SocketNetworking.Shared;
 using System.Net.Sockets;
 using System.Threading;
+using System.Diagnostics;
 
 namespace SocketNetworking.Client
 {
@@ -196,6 +197,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
+            Log.Info($"Connecting to {Transport.PeerAddress.ToString()}:{Transport.Peer.Port} on UDP...");
             Exception ex = UdpTransport.Connect(Transport.PeerAddress.ToString(), Transport.Peer.Port);
             if (ex != null)
             {

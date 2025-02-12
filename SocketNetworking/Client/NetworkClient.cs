@@ -71,6 +71,11 @@ namespace SocketNetworking.Client
         public event Action ClientDisconnected;
 
         /// <summary>
+        /// Called when the <see cref="StopClient"/> finishes executing.
+        /// </summary>
+        public event Action ClientStopped;
+
+        /// <summary>
         /// Called on both Remote and Local Clients when the connection state changes.
         /// </summary>
         public event Action<ConnectionState> ConnectionStateUpdated;
@@ -143,6 +148,11 @@ namespace SocketNetworking.Client
         /// Called when a network client is destroyed, gives the clients ID.
         /// </summary>
         public static event Action<int> ClientDestroyed;
+
+        /// <summary>
+        /// Called when <see cref="StopClient"/> finishes.
+        /// </summary>
+        public static event Action<NetworkClient> ClientStoppedStatic;
 
         /// <summary>
         /// Called when a client is created, gives the <see cref="NetworkClient"/> that was created.
@@ -543,7 +553,6 @@ namespace SocketNetworking.Client
             }
             set
             {
-                Log.Debug("Packet sending disabled?: " + value);
                 _noPacketSending = value;
             }
         }
@@ -828,13 +837,12 @@ namespace SocketNetworking.Client
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
                 Log.Info($"Disconnecting Client {ClientID} for " + message);
-                StopClient();
             }
             if (CurrnetClientLocation == ClientLocation.Local)
             {
                 Log.Info("Disconnecting from server. Reason: " + message);
-                StopClient();
             }
+            StopClient();
         }
 
         /// <summary>
@@ -851,6 +859,9 @@ namespace SocketNetworking.Client
         public virtual void StopClient()
         {
             NetworkManager.SendDisconnectedPulse(this);
+            _connectionState = ConnectionState.Disconnected;
+            Transport?.Close();
+            _shuttingDown = true;
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
                 RemoteStopClient();
@@ -859,18 +870,13 @@ namespace SocketNetworking.Client
             {
                 LocalStopClient();
             }
-            _connectionState = ConnectionState.Disconnected;
-            Transport?.Close();
-            _shuttingDown = true;
-            //_packetReaderThread?.Abort();
-            //_packetSenderThread?.Abort();
-            //_packetReaderThread = null;
-            //_packetSenderThread = null;
             if (Clients.Contains(this))
             {
                 Clients.Remove(this);
             }
             Log.Info("Closing Client!");
+            ClientStopped?.Invoke();
+            ClientStoppedStatic?.Invoke(this);
         }
 
         protected virtual void LocalStopClient()
@@ -1750,6 +1756,7 @@ namespace SocketNetworking.Client
                         };
                         if (!attemptResult)
                         {
+                            NoPacketSending = false;
                             Disconnect("SSL Handshake failure");
                         }
                         SendImmediate(upgradepacketResult);

@@ -28,9 +28,7 @@ namespace SocketNetworking.Transports
             Client = client;
         }
 
-        public string CertificateString { get; private set; }
-
-        public X509Certificate Certificate { get; private set; }
+        public X509Certificate Certificate { get; set; }
 
         public bool UsingSSL { get; private set; } = false;
 
@@ -44,48 +42,7 @@ namespace SocketNetworking.Transports
 
         public override bool IsConnected => Client.Connected;
 
-        private SslStream SslStream;
-
-        public bool ClientSSLUpgrade(string hostname)
-        {
-            try
-            {
-                var stream = new SslStream(Stream, true, ClientVerifyCert);
-                stream.AuthenticateAsClient(hostname);
-                SslStream = stream;
-            }
-            catch (AuthenticationException ex)
-            {
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Log.GlobalError("SSL Auth failure! Error: " + ex.ToString());
-                return false;
-            }
-            return true;
-        }
-
-        public bool ServerSSLUpgrade(X509Certificate certificate)
-        {
-            try
-            {
-                var stream = new SslStream(Stream, true, ServerVerifyCert);
-                stream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
-                SslStream = stream;
-            }
-            catch (AuthenticationException ex)
-            {
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Log.GlobalError("SSL Auth failure! Error: " + ex.ToString());
-                return false;
-            }
-            Certificate = certificate;
-            return true;
-        }
+        public SslStream SslStream { get; set; }
 
         public void SetSSLState(bool state)
         {
@@ -98,39 +55,6 @@ namespace SocketNetworking.Transports
                 }
                 UsingSSL = true;
             }
-        }
-
-        protected virtual bool ServerVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
-            if(sslPolicyErrors == SslPolicyErrors.None || sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateNotAvailable))
-            {
-                return true;
-            }
-            Log.GlobalError($"SSL Policy Errors: {string.Join(", ", sslPolicyErrors.GetActiveFlags())}");
-            return false;
-        }
-
-        protected virtual bool ClientVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
-            if (sslPolicyErrors == SslPolicyErrors.None)
-            {
-                Certificate = certificate;
-                return true;
-            }
-            if(sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateChainErrors))
-            {
-                foreach(var chainEntry in chain.ChainStatus)
-                {
-                    Log.GlobalInfo($"Chain Status: {string.Join(",", chainEntry.Status.GetActiveFlags())}. Description: {chainEntry.StatusInformation}");
-                    if (chainEntry.Status.HasFlag(X509ChainStatusFlags.UntrustedRoot))
-                    {
-                        Log.GlobalWarning("Untrusted root certificate detected.");
-                        return true;
-                    }
-                }
-            }
-            Log.GlobalError($"SSL Policy Errors: {string.Join(", ", sslPolicyErrors.GetActiveFlags())}");
-            return false;
         }
 
         public Stream Stream
