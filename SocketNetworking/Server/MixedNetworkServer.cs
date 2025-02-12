@@ -160,6 +160,7 @@ namespace SocketNetworking.Server
                 }
             }
             Log.Info("Shutting down UDP Server!");
+            udpClient.Dispose();
             return;
         }
     }

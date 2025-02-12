@@ -17,7 +17,6 @@ namespace SocketNetworking.Client
 {
     public class NetworkClient
     {
-
         static NetworkClient instance;
 
         /// <summary>
@@ -864,11 +863,11 @@ namespace SocketNetworking.Client
             _shuttingDown = true;
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
-                RemoteStopClient();
+                OnRemoteStopClient();
             }
             else
             {
-                LocalStopClient();
+                OnLocalStopClient();
             }
             if (Clients.Contains(this))
             {
@@ -877,9 +876,10 @@ namespace SocketNetworking.Client
             Log.Info("Closing Client!");
             ClientStopped?.Invoke();
             ClientStoppedStatic?.Invoke(this);
+            GC.Collect();
         }
 
-        protected virtual void LocalStopClient()
+        protected virtual void OnLocalStopClient()
         {
             _packetReaderThread?.Abort();
             _packetSenderThread?.Abort();
@@ -887,7 +887,7 @@ namespace SocketNetworking.Client
             _packetSenderThread = null;
         }
 
-        protected virtual void RemoteStopClient()
+        protected virtual void OnRemoteStopClient()
         {
             NetworkServer.RemoveClient(ClientID);
         }
@@ -1863,32 +1863,6 @@ namespace SocketNetworking.Client
             }
         }
 
-        #endregion
-
-        #endregion
-
-        /// <summary>
-        /// Reads the next packet and handles it. (Non-blocking)
-        /// </summary>
-        internal void ReadNext()
-        {
-            RawReader();
-            //Log.Debug("Reader ran");
-        }
-
-        /// <summary>
-        /// Writes the next packet. (Blocking)
-        /// </summary>
-        internal void WriteNext()
-        {
-            RawWriter();
-            //Log.Debug("Writer ran");
-        }
-
-        #endregion
-
-        #region Packet Proccessing
-
         protected void HandlePacket(PacketHeader header, byte[] fullPacket)
         {
             if (CurrnetClientLocation == ClientLocation.Remote)
@@ -1914,6 +1888,28 @@ namespace SocketNetworking.Client
             {
                 HandlePacket(result.Header, result.Data);
             }
+        }
+
+        #endregion
+
+        #endregion
+
+        /// <summary>
+        /// Reads the next packet and handles it. (Non-blocking)
+        /// </summary>
+        internal void ReadNext()
+        {
+            RawReader();
+            //Log.Debug("Reader ran");
+        }
+
+        /// <summary>
+        /// Writes the next packet. (Blocking)
+        /// </summary>
+        internal void WriteNext()
+        {
+            RawWriter();
+            //Log.Debug("Writer ran");
         }
 
         #endregion
