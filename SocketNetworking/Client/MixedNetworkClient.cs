@@ -161,7 +161,7 @@ namespace SocketNetworking.Client
             }
             catch(Exception ex)
             {
-                Log.Warning($"Malformed Packet. Length: {packet.Item1.Length}, From: {packet.Item2}");
+                Log.Warning($"Malformed Packet. Length: {packet.Item1.Length}, From: {packet.Item2}. Error: {ex.Message}");
             }
         }
 

@@ -100,6 +100,7 @@ namespace SocketNetworking.Client
             }
             catch (AuthenticationException ex)
             {
+                Log.Error("SSL Auth failure! Error: " + ex.Message);
                 SSLFailure?.Invoke();
                 return false;
             }
@@ -122,6 +123,7 @@ namespace SocketNetworking.Client
             }
             catch (AuthenticationException ex)
             {
+                Log.Error("SSL Auth failure! Error: " + ex.Message);
                 SSLFailure?.Invoke();
                 return false;
             }

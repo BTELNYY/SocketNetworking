@@ -15,14 +15,6 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public ProtocolConfiguration Configuration { get; set; } = new ProtocolConfiguration();
 
-        [Obsolete("Implement your own Authentication as this field is not encrypted when it is sent.")]
-        public string PasswordHash { get; private set; } = "lol";
-
-        public ClientDataPacket(string password) 
-        {
-            PasswordHash = password.GetStringHash();
-        }
-
         public ClientDataPacket()
         {
 
@@ -31,7 +23,6 @@ namespace SocketNetworking.PacketSystem.Packets
         public override ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = base.Deserialize(data);
-            PasswordHash = reader.ReadString();
             Configuration = reader.ReadPacketSerialized<ProtocolConfiguration>();
             return reader;
         }
@@ -39,7 +30,6 @@ namespace SocketNetworking.PacketSystem.Packets
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
-            writer.WriteString(PasswordHash);
             writer.WritePacketSerialized<ProtocolConfiguration>(Configuration);
             return writer;
         }

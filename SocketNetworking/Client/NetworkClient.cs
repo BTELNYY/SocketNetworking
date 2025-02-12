@@ -1084,7 +1084,8 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            ClientDataPacket dataPacket = new ClientDataPacket(_clientPassword);
+            ClientDataPacket dataPacket = new ClientDataPacket();
+            dataPacket.Configuration = ClientConfiguration;
             Send(dataPacket);
         }
 
@@ -1525,11 +1526,6 @@ namespace SocketNetworking.Client
                     if (clientDataPacket.Configuration.Version != NetworkServer.ServerConfiguration.Version)
                     {
                         Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
-                        break;
-                    }
-                    if ((clientDataPacket.PasswordHash != NetworkServer.Config.ServerPassword.GetStringHash()) && NetworkServer.Config.UseServerPassword)
-                    {
-                        Disconnect("Incorrect Server Password");
                         break;
                     }
                     ServerDataPacket serverDataPacket = new ServerDataPacket

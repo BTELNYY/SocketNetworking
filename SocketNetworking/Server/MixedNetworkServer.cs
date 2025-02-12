@@ -146,7 +146,7 @@ namespace SocketNetworking.Server
                 }
                 catch(Exception ex)
                 {
-                    //Log.Error(ex.ToString());
+                    Log.Error("UDP Client Listener Error: \n" + ex.ToString());
                     if(_udpClients.ContainsKey(listener))
                     {
                         MixedNetworkClient client = _udpClients[listener];
