@@ -1,5 +1,6 @@
 ﻿using SocketNetworking.Client;
 using SocketNetworking.PacketSystem;
+using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Shared.SyncVars
@@ -37,5 +38,11 @@ namespace SocketNetworking.Shared.SyncVars
         /// </summary>
         /// <param name="who"></param>
         void SyncTo(NetworkClient who);
+
+        /// <summary>
+        /// Get the <see cref="SyncVarData"/> to send.
+        /// </summary>
+        /// <returns></returns>
+        SyncVarData GetData();
     }
 }

@@ -437,10 +437,21 @@ namespace SocketNetworking.Shared
                         throw new InvalidOperationException("Creation in modifiction loop (Internal Error)");
                     case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
                         NetworkObjectData data = GetNetworkObjectData(@object);
+                        List<SyncVarData> datas = new List<SyncVarData>();
                         foreach(var info in data.SyncVars)
                         {
                             INetworkSyncVar var = (INetworkSyncVar)info.GetValue(@object);
-                            var.SyncTo(handle.Client);
+                            datas.Add(var.GetData());
+                        }
+                        while (datas.Count > 0)
+                        {
+                            SyncVarUpdatePacket syncVarUpdatePacket = new SyncVarUpdatePacket();
+                            syncVarUpdatePacket.Data = datas.Take(3).ToList();
+                            for (int i = 0; i < syncVarUpdatePacket.Data.Count; i++)
+                            {
+                                datas.RemoveAt(0);
+                            }
+                            handle.Client.Send(syncVarUpdatePacket);
                         }
                         @object.OnNetworkSpawned(handle.Client);
                         SendCreatedPulse(handle.Client, @object);

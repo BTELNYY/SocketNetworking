@@ -143,7 +143,8 @@ namespace SocketNetworking.Shared.SyncVars
                 this.value = t;
             }
         }
-        SyncVarUpdatePacket GetPacket()
+
+        public SyncVarData GetData()
         {
             SerializedData data = NetworkConvert.Serialize(value);
             SyncVarData syncVarData = new SyncVarData()
@@ -152,6 +153,12 @@ namespace SocketNetworking.Shared.SyncVars
                 Data = data,
                 TargetVar = Name,
             };
+            return syncVarData;
+        }
+
+        SyncVarUpdatePacket GetPacket()
+        {
+            SyncVarData syncVarData = GetData();
             SyncVarUpdatePacket packet = new SyncVarUpdatePacket()
             {
                 Data = new List<SyncVarData> { syncVarData },
