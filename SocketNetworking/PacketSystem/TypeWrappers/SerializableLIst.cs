@@ -34,11 +34,11 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             {
                 TType = typeof(T);
             }
-            if (!NetworkConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)))
+            if (!NetworkConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)) && !NetworkManager.TypeToTypeWrapper.ContainsKey(TType))
             {
                 throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", "values");
             }
-            _internalList = new List<T>();
+            _internalList = values.ToList();
         }
 
         public SerializableList()
@@ -88,7 +88,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             }
             int length = reader.ReadInt();
             usedBytes += 4;
-            while (reader.DataLength > 0)
+            while (usedBytes < length + 4)
             {
                 int currentChunkLength = reader.ReadInt();
                 usedBytes += 4;
@@ -115,34 +115,12 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
 
         public int GetLength()
         {
-            //We have this becuase our "counter" and "size" flags must exist. So the structure goes:
-            //Length, Elements
-            //Each element gets a length value attached to it.
-            int size = sizeof(int);
-            if (_internalList.Count == 0)
-            {
-                return 0;
-            }
-            foreach(T element in _internalList)
-            {
-                size += sizeof(int);
-                if(element.GetType().GetInterfaces().Contains(typeof(IPacketSerializable))) 
-                {
-                    IPacketSerializable serializable = (IPacketSerializable)element;
-                    size += serializable.Serialize().Length;
-                }
-                else
-                {
-                    size += typeof(T).SizeOf();
-                }
-            }
-            return size;
+            return Serialize().Length;
         }
 
         public byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            writer.WriteInt(GetLength());
             foreach(T element in _internalList)
             {
                 //Dont need to worry about type safety as we check in constructor
@@ -151,7 +129,10 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
                 writer.WriteInt(dataLength);
                 writer.Write(finalBytes);
             }
-            return writer.Data;
+            ByteWriter finalWriter = new ByteWriter();
+            finalWriter.WriteInt(writer.DataLength);
+            finalWriter.Write(writer.Data);
+            return finalWriter.Data;
         }
 
         public int IndexOf(T item)

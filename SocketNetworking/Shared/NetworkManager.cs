@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Security;
+using System.Reflection.Emit;
 
 namespace SocketNetworking.Shared
 {
@@ -768,7 +769,7 @@ namespace SocketNetworking.Shared
                 }
             }
             List<FieldInfo> syncVars = new List<FieldInfo>();
-            FieldInfo[] fields = t.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            FieldInfo[] fields = t.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             foreach (FieldInfo field in fields)
             {
                 if (!field.FieldType.GetInterfaces().Contains(typeof(INetworkSyncVar)))
@@ -790,6 +791,12 @@ namespace SocketNetworking.Shared
         {
             Type typeOfObject = target.GetType();
             NetworkObjectData data = GetNetworkObjectData(typeOfObject);
+            foreach(FieldInfo field in data.SyncVars)
+            {
+                INetworkSyncVar var = (INetworkSyncVar)field.GetValue(target);
+                var.Name = field.Name;
+                field.SetValue(target, var);
+            }
             return data;
         }
         #endregion
@@ -925,9 +932,16 @@ namespace SocketNetworking.Shared
                 foreach(INetworkObject obj in NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget))
                 {
                     NetworkObjectData networkObjectData = NetworkObjects[obj];
-                    if (!(networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar) is INetworkSyncVar syncVar))
+                    FieldInfo field = networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar);
+                    if (field == default)
                     {
                         Log.Warning($"No such Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName}");
+                        continue;
+                    }
+                    INetworkSyncVar syncVar = field.GetValue(obj) as INetworkSyncVar;
+                    if(syncVar == default)
+                    {
+                        Log.Warning($"Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName} is not an actual sync var, but is listed as one.");
                         continue;
                     }
                     if (syncVar.SyncOwner != OwnershipMode.Public)
@@ -943,7 +957,6 @@ namespace SocketNetworking.Shared
                     object value = NetworkConvert.Deserialize(data.Data, out int read);
                     syncVar.RawSet(value, runner);
                     syncVar.OwnerObject.OnSyncVarChanged(runner, syncVar);
-                    //Log.Debug($"Updated {syncVar.Name} on {obj.GetType().FullName}. Read {read} bytes as the value.");
                     if (WhereAmI == ClientLocation.Remote && syncVar.OwnerObject.ObjectVisibilityMode != ObjectVisibilityMode.OwnerAndServer)
                     {
                         if(!publicReplicated.Any(x => x.NetworkIDTarget == data.NetworkIDTarget && x.TargetVar == data.TargetVar))

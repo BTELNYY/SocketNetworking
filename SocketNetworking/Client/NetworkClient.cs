@@ -1697,14 +1697,14 @@ namespace SocketNetworking.Client
                         break;
                     }
                     ClientIdUpdated?.Invoke();
-                    Dictionary<int, string> NewPacketPairs = serverDataPacket.CustomPacketAutoPairs;
+                    Dictionary<int, string> newPacketPairs = serverDataPacket.CustomPacketAutoPairs;
                     List<Type> homelessPackets = new List<Type>();
-                    foreach (int i in NewPacketPairs.Keys)
+                    foreach (int i in newPacketPairs.Keys)
                     {
-                        Type t = Type.GetType(NewPacketPairs[i]);
+                        Type t = NetworkManager.AdditionalPacketTypes.Values.FirstOrDefault(x => x.FullName == newPacketPairs[i]);
                         if (t == null)
                         {
-                            Log.Error($"Can't find packet with fullname {NewPacketPairs[i]}, this will cause more errors later!");
+                            Log.Error($"Can't find packet with fullname {newPacketPairs[i]}, this will cause more errors later!");
                             continue;
                         }
                         if (NetworkManager.AdditionalPacketTypes.ContainsKey(i))
@@ -1922,17 +1922,17 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Sends a log message to the other side of the <see cref="NetworkTransport"/>.
         /// </summary>
-        /// <param name="error"></param>
+        /// <param name="message"></param>
         /// <param name="severity"></param>
-        public void SendLog(string error, LogSeverity severity)
+        public void SendLog(string message, LogSeverity severity)
         {
-            NetworkInvoke(nameof(GetError), new object[] { error, severity });
+            NetworkInvoke(nameof(GetError), new object[] { message, (int)severity });
         }
 
         [NetworkInvokable(NetworkDirection.Any)]
-        private void GetError(NetworkHandle handle, string err, LogSeverity level)
+        private void GetError(NetworkHandle handle, string message, int level)
         {
-            Log.Any(err, level);
+            Log.Any("[From Peer]: " + message, (LogSeverity)level);
         }
 
         #endregion

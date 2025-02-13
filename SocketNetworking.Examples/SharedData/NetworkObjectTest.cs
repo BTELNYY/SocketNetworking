@@ -19,7 +19,7 @@ namespace SocketNetworking.Example.SharedData
             Name = new NetworkSyncVar<string>(this, OwnershipMode.Client, "test");
         }
 
-        public NetworkSyncVar<string> Name { get; set; }
+        public NetworkSyncVar<string> Name;
 
         public override void OnNetworkSpawned(NetworkClient spawner)
         {

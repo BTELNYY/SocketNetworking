@@ -127,7 +127,7 @@ namespace SocketNetworking.Shared.SyncVars
         {
             if(value is T t)
             {
-                value = t;
+                this.value = t;
             }
         }
 
