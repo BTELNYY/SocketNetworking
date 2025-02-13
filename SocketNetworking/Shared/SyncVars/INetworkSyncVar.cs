@@ -16,6 +16,7 @@ namespace SocketNetworking.Shared.SyncVars
         /// The <see cref="INetworkObject"/> where this is registered.
         /// </summary>
         INetworkObject OwnerObject { get; set; }
+
         /// <summary>
         /// The direction in which the <see cref="INetworkSyncVar"/> accepts changes to its state.
         /// </summary>
