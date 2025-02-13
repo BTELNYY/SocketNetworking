@@ -136,7 +136,7 @@
  * `NetworkSyncVar`s have their own permission setting, the `NetworkSyncVar<>.OwnershipMode`. This can differ from the `NetworkObject.OwnershipMode` to allow for publicly changing values.
 
 #### A NetworkSyncVar being created and set.
-![image](https://github.com/user-attachments/assets/b5794fea-007c-4383-9da4-3dc15ac97e75)
+![image](https://github.com/user-attachments/assets/65218d0f-d166-4846-9c06-2252df134fac)
 
 #### PacketListener
  * A Packet Listener is a method which allows the capture of packets addressed to the `INetworkObject` or `NetworkClient` its on.
