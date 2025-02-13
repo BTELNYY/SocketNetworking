@@ -824,7 +824,10 @@ namespace SocketNetworking.Shared
                 {
                     var.OwnerObject = target;
                 }
-                var.Name = field.Name;
+                if(var.Name == string.Empty)
+                {
+                    var.Name = field.Name;
+                }
                 field.SetValue(target, var);
             }
             return data;
