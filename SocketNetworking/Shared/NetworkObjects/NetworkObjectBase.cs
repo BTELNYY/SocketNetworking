@@ -21,7 +21,9 @@ namespace SocketNetworking.Shared.NetworkObjects
         public virtual OwnershipMode FallBackIfOwnerDisconnects => OwnershipMode.Server;
 
         public virtual ObjectVisibilityMode ObjectVisibilityMode { get; set; }
+
         public virtual int NetworkID { get; set; }
+
         public virtual bool Active { get; set; }
 
         public virtual bool Spawnable => true;
