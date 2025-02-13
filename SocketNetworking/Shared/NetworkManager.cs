@@ -16,6 +16,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security;
 using System.Reflection.Emit;
+using System.CodeDom;
 
 namespace SocketNetworking.Shared
 {
@@ -435,6 +436,12 @@ namespace SocketNetworking.Shared
                     case ObjectManagePacket.ObjectManageAction.Create:
                         throw new InvalidOperationException("Creation in modifiction loop (Internal Error)");
                     case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
+                        NetworkObjectData data = GetNetworkObjectData(@object);
+                        foreach(var info in data.SyncVars)
+                        {
+                            INetworkSyncVar var = (INetworkSyncVar)info.GetValue(@object);
+                            var.SyncTo(handle.Client);
+                        }
                         @object.OnNetworkSpawned(handle.Client);
                         SendCreatedPulse(handle.Client, @object);
                         break;
@@ -793,7 +800,19 @@ namespace SocketNetworking.Shared
             NetworkObjectData data = GetNetworkObjectData(typeOfObject);
             foreach(FieldInfo field in data.SyncVars)
             {
-                INetworkSyncVar var = (INetworkSyncVar)field.GetValue(target);
+                INetworkSyncVar var;
+                if(field.GetValue(target) == null)
+                {
+                    var = (INetworkSyncVar)Activator.CreateInstance(field.FieldType, target, target.OwnershipMode);
+                }
+                else
+                {
+                    var = (INetworkSyncVar)field.GetValue(target);
+                }
+                if(var.OwnerObject == default)
+                {
+                    var.OwnerObject = target;
+                }
                 var.Name = field.Name;
                 field.SetValue(target, var);
             }

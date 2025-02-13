@@ -14,11 +14,11 @@ namespace SocketNetworking.Shared.SyncVars
         /// <summary>
         /// The <see cref="INetworkObject"/> where this is registered.
         /// </summary>
-        INetworkObject OwnerObject { get; }
+        INetworkObject OwnerObject { get; set; }
         /// <summary>
         /// The direction in which the <see cref="INetworkSyncVar"/> accepts changes to its state.
         /// </summary>
-        OwnershipMode SyncOwner { get; }
+        OwnershipMode SyncOwner { get; set; }
 
         /// <summary>
         /// The raw value of the object. This should update the value of the object on the Network. See <see cref="RawSet(object, NetworkClient)"/>, which will update the value locally.
@@ -32,5 +32,10 @@ namespace SocketNetworking.Shared.SyncVars
         /// <param name="who"></param>
         void RawSet(object value, NetworkClient who);
 
+        /// <summary>
+        /// Called when the object has been spawned by the <see cref="NetworkClient"/> in order to sync the current value to them.
+        /// </summary>
+        /// <param name="who"></param>
+        void SyncTo(NetworkClient who);
     }
 }
