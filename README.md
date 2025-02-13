@@ -108,15 +108,18 @@
 #### A Custom Packet
 ![image](https://github.com/user-attachments/assets/ff11c149-cc19-4ddb-8961-0a081e31a2fa)
 
- ### Making NetworkObjects
-  * Create a class, and Inherit from `INetworkObject` or `NetworkObject` (interface vs class).
-  * Register and add your object with the library with `NetworkManager.AddNetworkObject(INetworkObject)`. This should only be called on the server.
-  * To spawn your object, use the `NetworkSpawn()` extension. (Class: `SocketNetworking.NetworkObjectExtensions`, it also has some goodies for setting Owners, Visibility, OwnershipModes, and NetworkIDs!)
-  * And you are all done, your object is now registered and spawned.
+## Network Objects
 
-## NetworkInvoke and PacketListener
+### Making NetworkObjects
+ * Create a class, and Inherit from `INetworkObject` or `NetworkObject` (interface vs class).
+ * Register and add your object with the library with `NetworkManager.AddNetworkObject(INetworkObject)`. This should only be called on the server.
+ * To spawn your object, use the `NetworkSpawn()` extension. (Class: `SocketNetworking.NetworkObjectExtensions`, it also has some goodies for setting Owners, Visibility, OwnershipModes, and NetworkIDs!)
+ * And you are all done, your object is now registered and spawned.
 
-### NetworkInvoke
+#### Using Network Objects
+ Network objects can have various properties and methods, you will need to know about `NetworkInvoke`, `PacketListener`s and `NetworkSyncVar`s
+
+#### NetworkInvoke
  * A Network Invocation is a call to run a method on another object somewhere.
  * To define one, you will need to create a new instance method on either the `NetworkClient` or a Registered `INetworkObject`. These methods have 2 parts, the method itself, and the attribute. The method itself can have any return type (assuming you can serialize it) and must have either a `NetworkHandle` or `NetworkClient` as its first parameter, all additional parameters can be anything serializable.
  * You will now need the attribute `NetworkInvokableAttribute`. The first parameter is the direction, this is important. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only.
@@ -125,8 +128,17 @@
 #### A NetworkInvoke method (above) and its caller (lower)
 ![image](https://github.com/user-attachments/assets/e0526e01-ebf1-4d9c-a216-911d34304cfa)
 
+#### NetworkSyncVars
+ * To create a `NetworkSyncVar<T>`, define a **field** in your `NetworkObject` with the type `NetworkSyncVar<>`, you can use any serializable type as the generic parameter.
+ * Within the classes constructor, you can optionally assign a value to the `NetworkSyncVar`. If you do not, the value will be null until the object is registered.
+ * When you want to update the value, set the `NetworkSyncVar<T>.Value` property, security modifiers apply.
+ * You must either own the object, or be the server to make the change.
+ * `NetworkSyncVar`s have their own permission setting, the `NetworkSyncVar<>.OwnershipMode`. This can differ from the `NetworkObject.OwnershipMode` to allow for publicly changing values.
 
-### PacketListener
+#### A NetworkSyncVar being created and set.
+![image](https://github.com/user-attachments/assets/b5794fea-007c-4383-9da4-3dc15ac97e75)
+
+#### PacketListener
  * A Packet Listener is a method which allows the capture of packets addressed to the `INetworkObject` or `NetworkClient` its on.
  * To create one, create a method of any security level and have the arguments as the Packet you want to capture and a `NetworkHandle`.
  * Now place an attribute, The `PacketListenerAttribute`. You will need to provide a few arguments. First, the type of the Packet you are listening for. (Hint, use `typeof()`.) Secondly, you will need to specify the direction, it works the same as the NetworkInvokableAttribute. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only.
