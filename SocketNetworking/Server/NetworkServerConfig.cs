@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Client;
@@ -39,6 +40,22 @@ namespace SocketNetworking.Server
         /// Should the server check for client passwords?
         /// </summary>
         public bool UseServerPassword { get; set; } =  false;
+
+        /// <summary>
+        /// If not an empty string, will be used to prove server identity for <see cref="TcpNetworkClient"/> and <see cref="MixedNetworkClient"/> clients. This should be a path to the certificate.
+        /// </summary>
+        public string CertificatePath { get; set; } = "./example.cert";
+
+        /// <summary>
+        /// The loaded certificate.
+        /// </summary>
+        public X509Certificate Certificate
+        {
+            get
+            {
+                return X509Certificate.CreateFromCertFile(CertificatePath);
+            }
+        }
 
         /// <summary>
         /// What port should the server start on?

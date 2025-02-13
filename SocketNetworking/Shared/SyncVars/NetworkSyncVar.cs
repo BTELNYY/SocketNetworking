@@ -5,21 +5,23 @@ using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
 using System;
 using System.Collections.Generic;
+using SocketNetworking.Shared.NetworkObjects;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Http.Headers;
 
-namespace SocketNetworking.Shared
+namespace SocketNetworking.Shared.SyncVars
 {
     public class NetworkSyncVar<T> : IEquatable<T>, ICloneable, INetworkSyncVar
     {
-        public INetworkObject OwnerObject { get; }
+        public INetworkObject OwnerObject { get; set; }
 
         /// <summary>
         /// Sets who is allowed to set the value of this Sync var.
         /// </summary>
-        public OwnershipMode SyncOwner { get; }
+        public OwnershipMode SyncOwner { get; set; }
 
         T value = default(T);
 
@@ -48,17 +50,7 @@ namespace SocketNetworking.Shared
 
         void Sync()
         {
-            SerializedData data = NetworkConvert.Serialize(value);
-            SyncVarData syncVarData = new SyncVarData()
-            {
-                NetworkIDTarget = OwnerObject.NetworkID,
-                Data = data,
-                TargetVar = Name,
-            };
-            SyncVarUpdatePacket packet = new SyncVarUpdatePacket()
-            {
-                Data = new List<SyncVarData> { syncVarData },
-            };
+            SyncVarUpdatePacket packet = GetPacket();
             if(NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 if(NetworkClient.LocalClient == null)
@@ -84,6 +76,10 @@ namespace SocketNetworking.Shared
                         }
                         owner.Send(packet);
                     }
+                    else if(OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
+                    {
+                        NetworkServer.SendToAll(packet);
+                    }
                 }
                 else
                 {
@@ -108,6 +104,28 @@ namespace SocketNetworking.Shared
 
         string _name = string.Empty;
 
+        public NetworkSyncVar(T value)
+        {
+            this.value = value;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, T value)
+        {
+            OwnerObject = ownerObject;
+            this.value = value;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner)
+        {
+            OwnerObject = ownerObject;
+            SyncOwner = syncOwner;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner, T value) : this(ownerObject, syncOwner)
+        {
+            this.value = value;
+        }
+
         public bool Equals(T other)
         {
             return other.Equals(value);
@@ -122,32 +140,36 @@ namespace SocketNetworking.Shared
         {
             if(value is T t)
             {
-                value = t;
+                this.value = t;
             }
         }
 
-        public NetworkSyncVar(INetworkObject owner, T value)
+        public SyncVarData GetData()
         {
-            OwnerObject = owner;
-            Value = value;
-            SyncOwner = OwnershipMode.Server;
+            SerializedData data = NetworkConvert.Serialize(value);
+            SyncVarData syncVarData = new SyncVarData()
+            {
+                NetworkIDTarget = OwnerObject.NetworkID,
+                Data = data,
+                TargetVar = Name,
+            };
+            return syncVarData;
         }
 
-        public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncDirection, T value)
+        SyncVarUpdatePacket GetPacket()
         {
-            OwnerObject = ownerObject;
-            SyncOwner = syncDirection;
-            Value = value;
+            SyncVarData syncVarData = GetData();
+            SyncVarUpdatePacket packet = new SyncVarUpdatePacket()
+            {
+                Data = new List<SyncVarData> { syncVarData },
+            };
+            return packet;
         }
 
-        public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner, T value, string name) : this(ownerObject, syncOwner, value)
+        public void SyncTo(NetworkClient who)
         {
-            _name = name;
-        }
-
-        public NetworkSyncVar(INetworkObject ownerObject, T value, string name) : this(ownerObject, value)
-        {
-            _name = name;
+            SyncVarUpdatePacket packet = GetPacket();
+            who.Send(packet);
         }
     }
 }

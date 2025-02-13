@@ -5,6 +5,9 @@ using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Transports;
+using SocketNetworking.Shared.Messages;
+using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.SyncVars;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -17,7 +20,6 @@ namespace SocketNetworking.Client
 {
     public class NetworkClient
     {
-
         static NetworkClient instance;
 
         /// <summary>
@@ -35,6 +37,17 @@ namespace SocketNetworking.Client
             }
         }
 
+        public NetworkClient()
+        {
+            Log = new Log()
+            {
+                Prefix = $"[Client (No ID)]"
+            };
+            ClientCreated?.Invoke(this);
+            _networkEncryptionManager = new NetworkEncryption();
+            Init();
+        }
+
         /// <summary>
         /// Forcefully remove client on destruction
         /// </summary>
@@ -48,26 +61,6 @@ namespace SocketNetworking.Client
             instance = null;
         }
 
-        public NetworkClient()
-        {
-            Log = new Log()
-            {
-                Prefix = $"[Client (No ID)]"
-            };
-            ClientCreated?.Invoke(this);
-            _networkEncryptionManager = new NetworkEncryptionManager();
-            Init();
-        }
-
-        /// <summary>
-        /// Called on the server and client when a client is created.
-        /// </summary>
-        public virtual void Init()
-        {
-
-        }
-
-
         #region Per Client (Non-Static) Events
         /// <summary>
         /// Called on both Remote and Local clients when the connection has succeeded and the Socket is ready to use.
@@ -78,6 +71,11 @@ namespace SocketNetworking.Client
         /// Called on the both Remote and Local clients when the connection stops. Note that Remote Clients will be destroyed.
         /// </summary>
         public event Action ClientDisconnected;
+
+        /// <summary>
+        /// Called when the <see cref="StopClient"/> finishes executing.
+        /// </summary>
+        public event Action ClientStopped;
 
         /// <summary>
         /// Called on both Remote and Local Clients when the connection state changes.
@@ -154,6 +152,11 @@ namespace SocketNetworking.Client
         public static event Action<int> ClientDestroyed;
 
         /// <summary>
+        /// Called when <see cref="StopClient"/> finishes.
+        /// </summary>
+        public static event Action<NetworkClient> ClientStoppedStatic;
+
+        /// <summary>
         /// Called when a client is created, gives the <see cref="NetworkClient"/> that was created.
         /// </summary>
         public static event Action<NetworkClient> ClientCreated;
@@ -161,6 +164,11 @@ namespace SocketNetworking.Client
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// Does this client support SSL? By default, only <see cref="TcpNetworkClient"/>s and <see cref="MixedNetworkClient"/>s support SSL.
+        /// </summary>
+        public virtual bool SupportsSSL { get; } = false;
 
         /// <summary>
         /// Provdies the <see cref="SocketNetworking.Log"/> instance for this client. The <see cref="Log.Prefix"/> is set to contain the client ID for logging purposes.
@@ -208,9 +216,9 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected NetworkEncryptionManager _networkEncryptionManager;
+        protected NetworkEncryption _networkEncryptionManager;
 
-        public NetworkEncryptionManager EncryptionManager
+        public NetworkEncryption EncryptionManager
         {
             get
             {
@@ -233,7 +241,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Returns the connection IP
         /// </summary>
-        public string ConnectedIP
+        public string ConnectedHostname
         {
             get
             {
@@ -390,7 +398,7 @@ namespace SocketNetworking.Client
                     State = value,
                     Reason = "Setter in remote."
                 };
-                Send(updatePacket);
+                SendImmediate(updatePacket);
                 _connectionState = value;
                 ConnectionStateUpdated?.Invoke(value);
                 ClientConnectionStateChanged?.Invoke(this);
@@ -517,6 +525,40 @@ namespace SocketNetworking.Client
             }
         }
 
+        private bool _noPacketHandling = false;
+
+        /// <summary>
+        /// When true, no <see cref="Packet"/>s can be sent or recieved by the <see cref="NetworkClient"/>. This is usually used with the <see cref="SupportsSSL"/> property to ensure proper SSL communication.
+        /// </summary>
+        public bool NoPacketHandling
+        {
+            get 
+            {
+                return _noPacketHandling;
+            }
+            set
+            {
+                _noPacketHandling = value;
+            }
+        }
+
+        private bool _noPacketSending = false;
+
+        /// <summary>
+        /// Prevents the current <see cref="NetworkClient"/> from sending any <see cref="Packet"/>s, Except with <see cref="SendImmediate(Packet)"/>.
+        /// </summary>
+        public bool NoPacketSending
+        {
+            get
+            {
+                return _noPacketSending;
+            }
+            set
+            {
+                _noPacketSending = value;
+            }
+        }
+
         #endregion
 
         #region Encryption
@@ -572,9 +614,32 @@ namespace SocketNetworking.Client
             timer.Start();
         }
 
+        protected virtual void ConfirmSSL()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected virtual bool ClientTrySSLUpgrade()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected virtual bool ServerTrySSLUpgrade()
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
         #region Init
+
+        /// <summary>
+        /// Called on the server and client when a client is created.
+        /// </summary>
+        public virtual void Init()
+        {
+
+        }
 
         /// <summary>
         /// Used when initializing a <see cref="NetworkClient"/> object on the server. Do not call this on the local client.
@@ -701,9 +766,36 @@ namespace SocketNetworking.Client
                 Log.Error("Can't connect: Already connected to a server.");
                 return false;
             }
+            string finalHostname = "";
+            if(!IPAddress.TryParse(hostname, out IPAddress ip))
+            {
+                try
+                {
+                    IPHostEntry entry = Dns.GetHostEntry(hostname);
+                    if(entry.AddressList.Count() == 0)
+                    {
+                        Log.Error($"Can't find host {hostname}");
+                        return false;
+                    }
+                    else
+                    {
+                        finalHostname = entry.AddressList[0].ToString();
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Log.Error("DNS Resolution failed. " + ex.ToString());
+                    return false;
+                }
+            }
+            else
+            {
+                finalHostname = hostname;
+            }
+            Log.Info($"Connecting to {finalHostname}:{port}...");
             try
             {
-                Exception ex = Transport.Connect(hostname, port);
+                Exception ex = Transport.Connect(finalHostname, port);
                 if (ex != null)
                 {
                     throw ex;
@@ -731,6 +823,7 @@ namespace SocketNetworking.Client
         {
             if (!IsConnected || !IsTransportConnected)
             {
+                StopClient();
                 return;
             }
             ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
@@ -738,7 +831,7 @@ namespace SocketNetworking.Client
                 State = ConnectionState.Disconnected,
                 Reason = message
             };
-            Send(connectionUpdatePacket);
+            SendImmediate(connectionUpdatePacket);
             _connectionState = ConnectionState.Disconnected;
             NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
             ConnectionError?.Invoke(errorData);
@@ -746,13 +839,12 @@ namespace SocketNetworking.Client
             if (CurrnetClientLocation == ClientLocation.Remote)
             {
                 Log.Info($"Disconnecting Client {ClientID} for " + message);
-                StopClient();
             }
             if (CurrnetClientLocation == ClientLocation.Local)
             {
                 Log.Info("Disconnecting from server. Reason: " + message);
-                StopClient();
             }
+            StopClient();
         }
 
         /// <summary>
@@ -769,21 +861,38 @@ namespace SocketNetworking.Client
         public virtual void StopClient()
         {
             NetworkManager.SendDisconnectedPulse(this);
-            if (CurrnetClientLocation == ClientLocation.Remote)
-            {
-                NetworkServer.RemoveClient(ClientID);
-            }
             _connectionState = ConnectionState.Disconnected;
             Transport?.Close();
             _shuttingDown = true;
-            //_packetReaderThread?.Abort();
-            //_packetSenderThread?.Abort();
-            //_packetReaderThread = null;
-            //_packetSenderThread = null;
+            if (CurrnetClientLocation == ClientLocation.Remote)
+            {
+                OnRemoteStopClient();
+            }
+            else
+            {
+                OnLocalStopClient();
+            }
             if (Clients.Contains(this))
             {
                 Clients.Remove(this);
             }
+            Log.Info("Closing Client!");
+            ClientStopped?.Invoke();
+            ClientStoppedStatic?.Invoke(this);
+            GC.Collect();
+        }
+
+        protected virtual void OnLocalStopClient()
+        {
+            _packetReaderThread?.Abort();
+            _packetSenderThread?.Abort();
+            _packetReaderThread = null;
+            _packetSenderThread = null;
+        }
+
+        protected virtual void OnRemoteStopClient()
+        {
+            NetworkServer.RemoveClient(ClientID);
         }
 
         void StartClient()
@@ -833,14 +942,16 @@ namespace SocketNetworking.Client
         /// Forces the library to send the provided packet immediately on the calling thread. This is not a good idea, and should not be used.
         /// </summary>
         /// <param name="packet"></param>
-        [Obsolete("This method is not thread safe. Use Send(Packet) instead.")]
         public void SendImmediate(Packet packet)
         {
+            if(NoPacketHandling)
+            {
+                return;
+            }
             PreparePacket(ref packet);
             byte[] fullBytes = SerializePacket(packet);
             try
             {
-                //Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
                 Exception ex = Transport.Send(fullBytes, packet.Destination);
                 if (ex != null)
                 {
@@ -897,10 +1008,7 @@ namespace SocketNetworking.Client
         /// <param name="priority"></param>
         public void Send(Packet packet, bool priority)
         {
-            if (priority)
-            {
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
-            }
+            packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
             Send(packet);
         }
 
@@ -979,7 +1087,8 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            ClientDataPacket dataPacket = new ClientDataPacket(_clientPassword);
+            ClientDataPacket dataPacket = new ClientDataPacket();
+            dataPacket.Configuration = ClientConfiguration;
             Send(dataPacket);
         }
 
@@ -1004,6 +1113,14 @@ namespace SocketNetworking.Client
 
         protected virtual void SendNextPacketInternal()
         {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if(NoPacketSending)
+            {
+                return;
+            }
             if (_toSendPackets.IsEmpty)
             {
                 return;
@@ -1098,9 +1215,9 @@ namespace SocketNetworking.Client
                     Log.Error("Encryption cannot be done at this point: Not ready.");
                     return null;
                 }
-                if(packetDataBytes.Length > NetworkEncryptionManager.MaxBytesForAsym)
+                if(packetDataBytes.Length > NetworkEncryption.MaxBytesForAsym)
                 {
-                    Log.Warning($"Packet is too large for RSA! Packet Size: {packetDataBytes.Length}, Max Packet Size: {NetworkEncryptionManager.MaxBytesForAsym}");
+                    Log.Warning($"Packet is too large for RSA! Packet Size: {packetDataBytes.Length}, Max Packet Size: {NetworkEncryption.MaxBytesForAsym}");
                 }
                 else
                 {
@@ -1159,6 +1276,10 @@ namespace SocketNetworking.Client
 
         protected virtual void RawWriter()
         {
+            if (NoPacketHandling)
+            {
+                return;
+            }
             if (_manualPacketSend)
             {
                 return;
@@ -1196,6 +1317,10 @@ namespace SocketNetworking.Client
         /// </summary>
         protected virtual void RawReader()
         {
+            if(NoPacketHandling)
+            {
+                return;
+            }
             if (!IsTransportConnected)
             {
                 StopClient();
@@ -1217,110 +1342,8 @@ namespace SocketNetworking.Client
             }
             catch (Exception ex)
             {
-                Log.Warning($"Malformed Packet. Size: {packet.Item1.Length}");
+                Log.Warning($"Malformed Packet. Size: {packet.Item1.Length}, Error: {ex.ToString()}");
             }
-            //if(!Transport.DataAvailable)
-            //{
-            //    //Log.Debug("No data available.");
-            //    return;
-            //}
-            //byte[] buffer = new byte[Packet.MaxPacketSize]; // this can now be freely changed
-            //Transport.BufferSize = Packet.MaxPacketSize;
-            //int fillSize = 0; // the amount of bytes in the buffer. Reading anything from fillsize on from the buffer is undefined.
-            //// this is for breaking a nested loop further down. thanks C#
-            //if (!IsTransportConnected)
-            //{
-            //    Log.Debug("Disconnected!");
-            //    StopClient();
-            //    return;
-            //}
-            ///*if(TcpClient.ReceiveBufferSize == 0)
-            //{
-            //    continue;
-            //}*/
-            ///*if (!NetworkStream.DataAvailable)
-            //{
-            //    //Log.Debug("Nothing to read on stream");
-            //    continue;
-            //}*/
-            ////Log.Debug(TcpClient.ReceiveBufferSize.ToString());
-            //if (fillSize < sizeof(int))
-            //{
-            //    // we dont have enough data to read the length data
-            //    //Log.Debug($"Trying to read bytes to get length (we need at least 4 we have {fillSize})!");
-            //    int count = 0;
-            //    try
-            //    {
-            //        int tempFillSize = fillSize;
-            //        //(byte[], Exception) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
-            //        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(0, buffer.Length - fillSize);
-            //        count = transportRead.Item1.Length;
-            //        buffer = Transport.Buffer;
-            //        //count = NetworkStream.Read(tempBuffer, 0, buffer.Length - fillSize);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        Log.Error(ex.ToString());
-            //        return;
-            //    }
-            //    fillSize += count;
-            //    //Log.Debug($"Read {count} bytes from buffer ({fillSize})!");
-            //    return;
-            //}
-            //int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
-            //bodySize = IPAddress.NetworkToHostOrder(bodySize);
-            //if (bodySize == 0)
-            //{
-            //    Log.Warning("Got a malformed packet, Body Size can't be 0, Resetting header to beginning of Packet (may cuase duplicate packets)");
-            //    fillSize = 0;
-            //    return;
-            //}
-            //fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
-            //                         // read the rest of the whole packet
-            //if (bodySize > Packet.MaxPacketSize || bodySize < 0)
-            //{
-            //    CurrentConnectionState = ConnectionState.Disconnected;
-            //    string s = string.Empty;
-            //    for (int i = 0; i < buffer.Length; i++)
-            //    {
-            //        s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
-            //    }
-            //    Log.Error("Body Size is corrupted! Raw: " + s);
-            //}
-            //while (fillSize < bodySize)
-            //{
-            //    //Log.Debug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
-            //    if (fillSize == buffer.Length)
-            //    {
-            //        // The buffer is too full, and we are fucked (oh shit)
-            //        Log.Error("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
-            //        Disconnect("Illegal Packet Size");
-            //        break;
-            //    }
-            //    int count;
-            //    try
-            //    {
-            //        (byte[], Exception, IPEndPoint) transportRead = Transport.Receive(fillSize, buffer.Length - fillSize);
-            //        count = transportRead.Item1.Length;
-            //        buffer = Transport.Buffer;
-            //        //count = NetworkStream.Read(buffer, fillSize, buffer.Length - fillSize);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        Log.Error(ex.ToString());
-            //        return;
-            //    }
-            //    fillSize += count;
-            //}
-            //// we now know we have enough bytes to read at least one whole packet;
-            //byte[] fullPacket = ShiftOut(ref buffer, bodySize + sizeof(int));
-            //if ((fillSize -= bodySize) < 0)
-            //{
-            //    fillSize = 0;
-            //}
-            ////fillSize -= bodySize; // this resyncs fillsize with the fullness of the buffer
-            ////Log.Debug($"Read full packet with size: {fullPacket.Length}");
-            //Deserialize(fullPacket, Transport.Peer);
         }
 
         /// <summary>
@@ -1438,6 +1461,32 @@ namespace SocketNetworking.Client
                         SendLog(ex.Message, LogSeverity.Error);
                     }
                     break;
+                case PacketType.SSLUpgrade:
+                    SSLUpgradePacket sslUpgradePacket = new SSLUpgradePacket();
+                    sslUpgradePacket.Deserialize(data);
+                    if(sslUpgradePacket.Result)
+                    {
+                        SSLUpgradePacket sslUpgradeResponse = new SSLUpgradePacket()
+                        {
+                            Continue = true,
+                        };
+                        SendImmediate(sslUpgradeResponse);
+                        ConfirmSSL();
+                        NoPacketSending = false;
+                        if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
+                        {
+                            ServerBeginEncryption();
+                        }
+                        else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
+                        {
+                            Ready = true;
+                        }
+                    }
+                    else
+                    {
+                        Disconnect("SSL Handshake failure");
+                    }
+                    break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
                     connectionUpdatePacket.Deserialize(data);
@@ -1482,28 +1531,34 @@ namespace SocketNetworking.Client
                         Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
                         break;
                     }
-                    if ((clientDataPacket.PasswordHash != NetworkServer.Config.ServerPassword.GetStringHash()) && NetworkServer.Config.UseServerPassword)
-                    {
-                        Disconnect("Incorrect Server Password");
-                        break;
-                    }
                     ServerDataPacket serverDataPacket = new ServerDataPacket
                     {
                         YourClientID = _clientId,
                         Configuration = NetworkServer.ServerConfiguration,
-                        CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized
+                        CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized,
+                        UpgradeToSSL = NetworkServer.Config.CertificatePath != "" && SupportsSSL,
                     };
-                    Send(serverDataPacket);
+                    SendImmediate(serverDataPacket);
+                    if(serverDataPacket.UpgradeToSSL && SupportsSSL)
+                    {
+                        NoPacketSending = true;
+                        SSLUpgradePacket upgradePacket = new SSLUpgradePacket();
+                        SendImmediate(upgradePacket);
+                        ServerTrySSLUpgrade();
+                    }
+                    else
+                    {
+                        if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
+                        {
+                            ServerBeginEncryption();
+                        }
+                        else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
+                        {
+                            Ready = true;
+                        }
+                    }
                     CurrentConnectionState = ConnectionState.Connected;
                     ClientIdUpdated?.Invoke();
-                    if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
-                    {
-                        ServerBeginEncryption();
-                    }
-                    else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
-                    {
-                        Ready = true;
-                    }
                     break;
                 case PacketType.NetworkInvocation:
                     NetworkInvokationPacket networkInvocationPacket = new NetworkInvokationPacket();
@@ -1635,20 +1690,21 @@ namespace SocketNetworking.Client
                     _clientId = serverDataPacket.YourClientID;
                     Log.Prefix = $"[Client {_clientId}]";
                     Log.Info("New Client ID: " + _clientId.ToString());
+                    Log.Info("Server Supports SSL? " + serverDataPacket.UpgradeToSSL);
                     if (serverDataPacket.Configuration.Protocol != ClientConfiguration.Protocol || serverDataPacket.Configuration.Version != ClientConfiguration.Version)
                     {
                         Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
                         break;
                     }
                     ClientIdUpdated?.Invoke();
-                    Dictionary<int, string> NewPacketPairs = serverDataPacket.CustomPacketAutoPairs;
+                    Dictionary<int, string> newPacketPairs = serverDataPacket.CustomPacketAutoPairs;
                     List<Type> homelessPackets = new List<Type>();
-                    foreach (int i in NewPacketPairs.Keys)
+                    foreach (int i in newPacketPairs.Keys)
                     {
-                        Type t = Type.GetType(NewPacketPairs[i]);
+                        Type t = NetworkManager.AdditionalPacketTypes.Values.FirstOrDefault(x => x.FullName == newPacketPairs[i]);
                         if (t == null)
                         {
-                            Log.Error($"Can't find packet with fullname {NewPacketPairs[i]}, this will cause more errors later!");
+                            Log.Error($"Can't find packet with fullname {newPacketPairs[i]}, this will cause more errors later!");
                             continue;
                         }
                         if (NetworkManager.AdditionalPacketTypes.ContainsKey(i))
@@ -1679,6 +1735,31 @@ namespace SocketNetworking.Client
                         built += $"ID: {i}, Fullname: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
                     }
                     Log.Info("Finished re-writing dynamic packets: " + built);
+                    break;
+                case PacketType.SSLUpgrade:
+                    SSLUpgradePacket ssLUpgradePacket = new SSLUpgradePacket();
+                    ssLUpgradePacket.Deserialize(data);
+                    if(ssLUpgradePacket.Continue)
+                    {
+                        ConfirmSSL();
+                        NoPacketSending = false;
+                        break;
+                    }
+                    else
+                    {
+                        NoPacketSending = true;
+                        bool attemptResult = ClientTrySSLUpgrade();
+                        SSLUpgradePacket upgradepacketResult = new SSLUpgradePacket()
+                        {
+                            Result = attemptResult,
+                        };
+                        if (!attemptResult)
+                        {
+                            NoPacketSending = false;
+                            Disconnect("SSL Handshake failure");
+                        }
+                        SendImmediate(upgradepacketResult);
+                    }
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
@@ -1785,30 +1866,6 @@ namespace SocketNetworking.Client
             }
         }
 
-        #endregion
-
-        #endregion
-
-        /// <summary>
-        /// Reads the next packet and handles it. (Non-blocking)
-        /// </summary>
-        internal void ReadNext()
-        {
-            RawReader();
-            //Log.Debug("Reader ran");
-        }
-
-        /// <summary>
-        /// Writes the next packet. (Blocking)
-        /// </summary>
-        internal void WriteNext()
-        {
-            RawWriter();
-            //Log.Debug("Writer ran");
-        }
-
-        #endregion
-
         protected void HandlePacket(PacketHeader header, byte[] fullPacket)
         {
             if (CurrnetClientLocation == ClientLocation.Remote)
@@ -1836,27 +1893,55 @@ namespace SocketNetworking.Client
             }
         }
 
+        #endregion
+
+        #endregion
+
+        /// <summary>
+        /// Reads the next packet and handles it. (Non-blocking)
+        /// </summary>
+        internal void ReadNext()
+        {
+            RawReader();
+            //Log.Debug("Reader ran");
+        }
+
+        /// <summary>
+        /// Writes the next packet. (Blocking)
+        /// </summary>
+        internal void WriteNext()
+        {
+            RawWriter();
+            //Log.Debug("Writer ran");
+        }
+
+        #endregion
+
+        #region Misc
+
         /// <summary>
         /// Sends a log message to the other side of the <see cref="NetworkTransport"/>.
         /// </summary>
-        /// <param name="error"></param>
+        /// <param name="message"></param>
         /// <param name="severity"></param>
-        public void SendLog(string error, LogSeverity severity)
+        public void SendLog(string message, LogSeverity severity)
         {
-            NetworkInvoke(nameof(GetError), new object[] { error, severity });
+            NetworkInvoke(nameof(GetError), new object[] { message, (int)severity });
         }
 
         [NetworkInvokable(NetworkDirection.Any)]
-        private void GetError(NetworkHandle handle, string err, LogSeverity level)
+        private void GetError(NetworkHandle handle, string message, int level)
         {
-            Log.Any(err, level);
+            Log.Any("[From Peer]: " + message, (LogSeverity)level);
         }
 
-        public struct ReadPacketInfo
-        {
-            public PacketHeader Header;
-            public byte[] Data;
-        }
+        #endregion
+    }
+
+    public struct ReadPacketInfo
+    {
+        public PacketHeader Header;
+        public byte[] Data;
     }
 
     public struct NetworkErrorData

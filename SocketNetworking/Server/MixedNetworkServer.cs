@@ -16,7 +16,7 @@ using System.IO.Ports;
 
 namespace SocketNetworking.Server
 {
-    public class MixedNetworkServer : NetworkServer
+    public class MixedNetworkServer : TcpNetworkServer
     {
         protected List<MixedNetworkClient> _awaitingUDPConnection = new List<MixedNetworkClient>();
 
@@ -66,8 +66,7 @@ namespace SocketNetworking.Server
                     socket.Close();
                     continue;
                 }
-                TcpTransport tcpTransport = new TcpTransport();
-                tcpTransport.Client = socket;
+                TcpTransport tcpTransport = new TcpTransport(socket);
                 socket.NoDelay = true;
                 IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                 Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on TCP.");
@@ -147,7 +146,7 @@ namespace SocketNetworking.Server
                 }
                 catch(Exception ex)
                 {
-                    //Log.Error(ex.ToString());
+                    Log.Error("UDP Client Listener Error: \n" + ex.ToString());
                     if(_udpClients.ContainsKey(listener))
                     {
                         MixedNetworkClient client = _udpClients[listener];
@@ -161,6 +160,7 @@ namespace SocketNetworking.Server
                 }
             }
             Log.Info("Shutting down UDP Server!");
+            udpClient.Dispose();
             return;
         }
     }

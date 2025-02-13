@@ -9,11 +9,30 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SocketNetworking.Server
 {
     public class TcpNetworkServer : NetworkServer
     {
+        public override void StartServer()
+        {
+            if (Config.CertificatePath == "")
+            {
+                Log.Info("No SSL Certificate found, ignoring.");
+            }
+            else
+            {
+                Log.Info($"Found an SSL Certificate: {Config.CertificatePath}, Checking.");
+                var cert = X509Certificate.CreateFromCertFile(Config.CertificatePath);
+                if (cert == null)
+                {
+                    Log.Warning("Certificate couldn't be loaded.");
+                }
+            }
+            base.StartServer();
+        }
+
         protected override void ServerStartThread()
         {
             Log.Info("Server starting...");
@@ -39,8 +58,7 @@ namespace SocketNetworking.Server
                     continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();
-                TcpTransport tcpTransport = new TcpTransport();
-                tcpTransport.Client = socket;
+                TcpTransport tcpTransport = new TcpTransport(socket);
                 socket.NoDelay = true;
                 IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                 Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");

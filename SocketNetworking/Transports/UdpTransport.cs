@@ -175,6 +175,8 @@ namespace SocketNetworking.Transports
         public override void Close()
         {
             Client.Close();
+            Client.Dispose();
+            Client = null;
         }
 
         public override Exception Connect(string hostname, int port)

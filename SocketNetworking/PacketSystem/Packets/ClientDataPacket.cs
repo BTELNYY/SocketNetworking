@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Attributes;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Messages;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
@@ -14,13 +15,6 @@ namespace SocketNetworking.PacketSystem.Packets
         public sealed override PacketType Type => PacketType.ClientData;
 
         public ProtocolConfiguration Configuration { get; set; } = new ProtocolConfiguration();
-        
-        public string PasswordHash { get; private set; } = "lol";
-
-        public ClientDataPacket(string password) 
-        {
-            PasswordHash = password.GetStringHash();
-        }
 
         public ClientDataPacket()
         {
@@ -30,7 +24,6 @@ namespace SocketNetworking.PacketSystem.Packets
         public override ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = base.Deserialize(data);
-            PasswordHash = reader.ReadString();
             Configuration = reader.ReadPacketSerialized<ProtocolConfiguration>();
             return reader;
         }
@@ -38,7 +31,6 @@ namespace SocketNetworking.PacketSystem.Packets
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
-            writer.WriteString(PasswordHash);
             writer.WritePacketSerialized<ProtocolConfiguration>(Configuration);
             return writer;
         }

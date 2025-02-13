@@ -5,18 +5,44 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Attributes;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.PacketSystem.TypeWrappers
 {
     [TypeWrapper(typeof(Type))]
     public class SerializableType : TypeWrapper<Type>
     {
+        public SerializableType() { }
+
+        public SerializableType(Type type)
+        {
+            Value = type;
+        }
+
         public override (Type, int) Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             string sType = reader.ReadString();
-            string sAssmebly = reader.ReadString();
-            Type result = Assembly.Load(sAssmebly).GetType(sType);
+            bool isHash = reader.ReadBool();
+            Type result;
+            if(isHash)
+            {
+                ulong hash = reader.ReadULong();
+                Assembly assembly = NetworkManager.GetAssemblyFromHash(hash);
+                if(assembly != null)
+                {
+                    result = assembly.GetType(sType);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unable to find an assembly with hash {hash}");
+                }
+            }
+            else
+            {
+                string sAssmebly = reader.ReadString();
+                result = Assembly.Load(sAssmebly).GetType(sType);
+            }
             Value = result;
             return (result, reader.ReadBytes);
         }
@@ -25,7 +51,16 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteString(Value.FullName);
-            writer.WriteString(Value.Assembly.FullName);
+            if(NetworkManager.HasAssemblyHash(Value.Assembly))
+            {
+                writer.WriteBool(true);
+                writer.WriteULong(NetworkManager.GetHashFromAssembly(Value.Assembly));
+            }
+            else
+            {
+                writer.WriteBool(false);
+                writer.WriteString(Value.Assembly.FullName);
+            }
             return writer.Data;
         }
     }

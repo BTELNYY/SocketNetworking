@@ -11,6 +11,8 @@ using SocketNetworking.Misc;
 using SocketNetworking.Transports;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.Messages;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Diagnostics;
@@ -57,7 +59,7 @@ namespace SocketNetworking.Server
         protected static ServerState _serverState = ServerState.NotStarted;
 
         public static ServerState CurrentServerState 
-        { 
+        {
             get
             {
                 return _serverState;

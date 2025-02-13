@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
+using SocketNetworking.Server;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.Transports
 {
@@ -16,6 +22,15 @@ namespace SocketNetworking.Transports
         {
             buffer = new byte[BufferSize];
         }
+
+        public TcpTransport(TcpClient client) : this()
+        {
+            Client = client;
+        }
+
+        public X509Certificate Certificate { get; set; }
+
+        public bool UsingSSL { get; private set; } = false;
 
         public override IPEndPoint Peer => Client.Client.RemoteEndPoint as IPEndPoint;
 
@@ -27,10 +42,29 @@ namespace SocketNetworking.Transports
 
         public override bool IsConnected => Client.Connected;
 
-        public NetworkStream Stream
+        public SslStream SslStream { get; set; }
+
+        public void SetSSLState(bool state)
+        {
+            lock(_lock)
+            {
+                if (SslStream == null)
+                {
+                    Log.GlobalError("SSL Stream is null when trying to set SSL state!");
+                    return;
+                }
+                UsingSSL = true;
+            }
+        }
+
+        public Stream Stream
         {
             get
             {
+                if(UsingSSL)
+                {
+                    return SslStream;
+                }
                 return Client.GetStream();
             }
         }
@@ -70,7 +104,6 @@ namespace SocketNetworking.Transports
         {
             try
             {
-                //Stream.Read(Buffer, offset, size);
                 lock(_lock)
                 {
                     Buffer = ReceiveInternal();
@@ -150,12 +183,13 @@ namespace SocketNetworking.Transports
                                          // read the rest of the whole packet
                 if (bodySize > Packet.MaxPacketSize || bodySize < 0)
                 {
+                    
                     string s = string.Empty;
                     for (int i = 0; i < buffer.Length; i++)
                     {
                         s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
                     }
-                    Log.GlobalError("Body Size is corrupted! Raw: " + s);
+                    //Log.GlobalError("Body Size is corrupted! Raw: " + s);
                 }
                 while (fillSize < bodySize)
                 {
@@ -203,6 +237,8 @@ namespace SocketNetworking.Transports
         public override void Close()
         {
             Client.Close();
+            Client.Dispose();
+            Client = null;
         }
     }
 }

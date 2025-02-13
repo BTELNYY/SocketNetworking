@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Shared.SyncVars;
 
-namespace SocketNetworking.Shared
+namespace SocketNetworking.Shared.NetworkObjects
 {
     public class NetworkObjectBase : INetworkObject
     {
@@ -103,6 +104,16 @@ namespace SocketNetworking.Shared
         public virtual void OnSync(NetworkClient client)
         {
 
+        }
+
+        public virtual void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
+        {
+            
+        }
+
+        public virtual void OnSyncVarsChanged()
+        {
+            
         }
 
         public virtual ByteReader RecieveExtraData(byte[] extraData)

@@ -11,6 +11,8 @@ using SocketNetworking.Attributes;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Server;
+using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.UnityEngine.Components
 {
@@ -320,6 +322,16 @@ namespace SocketNetworking.UnityEngine.Components
                     NetworkManager.NetworkInvoke(this, NetworkClient.LocalClient, methodName, args);
                 }
             }
+        }
+
+        public virtual void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
+        {
+            
+        }
+
+        public virtual void OnSyncVarsChanged()
+        {
+            
         }
     }
 }

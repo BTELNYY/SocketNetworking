@@ -35,16 +35,22 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             }
         }
 
-        public SerializableDictionary(Dictionary<TKey, TValue> keyValuePairs)
+        public SerializableDictionary(IDictionary<TKey, TValue> keyValuePairs)
         {
-            keys = new SerializableList<TKey>(keyValuePairs.Keys.ToArray());
-            values = new SerializableList<TValue>(keyValuePairs.Values.ToArray());
+            keys = new SerializableList<TKey>(keyValuePairs.Keys);
+            values = new SerializableList<TValue>(keyValuePairs.Values);
         }
 
         public SerializableDictionary(SerializableList<TKey> keys, SerializableList<TValue> values)
         {
             this.keys = keys;
             this.values = values;
+        }
+
+        public SerializableDictionary(IEnumerable<TKey> keys, IEnumerable<TValue> values)
+        {
+            this.keys = new SerializableList<TKey>(keys);
+            this.values = new SerializableList<TValue>(values);
         }
 
         public SerializableDictionary()
@@ -127,7 +133,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
 
         public int GetLength()
         {
-            int counter = 0;
+            int counter = 4;
             counter += keys.GetLength();
             counter += values.GetLength();
             return counter;

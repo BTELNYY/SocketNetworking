@@ -8,6 +8,13 @@ using SocketNetworking.Client;
 namespace SocketNetworking.Shared
 {
 
+    public enum OwnershipMode : byte
+    {
+        Client,
+        Server,
+        Public
+    }
+
     /// <summary>
     /// Structure which represents what kind of packet is being sent, Note that the only type the user should use is CustomPacket.
     /// </summary>
@@ -24,6 +31,7 @@ namespace SocketNetworking.Shared
         SyncVarUpdate,
         ObjectManage,
         KeepAlive,
+        SSLUpgrade,
         CustomPacket,
     }
 

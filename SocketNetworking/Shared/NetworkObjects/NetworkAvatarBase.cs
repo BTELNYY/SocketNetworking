@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketNetworking.Shared
+namespace SocketNetworking.Shared.NetworkObjects
 {
     public class NetworkAvatarBase : NetworkObjectBase
     {

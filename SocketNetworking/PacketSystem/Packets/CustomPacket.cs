@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.PacketSystem.Packets
 {

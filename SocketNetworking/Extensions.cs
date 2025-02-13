@@ -136,7 +136,6 @@ namespace SocketNetworking
             StringBuilder sb = new StringBuilder();
             foreach (byte b in GetHash(inputString))
                 sb.Append(b.ToString("X2"));
-
             return sb.ToString();
         }
 

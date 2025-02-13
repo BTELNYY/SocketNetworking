@@ -8,7 +8,7 @@ using SocketNetworking.PacketSystem.Packets;
 
 namespace SocketNetworking.Shared
 {
-    public class NetworkEncryptionManager
+    public class NetworkEncryption
     {
         public const int KEY_SIZE = 2048;
 
@@ -105,7 +105,7 @@ namespace SocketNetworking.Shared
             }
         }
 
-        public NetworkEncryptionManager()
+        public NetworkEncryption()
         {
             SharedAes = new AesCryptoServiceProvider();
             SharedAes.GenerateIV();

@@ -13,6 +13,7 @@ using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using System.CodeDom;
 using System.Configuration.Assemblies;
+using System.Runtime.InteropServices;
 
 namespace SocketNetworking.Shared
 {
@@ -456,43 +457,17 @@ namespace SocketNetworking.Shared
     
     public struct SerializedData : IPacketSerializable
     {
-        private string TypeFullName;
-
-        private string Assmebly;
-
-        private Assembly asmCache;
-
-        private ulong AssemblyHash;
-
-        public bool Hashed;
+        Type _type;
 
         public Type Type
         {
             get
             {
-                if(asmCache == null)
-                {
-                    if(Hashed)
-                    {
-                        asmCache = NetworkManager.GetAssemblyFromHash(AssemblyHash);
-                    }
-                    else
-                    {
-                        asmCache = Assembly.Load(Assmebly);
-                    }
-                }
-                return asmCache.GetType(TypeFullName);
+                return _type;
             }
             set
             {
-                TypeFullName = value.FullName;
-                asmCache = Assembly.GetAssembly(value);
-                Assmebly = asmCache.GetName().FullName;
-                if(NetworkManager.HasAssemblyHash(asmCache))
-                {
-                    Hashed = true;
-                    AssemblyHash = NetworkManager.GetHashFromAssembly(asmCache);
-                }
+                _type = value;
             }
         }
 
@@ -503,16 +478,8 @@ namespace SocketNetworking.Shared
         public int Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
-            TypeFullName = reader.ReadString();
-            Hashed = reader.ReadBool();
-            if (Hashed)
-            {
-                AssemblyHash = reader.ReadULong();
-            }
-            else
-            {
-                Assmebly = reader.ReadString();
-            }
+            Type type = reader.ReadWrapper<SerializableType, Type>();
+            Type = type;
             DataNull = reader.ReadBool();
             Data = reader.ReadByteArray();
             return reader.ReadBytes;
@@ -520,26 +487,17 @@ namespace SocketNetworking.Shared
 
         public int GetLength()
         {
-            return TypeFullName.SerializedSize() + Data.Length;
+            return Serialize().Length;
         }
 
         public byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            if(TypeFullName == null)
+            if(Type == null)
             {
                 Type = typeof(void);
             }
-            writer.WriteString(TypeFullName);
-            writer.WriteBool(Hashed);
-            if(Hashed)
-            {
-                writer.WriteULong(AssemblyHash);
-            }
-            else
-            {
-                writer.WriteString(Assmebly);
-            }
+            writer.WriteWrapper<SerializableType, Type>(new SerializableType(Type));
             if(Data == null)
             {
                 writer.WriteBool(true);
