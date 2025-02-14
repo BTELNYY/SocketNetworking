@@ -1132,7 +1132,7 @@ namespace SocketNetworking.Client
                 byte[] fullBytes = SerializePacket(packet);
                 try
                 {
-                    //Log.Debug($"Sending packet. Target: {packet.NetowrkIDTarget} Type: {packet.Type} CustomID: {packet.CustomPacketID} Length: {fullBytes.Length}");
+                    //Log.Debug($"Sending packet: {packet.ToString()}");
                     Exception ex = Transport.Send(fullBytes, packet.Destination);
                     if (ex != null)
                     {
@@ -1156,6 +1156,12 @@ namespace SocketNetworking.Client
         protected virtual void PreparePacket(ref Packet packet)
         {
             packet.Source = Transport.LocalEndPoint;
+            packet.SendTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            //Port 0 is not a valid port.
+            if(packet.Destination.Port == 0)
+            {
+                packet.Destination = Transport.Peer;
+            }
             bool validationSuccess = packet.ValidatePacket();
             if (!validationSuccess)
             {

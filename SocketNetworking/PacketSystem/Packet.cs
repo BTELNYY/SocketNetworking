@@ -99,6 +99,11 @@ namespace SocketNetworking.PacketSystem
         public IPEndPoint Source { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
 
         /// <summary>
+        /// The unix timestemp when the <see cref="Packet"/> was sent in milliseconds
+        /// </summary>
+        public long SendTime { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
+        /// <summary>
         /// This method will validate the packet and modify it as needed. For example, it will change flags if need be, or the content if it isn't properly defined.
         /// </summary>
         /// <returns>
@@ -126,6 +131,7 @@ namespace SocketNetworking.PacketSystem
             SerializableIPEndPoint source = new SerializableIPEndPoint(Source);
             writer.WriteWrapper<SerializableIPEndPoint, IPEndPoint>(destination);
             writer.WriteWrapper<SerializableIPEndPoint, IPEndPoint>(source);
+            writer.WriteLong(SendTime);
             return writer;
         }
 
@@ -151,11 +157,14 @@ namespace SocketNetworking.PacketSystem
             CustomPacketID = reader.ReadInt();
             Destination = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
             Source = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
-            //if (expectedLength != reader.DataLength)
-            //{
-            //    throw new InvalidNetworkDataException("Packet Deserializer stole more bytes then it should!");
-            //}
+            SendTime = reader.ReadLong();
             return reader;
+        }
+
+        public override string ToString()
+        {
+            string result = $"Size: {Size}, Type: {Type}, Flags: {Flags.GetActiveFlagsString()}, NetworkIDTarget: {NetowrkIDTarget}, CustomPacketID: {CustomPacketID}, Destination: {Destination}, Source: {Source}, SendTime: {SendTime}";
+            return result;
         }
     }
 

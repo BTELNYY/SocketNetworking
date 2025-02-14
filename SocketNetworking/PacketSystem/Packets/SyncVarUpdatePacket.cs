@@ -39,12 +39,15 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public SerializedData Data;
 
+        public OwnershipMode Mode;
+
         public int Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             NetworkIDTarget = reader.ReadInt();
             TargetVar = reader.ReadString();
             Data = reader.ReadPacketSerialized<SerializedData>();
+            Mode = (OwnershipMode)reader.ReadByte();
             return reader.ReadBytes;
         }
 
@@ -59,6 +62,7 @@ namespace SocketNetworking.PacketSystem.Packets
             writer.WriteInt(NetworkIDTarget);
             writer.WriteString(TargetVar);
             writer.WritePacketSerialized<SerializedData>(Data);
+            writer.WriteByte((byte)Mode);
             return writer.Data;
         }
     }

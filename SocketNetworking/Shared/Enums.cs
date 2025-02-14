@@ -32,6 +32,7 @@ namespace SocketNetworking.Shared
         ObjectManage,
         KeepAlive,
         SSLUpgrade,
+        StreamPacket,
         CustomPacket,
     }
 

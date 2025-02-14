@@ -986,6 +986,7 @@ namespace SocketNetworking.Shared
                     }
                     object value = NetworkConvert.Deserialize(data.Data, out int read);
                     syncVar.RawSet(value, runner);
+                    syncVar.RawSet(data.Mode, runner);
                     syncVar.OwnerObject.OnSyncVarChanged(runner, syncVar);
                     if (WhereAmI == ClientLocation.Remote && syncVar.OwnerObject.ObjectVisibilityMode != ObjectVisibilityMode.OwnerAndServer)
                     {

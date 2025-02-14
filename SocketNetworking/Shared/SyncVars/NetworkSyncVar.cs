@@ -21,7 +21,20 @@ namespace SocketNetworking.Shared.SyncVars
         /// <summary>
         /// Sets who is allowed to set the value of this Sync var.
         /// </summary>
-        public OwnershipMode SyncOwner { get; set; }
+        public OwnershipMode SyncOwner
+        {
+            get
+            {
+                return _mode;
+            }
+            set
+            {
+                _mode = value;
+                Sync();
+            }
+        }
+
+        OwnershipMode _mode;
 
         T value = default(T);
 
@@ -48,7 +61,7 @@ namespace SocketNetworking.Shared.SyncVars
             }
         }
 
-        void Sync()
+        public void Sync()
         {
             SyncVarUpdatePacket packet = GetPacket();
             if(NetworkManager.WhereAmI == ClientLocation.Local)
@@ -118,7 +131,7 @@ namespace SocketNetworking.Shared.SyncVars
         public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner)
         {
             OwnerObject = ownerObject;
-            SyncOwner = syncOwner;
+            _mode = syncOwner;
         }
 
         public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner, T value) : this(ownerObject, syncOwner)
@@ -136,7 +149,7 @@ namespace SocketNetworking.Shared.SyncVars
             return new NetworkSyncVar<T>(OwnerObject, SyncOwner, value);
         }
 
-        public void RawSet(object value, NetworkClient who)
+        public virtual void RawSet(object value, NetworkClient who)
         {
             if(value is T t)
             {
@@ -144,7 +157,12 @@ namespace SocketNetworking.Shared.SyncVars
             }
         }
 
-        public SyncVarData GetData()
+        public virtual void RawSet(OwnershipMode mode, NetworkClient who)
+        {
+            _mode = mode;
+        }
+
+        public virtual SyncVarData GetData()
         {
             SerializedData data = NetworkConvert.Serialize(value);
             SyncVarData syncVarData = new SyncVarData()
@@ -152,6 +170,7 @@ namespace SocketNetworking.Shared.SyncVars
                 NetworkIDTarget = OwnerObject.NetworkID,
                 Data = data,
                 TargetVar = Name,
+                Mode = SyncOwner,
             };
             return syncVarData;
         }
@@ -166,7 +185,7 @@ namespace SocketNetworking.Shared.SyncVars
             return packet;
         }
 
-        public void SyncTo(NetworkClient who)
+        public virtual void SyncTo(NetworkClient who)
         {
             SyncVarUpdatePacket packet = GetPacket();
             who.Send(packet);
