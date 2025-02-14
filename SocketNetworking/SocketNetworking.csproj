@@ -78,6 +78,7 @@
     <Compile Include="PacketSystem\Packets\KeepAlivePacket.cs" />
     <Compile Include="PacketSystem\Packets\ObjectManagePacket.cs" />
     <Compile Include="PacketSystem\Packets\SSLUpgradePacket.cs" />
+    <Compile Include="PacketSystem\Packets\StreamPacket.cs" />
     <Compile Include="PacketSystem\Packets\SyncVarUpdatePacket.cs" />
     <Compile Include="PacketSystem\TypeWrappers\SerializableType.cs" />
     <Compile Include="Server\NetworkServerConfig.cs" />
@@ -85,6 +86,7 @@
     <Compile Include="Server\TcpNetworkServer.cs" />
     <Compile Include="Server\UdpNetworkServer.cs" />
     <Compile Include="Shared\NetworkObjects\INetworkSpawnable.cs" />
+    <Compile Include="Shared\Streams\NetStreamBase.cs" />
     <Compile Include="Shared\SyncVars\INetworkSyncVar.cs" />
     <Compile Include="Shared\NetworkObjects\NetworkAvatarBase.cs" />
     <Compile Include="Shared\NetworkHandle.cs" />
