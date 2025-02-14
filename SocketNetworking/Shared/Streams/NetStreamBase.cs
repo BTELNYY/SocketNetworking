@@ -4,55 +4,119 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Client;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
 
 namespace SocketNetworking.Shared.Streams
 {
-    public class NetStreamBase : Stream
+    public abstract class NetStreamBase : Stream
     {
-        public ushort ID { get; }
-
-
-
-        public override bool CanRead => throw new NotImplementedException();
-
-        public override bool CanSeek => throw new NotImplementedException();
-
-        public override bool CanWrite => throw new NotImplementedException();
-
-        public override long Length => throw new NotImplementedException();
-
-        public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public override void Flush()
+        public NetStreamBase(short id, int bufferSize)
         {
-            throw new NotImplementedException();
+            this.id = id;
+            this.bufferSize = bufferSize;
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
+        short id;
+
+        int bufferSize;
+
+        public short ID
         {
-            throw new NotImplementedException();
+            get
+            {
+                return id;
+            }
         }
 
-        public override long Seek(long offset, SeekOrigin origin)
+        public int BufferSize
         {
-            throw new NotImplementedException();
-        }
-
-        public override void SetLength(long value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            throw new NotImplementedException();
+            get 
+            { 
+                return bufferSize; 
+            }
         }
 
         public virtual void RecieveNetworkData(StreamPacket packet)
         {
 
+        }
+    }
+
+
+
+    public struct StreamResponseData : IPacketSerializable
+    {
+        public StreamError Error;
+
+        public string Message;
+
+        public bool Continue;
+
+        public int Deserialize(byte[] data)
+        {
+            ByteReader reader = new ByteReader(data);
+            Error = (StreamError)reader.ReadByte();
+            Message = reader.ReadString();
+            Continue = reader.ReadBool();
+            return reader.ReadBytes;
+        }
+
+        public int GetLength()
+        {
+            return Serialize().Length;
+        }
+
+        public byte[] Serialize()
+        {
+            ByteWriter writer = new ByteWriter();
+            writer.WriteByte((byte)Error);
+            writer.WriteString(Message);
+            writer.WriteBool(Continue);
+            return writer.Data;
+        }
+
+        public enum StreamError : byte
+        {
+            None,
+            GeneralError,
+        }
+    }
+
+    public struct StreamMetaData : IPacketSerializable
+    {
+        public int MaxBufferSize;
+
+        public bool AllowSeeking;
+
+        public bool AllowReading;
+
+        public bool AllowWriting;
+
+        public int GetLength()
+        {
+            return Serialize().Length;
+        }
+
+        public byte[] Serialize()
+        {
+            ByteWriter writer = new ByteWriter();
+            writer.WriteInt(MaxBufferSize);
+            writer.WriteBool(AllowSeeking);
+            writer.WriteBool(AllowReading);
+            writer.WriteBool(AllowWriting);
+            return writer.Data;
+        }
+
+        public int Deserialize(byte[] data)
+        {
+            ByteReader reader = new ByteReader(data);
+            MaxBufferSize = reader.ReadInt();
+            AllowSeeking = reader.ReadBool();
+            AllowReading = reader.ReadBool();
+            AllowWriting = reader.ReadBool();
+            return reader.ReadBytes;
         }
     }
 

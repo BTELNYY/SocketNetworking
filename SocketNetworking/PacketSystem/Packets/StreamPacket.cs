@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared;
 
 namespace SocketNetworking.PacketSystem.Packets
@@ -20,6 +21,8 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public string ErrorMessage { get; set; } = string.Empty;
 
+        public Type StreamType { get; set; } = typeof(void);
+
         public byte[] Data { get; set; } = new byte[0];
 
         public override ByteWriter Serialize()
@@ -33,6 +36,7 @@ namespace SocketNetworking.PacketSystem.Packets
                 writer.WriteString(ErrorMessage);
             }
             writer.WriteByteArray(Data);
+            writer.WriteWrapper<SerializableType, Type>(new SerializableType(StreamType));
             return writer;
         }
 
@@ -47,6 +51,7 @@ namespace SocketNetworking.PacketSystem.Packets
                 ErrorMessage = reader.ReadString();
             }
             Data = reader.ReadByteArray();
+            StreamType = reader.ReadWrapper<SerializableType, Type>();
             return reader;
         }
     }
