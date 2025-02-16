@@ -85,6 +85,21 @@ namespace SocketNetworking.PacketSystem
             _workingSetData = _workingSetData.RemoveFromStart(length);
         }
 
+        public T ReadObject<T>()
+        {
+            SerializedData data = ReadPacketSerialized<SerializedData>();
+            object obj = NetworkConvert.Deserialize(data, out int read);
+            Remove(read);
+            try
+            {
+                return (T)obj;
+            }
+            catch
+            {
+                return default;
+            }
+        }
+
         public byte[] Read(int length)
         {
             byte[] data = _workingSetData.Take(length).ToArray();

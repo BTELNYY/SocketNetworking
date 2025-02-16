@@ -19,6 +19,13 @@ namespace SocketNetworking.Shared
 {
     public class NetworkConvert
     {
+        static NetworkConvert()
+        {
+            Log = new Log("[Network Serialization]");
+        }
+
+        public static Log Log;
+
         /// <summary>
         /// List of allowed types for serialization. (Technically you can serialize anything but thats not a good idea, for complex structures just make use of <see cref="IPacketSerializable"/>)
         /// </summary>
@@ -190,6 +197,8 @@ namespace SocketNetworking.Shared
                 return sData;
             }
 
+            throw new NetworkSerializationException($"Type '{data.GetType().FullName}' cannot be serialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
+            return SerializedData.NullData;
             SerializableList<SerializedData> fieldData = new SerializableList<SerializedData>();
             SerializableList<SerializedData> propertyData = new SerializableList<SerializedData>();
             if (dataType.GetCustomAttribute<NetworkSerialized>() != null)

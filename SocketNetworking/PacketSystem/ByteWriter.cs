@@ -50,6 +50,12 @@ namespace SocketNetworking.PacketSystem
             _workingSetData = null;
         }
 
+        public void WriteObject<T>(T value)
+        {
+            SerializedData data = NetworkConvert.Serialize(value);
+            WritePacketSerialized<SerializedData>(data);
+        }
+
         public void WritePacketSerialized<T>(IPacketSerializable serializable)
         {
             byte[] data = serializable.Serialize();
