@@ -12,10 +12,13 @@ namespace SocketNetworking.Shared.Streams
 {
     public abstract class NetStreamBase : Stream
     {
+        byte[] buffer;
+
         public NetStreamBase(short id, int bufferSize)
         {
             this.id = id;
             this.bufferSize = bufferSize;
+            this.buffer = new byte[bufferSize];
         }
 
         short id;
@@ -42,6 +45,18 @@ namespace SocketNetworking.Shared.Streams
         {
 
         }
+
+        public virtual void Open()
+        {
+
+        }
+
+        public override void Close()
+        {
+            buffer = null;
+        }
+
+        public abstract void Send(Packet packet);
     }
 
 
