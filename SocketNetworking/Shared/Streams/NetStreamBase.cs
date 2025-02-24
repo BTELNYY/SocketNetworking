@@ -13,20 +13,31 @@ namespace SocketNetworking.Shared.Streams
 {
     public abstract class NetStreamBase : Stream
     {
+        NetStreamBase(NetworkClient client)
+        {
+            Client = client;
+            Log = new Log($"[Stream {id}, Client {client.ClientID}]");
+        }
+
+        public NetworkClient Client { get; }
+
+        public Log Log { get; }
+
         byte[] buffer;
 
-        public NetStreamBase(short id, int bufferSize)
+        public NetStreamBase(NetworkClient client, short id, int bufferSize) : this(client)
         {
             this.id = id;
             this.bufferSize = bufferSize;
             this.buffer = new byte[bufferSize];
+            Log.Prefix = $"[Stream {id}, Client {client.ClientID}]";
         }
 
-        short id;
+        ushort id;
 
         int bufferSize;
 
-        public short ID
+        public ushort ID
         {
             get
             {
@@ -44,12 +55,73 @@ namespace SocketNetworking.Shared.Streams
 
         public virtual void RecieveNetworkData(StreamPacket packet)
         {
-
+            ByteReader reader = new ByteReader(packet.Data);
+            switch(packet.Function)
+            {
+                case StreamFunction.DataSend:
+                    StreamData data = reader.ReadPacketSerialized<StreamData>();
+                    buffer = buffer.Push(data.Chunk);
+                    break;
+                case StreamFunction.Close:
+                    _isOpen = false;
+                    Close();
+                    break;
+                case StreamFunction.Accept:
+                    StreamMetaData metaData = reader.ReadPacketSerialized<StreamMetaData>();
+                    _isOpen = true;
+                    buffer = new byte[metaData.MaxBufferSize];
+                    _allowRead = metaData.AllowReading;
+                    _allowWrite = metaData.AllowWriting;
+                    _allowSeek = metaData.AllowSeeking;
+                    break;
+            }
         }
+
+        protected bool _allowWrite;
+
+        public bool AllowWrite
+        {
+            get
+            {
+                return _allowWrite;
+            }
+        }
+
+        protected bool _allowRead;
+
+        public bool AllowRead
+        {
+            get
+            {
+                return _allowRead;
+            }
+        }
+
+        protected bool _allowSeek;
+
+        public bool AllowSeek
+        {
+            get
+            {
+                return _allowSeek;
+            }
+        }
+
+        protected bool _isOpen;
+
+        public bool IsOpen
+        {
+            get
+            {
+                return _isOpen;
+            }
+        }
+
+        public bool UsePriority { get; set; }
 
         public virtual void Open()
         {
-
+            Client.Streams.Open(this);
         }
 
         public override void Close()
@@ -57,9 +129,16 @@ namespace SocketNetworking.Shared.Streams
             buffer = null;
         }
 
-        public abstract void Send(Packet packet);
-    }
+        public virtual void Send(Packet packet)
+        {
+            Client.Send(packet, UsePriority);
+        }
 
+        public virtual bool ValidateAcceptance(StreamMetaData data, StreamPacket packet, ByteReader reader)
+        {
+            return true;
+        }
+    }
 
 
     public struct StreamResponseData : IPacketSerializable

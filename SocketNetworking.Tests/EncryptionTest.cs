@@ -20,7 +20,7 @@ namespace SocketNetworking.Tests
             byte[] old = new byte[bytes.Length];
             bytes.CopyTo(old, 0);
             Assert.IsTrue(Enumerable.SequenceEqual(old, bytes));
-            NetworkEncryption manager = new NetworkEncryption();
+            NetworkEncryption manager = new NetworkEncryption(null);
             byte[] encrypted = manager.Encrypt(bytes);
             Assert.IsTrue(Enumerable.SequenceEqual(old, manager.Decrypt(encrypted)));
         }
@@ -34,7 +34,7 @@ namespace SocketNetworking.Tests
             byte[] old = new byte[bytes.Length];
             bytes.CopyTo(old, 0);
             Assert.IsTrue(Enumerable.SequenceEqual(old, bytes));
-            NetworkEncryption manager = new NetworkEncryption();
+            NetworkEncryption manager = new NetworkEncryption(null);
             byte[] encrypted = manager.Encrypt(bytes, false, true);
             byte[] returned = manager.Decrypt(encrypted, false);
             Assert.IsTrue(Enumerable.SequenceEqual(old, returned));

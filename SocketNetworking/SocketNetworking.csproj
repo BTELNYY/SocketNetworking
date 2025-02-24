@@ -86,6 +86,7 @@
     <Compile Include="Server\TcpNetworkServer.cs" />
     <Compile Include="Server\UdpNetworkServer.cs" />
     <Compile Include="Shared\NetworkObjects\INetworkSpawnable.cs" />
+    <Compile Include="Shared\NetworkStreams.cs" />
     <Compile Include="Shared\Streams\NetStreamBase.cs" />
     <Compile Include="Shared\SyncVars\INetworkSyncVar.cs" />
     <Compile Include="Shared\NetworkObjects\NetworkAvatarBase.cs" />
@@ -93,7 +94,7 @@
     <Compile Include="Shared\NetworkObjects\NetworkObjectBase.cs" />
     <Compile Include="Shared\SyncVars\NetworkSyncVar.cs" />
     <Compile Include="Transports\NetworkTransport.cs" />
-    <Compile Include="Shared\NetworkConvert.cs" />
+    <Compile Include="Shared\Serialization\ByteConvert.cs" />
     <Compile Include="Shared\NetworkEncryption.cs" />
     <Compile Include="Shared\NetworkManager.cs" />
     <Compile Include="Misc\NetworkResultAwaiter.cs" />
@@ -117,8 +118,8 @@
     <Compile Include="PacketSystem\Packets\ConnectionUpdatePacket.cs" />
     <Compile Include="PacketSystem\Packets\ServerDataPacket.cs" />
     <Compile Include="PacketSystem\Packets\CustomPacket.cs" />
-    <Compile Include="PacketSystem\ByteWriter.cs" />
-    <Compile Include="PacketSystem\ByteReader.cs" />
+    <Compile Include="Shared\Serialization\ByteWriter.cs" />
+    <Compile Include="Shared\Serialization\ByteReader.cs" />
     <Compile Include="PacketSystem\Packet.cs" />
     <Compile Include="PacketSystem\TypeWrappers\SerializableIPAddress.cs" />
     <Compile Include="PacketSystem\TypeWrappers\SerializableIPEndPoint.cs" />

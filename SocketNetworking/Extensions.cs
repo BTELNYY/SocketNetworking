@@ -41,15 +41,32 @@ namespace SocketNetworking
         /// </exception>
         public static T[] RemoveFromStart<T>(this T[] array, int amount)
         {
-            //Log.Debug("Old Size: " + array.Length);
             if (array.Length < amount)
             {
                 throw new ArgumentOutOfRangeException("amount", "Amount is out of range for specified array.");
             }
             List<T> newArray = array.ToList();
             newArray.RemoveRange(0, amount);
-            //Log.Debug("New size: " + newArray.ToArray().Length + " Should have removed: " + amount);
             return newArray.ToArray();
+        }
+
+
+        public static T[] Push<T>(this T[] array, T[] newData)
+        {
+            if(array.Length <= newData.Length)
+            {
+                array = newData.Take(array.Length).ToArray();
+                return array;
+            }
+            else
+            {
+                foreach(T t in newData.Reverse())
+                {
+                    array = array.Prepend(t).ToArray();
+                }
+                array = array.Take(array.Length - newData.Length).ToArray();
+                return array;
+            }
         }
 
         /// <summary>
