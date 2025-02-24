@@ -38,7 +38,13 @@ namespace SocketNetworking.Shared
             };
             packet.Data = metaData.Serialize();
             packet.StreamID = stream.ID;
+            packet.Function = StreamFunction.Open;
             Client.Send(packet);
+        }
+
+        public void Close(NetStreamBase stream)
+        {
+            
         }
 
         public void HandlePacket(StreamPacket packet)

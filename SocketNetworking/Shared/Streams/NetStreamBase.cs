@@ -126,6 +126,7 @@ namespace SocketNetworking.Shared.Streams
 
         public override void Close()
         {
+            Client.Streams.Close(this);
             buffer = null;
         }
 
