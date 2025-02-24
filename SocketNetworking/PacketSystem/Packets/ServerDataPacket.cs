@@ -9,6 +9,7 @@ using SocketNetworking.PacketSystem.TypeWrappers;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Messages;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem.Packets
 {

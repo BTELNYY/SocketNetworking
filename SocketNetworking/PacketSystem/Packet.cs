@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using System.Net;
 using SocketNetworking.PacketSystem.TypeWrappers;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem
 {
@@ -27,7 +28,7 @@ namespace SocketNetworking.PacketSystem
 
         public static byte[] SerializeSupportedType(object value)
         {
-            return NetworkConvert.Serialize(value).Data;
+            return ByteConvert.Serialize(value).Data;
         }
 
         /// <summary>

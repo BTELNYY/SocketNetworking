@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
 {

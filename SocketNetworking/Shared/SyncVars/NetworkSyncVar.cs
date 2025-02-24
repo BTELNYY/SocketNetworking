@@ -11,6 +11,7 @@ using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net.Http.Headers;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.SyncVars
 {
@@ -164,7 +165,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         public virtual SyncVarData GetData()
         {
-            SerializedData data = NetworkConvert.Serialize(value);
+            SerializedData data = ByteConvert.Serialize(value);
             SyncVarData syncVarData = new SyncVarData()
             {
                 NetworkIDTarget = OwnerObject.NetworkID,

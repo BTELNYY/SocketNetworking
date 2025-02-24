@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.TypeWrappers;
-using SocketNetworking.Shared;
+using SocketNetworking.Shared.Serialization;
 using UnityEditor.SearchService;
 using UnityEngine;
 

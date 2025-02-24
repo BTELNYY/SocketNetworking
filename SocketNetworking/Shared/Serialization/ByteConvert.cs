@@ -10,16 +10,15 @@ using System.Linq;
 using System.Reflection;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
-using SocketNetworking.Shared;
 using System.CodeDom;
 using System.Configuration.Assemblies;
 using System.Runtime.InteropServices;
 
-namespace SocketNetworking.Shared
+namespace SocketNetworking.Shared.Serialization
 {
-    public class NetworkConvert
+    public class ByteConvert
     {
-        static NetworkConvert()
+        static ByteConvert()
         {
             Log = new Log("[Network Serialization]");
         }
@@ -64,7 +63,7 @@ namespace SocketNetworking.Shared
         public static SerializedData Serialize(object data)
         {
             ByteWriter writer = new ByteWriter();
-            if(data == null)
+            if (data == null)
             {
                 return new SerializedData()
                 {
@@ -206,12 +205,12 @@ namespace SocketNetworking.Shared
                 List<FieldInfo> fields = dataType.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkNonSerialized>() == null).ToList();
                 List<PropertyInfo> properties = dataType.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.CanWrite && x.CanRead && x.GetCustomAttributes<NetworkNonSerialized>() == null).ToList();
 
-                foreach(FieldInfo field in fields)
+                foreach (FieldInfo field in fields)
                 {
                     SerializedData returneData = Serialize(field.GetValue(data));
                     fieldData.Add(returneData);
                 }
-                foreach(PropertyInfo property in properties)
+                foreach (PropertyInfo property in properties)
                 {
                     SerializedData returneData = Serialize(property.GetValue(data));
                     propertyData.Add(returneData);
@@ -260,25 +259,25 @@ namespace SocketNetworking.Shared
                 return null;
             }
 
-            if(data.Type == null)
+            if (data.Type == null)
             {
                 read = 0;
                 return null;
             }
-            
-            if(data.Type == typeof(NetworkClient))
+
+            if (data.Type == typeof(NetworkClient))
             {
                 int clientId = reader.ReadInt();
                 NetworkClient client = null;
-                if(NetworkManager.WhereAmI == ClientLocation.Remote)
+                if (NetworkManager.WhereAmI == ClientLocation.Remote)
                 {
                     client = NetworkServer.GetClient(clientId);
                 }
-                else if(NetworkManager.WhereAmI == ClientLocation.Local)
+                else if (NetworkManager.WhereAmI == ClientLocation.Local)
                 {
                     client = NetworkClient.Clients.Where(x => x.ClientID == clientId).FirstOrDefault();
                 }
-                if(client == default(NetworkClient))
+                if (client == default(NetworkClient))
                 {
                     throw new Exception("Can't find the networkclient which is referenced in this serialization.");
                 }
@@ -399,7 +398,7 @@ namespace SocketNetworking.Shared
                 List<FieldInfo> fields = data.Type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkNonSerialized>() == null).ToList();
                 List<PropertyInfo> properties = data.Type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.CanWrite && x.CanRead && x.GetCustomAttributes<NetworkNonSerialized>() == null).ToList();
                 int counter = 0;
-                foreach(FieldInfo field in fields)
+                foreach (FieldInfo field in fields)
                 {
                     field.SetValue(newObject, Deserialize(fieldData[counter], out int bytes));
                     customReadBytes += bytes;
@@ -434,7 +433,7 @@ namespace SocketNetworking.Shared
 
         public static T Deserialize<T>(SerializedData data, out int read)
         {
-            if(data.Type != typeof(T))
+            if (data.Type != typeof(T))
             {
                 throw new NetworkDeserializationException("Types provided do not match.");
             }
@@ -447,12 +446,12 @@ namespace SocketNetworking.Shared
         {
             ByteReader br = new ByteReader(data);
             SerializedData sData = br.ReadPacketSerialized<SerializedData>();
-            if(!br.IsEmpty)
+            if (!br.IsEmpty)
             {
                 Log.GlobalWarning("Provided Data Array was not emptied by the deseiralizer, probably extra bytes?");
             }
             Type givenType = sData.Type;
-            if(givenType == null)
+            if (givenType == null)
             {
                 throw new NetworkDeserializationException($"Type {givenType.Name} cannnot be found.");
             }
@@ -463,7 +462,7 @@ namespace SocketNetworking.Shared
             return Deserialize<T>(sData, out int read);
         }
     }
-    
+
     public struct SerializedData : IPacketSerializable
     {
         Type _type;
@@ -502,12 +501,12 @@ namespace SocketNetworking.Shared
         public byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            if(Type == null)
+            if (Type == null)
             {
                 Type = typeof(void);
             }
             writer.WriteWrapper<SerializableType, Type>(new SerializableType(Type));
-            if(Data == null)
+            if (Data == null)
             {
                 writer.WriteBool(true);
                 Data = new byte[] { };

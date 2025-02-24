@@ -15,6 +15,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Client
 {
@@ -44,7 +45,8 @@ namespace SocketNetworking.Client
                 Prefix = $"[Client (No ID)]"
             };
             ClientCreated?.Invoke(this);
-            _networkEncryptionManager = new NetworkEncryption();
+            _networkEncryptionManager = new NetworkEncryption(this);
+            _streams = new NetworkStreams(this);
             Init();
         }
 
@@ -223,6 +225,16 @@ namespace SocketNetworking.Client
             get
             {
                 return _networkEncryptionManager;
+            }
+        }
+
+        protected NetworkStreams _streams;
+
+        public NetworkStreams Streams
+        {
+            get
+            {
+                return _streams;
             }
         }
 

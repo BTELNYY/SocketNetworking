@@ -7,9 +7,9 @@ using System.Runtime.Serialization;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
-using SocketNetworking.Shared;
+using SocketNetworking.PacketSystem;
 
-namespace SocketNetworking.PacketSystem
+namespace SocketNetworking.Shared.Serialization
 {
     /// <summary>
     /// Provides Packet reading capablities by reading elements of the byte array.
@@ -36,12 +36,12 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// Is the buffer empty?
         /// </summary>
-        public bool IsEmpty 
-        { 
+        public bool IsEmpty
+        {
             get
             {
                 return _workingSetData.Length == 0;
-            } 
+            }
         }
 
         private byte[] _workingSetData = new byte[] { };
@@ -88,7 +88,7 @@ namespace SocketNetworking.PacketSystem
         public T ReadObject<T>()
         {
             SerializedData data = ReadPacketSerialized<SerializedData>();
-            object obj = NetworkConvert.Deserialize(data, out int read);
+            object obj = ByteConvert.Deserialize(data, out int read);
             Remove(read);
             try
             {
@@ -231,7 +231,7 @@ namespace SocketNetworking.PacketSystem
             byte[] stringArray = _workingSetData.Take(lenghtOfString).ToArray();
             Remove(stringArray.Length);
             string result = Encoding.UTF8.GetString(stringArray, 0, stringArray.Length);
-            if(_workingSetData.Length != expectedBytes)
+            if (_workingSetData.Length != expectedBytes)
             {
                 throw new InvalidOperationException("StringReader stole more bytes then it should have!");
             }

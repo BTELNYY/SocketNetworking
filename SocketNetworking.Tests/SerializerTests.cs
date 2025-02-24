@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.TypeWrappers;
 using System;
 using System.Collections.Generic;
@@ -11,6 +10,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Tests
 {

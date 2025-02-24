@@ -12,6 +12,7 @@ using SocketNetworking.Shared;
 using System.Net.Sockets;
 using System.Threading;
 using System.Diagnostics;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Client
 {

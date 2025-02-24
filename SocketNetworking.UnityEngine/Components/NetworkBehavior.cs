@@ -13,6 +13,7 @@ using SocketNetworking.Shared;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.SyncVars;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.UnityEngine.Components
 {

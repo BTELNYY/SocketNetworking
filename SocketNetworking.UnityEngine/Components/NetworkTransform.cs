@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SocketNetworking.PacketSystem;
 using SocketNetworking.UnityEngine.Packets.NetworkTransform;
 using SocketNetworking.UnityEngine.Packets;
 using SocketNetworking.UnityEngine.TypeWrappers;
@@ -14,6 +13,7 @@ using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.UnityEngine.Components
 {

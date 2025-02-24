@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
 using UnityEngine;
 using SocketNetworking.UnityEngine;
 using System.Security.Policy;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
 {

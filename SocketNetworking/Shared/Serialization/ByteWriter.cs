@@ -5,9 +5,9 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using SocketNetworking.Shared;
+using SocketNetworking.PacketSystem;
 
-namespace SocketNetworking.PacketSystem
+namespace SocketNetworking.Shared.Serialization
 {
     /// <summary>
     /// Provides buffer manipulation methods.
@@ -52,7 +52,7 @@ namespace SocketNetworking.PacketSystem
 
         public void WriteObject<T>(T value)
         {
-            SerializedData data = NetworkConvert.Serialize(value);
+            SerializedData data = ByteConvert.Serialize(value);
             WritePacketSerialized<SerializedData>(data);
         }
 
@@ -157,7 +157,7 @@ namespace SocketNetworking.PacketSystem
             byte[] bytes = Encoding.UTF8.GetBytes(data);
             int curLength = _workingSetData.Length;
             WriteInt(bytes.Length);
-            if(curLength + 4 > _workingSetData.Length)
+            if (curLength + 4 > _workingSetData.Length)
             {
                 Log.GlobalWarning("WriteInt failed!");
             }

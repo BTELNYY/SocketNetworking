@@ -1,12 +1,12 @@
 ﻿using SocketNetworking.Client;
 using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.PacketSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared.SyncVars;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.NetworkObjects
 {

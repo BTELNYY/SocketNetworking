@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using SocketNetworking.PacketSystem;
 using SocketNetworking.Attributes;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Example.SharedData
 {

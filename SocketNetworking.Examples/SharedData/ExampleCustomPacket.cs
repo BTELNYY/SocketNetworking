@@ -4,6 +4,7 @@ using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Example.SharedData
 {

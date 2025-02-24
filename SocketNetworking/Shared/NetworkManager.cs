@@ -17,6 +17,7 @@ using System.Reflection;
 using System.Security;
 using System.Reflection.Emit;
 using System.CodeDom;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared
 {
@@ -984,7 +985,7 @@ namespace SocketNetworking.Shared
                             }
                         }
                     }
-                    object value = NetworkConvert.Deserialize(data.Data, out int read);
+                    object value = ByteConvert.Deserialize(data.Data, out int read);
                     syncVar.RawSet(value, runner);
                     syncVar.RawSet(data.Mode, runner);
                     syncVar.OwnerObject.OnSyncVarChanged(runner, syncVar);
@@ -1182,7 +1183,7 @@ namespace SocketNetworking.Shared
             }
             foreach (SerializedData data in packet.Arguments)
             {
-                object obj = NetworkConvert.Deserialize(data, out int read);
+                object obj = ByteConvert.Deserialize(data, out int read);
                 args.Add(obj);
             }
             object result = null;
@@ -1203,7 +1204,7 @@ namespace SocketNetworking.Shared
             NetworkInvokations.Remove(packet.NetworkObjectTarget);
             NetworkInvokationResultPacket resultPacket = new NetworkInvokationResultPacket();
             resultPacket.CallbackID = packet.CallbackID;
-            resultPacket.Result = NetworkConvert.Serialize(result);
+            resultPacket.Result = ByteConvert.Serialize(result);
             resultPacket.IgnoreResult = packet.IgnoreResult;
             reciever.Send(resultPacket);
             return result;
@@ -1222,7 +1223,7 @@ namespace SocketNetworking.Shared
         /// The method name of the object from target argument. Note that the method msut be a non-static method. The access modifier does not matter.
         /// </param>
         /// <param name="args">
-        /// The arguments that should be provided to the method. Note that these arguments are serialized by <see cref="NetworkConvert"/>. Note: if your method has <see cref="NetworkClient"/> as its first argument, you do not have to inlude it, but you can.
+        /// The arguments that should be provided to the method. Note that these arguments are serialized by <see cref="ByteConvert"/>. Note: if your method has <see cref="NetworkClient"/> as its first argument, you do not have to inlude it, but you can.
         /// </param>
         /// <exception cref="NetworkInvocationException"></exception>
         /// <exception cref="SecurityException"></exception>
@@ -1292,7 +1293,7 @@ namespace SocketNetworking.Shared
             packet.MethodName = methodName;
             foreach (var arg in args)
             {
-                SocketNetworking.Shared.SerializedData data = NetworkConvert.Serialize(arg);
+                SerializedData data = ByteConvert.Serialize(arg);
                 packet.Arguments.Add(data);
             }
             packet.TargetType = target.GetType().FullName;
@@ -1374,7 +1375,7 @@ namespace SocketNetworking.Shared
             packet.IgnoreResult = false;
             foreach (var arg in args)
             {
-                SerializedData data = NetworkConvert.Serialize(arg);
+                SerializedData data = ByteConvert.Serialize(arg);
                 packet.Arguments.Add(data);
             }
             packet.TargetType = target.GetType().FullName;
@@ -1413,7 +1414,7 @@ namespace SocketNetworking.Shared
                 Log.Error($"NetworkInvoke on method {methodName} failed remotely! Error: " + resultPacket.ErrorMessage);
                 return default;
             }
-            object result = NetworkConvert.Deserialize(resultPacket.Result, out int read);
+            object result = ByteConvert.Deserialize(resultPacket.Result, out int read);
             if (result == null)
             {
                 return default;

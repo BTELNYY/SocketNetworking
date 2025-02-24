@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.Serialization;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.TypeWrappers

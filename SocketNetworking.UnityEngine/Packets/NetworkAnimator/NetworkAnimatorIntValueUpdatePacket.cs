@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.Serialization;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator

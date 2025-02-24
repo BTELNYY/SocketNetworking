@@ -10,9 +10,9 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using System.Reflection;
-using SocketNetworking.PacketSystem;
 using System.Threading;
 using System.IO.Ports;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Server
 {

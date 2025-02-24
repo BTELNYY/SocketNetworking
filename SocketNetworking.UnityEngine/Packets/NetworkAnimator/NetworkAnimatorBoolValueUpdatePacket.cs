@@ -1,5 +1,4 @@
 ﻿using System;
-using SocketNetworking.PacketSystem;
 using SocketNetworking.Attributes;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +7,7 @@ using System.Threading.Tasks;
 using SocketNetworking.PacketSystem.Packets;
 using UnityEngine;
 using System.Security.Policy;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
 {

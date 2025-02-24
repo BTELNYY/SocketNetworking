@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem.Packets
 {

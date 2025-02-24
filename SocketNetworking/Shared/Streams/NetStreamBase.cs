@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.Streams
 {

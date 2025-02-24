@@ -1,5 +1,4 @@
-﻿using SocketNetworking.PacketSystem;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -16,6 +15,7 @@ using JetBrains.Annotations;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.UnityEngine.Utility;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.UnityEngine
 {
