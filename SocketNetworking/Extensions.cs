@@ -15,6 +15,7 @@ using System.Reflection;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Server;
+using System.Collections;
 
 namespace SocketNetworking
 {
@@ -245,6 +246,18 @@ namespace SocketNetworking
             }
             return i;
         }
+
+        public static IEnumerable<TSource> SkipLong<TSource>(this IEnumerable<TSource> source, long count)
+        {
+            while (count > int.MaxValue)
+            {
+                source = source.Skip((int)int.MaxValue).ToList();
+                count -= int.MaxValue;
+            }
+            source = source.Skip((int)int.MaxValue).ToList();
+            return source;
+        }
+
 
         /// <summary>
         /// Checks if the type is a sublcass of the generic type <paramref name="generic"/>.

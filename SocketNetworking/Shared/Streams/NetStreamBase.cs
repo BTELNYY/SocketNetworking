@@ -17,6 +17,11 @@ namespace SocketNetworking.Shared.Streams
     {
         public event Action<int> NewDataRecieved;
 
+        /// <summary>
+        /// A maximum of 63,488 bytes can be sent every packet, you can write more per write operation, but they will be broken up into many packets.
+        /// </summary>
+        public const int MAX_BYTES_PER_SEND = 62 * 1024;
+
         NetStreamBase(NetworkClient client)
         {
             Client = client;
@@ -29,6 +34,11 @@ namespace SocketNetworking.Shared.Streams
 
         byte[] buffer;
 
+        long _position = 0;
+
+        public override long Length => throw new NotImplementedException();
+
+
         public NetStreamBase(NetworkClient client, ushort id, int bufferSize) : this(client)
         {
             this.id = id;
@@ -39,7 +49,7 @@ namespace SocketNetworking.Shared.Streams
 
         ushort id;
 
-        int bufferSize;
+        long bufferSize;
 
         public ushort ID
         {
@@ -57,7 +67,7 @@ namespace SocketNetworking.Shared.Streams
             }
         }
 
-        public int BufferSize
+        public long BufferSize
         {
             get 
             { 
@@ -76,18 +86,55 @@ namespace SocketNetworking.Shared.Streams
             };
         }
 
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            if(count < MAX_BYTES_PER_SEND)
+            {
+                StreamData data = new StreamData()
+                {
+                    Chunk = buffer.Skip(offset).Take(count).ToArray(),
+                    RequestID = 0
+                };
+                StreamPacket packet = new StreamPacket()
+                {
+                    StreamID = id,
+                    Function = StreamFunction.DataSend,
+                    Data = data.Serialize(),
+                };
+                Send(packet, false);
+            }
+            else
+            {
+                byte[] bufferPart = buffer.Skip(offset).Take(count).ToArray();
+                int written = 0;
+                while (written <= bufferPart.Length)
+                {
+                    StreamData data = new StreamData()
+                    {
+                        Chunk = buffer.Skip(offset).Take(count).ToArray(),
+                        RequestID = 0
+                    };
+                    StreamPacket packet = new StreamPacket()
+                    {
+                        StreamID = id,
+                        Function = StreamFunction.DataSend,
+                        Data = data.Serialize(),
+                    };
+                    Send(packet, false);
+                }
+            }
+            _position += count;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Called when the <see cref="NetStreamBase"/> is opened on the remote.
         /// </summary>
         public virtual void OnStreamOpenedRemote()
-        {
-
-        }
-
-        /// <summary>
-        /// Called when the <see cref="NetStreamBase"/> is opened on the local client.
-        /// </summary>
-        public virtual void OnStreamOpenedLocal()
         {
 
         }
@@ -155,7 +202,7 @@ namespace SocketNetworking.Shared.Streams
                     };
                     if (CanSeek)
                     {
-                        byte[] result = buffer.Skip(requestData.Index).ToArray();
+                        byte[] result = buffer.SkipLong(requestData.Index).ToArray();
                         streamResponseData.Chunk = result.Take(requestData.Length).ToArray();
                     }
                     else
@@ -256,36 +303,6 @@ namespace SocketNetworking.Shared.Streams
         {
             Client.Send(packet, usePriority);
         }
-
-        public override Task FlushAsync(CancellationToken cancellationToken)
-        {
-            return base.FlushAsync(cancellationToken);
-        }
-
-        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            return base.WriteAsync(buffer, offset, count, cancellationToken);
-        }
-
-        public override int EndRead(IAsyncResult asyncResult)
-        {
-            return base.EndRead(asyncResult);
-        }
-
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            return base.ReadAsync(buffer, offset, count, cancellationToken);
-        }
-
-        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-        {
-            return base.BeginRead(buffer, offset, count, callback, state);
-        }
-
-        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-        {
-            return base.BeginWrite(buffer, offset, count, callback, state);
-        }
     }
 
 
@@ -329,7 +346,7 @@ namespace SocketNetworking.Shared.Streams
 
     public struct StreamMetaData : IPacketSerializable
     {
-        public int MaxBufferSize;
+        public long MaxBufferSize;
 
         public bool AllowSeeking;
 
@@ -345,7 +362,7 @@ namespace SocketNetworking.Shared.Streams
         public byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            writer.WriteInt(MaxBufferSize);
+            writer.WriteLong(MaxBufferSize);
             writer.WriteBool(AllowSeeking);
             writer.WriteBool(AllowReading);
             writer.WriteBool(AllowWriting);
@@ -355,7 +372,7 @@ namespace SocketNetworking.Shared.Streams
         public int Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
-            MaxBufferSize = reader.ReadInt();
+            MaxBufferSize = reader.ReadLong();
             AllowSeeking = reader.ReadBool();
             AllowReading = reader.ReadBool();
             AllowWriting = reader.ReadBool();
@@ -367,7 +384,7 @@ namespace SocketNetworking.Shared.Streams
     {
         public ushort RequestID;
 
-        public int Index;
+        public long Index;
 
         public int Length;
 
@@ -375,7 +392,7 @@ namespace SocketNetworking.Shared.Streams
         {
             ByteReader reader = new ByteReader(data);
             RequestID = reader.ReadUShort();
-            Index = reader.ReadInt();
+            Index = reader.ReadLong();
             Length = reader.ReadInt();
             return reader.ReadBytes;
         }
@@ -389,7 +406,7 @@ namespace SocketNetworking.Shared.Streams
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteUShort(RequestID);
-            writer.WriteInt(Index);
+            writer.WriteLong(Index);
             writer.WriteInt(Length);
             return writer.Data;
         }

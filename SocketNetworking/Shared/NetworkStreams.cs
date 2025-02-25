@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Security.Policy;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.PacketSystem.Packets;
@@ -15,6 +17,10 @@ namespace SocketNetworking.Shared
     public class NetworkStreams
     {
         public event EventHandler<StreamOpenRequestEvent> StreamOpenRequest;
+
+        public event Action<NetStreamBase> StreamOpened;
+
+        public event Action<NetStreamBase> StreamClosed;
 
         public NetworkClient Client { get; }
 
@@ -65,6 +71,7 @@ namespace SocketNetworking.Shared
         public void Close(NetStreamBase stream)
         {
             _streams.Remove(stream);
+            StreamClosed?.Invoke(stream);
         }
 
         public void HandlePacket(StreamPacket packet)
@@ -93,6 +100,7 @@ namespace SocketNetworking.Shared
                     result.StreamID = packet.StreamID;
                     result.Data = streamBase.GetMetaData().Serialize();
                     Client.Send(result);
+                    StreamOpened?.Invoke(streamBase);
                 }
                 else
                 {
