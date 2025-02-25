@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.PacketSystem;
@@ -13,6 +15,8 @@ namespace SocketNetworking.Shared.Streams
 {
     public abstract class NetStreamBase : Stream
     {
+        public event Action<int> NewDataRecieved;
+
         NetStreamBase(NetworkClient client)
         {
             Client = client;
@@ -25,7 +29,7 @@ namespace SocketNetworking.Shared.Streams
 
         byte[] buffer;
 
-        public NetStreamBase(NetworkClient client, short id, int bufferSize) : this(client)
+        public NetStreamBase(NetworkClient client, ushort id, int bufferSize) : this(client)
         {
             this.id = id;
             this.bufferSize = bufferSize;
@@ -43,6 +47,14 @@ namespace SocketNetworking.Shared.Streams
             {
                 return id;
             }
+            set
+            {
+                if(IsOpen)
+                {
+                    return;
+                }
+                id = value;
+            }
         }
 
         public int BufferSize
@@ -53,6 +65,35 @@ namespace SocketNetworking.Shared.Streams
             }
         }
 
+        public virtual StreamMetaData GetMetaData()
+        {
+            return new StreamMetaData()
+            {
+                AllowReading = _allowRead,
+                AllowWriting = _allowWrite,
+                AllowSeeking = _allowSeek,
+                MaxBufferSize = bufferSize,
+            };
+        }
+
+        /// <summary>
+        /// Called when the <see cref="NetStreamBase"/> is opened on the remote.
+        /// </summary>
+        public virtual void OnStreamOpenedRemote()
+        {
+
+        }
+
+        /// <summary>
+        /// Called when the <see cref="NetStreamBase"/> is opened on the local client.
+        /// </summary>
+        public virtual void OnStreamOpenedLocal()
+        {
+
+        }
+
+        private ConcurrentDictionary<ushort, byte[]> _requests = new ConcurrentDictionary<ushort, byte[]>();
+
         public virtual void RecieveNetworkData(StreamPacket packet)
         {
             ByteReader reader = new ByteReader(packet.Data);
@@ -60,19 +101,70 @@ namespace SocketNetworking.Shared.Streams
             {
                 case StreamFunction.DataSend:
                     StreamData data = reader.ReadPacketSerialized<StreamData>();
-                    buffer = buffer.Push(data.Chunk);
+                    if(data.RequestID == 0)
+                    {
+                        buffer = buffer.Push(data.Chunk);
+                        NewDataRecieved?.Invoke(data.Chunk.Length);
+                    }
+                    else
+                    {
+                        if(_requests.ContainsKey(data.RequestID))
+                        {
+                            Log.Error($"Request ID {data.RequestID} has already been recieved! There is no way you have {ushort.MaxValue} pending data requests right?");
+                        }
+                        else
+                        {
+                            _requests.TryAdd(data.RequestID, data.Chunk);
+                        }
+                    }
                     break;
                 case StreamFunction.Close:
                     _isOpen = false;
+                    Log.Debug($"Stream was closed.");
                     Close();
                     break;
                 case StreamFunction.Accept:
+                case StreamFunction.MetaData:
                     StreamMetaData metaData = reader.ReadPacketSerialized<StreamMetaData>();
-                    _isOpen = true;
+                    if(packet.Function == StreamFunction.Accept)
+                    {
+                        _isOpen = true;
+                        OnStreamOpenedRemote();
+                    }
                     buffer = new byte[metaData.MaxBufferSize];
                     _allowRead = metaData.AllowReading;
                     _allowWrite = metaData.AllowWriting;
                     _allowSeek = metaData.AllowSeeking;
+                    break;
+                case StreamFunction.Reject:
+                    _isOpen = false;
+                    Close();
+                    Log.Error($"Stream {id} was rejected by remote.");
+                    break;
+                case StreamFunction.DataRequest:
+                    StreamRequestData requestData = reader.ReadPacketSerialized<StreamRequestData>();
+                    StreamPacket dataReqResponse = new StreamPacket()
+                    {
+                        Function = StreamFunction.DataSend,
+                        StreamID = ID,
+                    };
+                    StreamData streamResponseData = new StreamData()
+                    {
+                        Chunk = new byte[0],
+                        RequestID = requestData.RequestID,
+                    };
+                    if (CanSeek)
+                    {
+                        byte[] result = buffer.Skip(requestData.Index).ToArray();
+                        streamResponseData.Chunk = result.Take(requestData.Length).ToArray();
+                    }
+                    else
+                    {
+                        dataReqResponse.Error = true;
+                        dataReqResponse.ErrorMessage = "Seeking is not supported on this stream.";
+                    }
+                    dataReqResponse.Data = streamResponseData.Serialize();
+                    Send(dataReqResponse, false);
                     break;
             }
         }
@@ -117,11 +209,36 @@ namespace SocketNetworking.Shared.Streams
             }
         }
 
+        public override bool CanWrite => IsOpen && AllowWrite;
+
+        public override bool CanSeek => IsOpen && AllowSeek;
+
+        public override bool CanRead => IsOpen && AllowRead;
+
         public bool UsePriority { get; set; }
+
+        public virtual ByteWriter GetOpenData()
+        {
+            return new ByteWriter();
+        }
+
+        public virtual ByteReader SetOpenData(ByteReader reader)
+        {
+            return reader;
+        }
 
         public virtual void Open()
         {
             Client.Streams.Open(this);
+        }
+
+        public virtual void OpenBlocking()
+        {
+            Open();
+            while(!IsOpen)
+            {
+
+            }
         }
 
         public override void Close()
@@ -135,9 +252,39 @@ namespace SocketNetworking.Shared.Streams
             Client.Send(packet, UsePriority);
         }
 
-        public virtual bool ValidateAcceptance(StreamMetaData data, StreamPacket packet, ByteReader reader)
+        public virtual void Send(Packet packet, bool usePriority)
         {
-            return true;
+            Client.Send(packet, usePriority);
+        }
+
+        public override Task FlushAsync(CancellationToken cancellationToken)
+        {
+            return base.FlushAsync(cancellationToken);
+        }
+
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            return base.WriteAsync(buffer, offset, count, cancellationToken);
+        }
+
+        public override int EndRead(IAsyncResult asyncResult)
+        {
+            return base.EndRead(asyncResult);
+        }
+
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            return base.ReadAsync(buffer, offset, count, cancellationToken);
+        }
+
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            return base.BeginRead(buffer, offset, count, callback, state);
+        }
+
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            return base.BeginWrite(buffer, offset, count, callback, state);
         }
     }
 
@@ -216,13 +363,48 @@ namespace SocketNetworking.Shared.Streams
         }
     }
 
+    public struct StreamRequestData : IPacketSerializable
+    {
+        public ushort RequestID;
+
+        public int Index;
+
+        public int Length;
+
+        public int Deserialize(byte[] data)
+        {
+            ByteReader reader = new ByteReader(data);
+            RequestID = reader.ReadUShort();
+            Index = reader.ReadInt();
+            Length = reader.ReadInt();
+            return reader.ReadBytes;
+        }
+
+        public int GetLength()
+        {
+            return Serialize().Length;
+        }
+
+        public byte[] Serialize()
+        {
+            ByteWriter writer = new ByteWriter();
+            writer.WriteUShort(RequestID);
+            writer.WriteInt(Index);
+            writer.WriteInt(Length);
+            return writer.Data;
+        }
+    }
+
     public struct StreamData : IPacketSerializable
     {
+        public ushort RequestID;
+
         public byte[] Chunk;
 
         public int Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
+            RequestID = reader.ReadUShort();
             Chunk = reader.ReadByteArray();
             return reader.ReadBytes;
         }
@@ -235,6 +417,7 @@ namespace SocketNetworking.Shared.Streams
         public byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
+            writer.WriteUShort(RequestID);
             writer.WriteByteArray(Chunk);
             return writer.Data;
         }
