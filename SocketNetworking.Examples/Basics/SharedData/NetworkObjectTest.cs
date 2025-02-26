@@ -10,7 +10,7 @@ using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.SyncVars;
 
-namespace SocketNetworking.Example.SharedData
+namespace SocketNetworking.Example.Basics.SharedData
 {
     public class NetworkObjectTest : NetworkAvatarBase
     {

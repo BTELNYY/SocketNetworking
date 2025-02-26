@@ -7,7 +7,7 @@
     <ProjectGuid>{F8CBB59A-172D-4BF6-BCE7-9D53154F61B3}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>SocketNetworking.Example.Server</RootNamespace>
-    <AssemblyName>SocketNetworking.Example.Server</AssemblyName>
+    <AssemblyName>SocketNetworking.Example.Basics.Server</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -74,7 +74,7 @@
       <Project>{8d731ee2-ae7e-48a8-9a26-8f370d9fa1a2}</Project>
       <Name>SocketNetworking.Example.SharedData</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\SocketNetworking\SocketNetworking.csproj">
+    <ProjectReference Include="..\..\..\SocketNetworking\SocketNetworking.csproj">
       <Project>{ab97887e-ef11-4ce3-83b6-7e91456cf035}</Project>
       <Name>SocketNetworking</Name>
     </ProjectReference>

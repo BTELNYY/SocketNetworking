@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SocketNetworking;
-using SocketNetworking.Example.SharedData;
 using SocketNetworking.Transports;
 using SocketNetworking.Shared;
 using SocketNetworking.Client;
+using SocketNetworking.Example.Basics.SharedData;
 
-namespace SocketNetworking.Example.Client
+namespace SocketNetworking.Example.Basics.Client
 {
     public class Program
     {

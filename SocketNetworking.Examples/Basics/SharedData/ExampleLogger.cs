@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketNetworking.Example.SharedData
+namespace SocketNetworking.Example.Basics.SharedData
 {
     public class ExampleLogger
     {

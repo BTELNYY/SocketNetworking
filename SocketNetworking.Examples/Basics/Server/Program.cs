@@ -5,14 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using SocketNetworking;
-using SocketNetworking.Example.SharedData;
 using SocketNetworking.Misc;
 using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.Example.Basics.SharedData;
 
-namespace SocketNetworking.Example.Server
+namespace SocketNetworking.Example.Basics.Server
 {
     public class Program
     {

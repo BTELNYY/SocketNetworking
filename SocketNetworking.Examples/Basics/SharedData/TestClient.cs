@@ -8,7 +8,7 @@ using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 
-namespace SocketNetworking.Example.SharedData
+namespace SocketNetworking.Example.Basics.SharedData
 {
     public class TestClient : MixedNetworkClient
     {
@@ -21,7 +21,7 @@ namespace SocketNetworking.Example.SharedData
 
         public void NetworkInvokeSomeMethod(float someFloat, int someInt)
         {
-            TestResult result = NetworkInvoke<TestResult>(this, "SomeNetworkMethod", new object[] { someFloat, someInt, new ValueTuple<int, int> (1, 3) }, priority: true);
+            TestResult result = NetworkInvoke<TestResult>(this, "SomeNetworkMethod", new object[] { someFloat, someInt, new ValueTuple<int, int>(1, 3) }, priority: true);
             Log.GlobalDebug(result.ToString());
         }
 
