@@ -7,6 +7,7 @@ using SocketNetworking.Attributes;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Streams;
 
 namespace SocketNetworking.Example.Basics.SharedData
 {
@@ -31,6 +32,20 @@ namespace SocketNetworking.Example.Basics.SharedData
             Log.GlobalInfo($"Got a packet! Data: {packet.Data}, Flags: {packet.Flags.GetActiveFlagsString()}, Encrypted?: {handle.WasEncrypted}");
             Log.GlobalInfo($"Packet currently: {packet.Data}");
             Log.GlobalInfo($"Packet struct: {packet.Struct.ToString()}");
+        }
+
+        public override void Init()
+        {
+            base.Init();
+            ReadyStateChanged += TestClient_ReadyStateChanged;
+        }
+
+        private void TestClient_ReadyStateChanged(bool arg1, bool arg2)
+        {
+            if(Ready)
+            {
+                
+            }
         }
     }
 

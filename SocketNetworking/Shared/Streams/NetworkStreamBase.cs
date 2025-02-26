@@ -13,7 +13,7 @@ using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.Streams
 {
-    public abstract class NetStreamBase : Stream
+    public abstract class NetworkStreamBase : Stream
     {
         public event Action<int> NewDataRecieved;
 
@@ -22,7 +22,7 @@ namespace SocketNetworking.Shared.Streams
         /// </summary>
         public const int MAX_BYTES_PER_SEND = 62 * 1024;
 
-        NetStreamBase(NetworkClient client)
+        NetworkStreamBase(NetworkClient client)
         {
             Client = client;
             Log = new Log($"[Stream {id}, Client {client.ClientID}]");
@@ -36,10 +36,11 @@ namespace SocketNetworking.Shared.Streams
 
         long _position = 0;
 
-        public override long Length => throw new NotImplementedException();
+        public override long Length => buffer.Length - _position;
 
+        ushort lastWriteAmount = 0;
 
-        public NetStreamBase(NetworkClient client, ushort id, int bufferSize) : this(client)
+        public NetworkStreamBase(NetworkClient client, ushort id, int bufferSize) : this(client)
         {
             this.id = id;
             this.bufferSize = bufferSize;
@@ -132,7 +133,7 @@ namespace SocketNetworking.Shared.Streams
         }
 
         /// <summary>
-        /// Called when the <see cref="NetStreamBase"/> is opened on the remote.
+        /// Called when the <see cref="NetworkStreamBase"/> is opened on the remote.
         /// </summary>
         public virtual void OnStreamOpenedRemote()
         {
