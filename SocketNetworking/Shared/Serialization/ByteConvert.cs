@@ -289,7 +289,7 @@ namespace SocketNetworking.Shared.Serialization
             {
                 object obj = Activator.CreateInstance(data.Type);
                 IPacketSerializable serializable = (IPacketSerializable)obj;
-                read = serializable.Deserialize(data.Data);
+                read = serializable.Deserialize(data.Data).ReadBytes;
                 return serializable;
             }
 
@@ -483,22 +483,22 @@ namespace SocketNetworking.Shared.Serialization
 
         public byte[] Data;
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             Type type = reader.ReadWrapper<SerializableType, Type>();
             Type = type;
             DataNull = reader.ReadBool();
             Data = reader.ReadByteArray();
-            return reader.ReadBytes;
+            return reader;
         }
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return Serialize().DataLength;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             if (Type == null)
@@ -516,7 +516,7 @@ namespace SocketNetworking.Shared.Serialization
                 writer.WriteBool(false);
             }
             writer.WriteByteArray(Data);
-            return writer.Data;
+            return writer;
         }
 
         //Used internally to represent void returns in RPC and what not.

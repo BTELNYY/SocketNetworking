@@ -99,7 +99,7 @@ namespace SocketNetworking.Shared.Streams
                 {
                     StreamID = id,
                     Function = StreamFunction.DataSend,
-                    Data = data.Serialize(),
+                    Data = data.Serialize().Data,
                 };
                 Send(packet, false);
             }
@@ -118,7 +118,7 @@ namespace SocketNetworking.Shared.Streams
                     {
                         StreamID = id,
                         Function = StreamFunction.DataSend,
-                        Data = data.Serialize(),
+                        Data = data.Serialize().Data,
                     };
                     Send(packet, false);
                 }
@@ -210,7 +210,7 @@ namespace SocketNetworking.Shared.Streams
                         dataReqResponse.Error = true;
                         dataReqResponse.ErrorMessage = "Seeking is not supported on this stream.";
                     }
-                    dataReqResponse.Data = streamResponseData.Serialize();
+                    dataReqResponse.Data = streamResponseData.Serialize().Data;
                     Send(dataReqResponse, false);
                     break;
             }
@@ -314,27 +314,27 @@ namespace SocketNetworking.Shared.Streams
 
         public bool Continue;
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             Error = (StreamError)reader.ReadByte();
             Message = reader.ReadString();
             Continue = reader.ReadBool();
-            return reader.ReadBytes;
+            return reader;
         }
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return Serialize().DataLength;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteByte((byte)Error);
             writer.WriteString(Message);
             writer.WriteBool(Continue);
-            return writer.Data;
+            return writer;
         }
 
         public enum StreamError : byte
@@ -356,27 +356,27 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return Serialize().DataLength;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteLong(MaxBufferSize);
             writer.WriteBool(AllowSeeking);
             writer.WriteBool(AllowReading);
             writer.WriteBool(AllowWriting);
-            return writer.Data;
+            return writer;
         }
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             MaxBufferSize = reader.ReadLong();
             AllowSeeking = reader.ReadBool();
             AllowReading = reader.ReadBool();
             AllowWriting = reader.ReadBool();
-            return reader.ReadBytes;
+            return reader;
         }
     }
 
@@ -388,27 +388,27 @@ namespace SocketNetworking.Shared.Streams
 
         public int Length;
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             RequestID = reader.ReadUShort();
             Index = reader.ReadLong();
             Length = reader.ReadInt();
-            return reader.ReadBytes;
+            return reader;
         }
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return Serialize().DataLength;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteUShort(RequestID);
             writer.WriteLong(Index);
             writer.WriteInt(Length);
-            return writer.Data;
+            return writer;
         }
     }
 
@@ -418,25 +418,25 @@ namespace SocketNetworking.Shared.Streams
 
         public byte[] Chunk;
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             RequestID = reader.ReadUShort();
             Chunk = reader.ReadByteArray();
-            return reader.ReadBytes;
+            return reader;
         }
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return Serialize().Data.Length;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteUShort(RequestID);
             writer.WriteByteArray(Chunk);
-            return writer.Data;
+            return writer;
         }
     }
 }

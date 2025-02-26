@@ -366,7 +366,7 @@ namespace SocketNetworking.Server
         /// <param name="target"></param>
         /// <param name="toReadyOnly"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        public static void SendToAll(Packet packet, INetworkObject target, bool toReadyOnly = false)
+        public static void SendToAll(TargetedPacket packet, INetworkObject target, bool toReadyOnly = false)
         {
             if (!Active)
             {
@@ -383,7 +383,7 @@ namespace SocketNetworking.Server
             }
         }
 
-        public static void SentToAll(Packet packet, INetworkObject target, bool priority, bool toReadyOnly = false)
+        public static void SentToAll(TargetedPacket packet, INetworkObject target, bool priority, bool toReadyOnly = false)
         {
             if(priority)
             {
@@ -439,7 +439,7 @@ namespace SocketNetworking.Server
         /// <param name="target">
         /// The <see cref="INetworkObject"/> which is the target.
         /// </param>
-        public static void SendToReady(Packet packet, INetworkObject target)
+        public static void SendToReady(TargetedPacket packet, INetworkObject target)
         {
             if (!Active)
             {

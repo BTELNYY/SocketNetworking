@@ -42,29 +42,29 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public OwnershipMode Mode;
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             NetworkIDTarget = reader.ReadInt();
             TargetVar = reader.ReadString();
             Data = reader.ReadPacketSerialized<SerializedData>();
             Mode = (OwnershipMode)reader.ReadByte();
-            return reader.ReadBytes;
+            return reader;
         }
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return Serialize().DataLength;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteInt(NetworkIDTarget);
             writer.WriteString(TargetVar);
             writer.WritePacketSerialized<SerializedData>(Data);
             writer.WriteByte((byte)Mode);
-            return writer.Data;
+            return writer;
         }
     }
 }

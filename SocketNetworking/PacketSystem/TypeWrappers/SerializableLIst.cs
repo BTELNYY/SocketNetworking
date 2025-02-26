@@ -75,7 +75,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             }
         }
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             if(_internalList.Count > 0)
             {
@@ -85,7 +85,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             ByteReader reader = new ByteReader(data);
             if (reader.IsEmpty)
             {
-                return usedBytes;
+                return reader;
             }
             int length = reader.ReadInt();
             usedBytes += 4;
@@ -102,7 +102,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
                 //reader.Remove(currentChunkLength);
                 usedBytes += currentChunkLength;
             }
-            return usedBytes;
+            return reader;
         }
 
         private void DeserializeAndAdd(byte[] data)
@@ -116,10 +116,10 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return Serialize().Data.Length;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             foreach(T element in _internalList)
@@ -133,7 +133,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             ByteWriter finalWriter = new ByteWriter();
             finalWriter.WriteInt(writer.DataLength);
             finalWriter.Write(writer.Data);
-            return finalWriter.Data;
+            return finalWriter;
         }
 
         public int IndexOf(T item)

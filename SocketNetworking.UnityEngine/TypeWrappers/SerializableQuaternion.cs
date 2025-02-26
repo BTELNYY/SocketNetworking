@@ -13,7 +13,6 @@ namespace SocketNetworking.UnityEngine.TypeWrappers
     {
         public Quaternion Quaternion;
 
-
         public SerializableQuaternion()
         {
             Quaternion = new Quaternion();
@@ -24,11 +23,11 @@ namespace SocketNetworking.UnityEngine.TypeWrappers
             Quaternion = quaternion;
         }
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             Quaternion = reader.ReadQuaternion();
-            return reader.ReadBytes;
+            return reader;
         }
 
         public int GetLength()
@@ -36,11 +35,11 @@ namespace SocketNetworking.UnityEngine.TypeWrappers
             return sizeof(float) * 4;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteQuaternion(Quaternion);
-            return writer.Data;
+            return writer;
         }
     }
 }

@@ -37,17 +37,17 @@ namespace SocketNetworking.Example.Basics.Server
             //stopwatch.Start();
             while (true)
             {
-                break;
+                //break;
                 Thread.Sleep(1000);
                 foreach (NetworkClient c in NetworkServer.ConnectedClients)
                 {
                     if (c is TestClient client && c.Ready)
                     {
-                        client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
+                        //client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
                         ExampleCustomPacket packet = new ExampleCustomPacket();
                         packet.Data = "test";
                         packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
-                        //c.Send(packet);
+                        c.Send(packet);
                     }
                     continue;
                     if (c.IsTransportConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)

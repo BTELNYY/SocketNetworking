@@ -13,11 +13,11 @@ namespace SocketNetworking.UnityEngine.TypeWrappers
     {
         public Vector2 Vector;
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             Vector = reader.ReadVector2();
-            return reader.ReadBytes;
+            return reader;
         }
 
         public int GetLength()
@@ -25,11 +25,11 @@ namespace SocketNetworking.UnityEngine.TypeWrappers
             return sizeof(float) * 2;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteVector2(Vector);
-            return writer.Data;
+            return writer;
         }
     }
 }

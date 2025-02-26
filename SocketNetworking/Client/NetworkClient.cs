@@ -1007,9 +1007,9 @@ namespace SocketNetworking.Client
         /// </summary>
         /// <param name="packet"></param>
         /// <param name="sender"></param>
-        public void Send(Packet packet, INetworkObject sender)
+        public void Send(TargetedPacket packet, INetworkObject sender)
         {
-            packet.NetowrkIDTarget = sender.NetworkID;
+            packet.NetworkIDTarget = sender.NetworkID;
             Send(packet);
         }
 
@@ -1030,9 +1030,9 @@ namespace SocketNetworking.Client
         /// <param name="packet"></param>
         /// <param name="sender"></param>
         /// <param name="priority"></param>
-        public void Send(Packet packet, INetworkObject sender, bool priority)
+        public void Send(TargetedPacket packet, INetworkObject sender, bool priority)
         {
-            packet.NetowrkIDTarget = sender.NetworkID;
+            packet.NetworkIDTarget = sender.NetworkID;
             packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
             Send(packet);
         }
@@ -1208,7 +1208,7 @@ namespace SocketNetworking.Client
             }
             if (!packet.ValidateFlags())
             {
-                Log.Error($"Packet send failed! Flag validation failure. Packet Type: {packet.Type}, Target: {packet.NetowrkIDTarget}, Custom Packet ID: {packet.CustomPacketID}, Active Flags: {string.Join(", ", packet.Flags.GetActiveFlags())}");
+                Log.Error($"Packet send failed! {packet.ToString()}");
                 return null;
             }
             //Log.Debug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
@@ -1266,7 +1266,7 @@ namespace SocketNetworking.Client
             int written = writer.DataLength;
             if(written != (packetFull.Length + 4))
             {
-                Log.Error($"Trying to send corrupted size! Custom Packet ID: {packet.CustomPacketID}, Target: {packet.NetowrkIDTarget}, Size: {written}, Expected: {packetFull.Length + 4}");
+                Log.Error($"Trying to send corrupted size! {packet.ToString()}");
                 return null;
             }
             byte[] fullBytes = writer.Data;
@@ -1378,10 +1378,6 @@ namespace SocketNetworking.Client
             //}
             //Log.Debug(hex.ToString());
             PacketHeader header = Packet.ReadPacketHeader(fullPacket);
-            if (header.Type == PacketType.CustomPacket && NetworkManager.GetCustomPacketByID(header.CustomPacketID) == null)
-            {
-                Log.Warning($"Got a packet with a Custom Packet ID that does not exist, either not registered or corrupt. Custom Packet ID: {header.CustomPacketID}, Target: {header.NetworkIDTarget}");
-            }
             //Log.Debug("Active Flags: " + string.Join(", ", header.Flags.GetActiveFlags()));
             //Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
             byte[] rawPacket = fullPacket;
@@ -1650,7 +1646,7 @@ namespace SocketNetworking.Client
                     }
                     break;
                 default:
-                    Log.Error($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
+                    Log.Error($"Packet is not handled! Info: Type: {header.Type}");
                     Disconnect("Client Sent an Unknown packet with PacketID " + header.Type.ToString());
                     break;
             }
@@ -1878,7 +1874,7 @@ namespace SocketNetworking.Client
                     }
                     break;
                 default:
-                    Log.Error($"Packet is not handled! Info: Target: {header.NetworkIDTarget}, Type Provided: {header.Type}, Size: {header.Size}, Custom Packet ID: {header.CustomPacketID}");
+                    Log.Error($"Packet is not handled! Type: {header.Type}");
                     Disconnect("Server Sent an Unknown packet with PacketID " + header.Type.ToString());
                     break;
             }

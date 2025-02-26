@@ -58,7 +58,7 @@ namespace SocketNetworking.Shared.Serialization
 
         public void WritePacketSerialized<T>(IPacketSerializable serializable)
         {
-            byte[] data = serializable.Serialize();
+            byte[] data = serializable.Serialize().Data;
             Write(data);
         }
 

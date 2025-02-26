@@ -29,6 +29,8 @@ namespace SocketNetworking.Example.Basics.SharedData
         public void Listener(ExampleCustomPacket packet, NetworkHandle handle)
         {
             Log.GlobalInfo($"Got a packet! Data: {packet.Data}, Flags: {packet.Flags.GetActiveFlagsString()}, Encrypted?: {handle.WasEncrypted}");
+            Log.GlobalInfo($"Packet currently: {packet.Data}");
+            Log.GlobalInfo($"Packet struct: {packet.Struct.ToString()}");
         }
     }
 

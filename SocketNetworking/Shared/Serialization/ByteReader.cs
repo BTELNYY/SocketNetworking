@@ -116,7 +116,7 @@ namespace SocketNetworking.Shared.Serialization
         public T ReadPacketSerialized<T>() where T : IPacketSerializable
         {
             IPacketSerializable serializable = (IPacketSerializable)Activator.CreateInstance(typeof(T));
-            int bytesUsed = serializable.Deserialize(_workingSetData);
+            int bytesUsed = serializable.Deserialize(_workingSetData).ReadBytes;
             Remove(bytesUsed);
             return (T)serializable;
         }

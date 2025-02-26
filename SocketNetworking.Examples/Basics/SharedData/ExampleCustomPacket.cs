@@ -47,13 +47,13 @@ namespace SocketNetworking.Example.Basics.SharedData
 
         public float Value3;
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             Value = reader.ReadInt();
             Value2 = reader.ReadULong();
             Value3 = reader.ReadFloat();
-            return reader.ReadBytes;
+            return reader;
         }
 
         public int GetLength()
@@ -63,13 +63,18 @@ namespace SocketNetworking.Example.Basics.SharedData
             //return Serialize().Length;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteInt(Value);
             writer.WriteULong(Value2);
             writer.WriteFloat(Value3);
-            return writer.Data;
+            return writer;
+        }
+
+        public override string ToString()
+        {
+            return $"{Value}, {Value2}, {Value3}";
         }
     }
 }

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
-    public sealed class ObjectManagePacket : Packet
+    public sealed class ObjectManagePacket : TargetedPacket
     {
         public override PacketType Type => PacketType.ObjectManage;
 

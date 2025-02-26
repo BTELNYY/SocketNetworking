@@ -10,7 +10,7 @@ using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
-    public sealed class NetworkInvokationPacket : Packet
+    public sealed class NetworkInvokationPacket : TargetedPacket
     {
         public override PacketType Type => PacketType.NetworkInvocation;
 
@@ -19,8 +19,6 @@ namespace SocketNetworking.PacketSystem.Packets
         public string TargetType { get; set; } = string.Empty;
 
         public string MethodName { get; set; } = string.Empty;
-
-        public int NetworkObjectTarget { get; set; } = 0;
 
         public int CallbackID { get; set; } = 0;
 
@@ -34,7 +32,6 @@ namespace SocketNetworking.PacketSystem.Packets
             writer.WriteString(TargetTypeAssmebly);
             writer.WriteString(TargetType);
             writer.WriteString(MethodName);
-            writer.WriteInt(NetworkObjectTarget);
             writer.WriteInt(CallbackID);
             writer.WriteBool(IgnoreResult);
             SerializableList<SerializedData> list = new SerializableList<SerializedData>();
@@ -49,7 +46,6 @@ namespace SocketNetworking.PacketSystem.Packets
             TargetTypeAssmebly = reader.ReadString();
             TargetType = reader.ReadString();
             MethodName = reader.ReadString();
-            NetworkObjectTarget = reader.ReadInt();
             CallbackID = reader.ReadInt();
             IgnoreResult = reader.ReadBool();
             Arguments = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;

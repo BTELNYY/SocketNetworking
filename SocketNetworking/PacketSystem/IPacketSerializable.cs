@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem
 {
@@ -22,7 +23,7 @@ namespace SocketNetworking.PacketSystem
         /// <returns>
         /// byte array which will be written to packet.
         /// </returns>
-        byte[] Serialize();
+        ByteWriter Serialize();
 
         /// <summary>
         /// Method is called on Read(), place your instance logic here. (e.g. reading the data manually from the byte stream)
@@ -33,6 +34,6 @@ namespace SocketNetworking.PacketSystem
         /// <returns>
         /// Number of bytes that have been read.
         /// </returns>
-        int Deserialize(byte[] data);
+        ByteReader Deserialize(byte[] data);
     }
 }

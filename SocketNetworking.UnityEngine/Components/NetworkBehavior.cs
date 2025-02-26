@@ -270,7 +270,7 @@ namespace SocketNetworking.UnityEngine.Components
         /// Preforms a send operation and syncs data across network, can be called on either client or server, method handles what happens.
         /// </summary>
         /// <param name="packet"></param>
-        public virtual void Send(Packet packet, bool priority = false)
+        public virtual void Send(TargetedPacket packet, bool priority = false)
         {
             Send(packet, this, priority);
         }
@@ -279,7 +279,7 @@ namespace SocketNetworking.UnityEngine.Components
         /// Preforms a send operation and syncs data across network, can be called on either client or server, method handles what happens.
         /// </summary>
         /// <param name="packet"></param>
-        public virtual void Send(Packet packet, INetworkObject target, bool priority)
+        public virtual void Send(TargetedPacket packet, INetworkObject target, bool priority)
         {
             if (NetworkID == -1)
             {

@@ -98,7 +98,7 @@ namespace SocketNetworking.Shared
                     streamBase.SetOpenData(reader);
                     result.Function = StreamFunction.Accept;
                     result.StreamID = packet.StreamID;
-                    result.Data = streamBase.GetMetaData().Serialize();
+                    result.Data = streamBase.GetMetaData().Serialize().Data;
                     Client.Send(result);
                     StreamOpened?.Invoke(streamBase);
                 }

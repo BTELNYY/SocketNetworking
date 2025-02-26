@@ -374,7 +374,7 @@ namespace SocketNetworking.Shared
         internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
         {
             //Spawning
-            if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && GetNetworkObjectByID(packet.NetowrkIDTarget).Item1 == null)
+            if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && GetNetworkObjectByID(packet.NetworkIDTarget).Item1 == null)
             {
                 Type objType = Assembly.Load(packet.AssmeblyName)?.GetType(packet.ObjectClassName);
                 if (objType == null)
@@ -395,13 +395,13 @@ namespace SocketNetworking.Shared
                 {
                     throw new NullReferenceException($"Failed to spawn {objType.FullName}");
                 }
-                netObj.NetworkID = packet.NetowrkIDTarget;
+                netObj.NetworkID = packet.NetworkIDTarget;
                 netObj.OwnerClientID = packet.OwnerID;
                 netObj.OwnershipMode = packet.OwnershipMode;
                 netObj.Active = packet.Active;
                 ObjectManagePacket creationConfirmation = new ObjectManagePacket()
                 {
-                    NetowrkIDTarget = packet.NetowrkIDTarget,
+                    NetworkIDTarget = packet.NetworkIDTarget,
                     Action = ObjectManagePacket.ObjectManageAction.ConfirmCreate,
                 };
                 AddNetworkObject(netObj);
@@ -410,7 +410,7 @@ namespace SocketNetworking.Shared
                 return;
             }
 
-            foreach (INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetowrkIDTarget))
+            foreach (INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget))
             {
                 //Security
                 if (packet.Action != ObjectManagePacket.ObjectManageAction.Create && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy)
@@ -461,14 +461,14 @@ namespace SocketNetworking.Shared
                         INetworkObject destructionTarget = @object;
                         if (destructionTarget == default(INetworkObject))
                         {
-                            throw new NullReferenceException($"Can't find the object that should be destroyed. ID: {packet.NetowrkIDTarget}");
+                            throw new NullReferenceException($"Can't find the object that should be destroyed. ID: {packet.NetworkIDTarget}");
                         }
                         SendDestroyedPulse(handle.Client, destructionTarget);
                         RemoveNetworkObject(destructionTarget);
                         destructionTarget.OnClientDestroy(handle.Client);
                         ObjectManagePacket destroyConfirmPacket = new ObjectManagePacket()
                         {
-                            NetowrkIDTarget = destructionTarget.NetworkID,
+                            NetworkIDTarget = destructionTarget.NetworkID,
                             Action = ObjectManagePacket.ObjectManageAction.ConfirmDestroy,
                         };
                         handle.Client.Send(destroyConfirmPacket);
@@ -482,7 +482,7 @@ namespace SocketNetworking.Shared
                         INetworkObject modificationTarget = @object;
                         if (modificationTarget == default(INetworkObject))
                         {
-                            throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetowrkIDTarget}");
+                            throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetworkIDTarget}");
                         }
                         modificationTarget.OnModify(packet, handle.Client);
                         modificationTarget.NetworkID = packet.NewNetworkID;
@@ -497,7 +497,7 @@ namespace SocketNetworking.Shared
                         INetworkObject modificationConfirmTarget = @object;
                         if (modificationConfirmTarget == default(INetworkObject))
                         {
-                            throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetowrkIDTarget}");
+                            throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetworkIDTarget}");
                         }
                         modificationConfirmTarget.OnModified(handle.Client);
                         SendModifiedPulse(handle.Client, modificationConfirmTarget);
@@ -851,21 +851,29 @@ namespace SocketNetworking.Shared
         public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
         {
             ClientLocation clientLocation = runningClient.CurrnetClientLocation;
-            if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
+            if(header.Type != PacketType.CustomPacket)
             {
-                Log.Error("Unknown Custom packet. ID: " + header.CustomPacketID);
+                Log.Error("Non Custom packets cannot be used in PacketListeners");
                 return;
             }
-            Type packetType = AdditionalPacketTypes[header.CustomPacketID];
-            Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);
+            CustomPacket cPacket = new CustomPacket();
+            cPacket.Deserialize(data);
+            if (!AdditionalPacketTypes.ContainsKey(cPacket.CustomPacketID))
+            {
+                Log.Error("Unknown Custom packet. ID: " + cPacket.CustomPacketID);
+                return;
+            }
+            Type packetType = AdditionalPacketTypes[cPacket.CustomPacketID];
+            //Log.Debug(packetType.Name);
+            Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[cPacket.CustomPacketID]);
             ByteReader reader = packet.Deserialize(data);
             if (reader.ReadBytes < header.Size)
             {
-                Log.Warning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read. Actual: {reader.ReadBytes}, Header: {header.Size}");
+                //Log.Warning($"Packet with ID {cPacket.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read. Actual: {reader.ReadBytes}, Header: {header.Size}");
             }
             object changedPacket = Convert.ChangeType(packet, packetType);
             NetworkHandle handle = new NetworkHandle(runningClient, (Packet)changedPacket);
-            if (header.NetworkIDTarget == 0)
+            if (cPacket.NetworkIDTarget == 0)
             {
                 //Log.Debug("Handle Client-Client communication!");
                 MethodInfo[] clientMethods = runningClient.GetType().GetMethods().ToArray();
@@ -908,10 +916,10 @@ namespace SocketNetworking.Shared
                 }
                 return;
             }
-            List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == header.NetworkIDTarget && x.Active).ToList();
+            List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == cPacket.NetworkIDTarget && x.Active).ToList();
             if (objects.Count == 0)
             {
-                Log.Warning("Target NetworkID revealed no active objects registered!");
+                Log.Warning($"Target NetworkID revealed no active objects registered! ID: {cPacket.NetworkIDTarget}");
                 return;
             }
             //This may look not very effecient, but you arent checking EVERY possible object, only the ones which match the TargetID.
@@ -1106,9 +1114,9 @@ namespace SocketNetworking.Shared
             }
             object target = reciever;
             List<object> targets = new List<object>();
-            if (packet.NetworkObjectTarget != 0)
+            if (packet.NetworkIDTarget != 0)
             {
-                List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkObjectTarget && x.GetType() == targetType).ToList();
+                List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget && x.GetType() == targetType).ToList();
                 if (netObjs.Count != 0)
                 {
                     targets.AddRange(netObjs);
@@ -1120,7 +1128,7 @@ namespace SocketNetworking.Shared
             }
             if (targets.Count == 0)
             {
-                throw new NetworkInvocationException("Unable to find any networkobjects with ID: " + packet.NetworkObjectTarget);
+                throw new NetworkInvocationException("Unable to find any networkobjects with ID: " + packet.NetworkIDTarget);
             }
             if (target == null)
             {
@@ -1201,7 +1209,7 @@ namespace SocketNetworking.Shared
                     method.Invoke(obj, args.ToArray());
                 }
             }
-            NetworkInvokations.Remove(packet.NetworkObjectTarget);
+            NetworkInvokations.Remove(packet.NetworkIDTarget);
             NetworkInvokationResultPacket resultPacket = new NetworkInvokationResultPacket();
             resultPacket.CallbackID = packet.CallbackID;
             resultPacket.Result = ByteConvert.Serialize(result);
@@ -1289,7 +1297,7 @@ namespace SocketNetworking.Shared
             }
             NetworkInvokationPacket packet = new NetworkInvokationPacket();
             packet.TargetTypeAssmebly = Assembly.GetAssembly(target.GetType()).GetName().FullName;
-            packet.NetworkObjectTarget = targetID;
+            packet.NetworkIDTarget = targetID;
             packet.MethodName = methodName;
             foreach (var arg in args)
             {
@@ -1370,7 +1378,7 @@ namespace SocketNetworking.Shared
             }
             NetworkInvokationPacket packet = new NetworkInvokationPacket();
             packet.TargetTypeAssmebly = Assembly.GetAssembly(target.GetType()).GetName().FullName;
-            packet.NetworkObjectTarget = targetID;
+            packet.NetworkIDTarget = targetID;
             packet.MethodName = methodName;
             packet.IgnoreResult = false;
             foreach (var arg in args)

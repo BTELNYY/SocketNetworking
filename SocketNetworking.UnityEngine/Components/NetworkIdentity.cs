@@ -72,28 +72,28 @@ namespace SocketNetworking.UnityEngine.Components
 
         public List<string> Tree;
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             Name = reader.ReadString();
             PrefabID = reader.ReadInt();
             Tree = reader.ReadPacketSerialized<SerializableList<string>>().ContainedList;
-            return reader.ReadBytes;
+            return reader;
         }
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return Serialize().DataLength;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteString(Name);
             writer.WriteInt(PrefabID);
             SerializableList<string> tree = new SerializableList<string>(Tree);
             writer.WritePacketSerialized<SerializableList<string>>(tree);
-            return writer.Data;
+            return writer;
         }
     }
 }
