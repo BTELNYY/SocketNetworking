@@ -18,9 +18,9 @@ namespace SocketNetworking.Shared
     {
         public event EventHandler<StreamOpenRequestEvent> StreamOpenRequest;
 
-        public event Action<NetworkStreamBase> StreamOpened;
+        public event Action<SyncedStream> StreamOpened;
 
-        public event Action<NetworkStreamBase> StreamClosed;
+        public event Action<SyncedStream> StreamClosed;
 
         public NetworkClient Client { get; }
 
@@ -29,7 +29,7 @@ namespace SocketNetworking.Shared
             Client = client;
         }
 
-        List<NetworkStreamBase> _streams = new List<NetworkStreamBase>();
+        List<SyncedStream> _streams = new List<SyncedStream>();
 
         public ushort NextID
         {
@@ -45,7 +45,7 @@ namespace SocketNetworking.Shared
             }
         }
 
-        public void Open(NetworkStreamBase stream)
+        public void Open(SyncedStream stream)
         {
             OpenInternal(stream);
             StreamPacket packet = new StreamPacket();
@@ -58,7 +58,7 @@ namespace SocketNetworking.Shared
             Client.Send(packet);
         }
 
-        void OpenInternal(NetworkStreamBase stream)
+        void OpenInternal(SyncedStream stream)
         {
             if (_streams.Contains(stream) || _streams.Select(x => x.ID).Contains(stream.ID))
             {
@@ -68,7 +68,7 @@ namespace SocketNetworking.Shared
             _streams.Add(stream);
         }
 
-        public void Close(NetworkStreamBase stream)
+        public void Close(SyncedStream stream)
         {
             _streams.Remove(stream);
             StreamClosed?.Invoke(stream);
@@ -76,7 +76,7 @@ namespace SocketNetworking.Shared
 
         public void HandlePacket(StreamPacket packet)
         {
-            NetworkStreamBase stream = _streams.FirstOrDefault(x => x.ID == packet.StreamID);
+            SyncedStream stream = _streams.FirstOrDefault(x => x.ID == packet.StreamID);
             if (packet.Function == StreamFunction.Open)
             {
                 StreamOpenRequestEvent @event = new StreamOpenRequestEvent(packet);
@@ -90,7 +90,7 @@ namespace SocketNetworking.Shared
                     {
                         Client.Log.Error("Cannot find the type of stream.");
                     }
-                    NetworkStreamBase streamBase = (NetworkStreamBase)Activator.CreateInstance(streamType);
+                    SyncedStream streamBase = (SyncedStream)Activator.CreateInstance(streamType);
                     streamBase.ID = packet.StreamID;
                     OpenInternal(streamBase);
                     ByteReader reader = new ByteReader(packet.Data);

@@ -13,7 +13,7 @@ using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.Streams
 {
-    public abstract class NetworkStreamBase : Stream
+    public class SyncedStream : Stream
     {
         public event Action<int> NewDataRecieved;
 
@@ -22,7 +22,7 @@ namespace SocketNetworking.Shared.Streams
         /// </summary>
         public const int MAX_BYTES_PER_SEND = 62 * 1024;
 
-        NetworkStreamBase(NetworkClient client)
+        SyncedStream(NetworkClient client)
         {
             Client = client;
             Log = new Log($"[Stream {id}, Client {client.ClientID}]");
@@ -34,13 +34,37 @@ namespace SocketNetworking.Shared.Streams
 
         byte[] buffer;
 
-        long _position = 0;
+        public int BufferSize
+        {
+            get
+            {
+                return buffer.Length;
+            }
+        }
 
-        public override long Length => buffer.Length - _position;
+        /// <summary>
+        /// The Length of the <see cref="SyncedStream"/>. Same as <see cref="Available"/>
+        /// </summary>
+        public override long Length => Available;
 
-        ushort lastWriteAmount = 0;
+        long _available;
 
-        public NetworkStreamBase(NetworkClient client, ushort id, int bufferSize) : this(client)
+        /// <summary>
+        /// Amount of bytes which are yet to be read
+        /// </summary>
+        public long Available
+        {
+            get
+            {
+                return _available;
+            }
+            protected set
+            {
+                _available = Math.Min(bufferSize, value);
+            }
+        }
+
+        public SyncedStream(NetworkClient client, ushort id, int bufferSize) : this(client)
         {
             this.id = id;
             this.bufferSize = bufferSize;
@@ -65,14 +89,6 @@ namespace SocketNetworking.Shared.Streams
                     return;
                 }
                 id = value;
-            }
-        }
-
-        public long BufferSize
-        {
-            get 
-            { 
-                return bufferSize; 
             }
         }
 
@@ -124,16 +140,27 @@ namespace SocketNetworking.Shared.Streams
                     Send(packet, false);
                 }
             }
-            _position += count;
         }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            if(offset > Available)
+            {
+                throw new ArgumentException("Offset out of range.");
+            }
+            int readCount = 0;
+            for(int i = offset; i < count && i < Available; i++)
+            {
+                buffer[i - offset] = this.buffer[i];
+                readCount = i;
+            }
+            this.buffer = this.buffer.RemoveFromStart(readCount);
+            Available -= readCount;
+            return readCount;
         }
 
         /// <summary>
-        /// Called when the <see cref="NetworkStreamBase"/> is opened on the remote.
+        /// Called when the <see cref="SyncedStream"/> is opened on the remote.
         /// </summary>
         public virtual void OnStreamOpenedRemote()
         {
@@ -151,7 +178,8 @@ namespace SocketNetworking.Shared.Streams
                     StreamData data = reader.ReadPacketSerialized<StreamData>();
                     if(data.RequestID == 0)
                     {
-                        buffer = buffer.Push(data.Chunk);
+                        buffer = buffer.AppendAll(data.Chunk);
+                        Available += data.Chunk.LongLength;
                         NewDataRecieved?.Invoke(data.Chunk.Length);
                     }
                     else
@@ -265,6 +293,11 @@ namespace SocketNetworking.Shared.Streams
 
         public bool UsePriority { get; set; }
 
+        /// <summary>
+        /// The position in a stream does nothing within the <see cref="SyncedStream"/> class as you cannot rewind or fast forward the internet.
+        /// </summary>
+        public override long Position { get; set; }
+
         public virtual ByteWriter GetOpenData()
         {
             return new ByteWriter();
@@ -303,6 +336,21 @@ namespace SocketNetworking.Shared.Streams
         public virtual void Send(Packet packet, bool usePriority)
         {
             Client.Send(packet, usePriority);
+        }
+
+        public override void Flush()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotImplementedException();
         }
     }
 
