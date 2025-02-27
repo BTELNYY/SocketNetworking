@@ -44,7 +44,7 @@ namespace SocketNetworking.Server
         /// <summary>
         /// If not an empty string, will be used to prove server identity for <see cref="TcpNetworkClient"/> and <see cref="MixedNetworkClient"/> clients. This should be a path to the certificate.
         /// </summary>
-        public string CertificatePath { get; set; } = "./example.cert";
+        public string CertificatePath { get; set; } = "";
 
 
 

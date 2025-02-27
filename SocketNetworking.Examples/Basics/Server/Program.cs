@@ -24,6 +24,7 @@ namespace SocketNetworking.Example.Basics.Server
             NetworkServer.ClientAvatar = typeof(NetworkObjectTest);
             NetworkServer.Config.HandshakeTime = 10f;
             NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
+            NetworkServer.Config.CertificatePath = "./exmaple.cert";
             NetworkServer.ClientConnected += OnClientConnected;
             server.StartServer();
             Thread t = new Thread(SpamThread);
