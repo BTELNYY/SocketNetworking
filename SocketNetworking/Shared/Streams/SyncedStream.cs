@@ -169,7 +169,7 @@ namespace SocketNetworking.Shared.Streams
         /// </summary>
         public virtual void OnStreamOpenedRemote()
         {
-            Log.Info("Stream has been accepted and opened.");
+            Log.Info($"Stream has been accepted and opened with buffer size {bufferSize}.");
         }
 
         private ConcurrentDictionary<ushort, byte[]> _requests = new ConcurrentDictionary<ushort, byte[]>();
@@ -324,6 +324,7 @@ namespace SocketNetworking.Shared.Streams
         public virtual void Open()
         {
             Client.Streams.Open(this);
+            Log.Info($"Stream open requested with a buffer size of {bufferSize}");
         }
 
         public virtual void OpenBlocking()

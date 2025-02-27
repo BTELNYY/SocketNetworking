@@ -82,19 +82,22 @@ namespace SocketNetworking.Shared
             {
                 StreamOpenRequestEvent @event = new StreamOpenRequestEvent(packet);
                 StreamOpenRequest?.Invoke(this, @event);
+                Type streamType = packet.StreamType;
+                if (streamType == null)
+                {
+                    Client.Log.Error("Cannot find the type of stream.");
+                    return;
+                }
+                Client.Log.Info($"New stream request.");
                 StreamPacket result = new StreamPacket();
                 result.StreamID = packet.StreamID;
                 if (@event.Accept)
                 {
                     try
                     {
-                        Type streamType = packet.StreamType;
-                        if (streamType == null)
-                        {
-                            Client.Log.Error("Cannot find the type of stream.");
-                        }
                         ByteReader reader = new ByteReader(packet.Data);
                         StreamMetaData meta = reader.ReadPacketSerialized<StreamMetaData>();
+                        Client.Log.Info($"Stream open request accepted. ID: {packet.StreamID}, Buffer Size: {meta.MaxBufferSize}");
                         SyncedStream streamBase = (SyncedStream)Activator.CreateInstance(streamType, (NetworkClient)Client, packet.StreamID, (int)meta.MaxBufferSize);
                         streamBase.ID = packet.StreamID;
                         OpenInternal(streamBase);

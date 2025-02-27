@@ -44,8 +44,10 @@ namespace SocketNetworking.Example.Basics.SharedData
         {
             if(Ready && CurrentClientLocation == ClientLocation.Remote)
             {
-                SyncedStream stream = new SyncedStream(this, 0, 2048);
+                SyncedStream stream = new SyncedStream(this, 1, 2048);
                 stream.Open();
+                SyncedStream stream1 = new SyncedStream(this, 2, short.MaxValue);
+                stream1.Open();
             }
         }
     }
