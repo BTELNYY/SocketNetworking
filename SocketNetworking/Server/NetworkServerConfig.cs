@@ -46,6 +46,8 @@ namespace SocketNetworking.Server
         /// </summary>
         public string CertificatePath { get; set; } = "./example.cert";
 
+
+
         /// <summary>
         /// The loaded certificate.
         /// </summary>
@@ -53,9 +55,16 @@ namespace SocketNetworking.Server
         {
             get
             {
-                return X509Certificate.CreateFromCertFile(CertificatePath);
+                return _cert;
+            }
+            set
+            {
+                _cert = value;
             }
         }
+
+        [NonSerialized]
+        private X509Certificate _cert;
 
         /// <summary>
         /// What port should the server start on?

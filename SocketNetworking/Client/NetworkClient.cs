@@ -16,6 +16,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using SocketNetworking.Shared.Serialization;
+using System.IO;
 
 namespace SocketNetworking.Client
 {
@@ -1550,7 +1551,7 @@ namespace SocketNetworking.Client
                         YourClientID = _clientId,
                         Configuration = NetworkServer.ServerConfiguration,
                         CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized,
-                        UpgradeToSSL = NetworkServer.Config.CertificatePath != "" && SupportsSSL,
+                        UpgradeToSSL = NetworkServer.Config.Certificate != null && SupportsSSL,
                     };
                     SendImmediate(serverDataPacket);
                     if(serverDataPacket.UpgradeToSSL && SupportsSSL)

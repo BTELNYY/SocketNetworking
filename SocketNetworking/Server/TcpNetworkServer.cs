@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using System.Security.Cryptography.X509Certificates;
+using System.IO;
 
 namespace SocketNetworking.Server
 {
@@ -24,10 +25,21 @@ namespace SocketNetworking.Server
             else
             {
                 Log.Info($"Found an SSL Certificate: {Config.CertificatePath}, Checking.");
-                var cert = X509Certificate.CreateFromCertFile(Config.CertificatePath);
-                if (cert == null)
+                if(!File.Exists(Config.CertificatePath))
                 {
-                    Log.Warning("Certificate couldn't be loaded.");
+                    Log.Warning($"Certificate couldn't be loaded: '{Config.CertificatePath}' is not found.");
+                }
+                else
+                {
+                    var cert = X509Certificate.CreateFromCertFile(Config.CertificatePath);
+                    if (cert == null)
+                    {
+                        Log.Warning("Certificate couldn't be loaded.");
+                    }
+                    else
+                    {
+                        Config.Certificate = cert;
+                    }
                 }
             }
             base.StartServer();
