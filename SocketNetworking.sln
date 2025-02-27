@@ -13,11 +13,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{7A
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Basics", "Basics", "{7E58342A-ECC9-4EA0-AF5A-FC144614A16A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.Client", "SocketNetworking.Examples\Basics\Client\SocketNetworking.Example.Client.csproj", "{604C49D0-F0D5-4CA4-A627-5B47DF2D76A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.Basics.Client", "SocketNetworking.Examples\Basics\Client\SocketNetworking.Example.Basics.Client.csproj", "{604C49D0-F0D5-4CA4-A627-5B47DF2D76A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.Server", "SocketNetworking.Examples\Basics\Server\SocketNetworking.Example.Server.csproj", "{F8CBB59A-172D-4BF6-BCE7-9D53154F61B3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.Basics.Server", "SocketNetworking.Examples\Basics\Server\SocketNetworking.Example.Basics.Server.csproj", "{F8CBB59A-172D-4BF6-BCE7-9D53154F61B3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.SharedData", "SocketNetworking.Examples\Basics\SharedData\SocketNetworking.Example.SharedData.csproj", "{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.Basics.SharedData", "SocketNetworking.Examples\Basics\SharedData\SocketNetworking.Example.Basics.SharedData.csproj", "{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "External", "External", "{7A370070-17B2-4AAE-B821-B1056741913A}"
 EndProject

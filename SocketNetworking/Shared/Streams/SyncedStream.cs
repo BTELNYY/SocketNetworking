@@ -123,12 +123,16 @@ namespace SocketNetworking.Shared.Streams
             else
             {
                 byte[] bufferPart = buffer.Skip(offset).Take(count).ToArray();
-                int written = 0;
-                while (written <= bufferPart.Length)
+                while(bufferPart.Length > 0)
                 {
+                    byte[] slice = new byte[Math.Min(bufferPart.Length, MAX_BYTES_PER_SEND)];
+                    for(int i = 0; i < count && i < MAX_BYTES_PER_SEND; i++)
+                    {
+                        slice[i] = bufferPart[i];
+                    }
                     StreamData data = new StreamData()
                     {
-                        Chunk = buffer.Skip(offset).Take(count).ToArray(),
+                        Chunk = slice,
                         RequestID = 0
                     };
                     StreamPacket packet = new StreamPacket()
@@ -138,6 +142,7 @@ namespace SocketNetworking.Shared.Streams
                         Data = data.Serialize().Data,
                     };
                     Send(packet, false);
+                    bufferPart = bufferPart.RemoveFromStart(slice.Length);
                 }
             }
         }
@@ -164,7 +169,7 @@ namespace SocketNetworking.Shared.Streams
         /// </summary>
         public virtual void OnStreamOpenedRemote()
         {
-
+            Log.Info("Stream has been accepted and opened.");
         }
 
         private ConcurrentDictionary<ushort, byte[]> _requests = new ConcurrentDictionary<ushort, byte[]>();
@@ -172,12 +177,20 @@ namespace SocketNetworking.Shared.Streams
         public virtual void RecieveNetworkData(StreamPacket packet)
         {
             ByteReader reader = new ByteReader(packet.Data);
+            if(packet.Error)
+            {
+                Log.Error($"Remote error: {packet.ErrorMessage}");
+            }
             switch(packet.Function)
             {
                 case StreamFunction.DataSend:
                     StreamData data = reader.ReadPacketSerialized<StreamData>();
                     if(data.RequestID == 0)
                     {
+                        if(Available + data.Chunk.Length > BufferSize)
+                        {
+                            buffer = buffer.RemoveFromStart(data.Chunk.Length);
+                        }
                         buffer = buffer.AppendAll(data.Chunk);
                         Available += data.Chunk.LongLength;
                         NewDataRecieved?.Invoke(data.Chunk.Length);
@@ -245,7 +258,7 @@ namespace SocketNetworking.Shared.Streams
             }
         }
 
-        protected bool _allowWrite;
+        protected bool _allowWrite = true;
 
         public bool AllowWrite
         {
@@ -255,7 +268,7 @@ namespace SocketNetworking.Shared.Streams
             }
         }
 
-        protected bool _allowRead;
+        protected bool _allowRead = true;
 
         public bool AllowRead
         {
@@ -265,7 +278,7 @@ namespace SocketNetworking.Shared.Streams
             }
         }
 
-        protected bool _allowSeek;
+        protected bool _allowSeek = false;
 
         public bool AllowSeek
         {
@@ -338,19 +351,32 @@ namespace SocketNetworking.Shared.Streams
             Client.Send(packet, usePriority);
         }
 
+        /// <summary>
+        /// Since all changes are written to the network as they happen, this method does nothing.
+        /// </summary>
         public override void Flush()
         {
-            throw new NotImplementedException();
+            
         }
 
+        /// <summary>
+        /// This method does nothing as you cannot rewind the internet.
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="origin"></param>
+        /// <returns></returns>
         public override long Seek(long offset, SeekOrigin origin)
         {
-            throw new NotImplementedException();
+            return 0L;
         }
 
+        /// <summary>
+        /// This method does nothing as the <see cref="BufferSize"/> is set in the constructor.
+        /// </summary>
+        /// <param name="value"></param>
         public override void SetLength(long value)
         {
-            throw new NotImplementedException();
+            
         }
     }
 

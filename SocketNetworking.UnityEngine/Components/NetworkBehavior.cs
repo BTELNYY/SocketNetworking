@@ -243,7 +243,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual bool ShouldBeReceivingPacketsFrom(NetworkClient client)
         {
-            if (OwnershipMode == OwnershipMode.Server && client.CurrnetClientLocation == ClientLocation.Local)
+            if (OwnershipMode == OwnershipMode.Server && client.CurrentClientLocation == ClientLocation.Local)
             {
                 return true;
             }

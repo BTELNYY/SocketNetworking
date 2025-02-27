@@ -42,9 +42,10 @@ namespace SocketNetworking.Example.Basics.SharedData
 
         private void TestClient_ReadyStateChanged(bool arg1, bool arg2)
         {
-            if(Ready)
+            if(Ready && CurrentClientLocation == ClientLocation.Remote)
             {
-                
+                SyncedStream stream = new SyncedStream(this, 0, 2048);
+                stream.Open();
             }
         }
     }

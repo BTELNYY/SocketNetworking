@@ -298,7 +298,7 @@ namespace SocketNetworking.Client
                     Ready = value
                 };
                 Send(readyStateUpdatePacket);
-                if (CurrnetClientLocation == ClientLocation.Remote) 
+                if (CurrentClientLocation == ClientLocation.Remote) 
                 {
                     _ready = value;
                     ReadyStateChanged?.Invoke(!_ready, _ready);
@@ -360,7 +360,7 @@ namespace SocketNetworking.Client
                 {
                     return false;
                 }
-                if(CurrnetClientLocation == ClientLocation.Remote && Transport.IsConnected)
+                if(CurrentClientLocation == ClientLocation.Remote && Transport.IsConnected)
                 {
                     return true;
                 }
@@ -389,19 +389,19 @@ namespace SocketNetworking.Client
         /// <summary>
         /// <see cref="bool"/> which represents if the Client has been started
         /// </summary>
-        private bool ClientStarted => CurrnetClientLocation == ClientLocation.Remote || _clientActive;
+        private bool ClientStarted => CurrentClientLocation == ClientLocation.Remote || _clientActive;
 
         private ConnectionState _connectionState = ConnectionState.Disconnected;
 
         /// <summary>
-        /// The <see cref="ConnectionState"/> of the current client. Can only be set by clients which have the <see cref="ClientLocation.Remote"/> <see cref="CurrnetClientLocation"/>
+        /// The <see cref="ConnectionState"/> of the current client. Can only be set by clients which have the <see cref="ClientLocation.Remote"/> <see cref="CurrentClientLocation"/>
         /// </summary>
         public ConnectionState CurrentConnectionState
         {
             get => _connectionState;
             set
             {
-                if(CurrnetClientLocation != ClientLocation.Remote)
+                if(CurrentClientLocation != ClientLocation.Remote)
                 {
                     Log.Error("Local client tried changing state of connection, only servers can do so.");
                     return;
@@ -482,7 +482,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// The current location of the client. Remote = On the server, Local = On the local client
         /// </summary>
-        public ClientLocation CurrnetClientLocation
+        public ClientLocation CurrentClientLocation
         {
             get
             {
@@ -607,7 +607,7 @@ namespace SocketNetworking.Client
         /// </summary>
         public void ServerBeginEncryption()
         {
-            if (CurrnetClientLocation != ClientLocation.Remote || EncryptionState > EncryptionState.Disabled)
+            if (CurrentClientLocation != ClientLocation.Remote || EncryptionState > EncryptionState.Disabled)
             {
                 return;
             }
@@ -771,7 +771,7 @@ namespace SocketNetworking.Client
         /// </returns>
         public bool Connect(string hostname, int port, string password)
         {
-            if(CurrnetClientLocation == ClientLocation.Remote)
+            if(CurrentClientLocation == ClientLocation.Remote)
             {
                 Log.Error("Cannot connect to other servers from remote.");
                 return false;
@@ -851,11 +851,11 @@ namespace SocketNetworking.Client
             NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
             ConnectionError?.Invoke(errorData);
             ClientDisconnected?.Invoke();
-            if (CurrnetClientLocation == ClientLocation.Remote)
+            if (CurrentClientLocation == ClientLocation.Remote)
             {
                 Log.Info($"Disconnecting Client {ClientID} for " + message);
             }
-            if (CurrnetClientLocation == ClientLocation.Local)
+            if (CurrentClientLocation == ClientLocation.Local)
             {
                 Log.Info("Disconnecting from server. Reason: " + message);
             }
@@ -879,7 +879,7 @@ namespace SocketNetworking.Client
             _connectionState = ConnectionState.Disconnected;
             Transport?.Close();
             _shuttingDown = true;
-            if (CurrnetClientLocation == ClientLocation.Remote)
+            if (CurrentClientLocation == ClientLocation.Remote)
             {
                 OnRemoteStopClient();
             }
@@ -912,7 +912,7 @@ namespace SocketNetworking.Client
 
         void StartClient()
         {
-            if (CurrnetClientLocation == ClientLocation.Remote)
+            if (CurrentClientLocation == ClientLocation.Remote)
             {
                 Log.Error("Can't start client on remote, started by constructor.");
                 return;
@@ -1098,7 +1098,7 @@ namespace SocketNetworking.Client
 
         void OnLocalClientConnected()
         {
-            if (CurrnetClientLocation != ClientLocation.Local)
+            if (CurrentClientLocation != ClientLocation.Local)
             {
                 return;
             }
@@ -1111,7 +1111,7 @@ namespace SocketNetworking.Client
 
         void OnRemoteClientConnected()
         {
-            if (CurrnetClientLocation != ClientLocation.Remote)
+            if (CurrentClientLocation != ClientLocation.Remote)
             {
                 return;
             }
@@ -1450,6 +1450,11 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.StreamPacket:
+                    StreamPacket streamPacket = new StreamPacket();
+                    streamPacket.Deserialize(data);
+                    Streams.HandlePacket(streamPacket);
+                    break;
                 case PacketType.CustomPacket:
                     NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
@@ -1668,6 +1673,11 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.StreamPacket:
+                    StreamPacket streamPacket = new StreamPacket();
+                    streamPacket.Deserialize(data);
+                    Streams.HandlePacket(streamPacket);
+                    break;
                 case PacketType.CustomPacket:
                     NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
@@ -1895,11 +1905,11 @@ namespace SocketNetworking.Client
 
         protected void HandlePacket(PacketHeader header, byte[] fullPacket)
         {
-            if (CurrnetClientLocation == ClientLocation.Remote)
+            if (CurrentClientLocation == ClientLocation.Remote)
             {
                 HandleRemoteClient(header, fullPacket);
             }
-            if (CurrnetClientLocation == ClientLocation.Local)
+            if (CurrentClientLocation == ClientLocation.Local)
             {
                 HandleLocalClient(header, fullPacket);
             }

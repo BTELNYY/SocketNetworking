@@ -55,6 +55,13 @@ namespace SocketNetworking.PacketSystem.Packets
             StreamType = reader.ReadWrapper<SerializableType, Type>();
             return reader;
         }
+
+        public override string ToString()
+        {
+            string s = base.ToString();
+            s += $" Function: {Function}, ID: {StreamID}, Data Length: {Data.Length}";
+            return s;
+        }
     }
 
     public enum StreamFunction : byte

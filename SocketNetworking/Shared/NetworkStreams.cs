@@ -55,6 +55,7 @@ namespace SocketNetworking.Shared
             packet.Data = writer.Data;
             packet.StreamID = stream.ID;
             packet.Function = StreamFunction.Open;
+            packet.StreamType = stream.GetType();
             Client.Send(packet);
         }
 
@@ -85,35 +86,50 @@ namespace SocketNetworking.Shared
                 result.StreamID = packet.StreamID;
                 if (@event.Accept)
                 {
-                    Type streamType = packet.StreamType;
-                    if (streamType == null)
+                    try
                     {
-                        Client.Log.Error("Cannot find the type of stream.");
+                        Type streamType = packet.StreamType;
+                        if (streamType == null)
+                        {
+                            Client.Log.Error("Cannot find the type of stream.");
+                        }
+                        ByteReader reader = new ByteReader(packet.Data);
+                        StreamMetaData meta = reader.ReadPacketSerialized<StreamMetaData>();
+                        SyncedStream streamBase = (SyncedStream)Activator.CreateInstance(streamType, (NetworkClient)Client, packet.StreamID, (int)meta.MaxBufferSize);
+                        streamBase.ID = packet.StreamID;
+                        OpenInternal(streamBase);
+                        streamBase.SetOpenData(reader);
+                        result.Function = StreamFunction.Accept;
+                        result.StreamID = packet.StreamID;
+                        result.Data = streamBase.GetMetaData().Serialize().Data;
+                        Client.Send(result);
+                        StreamOpened?.Invoke(streamBase);
                     }
-                    SyncedStream streamBase = (SyncedStream)Activator.CreateInstance(streamType);
-                    streamBase.ID = packet.StreamID;
-                    OpenInternal(streamBase);
-                    ByteReader reader = new ByteReader(packet.Data);
-                    StreamMetaData meta = reader.ReadPacketSerialized<StreamMetaData>();
-                    streamBase.SetOpenData(reader);
-                    result.Function = StreamFunction.Accept;
-                    result.StreamID = packet.StreamID;
-                    result.Data = streamBase.GetMetaData().Serialize().Data;
-                    Client.Send(result);
-                    StreamOpened?.Invoke(streamBase);
+                    catch (Exception ex)
+                    {
+                        result.Function = StreamFunction.Reject;
+                        result.Error = true;
+                        result.ErrorMessage = ex.Message;
+                        Client.Send(result);
+                        return;
+                    }
                 }
                 else
                 {
                     result.Function = StreamFunction.Reject;
                     Client.Send(result);
+                    return;
                 }
             }
-            if (stream == default)
+            else
             {
-                Client.Log.Error($"No such Stream '{packet.StreamID}'");
-                return;
+                if (stream == default)
+                {
+                    Client.Log.Error($"No such Stream '{packet.StreamID}'");
+                    return;
+                }
+                stream.RecieveNetworkData(packet);
             }
-            stream.RecieveNetworkData(packet);
         }
     }
 

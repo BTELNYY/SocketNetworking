@@ -84,23 +84,23 @@ namespace SocketNetworking.Shared
             {
                 if (NetworkServer.Active)
                 {
-                    if (NetworkClient.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() == 0)
+                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Count() == 0)
                     {
                         return ClientLocation.Remote;
                     }
-                    if (NetworkClient.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() != 0)
+                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Count() != 0)
                     {
                         return ClientLocation.Unknown;
                     }
                 }
                 else
                 {
-                    if (NetworkClient.Clients.Any(x => x.CurrnetClientLocation == ClientLocation.Remote))
+                    if (NetworkClient.Clients.Any(x => x.CurrentClientLocation == ClientLocation.Remote))
                     {
                         Log.Error("There are active remote clients even though the server is closed, these clients will now be terminated.");
                         foreach (var x in NetworkClient.Clients)
                         {
-                            if (x.CurrnetClientLocation == ClientLocation.Local)
+                            if (x.CurrentClientLocation == ClientLocation.Local)
                             {
                                 continue;
                             }
@@ -850,7 +850,7 @@ namespace SocketNetworking.Shared
         /// </param>
         public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
         {
-            ClientLocation clientLocation = runningClient.CurrnetClientLocation;
+            ClientLocation clientLocation = runningClient.CurrentClientLocation;
             if(header.Type != PacketType.CustomPacket)
             {
                 Log.Error("Non Custom packets cannot be used in PacketListeners");
@@ -1142,15 +1142,15 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvokable invokable = method.GetCustomAttribute<NetworkInvokable>();
-            if (invokable.Direction == NetworkDirection.Server && reciever.CurrnetClientLocation == ClientLocation.Remote)
+            if (invokable.Direction == NetworkDirection.Server && reciever.CurrentClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
-            if (invokable.Direction == NetworkDirection.Client && reciever.CurrnetClientLocation == ClientLocation.Local)
+            if (invokable.Direction == NetworkDirection.Client && reciever.CurrentClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
-            if (invokable.SecureMode && reciever.CurrnetClientLocation != ClientLocation.Local)
+            if (invokable.SecureMode && reciever.CurrentClientLocation != ClientLocation.Local)
             {
                 if (target is NetworkClient client && client.ClientID != reciever.ClientID)
                 {
@@ -1162,7 +1162,7 @@ namespace SocketNetworking.Shared
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if (owned.OwnershipMode == OwnershipMode.Server && reciever.CurrnetClientLocation != ClientLocation.Local)
+                    else if (owned.OwnershipMode == OwnershipMode.Server && reciever.CurrentClientLocation != ClientLocation.Local)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
@@ -1258,11 +1258,11 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvokable invocable = method.GetCustomAttribute<NetworkInvokable>();
-            if (invocable.Direction == NetworkDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == NetworkDirection.Client && sender.CurrentClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
-            if (invocable.Direction == NetworkDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == NetworkDirection.Server && sender.CurrentClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
@@ -1278,7 +1278,7 @@ namespace SocketNetworking.Shared
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrnetClientLocation != ClientLocation.Remote)
+                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrentClientLocation != ClientLocation.Remote)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
@@ -1339,11 +1339,11 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvokable invocable = method.GetCustomAttribute<NetworkInvokable>();
-            if (invocable.Direction == NetworkDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == NetworkDirection.Client && sender.CurrentClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
-            if (invocable.Direction == NetworkDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == NetworkDirection.Server && sender.CurrentClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
@@ -1359,7 +1359,7 @@ namespace SocketNetworking.Shared
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrnetClientLocation != ClientLocation.Remote)
+                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrentClientLocation != ClientLocation.Remote)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
