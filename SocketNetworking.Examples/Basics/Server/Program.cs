@@ -48,7 +48,7 @@ namespace SocketNetworking.Example.Basics.Server
                         ExampleCustomPacket packet = new ExampleCustomPacket();
                         packet.Data = "test";
                         packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
-                        c.Send(packet);
+                        client.Send(packet);
                     }
                     continue;
                     if (c.IsTransportConnected && c.Ready && c.CurrentConnectionState == ConnectionState.Connected)
@@ -70,7 +70,7 @@ namespace SocketNetworking.Example.Basics.Server
 
         private static void OnClientConnected(int id)
         {
-            TestClient client = (TestClient)NetworkServer.GetClient(id);
+            
         }
     }
 }

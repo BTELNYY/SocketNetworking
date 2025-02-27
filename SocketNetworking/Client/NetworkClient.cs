@@ -611,9 +611,11 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            EncryptionPacket packet = new EncryptionPacket();
-            packet.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
-            packet.PublicKey = EncryptionManager.MyPublicKey;
+            EncryptionPacket packet = new EncryptionPacket
+            {
+                EncryptionFunction = EncryptionFunction.AsymmetricalKeySend,
+                PublicKey = EncryptionManager.MyPublicKey
+            };
             _encryptionState = EncryptionState.Handshake;
             Send(packet);
             CallbackTimer<NetworkClient> timer = new CallbackTimer<NetworkClient>((x) =>
@@ -1100,8 +1102,10 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            ClientDataPacket dataPacket = new ClientDataPacket();
-            dataPacket.Configuration = ClientConfiguration;
+            ClientDataPacket dataPacket = new ClientDataPacket
+            {
+                Configuration = ClientConfiguration
+            };
             Send(dataPacket);
         }
 
@@ -1209,7 +1213,7 @@ namespace SocketNetworking.Client
             }
             if (!packet.ValidateFlags())
             {
-                Log.Error($"Packet send failed! {packet.ToString()}");
+                Log.Error($"Packet send failed! {packet}");
                 return null;
             }
             //Log.Debug("Active Flags: " + string.Join(", ", packet.Flags.GetActiveFlags()));
@@ -1361,7 +1365,7 @@ namespace SocketNetworking.Client
             }
             catch (Exception ex)
             {
-                Log.Warning($"Malformed Packet. Size: {packet.Item1.Length}, Error: {ex.ToString()}");
+                Log.Warning($"Malformed Packet. Size: {packet.Item1.Length}, Error: {ex}");
             }
         }
 
@@ -1611,8 +1615,10 @@ namespace SocketNetworking.Client
                             break;
                         case EncryptionFunction.AsymmetricalKeySend:
                             EncryptionManager.OthersPublicKey = encryptionPacket.PublicKey;
-                            EncryptionPacket gotYourPublicKey = new EncryptionPacket();
-                            gotYourPublicKey.EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve;
+                            EncryptionPacket gotYourPublicKey = new EncryptionPacket
+                            {
+                                EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve
+                            };
                             Send(gotYourPublicKey);
                             EncryptionState = EncryptionState.AsymmetricalReady;
                             //Log.Info($"Got Asymmetrical Encryption Key, ID: {ClientID}");
@@ -1631,9 +1637,11 @@ namespace SocketNetworking.Client
                         case EncryptionFunction.SymetricalKeyRecieve:
                             EncryptionState = EncryptionState.SymmetricalReady;
                             //Log.Info($"Client Got Symmetrical Encryption Key, ID: {ClientID}");
-                            EncryptionPacket updateEncryptionStateFinal = new EncryptionPacket();
-                            updateEncryptionStateFinal.EncryptionFunction = EncryptionFunction.UpdateEncryptionStatus;
-                            updateEncryptionStateFinal.State = EncryptionState.Encrypted;
+                            EncryptionPacket updateEncryptionStateFinal = new EncryptionPacket
+                            {
+                                EncryptionFunction = EncryptionFunction.UpdateEncryptionStatus,
+                                State = EncryptionState.Encrypted
+                            };
                             Send(updateEncryptionStateFinal); 
                             Log.Success("Encryption Successful.");
                             if (NetworkServer.Config.DefaultReady == true)
@@ -1837,8 +1845,10 @@ namespace SocketNetworking.Client
                             break;
                         case EncryptionFunction.AsymmetricalKeySend:
                             EncryptionManager.OthersPublicKey = encryptionPacket.PublicKey;
-                            EncryptionPacket gotYourPublicKey = new EncryptionPacket();
-                            gotYourPublicKey.EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve;
+                            EncryptionPacket gotYourPublicKey = new EncryptionPacket
+                            {
+                                EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve
+                            };
                             //Log.Info("Got Servers Public key, Sending mine.");
                             Send(gotYourPublicKey);
                             EncryptionState = EncryptionState.AsymmetricalReady;
@@ -1849,8 +1859,10 @@ namespace SocketNetworking.Client
                         case EncryptionFunction.SymmetricalKeySend:
                             //Log.Info($"Got servers symetrical key.");
                             EncryptionManager.SharedAesKey = new Tuple<byte[], byte[]>(encryptionPacket.SymKey, encryptionPacket.SymIV);
-                            EncryptionPacket gotYourSymmetricalKey = new EncryptionPacket();
-                            gotYourSymmetricalKey.EncryptionFunction = EncryptionFunction.SymetricalKeyRecieve;
+                            EncryptionPacket gotYourSymmetricalKey = new EncryptionPacket
+                            {
+                                EncryptionFunction = EncryptionFunction.SymetricalKeyRecieve
+                            };
                             Send(gotYourSymmetricalKey);
                             EncryptionState = EncryptionState.SymmetricalReady;
                             break;
