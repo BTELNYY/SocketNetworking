@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.Client;
+using SocketNetworking.Misc;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.Streams;
@@ -91,7 +92,7 @@ namespace SocketNetworking.Shared
                 Client.Log.Info($"New stream request.");
                 StreamPacket result = new StreamPacket();
                 result.StreamID = packet.StreamID;
-                if (@event.Accept)
+                if (@event.Accepted)
                 {
                     try
                     {
@@ -136,7 +137,7 @@ namespace SocketNetworking.Shared
         }
     }
 
-    public class StreamOpenRequestEvent : EventArgs
+    public class StreamOpenRequestEvent : ChoiceEvent
     {
         public StreamOpenRequestEvent(StreamPacket packet) : base()
         {
@@ -144,8 +145,6 @@ namespace SocketNetworking.Shared
         }
 
         public StreamPacket Packet { get; }
-
-        public bool Accept { get; set; } = true;
 
     }
 }
