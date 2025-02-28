@@ -275,6 +275,29 @@ namespace SocketNetworking.Client
             }
         }
 
+        private bool _authenticated = false;
+
+        public bool Authenticated
+        {
+            get
+            {
+                return _authenticated;
+            }
+            set
+            {
+                NetworkInvoke(nameof(ClientGetAuthenticatedState), new object[] { value });
+                _authenticated = value;
+            }
+        }
+
+        [NetworkInvokable(NetworkDirection.Server)]
+        private void ClientGetAuthenticatedState(NetworkHandle handle, bool state)
+        {
+            Log.Info("Authentication has been successful.");
+            _authenticated = true;
+        }
+
+
         private bool _ready = false;
 
         /// <summary>
@@ -678,62 +701,6 @@ namespace SocketNetworking.Client
             //_packetReaderThread.Start();
             //_packetSenderThread = new Thread(PacketSenderThreadMethod);
             //_packetSenderThread.Start();
-        }
-
-        private void OnReadyStateChanged(bool oldState, bool newState)
-        {
-            if(!newState)
-            {
-                return;
-            }
-            List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
-            NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
-            foreach(INetworkObject @object in objects)
-            {
-                @object.OnSync(this);
-                @object.NetworkSpawn(this);
-            }
-            if(NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkObject)))
-            {
-                INetworkObject result = null;
-                NetworkObjectSpawner spawner = NetworkManager.GetBestSpawner(NetworkServer.ClientAvatar);
-                if(spawner != null)
-                {
-                    result = (INetworkObject)spawner.Spawner.Invoke(null, new NetworkHandle(this));
-                }
-                else
-                {
-                    result = (INetworkObject)Activator.CreateInstance(NetworkServer.ClientAvatar);
-                }
-                if(result != null)
-                {
-                    result.OwnerClientID = ClientID;
-                    result.OwnershipMode = OwnershipMode.Client;
-                    result.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
-                    NetworkManager.AddNetworkObject(result);
-                    result.NetworkSpawn();
-                    NetworkInvoke(nameof(GetClientAvatar), new object[] { result.NetworkID });
-                }
-            }
-        }
-
-        [NetworkInvokable(Direction = NetworkDirection.Server)]
-        private void OnSyncBegin(NetworkHandle handle, int objCount)
-        {
-            Log.Info("Total of Network Objects that will be spawned automatically: " + objCount);
-        }
-
-        [NetworkInvokable(Direction = NetworkDirection.Server)]
-        private void GetClientAvatar(NetworkHandle handle, int id)
-        {
-            Log.Info("New Client avatar has been specified. ID: " + id);
-            var result = NetworkManager.GetNetworkObjectByID(id);
-            if(result.Item1 == null)
-            {
-                Log.Warning("Got a client avatar, can't find the ID? ID: " + id);
-                return;
-            }
-            Avatar = result.Item1;
         }
 
         /// <summary>
@@ -1970,6 +1937,62 @@ namespace SocketNetworking.Client
         private void GetError(NetworkHandle handle, string message, int level)
         {
             Log.Any("[From Peer]: " + message, (LogSeverity)level);
+        }
+
+        private void OnReadyStateChanged(bool oldState, bool newState)
+        {
+            if (!newState)
+            {
+                return;
+            }
+            List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
+            NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
+            foreach (INetworkObject @object in objects)
+            {
+                @object.OnSync(this);
+                @object.NetworkSpawn(this);
+            }
+            if (NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkObject)))
+            {
+                INetworkObject result = null;
+                NetworkObjectSpawner spawner = NetworkManager.GetBestSpawner(NetworkServer.ClientAvatar);
+                if (spawner != null)
+                {
+                    result = (INetworkObject)spawner.Spawner.Invoke(null, new NetworkHandle(this));
+                }
+                else
+                {
+                    result = (INetworkObject)Activator.CreateInstance(NetworkServer.ClientAvatar);
+                }
+                if (result != null)
+                {
+                    result.OwnerClientID = ClientID;
+                    result.OwnershipMode = OwnershipMode.Client;
+                    result.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
+                    NetworkManager.AddNetworkObject(result);
+                    result.NetworkSpawn();
+                    NetworkInvoke(nameof(GetClientAvatar), new object[] { result.NetworkID });
+                }
+            }
+        }
+
+        [NetworkInvokable(Direction = NetworkDirection.Server)]
+        private void OnSyncBegin(NetworkHandle handle, int objCount)
+        {
+            Log.Info("Total of Network Objects that will be spawned automatically: " + objCount);
+        }
+
+        [NetworkInvokable(Direction = NetworkDirection.Server)]
+        private void GetClientAvatar(NetworkHandle handle, int id)
+        {
+            Log.Info("New Client avatar has been specified. ID: " + id);
+            var result = NetworkManager.GetNetworkObjectByID(id);
+            if (result.Item1 == null)
+            {
+                Log.Warning("Got a client avatar, can't find the ID? ID: " + id);
+                return;
+            }
+            Avatar = result.Item1;
         }
 
         #endregion

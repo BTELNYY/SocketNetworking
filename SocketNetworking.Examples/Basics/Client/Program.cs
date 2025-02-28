@@ -24,6 +24,11 @@ namespace SocketNetworking.Example.Basics.Client
             client.ClientStopped += Client_Stopped;
             //This allows untrusted root certificates if you are using it.
             client.AllowUntrustedRootCertificates = true;
+            //Accept all streams
+            client.Streams.StreamOpenRequest += (sender, @event) =>
+            {
+                @event.Accept();
+            };
             client.Connect("127.0.0.1", 7777, "DefaultPassword");
         }
 

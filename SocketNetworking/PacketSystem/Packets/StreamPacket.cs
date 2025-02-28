@@ -73,5 +73,6 @@ namespace SocketNetworking.PacketSystem.Packets
         Accept,
         Reject,
         MetaData,
+        CustomData,
     }
 }

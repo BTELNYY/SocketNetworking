@@ -81,15 +81,14 @@ namespace SocketNetworking.Shared
             SyncedStream stream = _streams.FirstOrDefault(x => x.ID == packet.StreamID);
             if (packet.Function == StreamFunction.Open)
             {
-                StreamOpenRequestEvent @event = new StreamOpenRequestEvent(packet);
-                StreamOpenRequest?.Invoke(this, @event);
                 Type streamType = packet.StreamType;
                 if (streamType == null)
                 {
                     Client.Log.Error("Cannot find the type of stream.");
                     return;
                 }
-                Client.Log.Info($"New stream request.");
+                StreamOpenRequestEvent @event = new StreamOpenRequestEvent(packet, false);
+                StreamOpenRequest?.Invoke(this, @event);
                 StreamPacket result = new StreamPacket();
                 result.StreamID = packet.StreamID;
                 if (@event.Accepted)
@@ -122,6 +121,7 @@ namespace SocketNetworking.Shared
                 {
                     result.Function = StreamFunction.Reject;
                     Client.Send(result);
+                    Client.Log.Info($"Stream {packet.StreamID} with type {packet.StreamType} was rejected.");
                     return;
                 }
             }
@@ -142,7 +142,16 @@ namespace SocketNetworking.Shared
         public StreamOpenRequestEvent(StreamPacket packet) : base()
         {
             Packet = packet;
+            StreamType = packet.StreamType;
         }
+
+        public StreamOpenRequestEvent(StreamPacket packet, bool defaultState) : base(defaultState)
+        {
+            Packet = packet;
+            StreamType = packet.StreamType;
+        }
+
+        public Type StreamType { get;  }
 
         public StreamPacket Packet { get; }
 

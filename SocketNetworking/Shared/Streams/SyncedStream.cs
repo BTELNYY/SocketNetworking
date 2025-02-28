@@ -235,6 +235,20 @@ namespace SocketNetworking.Shared.Streams
             NewDataRecieved?.Invoke(data.Chunk.Length);
         }
 
+        public virtual void RecieveCustomData(StreamPacket packet, byte[] data)
+        {
+
+        }
+
+        public virtual void SendCustomData(byte[] data)
+        {
+            StreamPacket packet = new StreamPacket();
+            packet.Data = data;
+            packet.StreamID = ID;
+            packet.Function = StreamFunction.CustomData;
+            Send(packet);
+        }
+
         public virtual void RecieveNetworkData(StreamPacket packet)
         {
             ByteReader reader = new ByteReader(packet.Data);
@@ -244,6 +258,9 @@ namespace SocketNetworking.Shared.Streams
             }
             switch(packet.Function)
             {
+                case StreamFunction.CustomData:
+                    RecieveCustomData(packet, packet.Data);
+                    break;
                 case StreamFunction.DataSend:
                     StreamData data = reader.ReadPacketSerialized<StreamData>();
                     HandleNewData(packet, data);

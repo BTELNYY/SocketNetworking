@@ -90,6 +90,7 @@
     <Compile Include="Server\UdpNetworkServer.cs" />
     <Compile Include="Shared\NetworkObjects\INetworkSpawnable.cs" />
     <Compile Include="Shared\NetworkStreams.cs" />
+    <Compile Include="Shared\Streams\NetworkFileStream.cs" />
     <Compile Include="Shared\Streams\SyncedStream.cs" />
     <Compile Include="Shared\SyncVars\INetworkSyncVar.cs" />
     <Compile Include="Shared\NetworkObjects\NetworkAvatarBase.cs" />
