@@ -85,7 +85,7 @@ namespace SocketNetworking
         {
             foreach(T item in value)
             {
-                target.Append(item);
+                target = target.Append(item).ToArray();
             }
             return target;
         }
@@ -256,6 +256,34 @@ namespace SocketNetworking
             }
             source = source.Skip((int)int.MaxValue).ToList();
             return source;
+        }
+
+        public static IEnumerable<TSource> TakeLong<TSource>(this IEnumerable<TSource> source, long count)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException("source");
+            }
+            return TakeIterator(source, count);
+        }
+
+        private static IEnumerable<TSource> TakeIterator<TSource>(IEnumerable<TSource> source, long count)
+        {
+            if (count <= 0)
+            {
+                yield break;
+            }
+
+            foreach (TSource item in source)
+            {
+                yield return item;
+                long num = count - 1;
+                count = num;
+                if (num == 0)
+                {
+                    break;
+                }
+            }
         }
 
 

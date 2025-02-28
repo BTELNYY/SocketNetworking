@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +18,20 @@ namespace SocketNetworking.Shared.Streams
 {
     public class SyncedStream : Stream
     {
+        /// <summary>
+        /// Called when the <see cref="SyncedStream"/> recieves a new batch of data. The <see cref="int"/> argument is the amount of data received, although <see cref="Available"/> will return the same number.
+        /// </summary>
         public event Action<int> NewDataRecieved;
+
+        /// <summary>
+        /// Called when the <see cref="SyncedStream"/> is opened.
+        /// </summary>
+        public event Action StreamOpened;
+
+        /// <summary>
+        /// Called when the <see cref="SyncedStream"/> is closed within the <see cref="SyncedStream.Close"/> method.
+        /// </summary>
+        public event Action StreamClosed;
 
         /// <summary>
         /// A maximum of 63,488 bytes can be sent every packet, you can write more per write operation, but they will be broken up into many packets.
@@ -34,11 +50,11 @@ namespace SocketNetworking.Shared.Streams
 
         byte[] buffer;
 
-        public int BufferSize
+        public long BufferSize
         {
             get
             {
-                return buffer.Length;
+                return _bufferSize;
             }
         }
 
@@ -60,21 +76,21 @@ namespace SocketNetworking.Shared.Streams
             }
             protected set
             {
-                _available = Math.Min(bufferSize, value);
+                _available = Math.Min(_bufferSize, value);
             }
         }
 
-        public SyncedStream(NetworkClient client, ushort id, int bufferSize) : this(client)
+        public SyncedStream(NetworkClient client, ushort id, long bufferSize) : this(client)
         {
             this.id = id;
-            this.bufferSize = bufferSize;
+            this._bufferSize = bufferSize;
             this.buffer = new byte[bufferSize];
             Log.Prefix = $"[Stream {id}, Client {client.ClientID}]";
         }
 
         ushort id;
 
-        long bufferSize;
+        long _bufferSize;
 
         public ushort ID
         {
@@ -99,7 +115,7 @@ namespace SocketNetworking.Shared.Streams
                 AllowReading = _allowRead,
                 AllowWriting = _allowWrite,
                 AllowSeeking = _allowSeek,
-                MaxBufferSize = bufferSize,
+                MaxBufferSize = _bufferSize,
             };
         }
 
@@ -169,10 +185,55 @@ namespace SocketNetworking.Shared.Streams
         /// </summary>
         public virtual void OnStreamOpenedRemote()
         {
-            Log.Info($"Stream has been accepted and opened with buffer size {bufferSize}.");
+            Log.Info($"Stream has been accepted and opened with buffer size {_bufferSize}.");
         }
 
         private ConcurrentDictionary<ushort, byte[]> _requests = new ConcurrentDictionary<ushort, byte[]>();
+
+
+        protected virtual void HandleNewData(StreamPacket packet, StreamData data)
+        {
+            Log.Debug($"New Data recieved! Size: {data.Chunk.Length}, Data: {string.Join("-", data.Chunk)}");
+            if (data.RequestID == 0)
+            {
+                if (data.Chunk.Length > BufferSize)
+                {
+                    Log.Warning($"Buffer is too small for this size of transmission! Buffer is {BufferSize} bytes long and the transmission is {data.Chunk.Length} bytes long. The last bytes of the tranmission have been discarded.");
+                    data.Chunk = data.Chunk.TakeLong(BufferSize).ToArray();
+                    Log.Warning($"New chunk size: {data.Chunk.Length}");
+                }
+                if(Available + data.Chunk.Length > BufferSize)
+                {
+                    int diff = (int)((Available + data.Chunk.Length) - BufferSize);
+                    Log.Debug(diff.ToString());
+                    buffer = buffer.RemoveFromStart(diff);
+                    buffer = buffer.AppendAll(data.Chunk);
+                }
+                else
+                {
+                    long index = Math.Max(0, Available);
+                    for (int i = 0; i < data.Chunk.Length; i++)
+                    {
+                        buffer[i+index] = data.Chunk[i];
+                    }
+                }
+                Available += data.Chunk.LongLength;
+                NewDataRecieved?.Invoke(data.Chunk.Length);
+            }
+            else
+            {
+                if (_requests.ContainsKey(data.RequestID))
+                {
+                    Log.Error($"Request ID {data.RequestID} has already been recieved! There is no way you have {ushort.MaxValue} pending data requests right?");
+                }
+                else
+                {
+                    _requests.TryAdd(data.RequestID, data.Chunk);
+                }
+            }
+            Log.Debug(string.Join("-", buffer));
+            NewDataRecieved?.Invoke(data.Chunk.Length);
+        }
 
         public virtual void RecieveNetworkData(StreamPacket packet)
         {
@@ -185,32 +246,7 @@ namespace SocketNetworking.Shared.Streams
             {
                 case StreamFunction.DataSend:
                     StreamData data = reader.ReadPacketSerialized<StreamData>();
-                    if(data.RequestID == 0)
-                    {
-                        if(Available + data.Chunk.Length > BufferSize)
-                        {
-                            buffer = buffer.RemoveFromStart(data.Chunk.Length);
-                        }
-                        buffer = buffer.AppendAll(data.Chunk);
-                        Available += data.Chunk.LongLength;
-                        NewDataRecieved?.Invoke(data.Chunk.Length);
-                    }
-                    else
-                    {
-                        if(_requests.ContainsKey(data.RequestID))
-                        {
-                            Log.Error($"Request ID {data.RequestID} has already been recieved! There is no way you have {ushort.MaxValue} pending data requests right?");
-                        }
-                        else
-                        {
-                            _requests.TryAdd(data.RequestID, data.Chunk);
-                        }
-                    }
-                    break;
-                case StreamFunction.Close:
-                    _isOpen = false;
-                    Log.Debug($"Stream was closed.");
-                    Close();
+                    HandleNewData(packet, data);
                     break;
                 case StreamFunction.Accept:
                 case StreamFunction.MetaData:
@@ -219,16 +255,20 @@ namespace SocketNetworking.Shared.Streams
                     {
                         _isOpen = true;
                         OnStreamOpenedRemote();
+                        StreamOpened?.Invoke();
                     }
                     buffer = new byte[metaData.MaxBufferSize];
+                    _bufferSize = metaData.MaxBufferSize;
                     _allowRead = metaData.AllowReading;
                     _allowWrite = metaData.AllowWriting;
                     _allowSeek = metaData.AllowSeeking;
                     break;
+                case StreamFunction.Close:
                 case StreamFunction.Reject:
                     _isOpen = false;
                     Close();
-                    Log.Error($"Stream {id} was rejected by remote.");
+                    string message = packet.Function == StreamFunction.Close ? "Stream was closed" : "Stream was rejected";
+                    Log.Info(message);
                     break;
                 case StreamFunction.DataRequest:
                     StreamRequestData requestData = reader.ReadPacketSerialized<StreamRequestData>();
@@ -304,7 +344,9 @@ namespace SocketNetworking.Shared.Streams
 
         public override bool CanRead => IsOpen && AllowRead;
 
-        public bool UsePriority { get; set; }
+        public bool UsePriority { get; set; } = false;
+
+        public bool CompressStream { get; set; } = false;
 
         /// <summary>
         /// The position in a stream does nothing within the <see cref="SyncedStream"/> class as you cannot rewind or fast forward the internet.
@@ -324,7 +366,7 @@ namespace SocketNetworking.Shared.Streams
         public virtual void Open()
         {
             Client.Streams.Open(this);
-            Log.Info($"Stream open requested with a buffer size of {bufferSize}");
+            Log.Info($"Stream open requested with a buffer size of {_bufferSize}");
         }
 
         public virtual void OpenBlocking()
@@ -338,17 +380,22 @@ namespace SocketNetworking.Shared.Streams
 
         public override void Close()
         {
+            StreamClosed?.Invoke();
             Client.Streams.Close(this);
             buffer = null;
         }
 
         public virtual void Send(Packet packet)
         {
-            Client.Send(packet, UsePriority);
+            Send(packet, UsePriority);
         }
 
         public virtual void Send(Packet packet, bool usePriority)
         {
+            if(CompressStream)
+            {
+                packet.Flags |= PacketFlags.Compressed;
+            }
             Client.Send(packet, usePriority);
         }
 
