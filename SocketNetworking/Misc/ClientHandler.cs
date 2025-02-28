@@ -80,11 +80,21 @@ namespace SocketNetworking.Misc
                 if (die) return;
                 lock (_lock)
                 {
+                    int[] removeIndex = { };
                     for (int i = 0; i < Clients.Count; i++)
                     {
                         NetworkClient client = Clients[i];
+                        if(client.CurrentConnectionState == Shared.ConnectionState.Disconnected)
+                        {
+                            removeIndex.Append(i);
+                            continue;
+                        }
                         client.ReadNext();
                         client.WriteNext();
+                    }
+                    for (int i = 0; i < removeIndex.Length; i++)
+                    {
+                        Clients.RemoveAt(removeIndex[i]);
                     }
                 }
             }

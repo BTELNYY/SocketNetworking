@@ -174,8 +174,8 @@ namespace SocketNetworking.Transports
 
         public override void Close()
         {
-            Client.Close();
-            Client.Dispose();
+            Client?.Close();
+            Client?.Dispose();
             Client = null;
         }
 

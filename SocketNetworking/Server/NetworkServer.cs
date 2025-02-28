@@ -16,6 +16,7 @@ using SocketNetworking.Shared.Messages;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Diagnostics;
+using SocketNetworking.Server.Events;
 
 namespace SocketNetworking.Server
 {
@@ -54,6 +55,18 @@ namespace SocketNetworking.Server
         protected static void InvokeServerStopped()
         {
             ServerStopped?.Invoke();
+        }
+
+        /// <summary>
+        /// Called when a <see cref="NetworkClient"/> is first connecting. At this point, this <see cref="NetworkClient"/> is fresh.
+        /// </summary>
+        public static event EventHandler<ClientConnectRequest> ClientConnecting;
+
+        protected static bool AcceptClient(NetworkClient client)
+        {
+            ClientConnectRequest req = new ClientConnectRequest(client, true);
+            ClientConnecting?.Invoke(null, req);
+            return req.Accepted;
         }
 
         protected static ServerState _serverState = ServerState.NotStarted;

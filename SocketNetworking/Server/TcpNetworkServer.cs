@@ -77,6 +77,12 @@ namespace SocketNetworking.Server
                 NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
                 client.InitRemoteClient(counter, tcpTransport);
                 AddClient(client, counter);
+                bool disconnect = !AcceptClient(client);
+                if(disconnect)
+                {
+                    client.Disconnect();
+                    continue;
+                }
                 CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                 {
                     if (x == null)

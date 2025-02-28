@@ -72,6 +72,7 @@
     <Compile Include="Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Exceptions\NetworkInvocationException.cs" />
     <Compile Include="Exceptions\NetworkSerializationException.cs" />
+    <Compile Include="Misc\ChoiceEvent.cs" />
     <Compile Include="Misc\ClientHandler.cs" />
     <Compile Include="Misc\ObjectPool.cs" />
     <Compile Include="NetworkObjectExtensions.cs" />
@@ -82,6 +83,7 @@
     <Compile Include="PacketSystem\Packets\SyncVarUpdatePacket.cs" />
     <Compile Include="PacketSystem\TargetedPacket.cs" />
     <Compile Include="PacketSystem\TypeWrappers\SerializableType.cs" />
+    <Compile Include="Server\Events\ClientConnectRequest.cs" />
     <Compile Include="Server\NetworkServerConfig.cs" />
     <Compile Include="Server\MixedNetworkServer.cs" />
     <Compile Include="Server\TcpNetworkServer.cs" />
