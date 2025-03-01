@@ -307,6 +307,10 @@ namespace SocketNetworking.Client
         {
             get
             {
+                if(!IsConnected)
+                {
+                    return false;
+                }
                 return _ready;
             }
             set
@@ -842,6 +846,7 @@ namespace SocketNetworking.Client
         /// </summary>
         public virtual void StopClient()
         {
+            NoPacketHandling = true;
             NetworkManager.SendDisconnectedPulse(this);
             _connectionState = ConnectionState.Disconnected;
             Transport?.Close();
@@ -854,6 +859,8 @@ namespace SocketNetworking.Client
             {
                 OnLocalStopClient();
             }
+            _toReadPackets = null;
+            _toSendPackets = null;
             if (Clients.Contains(this))
             {
                 Clients.Remove(this);

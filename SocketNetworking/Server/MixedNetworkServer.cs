@@ -150,7 +150,7 @@ namespace SocketNetworking.Server
                     if(_udpClients.ContainsKey(listener))
                     {
                         MixedNetworkClient client = _udpClients[listener];
-                        if(client.UDPFailures > 5)
+                        if(client.UDPFailures > 5 && client.IsConnected)
                         {
                             client.Disconnect("UDP errors reached limit, You have failed to transmit valid packets.");
                             continue;

@@ -24,6 +24,18 @@ namespace SocketNetworking.Client
             _networkEncryptionManager = new NetworkEncryption(this);
         }
 
+        protected override void OnLocalStopClient()
+        {
+            base.OnLocalStopClient();
+            UdpTransport?.Close();
+        }
+
+        protected override void OnRemoteStopClient()
+        {
+            base.OnRemoteStopClient();
+            UdpTransport?.Close();
+        }
+
         public int UDPFailures = 0;
 
         public int InitialUDPKey = 0;

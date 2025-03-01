@@ -53,6 +53,14 @@ namespace SocketNetworking.Transports
                 }
                 if(_hasConnected)
                 {
+                    if(Client == null)
+                    {
+                        return false;
+                    }
+                    if(Client.Client == null)
+                    {
+                        return false;
+                    }
                     return Client.Client.Connected;
                 }
                 return false;
@@ -174,6 +182,11 @@ namespace SocketNetworking.Transports
 
         public override void Close()
         {
+            if(_isServerMode)
+            {
+                Client = null;
+                return;
+            }
             Client?.Close();
             Client?.Dispose();
             Client = null;

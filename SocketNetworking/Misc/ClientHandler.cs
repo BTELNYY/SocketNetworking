@@ -86,6 +86,7 @@ namespace SocketNetworking.Misc
                         NetworkClient client = Clients[i];
                         if(client.CurrentConnectionState == Shared.ConnectionState.Disconnected)
                         {
+                            Log.GlobalWarning($"Client {client.ClientID} is disconnected, therefore it is being removed.");
                             removeIndex.Append(i);
                             continue;
                         }

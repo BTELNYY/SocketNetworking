@@ -40,7 +40,7 @@ namespace SocketNetworking.Transports
 
         public override int PeerPort => Peer.Port;
 
-        public override bool IsConnected => Client.Connected;
+        public override bool IsConnected => Client != null && Client.Connected;
 
         public SslStream SslStream { get; set; }
 
@@ -61,11 +61,15 @@ namespace SocketNetworking.Transports
         {
             get
             {
+                if(!IsConnected)
+                {
+                    return null;
+                }
                 if(UsingSSL)
                 {
                     return SslStream;
                 }
-                return Client.GetStream();
+                return Client?.GetStream();
             }
         }
 
