@@ -286,7 +286,7 @@ namespace SocketNetworking.Shared
 
         #region Network Objects
 
-        private static readonly Dictionary<INetworkObject, NetworkObjectData> NetworkObjects = new Dictionary<INetworkObject, NetworkObjectData>();
+        private static readonly ConcurrentDictionary<INetworkObject, NetworkObjectData> NetworkObjects = new ConcurrentDictionary<INetworkObject, NetworkObjectData>();
 
         private static readonly List<NetworkObjectData> PreCache = new List<NetworkObjectData>();
 
@@ -635,7 +635,7 @@ namespace SocketNetworking.Shared
             else
             {
                 NetworkObjectData data = GetNetworkObjectData(networkObject);
-                NetworkObjects.Add(networkObject, data);
+                NetworkObjects.TryAdd(networkObject, data);
                 SendAddedPulse(networkObject);
                 return true;
             }
@@ -684,7 +684,7 @@ namespace SocketNetworking.Shared
             }
             else
             {
-                NetworkObjects.Remove(networkObject);
+                NetworkObjects.TryRemove(networkObject, out var value);
                 SendRemovedPulse(networkObject);
                 return true;
             }

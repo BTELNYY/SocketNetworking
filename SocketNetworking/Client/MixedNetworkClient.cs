@@ -122,10 +122,18 @@ namespace SocketNetworking.Client
                     Exception ex;
                     if (packet.Flags.HasFlag(PacketFlags.Priority))
                     {
+                        if(!UdpTransport.IsConnected)
+                        {
+                            return;
+                        }
                         ex = UdpTransport.Send(fullBytes, packet.Destination);
                     }
                     else
                     {
+                        if(!TcpTransport.IsConnected)
+                        {
+                            return;
+                        }
                         ex = Transport.Send(fullBytes, packet.Destination);
                     }
                     //Log.Debug("Packet sent!");

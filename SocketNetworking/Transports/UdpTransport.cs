@@ -45,7 +45,7 @@ namespace SocketNetworking.Transports
             {
                 if (IsServerMode)
                 {
-                    return true;
+                    return _serverIsConnected;
                 }
                 if (OverrideConnectedState)
                 {
@@ -81,9 +81,12 @@ namespace SocketNetworking.Transports
             }
         }
 
+        private bool _serverIsConnected = false;
+
         public virtual void SetupForServerUse(IPEndPoint peer, IPEndPoint me)
         {
             _isServerMode = true;
+            _serverIsConnected = true;
             _emulatedPeer = peer;
             _emulatedMe = me;
         }
@@ -185,6 +188,7 @@ namespace SocketNetworking.Transports
             if(_isServerMode)
             {
                 Client = null;
+                _serverIsConnected = false;
                 return;
             }
             Client?.Close();
