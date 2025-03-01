@@ -75,17 +75,17 @@ namespace SocketNetworking.Transports
 
         public TcpClient Client { get; set; } = new TcpClient();
 
-        public override Socket Socket => Client.Client;
+        public override Socket Socket => Client?.Client;
 
         public override bool DataAvailable
         {
             get
             {
-                return Stream.CanRead && Socket.Available > 0;
+                return Stream != null && Stream.CanRead && Socket.Available > 0;
             }
         }
-
-        public override int DataAmountAvailable => Socket.Available;
+        
+        public override int DataAmountAvailable => Socket == null ? 0 : Socket.Available;
 
         public override Exception Connect(string hostname, int port)
         {

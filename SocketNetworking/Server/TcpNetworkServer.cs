@@ -70,32 +70,38 @@ namespace SocketNetworking.Server
                     continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();
-                TcpTransport tcpTransport = new TcpTransport(socket);
-                socket.NoDelay = true;
-                IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
-                Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
-                NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
-                client.InitRemoteClient(counter, tcpTransport);
-                AddClient(client, counter);
-                bool disconnect = !AcceptClient(client);
-                if(disconnect)
+                _ = Task.Run(() => 
                 {
-                    client.Disconnect();
-                    continue;
-                }
-                CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
-                {
-                    if (x == null)
+                    TcpTransport tcpTransport = new TcpTransport(socket);
+                    IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
+                    Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
+                    TcpNetworkClient client = (TcpNetworkClient)Activator.CreateInstance(ClientType);
+                    client.InitRemoteClient(counter, tcpTransport);
+                    client.TcpNoDelay = true;
+                    AddClient(client, counter);
+                    bool disconnect = !AcceptClient(client);
+                    if (disconnect)
                     {
-                        return;
+                        client.Disconnect();
+                        socket?.Close();
                     }
-                    if (x.CurrentConnectionState != ConnectionState.Connected)
+                    else
                     {
-                        x.Disconnect("Failed to handshake in time.");
+                        CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
+                        {
+                            if (x == null)
+                            {
+                                return;
+                            }
+                            if (x.CurrentConnectionState != ConnectionState.Connected)
+                            {
+                                x.Disconnect("Failed to handshake in time.");
+                            }
+                        }, client, Config.HandshakeTime);
+                        callback.Start();
+                        InvokeClientConnected(counter);
                     }
-                }, client, Config.HandshakeTime);
-                callback.Start();
-                InvokeClientConnected(counter);
+                });
                 counter++;
             }
             Log.Info("Shutting down!");

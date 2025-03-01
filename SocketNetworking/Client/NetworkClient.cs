@@ -402,11 +402,11 @@ namespace SocketNetworking.Client
         {
             get
             {
-                return CurrentConnectionState == ConnectionState.Connected || CurrentConnectionState == ConnectionState.Handshake;
+                return (CurrentConnectionState == ConnectionState.Connected || CurrentConnectionState == ConnectionState.Handshake) && Transport.IsConnected;
             }
             set
             {
-                if(IsConnected)
+                if(!value)
                 {
                     Disconnect();
                 }
@@ -881,6 +881,7 @@ namespace SocketNetworking.Client
 
         protected virtual void OnRemoteStopClient()
         {
+            Transport?.Close();
             NetworkServer.RemoveClient(ClientID);
         }
 
@@ -931,9 +932,13 @@ namespace SocketNetworking.Client
         /// Forces the library to send the provided packet immediately on the calling thread. This is not a good idea, and should not be used.
         /// </summary>
         /// <param name="packet"></param>
-        public void SendImmediate(Packet packet)
+        public virtual void SendImmediate(Packet packet)
         {
             if(NoPacketHandling)
+            {
+                return;
+            }
+            if(!Transport.IsConnected)
             {
                 return;
             }

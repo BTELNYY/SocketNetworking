@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Threading;
 using System.IO.Ports;
 using SocketNetworking.Shared.Serialization;
+using System.Net.NetworkInformation;
 
 namespace SocketNetworking.Server
 {
@@ -34,6 +35,18 @@ namespace SocketNetworking.Server
 
         protected override void ServerStartThread()
         {
+            ClientDisconnected += (id) =>
+            {
+                lock(clientLock)
+                {
+                    var client = _udpClients.FirstOrDefault(x => x.Value.ClientID == id).Key;
+                    if(client == default)
+                    {
+                        return;
+                    }
+                    _udpClients.Remove(client);
+                }
+            };
             Log.Info("Server starting...");
             TcpListener serverSocket = new TcpListener(IPAddress.Parse(Config.BindIP), Config.Port);
             serverSocket.Start();
@@ -133,7 +146,10 @@ namespace SocketNetworking.Server
                         client.UdpTransport = new UdpTransport();
                         client.UdpTransport.Client = udpClient;
                         client.UdpTransport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
-                        _udpClients.Add(remoteIpEndPoint, client);
+                        lock(clientLock)
+                        {
+                            _udpClients.Add(remoteIpEndPoint, client);
+                        }
                         //Dont read the first message since its not actually a packet, and just the client ID and the passkey.
                         _awaitingUDPConnection.Remove((MixedNetworkClient)client);
                     }
@@ -157,6 +173,7 @@ namespace SocketNetworking.Server
                         }
                         client.UDPFailures++;
                     }
+                    continue;
                 }
             }
             Log.Info("Shutting down UDP Server!");

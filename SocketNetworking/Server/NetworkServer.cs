@@ -286,7 +286,7 @@ namespace SocketNetworking.Server
             return bestHandler;
         }
 
-        static object clientLock = new object();
+        protected static object clientLock = new object();
 
         public static void RemoveClient(int clientId)
         {
@@ -300,6 +300,7 @@ namespace SocketNetworking.Server
                     {
                         Log.Error("Unable to find the handler responsible for Client ID " + clientId);
                     }
+                    InvokeClientDisconnected(clientId);
                     handler.RemoveClient(_clients[clientId]);
                     _clients.Remove(clientId);
                 }
