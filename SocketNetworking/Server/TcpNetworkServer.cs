@@ -53,8 +53,8 @@ namespace SocketNetworking.Server
             Log.Info("Socket Started.");
             Log.Info($"Listening on {Config.BindIP}:{Config.Port}");
             int counter = 0;
-            InvokeServerReady();
             _serverState = ServerState.Ready;
+            InvokeServerReady();
             while (true)
             {
                 if (_isShuttingDown)

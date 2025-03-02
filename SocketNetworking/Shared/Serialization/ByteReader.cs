@@ -16,7 +16,7 @@ namespace SocketNetworking.Shared.Serialization
     /// </summary>
     public class ByteReader
     {
-        object _lock;
+        object _lock = new object();
 
         /// <summary>
         /// Represents the original untouched data fed into the class. This data is not changed by any method.
@@ -31,7 +31,10 @@ namespace SocketNetworking.Shared.Serialization
         {
             get
             {
-                return _workingSetData.Length;
+                lock (_lock)
+                {
+                    return _workingSetData.Length;
+                }
             }
         }
 
@@ -42,7 +45,10 @@ namespace SocketNetworking.Shared.Serialization
         {
             get
             {
-                return _workingSetData.Length == 0;
+                lock (_lock)
+                {
+                    return _workingSetData.Length == 0;
+                }
             }
         }
 
@@ -55,7 +61,10 @@ namespace SocketNetworking.Shared.Serialization
         {
             get
             {
-                return RawData.Length - _workingSetData.Length;
+                lock (_lock)
+                {
+                    return RawData.Length - _workingSetData.Length;
+                }
             }
         }
 
@@ -63,7 +72,6 @@ namespace SocketNetworking.Shared.Serialization
         {
             RawData = data;
             _workingSetData = RawData;
-            _lock = new object();
         }
 
         public ByteReader(byte[] data, bool showDebug) : this(data)

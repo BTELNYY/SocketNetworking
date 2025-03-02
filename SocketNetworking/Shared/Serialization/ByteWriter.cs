@@ -14,6 +14,8 @@ namespace SocketNetworking.Shared.Serialization
     /// </summary>
     public class ByteWriter
     {
+        object _lock = new object();
+
         /// <summary>
         /// The current length of the buffer.
         /// </summary>
@@ -21,7 +23,10 @@ namespace SocketNetworking.Shared.Serialization
         {
             get
             {
-                return _workingSetData.Length;
+                lock (_lock)
+                {
+                    return _workingSetData.Length;
+                }
             }
         }
 
@@ -32,7 +37,10 @@ namespace SocketNetworking.Shared.Serialization
         {
             get
             {
-                return _workingSetData;
+                lock (_lock)
+                {
+                    return _workingSetData;
+                }
             }
         }
 
@@ -52,122 +60,176 @@ namespace SocketNetworking.Shared.Serialization
 
         public void WriteObject<T>(T value)
         {
-            SerializedData data = ByteConvert.Serialize(value);
-            WritePacketSerialized<SerializedData>(data);
+            lock (_lock)
+            {
+                SerializedData data = ByteConvert.Serialize(value);
+                WritePacketSerialized<SerializedData>(data);
+            }
         }
 
         public void WritePacketSerialized<T>(IPacketSerializable serializable)
         {
-            byte[] data = serializable.Serialize().Data;
-            Write(data);
+            lock (_lock)
+            {
+                byte[] data = serializable.Serialize().Data;
+                Write(data);
+            }
         }
 
         public void WriteWrapper(object any)
         {
-            Type type = any.GetType();
-            if (!NetworkManager.TypeToTypeWrapper.ContainsKey(type))
+            lock (_lock)
             {
-                throw new InvalidOperationException("No type wrapper for type: " + type.FullName);
+                Type type = any.GetType();
+                if (!NetworkManager.TypeToTypeWrapper.ContainsKey(type))
+                {
+                    throw new InvalidOperationException("No type wrapper for type: " + type.FullName);
+                }
+                object wrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
+                MethodInfo serializer = wrapper.GetType().GetMethod("Serialize");
+                byte[] result = (byte[])serializer.Invoke(wrapper, new object[] { any });
+                WriteByteArray(result);
             }
-            object wrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
-            MethodInfo serializer = wrapper.GetType().GetMethod("Serialize");
-            byte[] result = (byte[])serializer.Invoke(wrapper, new object[] { any });
-            WriteByteArray(result);
         }
 
         public void WriteWrapper<T, K>(T value) where T : TypeWrapper<K>
         {
-            byte[] data = value.Serialize();
-            WriteByteArray(data);
+            lock (_lock)
+            {
+                byte[] data = value.Serialize();
+                WriteByteArray(data);
+            }
         }
 
         public void Write(byte[] data)
         {
-            _workingSetData = _workingSetData.Concat(data).ToArray();
+            lock (_lock)
+            {
+                _workingSetData = _workingSetData.Concat(data).ToArray();
+            }
         }
 
         public void WriteByteArray(byte[] data)
         {
-            WriteInt(data.Length);
-            _workingSetData = _workingSetData.Concat(data).ToArray();
+            lock (_lock)
+            {
+                WriteInt(data.Length);
+                _workingSetData = _workingSetData.Concat(data).ToArray();
+            }
         }
 
         public void WriteByte(byte data)
         {
-            _workingSetData = _workingSetData.Append(data).ToArray();
+            lock (_lock)
+            {
+                _workingSetData = _workingSetData.Append(data).ToArray();
+            }
         }
 
         public void WriteSByte(sbyte data)
         {
-            byte written = Convert.ToByte(data);
-            _workingSetData = _workingSetData.Append(written).ToArray();
+            lock (_lock)
+            {
+                byte written = Convert.ToByte(data);
+                _workingSetData = _workingSetData.Append(written).ToArray();
+            }
         }
 
         public void WriteLong(long data)
         {
-            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
-            _workingSetData = _workingSetData.Concat(result).ToArray();
+            lock (_lock)
+            {
+                byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
+                _workingSetData = _workingSetData.Concat(result).ToArray();
+            }
         }
 
         public void WriteInt(int data)
         {
-            int network = IPAddress.HostToNetworkOrder(data);
-            byte[] result = BitConverter.GetBytes(network);
-            _workingSetData = _workingSetData.Concat(result).ToArray();
+            lock (_lock)
+            {
+                int network = IPAddress.HostToNetworkOrder(data);
+                byte[] result = BitConverter.GetBytes(network);
+                _workingSetData = _workingSetData.Concat(result).ToArray();
+            }
         }
 
         public void WriteShort(short data)
         {
-            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
-            _workingSetData = _workingSetData.Concat(result).ToArray();
+            lock (_lock)
+            {
+                byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
+                _workingSetData = _workingSetData.Concat(result).ToArray();
+            }
         }
 
         public void WriteULong(ulong data)
         {
-            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((long)data));
-            _workingSetData = _workingSetData.Concat(result).ToArray();
+            lock (_lock)
+            {
+                byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((long)data));
+                _workingSetData = _workingSetData.Concat(result).ToArray();
+            }
         }
 
         public void WriteUInt(uint data)
         {
-            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((int)data));
-            _workingSetData = _workingSetData.Concat(result).ToArray();
+            lock (_lock)
+            {
+                byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((int)data));
+                _workingSetData = _workingSetData.Concat(result).ToArray();
+            }
         }
 
         public void WriteUShort(ushort data)
         {
-            byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)data));
-            _workingSetData = _workingSetData.Concat(result).ToArray();
+            lock (_lock)
+            {
+                byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)data));
+                _workingSetData = _workingSetData.Concat(result).ToArray();
+            }
         }
 
         public void WriteFloat(float data)
         {
-            byte[] result = BitConverter.GetBytes(data);
-            _workingSetData = _workingSetData.Concat(result).ToArray();
+            lock (_lock)
+            {
+                byte[] result = BitConverter.GetBytes(data);
+                _workingSetData = _workingSetData.Concat(result).ToArray();
+            }
         }
 
         public void WriteDouble(double data)
         {
-            byte[] result = BitConverter.GetBytes(data);
-            _workingSetData = _workingSetData.Concat(result).ToArray();
+            lock (_lock)
+            {
+                byte[] result = BitConverter.GetBytes(data);
+                _workingSetData = _workingSetData.Concat(result).ToArray();
+            }
         }
 
         public void WriteString(string data)
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(data);
-            int curLength = _workingSetData.Length;
-            WriteInt(bytes.Length);
-            if (curLength + 4 > _workingSetData.Length)
+            lock (_lock)
             {
-                Log.GlobalWarning("WriteInt failed!");
+                byte[] bytes = Encoding.UTF8.GetBytes(data);
+                int curLength = _workingSetData.Length;
+                WriteInt(bytes.Length);
+                if (curLength + 4 > _workingSetData.Length)
+                {
+                    Log.GlobalWarning("WriteInt failed!");
+                }
+                _workingSetData = _workingSetData.Concat(bytes).ToArray();
             }
-            _workingSetData = _workingSetData.Concat(bytes).ToArray();
         }
 
         public void WriteBool(bool data)
         {
-            byte[] result = BitConverter.GetBytes(data);
-            _workingSetData = _workingSetData.Concat(result).ToArray();
+            lock (_lock)
+            {
+                byte[] result = BitConverter.GetBytes(data);
+                _workingSetData = _workingSetData.Concat(result).ToArray();
+            }
         }
     }
 }
