@@ -35,11 +35,11 @@ namespace SocketNetworking.Server
 
         protected override void ServerStartThread()
         {
-            ClientDisconnected += (id) =>
+            ClientDisconnected += (dcClient) =>
             {
                 lock(clientLock)
                 {
-                    var client = _udpClients.FirstOrDefault(x => x.Value.ClientID == id).Key;
+                    var client = _udpClients.FirstOrDefault(x => x.Value == dcClient).Key;
                     if(client == default)
                     {
                         return;
@@ -166,12 +166,23 @@ namespace SocketNetworking.Server
                     if(_udpClients.ContainsKey(listener))
                     {
                         MixedNetworkClient client = _udpClients[listener];
-                        if(client.UDPFailures > 5 && client.IsConnected)
+                        if(client.UDPFailures > 5)
                         {
+                            if(!client.IsConnected || !client.UdpTransport.IsConnected)
+                            {
+                                lock(clientLock)
+                                {
+                                    _udpClients.Remove(listener);
+                                }
+                            }
                             client.Disconnect("UDP errors reached limit, You have failed to transmit valid packets.");
                             continue;
                         }
                         client.UDPFailures++;
+                    }
+                    else
+                    {
+                        Log.Debug(listener.ToString());
                     }
                     continue;
                 }

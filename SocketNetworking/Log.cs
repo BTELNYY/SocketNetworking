@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,7 +12,19 @@ namespace SocketNetworking
     {
         public static event Action<LogData> OnLog;
 
-        private static readonly HashSet<LogSeverity> hiddenSeverities = new HashSet<LogSeverity>();
+        //what the fuck
+        //private static readonly HashSet<LogSeverity> hiddenSeverities = new HashSet<LogSeverity>();
+
+        //By default, everything but debug is shown.
+        public static LogSeverity Levels = DEFAULT_LOG;
+
+        public const LogSeverity DEFAULT_LOG = (LogSeverity)30;
+
+        public const LogSeverity FULL_LOG = (LogSeverity)31;
+
+        public const LogSeverity NO_LOG = 0;
+
+        public static bool ShowStackTrace = false;
 
         private static Log _instance;
 
@@ -25,30 +38,6 @@ namespace SocketNetworking
             {
                 _instance = new Log();
                 return _instance;
-            }
-        }
-
-        public static void SetHiddenFlag(LogSeverity severity)
-        {
-            if(hiddenSeverities.Contains(severity))
-            {
-                return;
-            }
-            else
-            {
-                hiddenSeverities.Add(severity);
-            }
-        }
-
-        public static void RemoveHiddenFlag(LogSeverity severity)
-        {
-            if (hiddenSeverities.Contains(severity))
-            {
-                hiddenSeverities.Remove(severity);
-            }
-            else
-            {
-                return;
             }
         }
 
@@ -175,12 +164,16 @@ namespace SocketNetworking
         private void InvokeInstance(LogData data)
         {
             data.Message = Prefix + ": " + data.Message;
-            if (hiddenSeverities.Contains(data.Severity))
+            if (!Levels.HasFlag(data.Severity))
             {
                 return;
             }
             else
             {
+                if (ShowStackTrace)
+                {
+                    data.Message += $"\nStack Trace:\n{GetStackTrace().ToString()}";
+                }
                 OnLog?.Invoke(data);
             }
         }
@@ -210,12 +203,16 @@ namespace SocketNetworking
         private static void Invoke(LogData data)
         {
             data.Message = GetInstance().Prefix + ": " + data.Message;
-            if (hiddenSeverities.Contains(data.Severity))
+            if (!Levels.HasFlag(data.Severity))
             {
                 return;
             }
             else
             {
+                if(ShowStackTrace)
+                {
+                    data.Message += $"\nStack Trace:\n{GetStackTrace().ToString()}";
+                }
                 OnLog?.Invoke(data);
             }
         }
@@ -227,6 +224,12 @@ namespace SocketNetworking
             var type = method.DeclaringType;
             return type;
         }
+
+        private static StackTrace GetStackTrace()
+        {
+            var stackTrace = new StackTrace();
+            return stackTrace;
+        }
     }
 
     public struct LogData
@@ -236,12 +239,13 @@ namespace SocketNetworking
         public Type CallerType;
     }
 
+    [Flags]
     public enum LogSeverity
     {
-        Debug,
-        Info,
-        Success,
-        Warning,
-        Error
+        Debug = 1,
+        Info = 2,
+        Success = 4,
+        Warning = 8,
+        Error = 16,
     }
 }

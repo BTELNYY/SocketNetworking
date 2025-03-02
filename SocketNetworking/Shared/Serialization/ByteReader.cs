@@ -101,11 +101,11 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                SerializedData data = ReadPacketSerialized<SerializedData>();
-                object obj = ByteConvert.Deserialize(data, out int read);
-                Remove(read);
                 try
                 {
+                    SerializedData data = ReadPacketSerialized<SerializedData>();
+                    object obj = ByteConvert.Deserialize(data, out int read);
+                    Remove(read);
                     return (T)obj;
                 }
                 catch

@@ -26,14 +26,14 @@ namespace SocketNetworking.Client
 
         protected override void OnLocalStopClient()
         {
-            base.OnLocalStopClient();
             UdpTransport?.Close();
+            base.OnLocalStopClient();
         }
 
         protected override void OnRemoteStopClient()
         {
-            base.OnRemoteStopClient();
             UdpTransport?.Close();
+            base.OnRemoteStopClient();
         }
 
         public int UDPFailures = 0;
@@ -88,6 +88,7 @@ namespace SocketNetworking.Client
                 _transport = value;
             }
         }
+
 
         protected override void SendNextPacketInternal()
         {

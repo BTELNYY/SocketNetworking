@@ -81,7 +81,7 @@ namespace SocketNetworking.Transports
         {
             get
             {
-                return Stream != null && Stream.CanRead && Socket.Available > 0;
+                return Stream != null && Stream.CanRead && DataAmountAvailable > 0;
             }
         }
         

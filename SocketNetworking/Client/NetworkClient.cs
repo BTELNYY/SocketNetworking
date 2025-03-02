@@ -544,6 +544,11 @@ namespace SocketNetworking.Client
         protected bool _shuttingDown = false;
 
         /// <summary>
+        /// This boolean is set to true when the <see cref="StopClient"/> function is called. It is intended to be a kill switch for the client.
+        /// </summary>
+        public bool ShuttingDown => _shuttingDown;
+
+        /// <summary>
         /// Returns the amount of <see cref="Packet"/>s left to read, this is always zero if <see cref="NetworkClient.ManualPacketHandle"/> is false
         /// </summary>
         public int PacketsLeftToRead
@@ -807,11 +812,6 @@ namespace SocketNetworking.Client
         /// </param>
         public virtual void Disconnect(string message)
         {
-            if (!IsConnected || !IsTransportConnected)
-            {
-                StopClient();
-                return;
-            }
             ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
             {
                 State = ConnectionState.Disconnected,
@@ -846,11 +846,16 @@ namespace SocketNetworking.Client
         /// </summary>
         public virtual void StopClient()
         {
+            if(!_shuttingDown)
+            {
+                return;
+            }
+            Log.Info("Closing Client!");
+            _shuttingDown = true;
             NoPacketHandling = true;
             NetworkManager.SendDisconnectedPulse(this);
             _connectionState = ConnectionState.Disconnected;
             Transport?.Close();
-            _shuttingDown = true;
             if (CurrentClientLocation == ClientLocation.Remote)
             {
                 OnRemoteStopClient();
@@ -865,7 +870,6 @@ namespace SocketNetworking.Client
             {
                 Clients.Remove(this);
             }
-            Log.Info("Closing Client!");
             ClientStopped?.Invoke();
             ClientStoppedStatic?.Invoke(this);
             GC.Collect();
@@ -881,8 +885,7 @@ namespace SocketNetworking.Client
 
         protected virtual void OnRemoteStopClient()
         {
-            Transport?.Close();
-            NetworkServer.RemoveClient(ClientID);
+            NetworkServer.RemoveClient(this);
         }
 
         void StartClient()

@@ -36,11 +36,11 @@ namespace SocketNetworking.Server
             ClientConnected?.Invoke(id);
         }
 
-        public static event Action<int> ClientDisconnected;
+        public static event Action<NetworkClient> ClientDisconnected;
 
-        protected static void InvokeClientDisconnected(int id)
+        protected static void InvokeClientDisconnected(NetworkClient client)
         {
-            ClientDisconnected?.Invoke(id);
+            ClientDisconnected?.Invoke(client);
         } 
 
         public static event Action ServerStarted;
@@ -288,25 +288,38 @@ namespace SocketNetworking.Server
 
         protected static object clientLock = new object();
 
-        public static void RemoveClient(int clientId)
+        public static void RemoveClient(NetworkClient myClient)
         {
             lock(clientLock)
             {
-                if (_clients.ContainsKey(clientId))
+                if (_clients.ContainsKey(myClient.ClientID))
                 {
-                    ClientDisconnected?.Invoke(clientId);
-                    ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(_clients[clientId]));
+                    ClientDisconnected?.Invoke(myClient);
+                    ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(_clients[myClient.ClientID]));
                     if (handler == null)
                     {
-                        Log.Error("Unable to find the handler responsible for Client ID " + clientId);
+                        Log.Error("Unable to find the handler responsible for Client ID " + myClient.ClientID);
                     }
-                    InvokeClientDisconnected(clientId);
-                    handler.RemoveClient(_clients[clientId]);
-                    _clients.Remove(clientId);
+                    else
+                    {
+                        handler.RemoveClient(_clients[myClient.ClientID]);
+                    }
+                    InvokeClientDisconnected(myClient);
+                    Log.Debug($"Removed client {myClient.ClientID} from handler {handler?.ToString()}");
+                    _clients.Remove(myClient.ClientID);
                 }
                 else
                 {
-                    Log.Warning($"Can't remove client ID {clientId}, not found!");
+                    Log.Warning($"Can't remove client ID {myClient.ClientID}, not found!");
+                    ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(myClient));
+                    if (handler == null)
+                    {
+                        Log.Error("Unable to find the handler responsible for Client ID " + myClient.ClientID);
+                    }
+                    else
+                    {
+                        handler.RemoveClient(_clients[myClient.ClientID]);
+                    }
                 }
             }
         }

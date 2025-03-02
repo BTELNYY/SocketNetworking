@@ -19,6 +19,7 @@ namespace SocketNetworking.Example.Basics.SharedData
 
         public static Assembly GetAssembly()
         {
+            Log.Levels = Log.FULL_LOG;
             return Assembly.GetExecutingAssembly();
         }
     }
