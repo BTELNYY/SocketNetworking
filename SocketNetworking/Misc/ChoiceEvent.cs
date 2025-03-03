@@ -18,7 +18,7 @@ namespace SocketNetworking.Misc
             Accepted = defaultState;
         }
 
-        public void LocK()
+        public void Lock()
         {
             _final = true;
         }

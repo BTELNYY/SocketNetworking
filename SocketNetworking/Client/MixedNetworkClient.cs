@@ -109,7 +109,11 @@ namespace SocketNetworking.Client
             {
                 _toSendPackets.TryDequeue(out Packet packet);
                 PreparePacket(ref packet);
-                if(packet.Flags.HasFlag(PacketFlags.Priority))
+                if (!InvokePacketSendRequest(packet))
+                {
+                    return;
+                }
+                if (packet.Flags.HasFlag(PacketFlags.Priority))
                 {
                     packet.Destination = UdpTransport.Peer;
                 }
@@ -149,6 +153,7 @@ namespace SocketNetworking.Client
                     NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
                     InvokeConnectionError(networkErrorData);
                 }
+                InvokePacketSent(packet);
             }
         }
 

@@ -5,8 +5,8 @@ using System.Threading;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.PacketSystem;
-using SocketNetworking.Server.Events;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
 

@@ -10,6 +10,7 @@ using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.Serialization;
@@ -45,6 +46,7 @@ namespace SocketNetworking.Client
             ClientCreated?.Invoke(this);
             _networkEncryptionManager = new NetworkEncryption(this);
             _streams = new NetworkStreams(this);
+            PrivateInit();
             Init();
         }
 
@@ -132,6 +134,29 @@ namespace SocketNetworking.Client
         /// Called when the <see cref="EncryptionState"/> has been set to <see cref="EncryptionState.SymmetricalReady"/> or higher.
         /// </summary>
         public event Action EncryptionComplete;
+
+        /// <summary>
+        /// Called when a <see cref="Packet"/> is about to be sent. if <see cref="ChoiceEvent.Accepted"/> is false, this is cancelled. See <see cref="ChoiceEvent.Accept"/> and <see cref="ChoiceEvent.Reject"/>
+        /// </summary>
+        public event EventHandler<PacketSendRequest> PacketSendRequest;
+
+        protected bool InvokePacketSendRequest(Packet packet)
+        {
+            PacketSendRequest req = new PacketSendRequest(packet);
+            PacketSendRequest?.Invoke(this, req);
+            return req.Accepted;
+        }
+
+        /// <summary>
+        /// Called when a <see cref="Packet"/> has been sent.
+        /// </summary>
+        public event Action<Packet> PacketSent;
+
+        protected void InvokePacketSent(Packet packet)
+        {
+            PacketSent?.Invoke(packet);
+        }
+
         #endregion
 
         #region Static Events
@@ -685,6 +710,12 @@ namespace SocketNetworking.Client
 
         }
 
+
+        private void PrivateInit()
+        {
+            
+        }
+
         /// <summary>
         /// Used when initializing a <see cref="NetworkClient"/> object on the server. Do not call this on the local client.
         /// </summary>
@@ -1125,6 +1156,10 @@ namespace SocketNetworking.Client
             {
                 _toSendPackets.TryDequeue(out Packet packet);
                 PreparePacket(ref packet);
+                if (!InvokePacketSendRequest(packet))
+                {
+                    return;
+                }
                 byte[] fullBytes = SerializePacket(packet);
                 try
                 {
@@ -1142,6 +1177,7 @@ namespace SocketNetworking.Client
                     NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
                     ConnectionError?.Invoke(networkErrorData);
                 }
+                InvokePacketSent(packet);
             }
         }
 

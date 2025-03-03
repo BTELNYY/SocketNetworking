@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
 
-namespace SocketNetworking.Server.Events
+namespace SocketNetworking.Shared.Events
 {
     public class ClientConnectRequest : ChoiceEvent
     {
