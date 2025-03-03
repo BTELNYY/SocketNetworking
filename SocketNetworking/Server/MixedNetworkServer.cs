@@ -1,19 +1,15 @@
-﻿using SocketNetworking.Client;
-using SocketNetworking.Misc;
-using SocketNetworking.Transports;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Shared;
-using System.Reflection;
+using System.Net.Sockets;
 using System.Threading;
-using System.IO.Ports;
+using System.Threading.Tasks;
+using SocketNetworking.Client;
+using SocketNetworking.Misc;
+using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
-using System.Net.NetworkInformation;
+using SocketNetworking.Transports;
 
 namespace SocketNetworking.Server
 {
@@ -79,31 +75,45 @@ namespace SocketNetworking.Server
                     socket.Close();
                     continue;
                 }
-                TcpTransport tcpTransport = new TcpTransport(socket);
-                socket.NoDelay = true;
-                IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
-                Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on TCP.");
-                MixedNetworkClient client = (MixedNetworkClient)Activator.CreateInstance(ClientType);
-                client.InitRemoteClient(counter, tcpTransport);
-                AddClient(client, counter);
-                _awaitingUDPConnection.Add(client);
-                CallbackTimer<MixedNetworkClient> callback = new CallbackTimer<MixedNetworkClient>((x) =>
+                _ = Task.Run(() => 
                 {
-                    if (x == null)
+                    TcpTransport tcpTransport = new TcpTransport(socket);
+                    socket.NoDelay = true;
+                    IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
+                    Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on TCP.");
+                    MixedNetworkClient client = (MixedNetworkClient)Activator.CreateInstance(ClientType);
+                    client.InitRemoteClient(counter, tcpTransport);
+                    AddClient(client, counter);
+                    _awaitingUDPConnection.Add(client);
+                    CallbackTimer<MixedNetworkClient> callback = new CallbackTimer<MixedNetworkClient>((x) =>
                     {
-                        return;
-                    }
-                    if(_awaitingUDPConnection.Contains(x))
+                        if (x == null)
+                        {
+                            return;
+                        }
+                        if (_awaitingUDPConnection.Contains(x))
+                        {
+                            x.Disconnect("Failed to Establish UDP in time.");
+                        }
+                        if (x.CurrentConnectionState != ConnectionState.Connected)
+                        {
+                            x.Disconnect("Failed to handshake in time.");
+                        }
+                    }, client, Config.HandshakeTime, x => true, (x) => 
                     {
-                        x.Disconnect("Failed to Establish UDP in time.");
-                    }
-                    if (x.CurrentConnectionState != ConnectionState.Connected)
-                    {
-                        x.Disconnect("Failed to handshake in time.");
-                    }
-                }, client, Config.HandshakeTime);
-                callback.Start();
-                InvokeClientConnected(counter);
+                        if (x == null)
+                        {
+                            return false;
+                        }
+                        if(!_awaitingUDPConnection.Contains(x))
+                        {
+                            return false;
+                        }
+                        return true;
+                    });
+                    callback.Start();
+                    InvokeClientConnected(counter);
+                });
                 counter++;
             }
             Log.Info("Shutting down!");

@@ -1,11 +1,8 @@
-﻿using SocketNetworking.PacketSystem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.PacketSystem;
 
 namespace SocketNetworking.Transports
 {
@@ -94,11 +91,26 @@ namespace SocketNetworking.Transports
         public abstract Exception Send(byte[] data, IPEndPoint destination);
 
         /// <summary>
+        /// Does the same as <see cref="SendAsync(byte[], IPEndPoint)"/>, but is async.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="destination"></param>
+        /// <returns></returns>
+        public abstract Task<Exception> SendAsync(byte[] data, IPEndPoint destination);
+
+        /// <summary>
         /// Send data to the <see cref="Peer"/>.
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
         public abstract Exception Send(byte[] data);
+
+        /// <summary>
+        /// Does the exact same as <see cref="Send(byte[])"/> but is async.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public abstract Task<Exception> SendAsync(byte[] data);
 
         /// <summary>
         /// Recieve Data, this is a blocking task. See <see cref="DataAvailable"/> to implement a non-blocking approach.
@@ -107,6 +119,12 @@ namespace SocketNetworking.Transports
         /// <param name="size"></param>
         /// <returns></returns>
         public abstract (byte[], Exception, IPEndPoint) Receive();
+
+        /// <summary>
+        /// Does the same as <see cref="Receive"/>, but is async.
+        /// </summary>
+        /// <returns></returns>
+        public abstract Task<(byte[], Exception, IPEndPoint)> ReceiveAsync();
 
         /// <summary>
         /// Closes the transport.

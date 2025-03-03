@@ -1,12 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Mail;
-using System.Security.Policy;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.PacketSystem.Packets;

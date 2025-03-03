@@ -305,5 +305,91 @@ namespace SocketNetworking.Transports
                 return ex;
             }
         }
+
+        public async override Task<Exception> SendAsync(byte[] data, IPEndPoint destination)
+        {
+            try
+            {
+                if (_hasConnected)
+                {
+                    Log.GlobalWarning("Tried to send data to random host while connected!");
+                    Send(data);
+                    return null;
+                }
+                int sent;
+                if (IsServerMode)
+                {
+                    sent = await Client.SendAsync(data, data.Length, _emulatedPeer);
+                }
+                else
+                {
+                    sent = await Client.SendAsync(data, data.Length, _peer);
+                }
+                //Log.GlobalDebug("Bytes Sent: " + sent);
+                return null;
+            }
+            catch(Exception e)
+            {
+                return e;
+            }
+        }
+
+        public async override Task<Exception> SendAsync(byte[] data)
+        {
+            try
+            {
+                await Client.SendAsync(data, data.Length);
+                return null;
+            }
+            catch(Exception e)
+            {
+                return e;
+            }
+        }
+
+        public async override Task<(byte[], Exception, IPEndPoint)> ReceiveAsync()
+        {
+            if (IsServerMode)
+            {
+                while (_receivedBytes.IsEmpty)
+                {
+                    //do nothing.
+                }
+                _receivedBytes.TryDequeue(out var result);
+                //Log.GlobalDebug(result.Item1.Length.ToString() + " ServerMode");
+                return (result.Item1, null, _emulatedPeer);
+            }
+            else
+            {
+                try
+                {
+                    byte[] read = new byte[] { };
+                    IPEndPoint peer;
+                    UdpReceiveResult result;
+                    if (AllowBroadcast)
+                    {
+                        peer = BroadcastEndpoint;
+                        //Log.GlobalDebug("Waiting for BroadcastEndpoint");
+                        result = await Client.ReceiveAsync();
+                        read = result.Buffer;
+                        peer = result.RemoteEndPoint;
+                    }
+                    else
+                    {
+                        peer = Peer;
+                        //Log.GlobalDebug($"Waiting for RemoteEndPoint. EndPoint: ${peer.Address}:{peer.Port}");
+                        result = await Client.ReceiveAsync();
+                        read = result.Buffer;
+                        peer = result.RemoteEndPoint;
+                    }
+                    //Log.GlobalDebug(read.Length.ToString() + " ClientMode");
+                    return (read, null, peer);
+                }
+                catch (Exception ex)
+                {
+                    return (null, ex, null);
+                }
+            }
+        }
     }
 }

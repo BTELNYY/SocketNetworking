@@ -1,22 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
-using System.Net;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.Misc;
-using SocketNetworking.Transports;
 using SocketNetworking.Client;
-using SocketNetworking.Shared;
-using SocketNetworking.Shared.NetworkObjects;
-using SocketNetworking.Shared.Messages;
-using System.Collections.Concurrent;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Diagnostics;
+using SocketNetworking.Misc;
+using SocketNetworking.PacketSystem;
 using SocketNetworking.Server.Events;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.Messages;
+using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Server
 {

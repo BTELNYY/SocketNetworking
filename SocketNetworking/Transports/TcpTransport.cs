@@ -1,18 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
-using SocketNetworking.Server;
-using SocketNetworking.Shared;
 
 namespace SocketNetworking.Transports
 {
@@ -243,6 +237,30 @@ namespace SocketNetworking.Transports
             Client?.Close();
             Client?.Dispose();
             Client = null;
+        }
+
+        public async override Task<Exception> SendAsync(byte[] data, IPEndPoint destination)
+        {
+            return await SendAsync(data);
+        }
+
+        public async override Task<Exception> SendAsync(byte[] data)
+        {
+            try
+            {
+                await Stream.WriteAsync(data, 0, data.Length);
+                Thread.Sleep(1);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return ex;
+            }
+        }
+
+        public async override Task<(byte[], Exception, IPEndPoint)> ReceiveAsync()
+        {
+            return Receive();
         }
     }
 }
