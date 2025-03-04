@@ -20,7 +20,13 @@ namespace SocketNetworking.Misc
 
         private Func<T, bool> _checkFunc;
 
-        public CallbackTimer(Action<T> action, T data, float secondDelay)
+        CallbackTimer()
+        {
+            _token = new CancellationTokenSource();
+            _token.Token.Register(Cleanup);
+        }
+
+        public CallbackTimer(Action<T> action, T data, float secondDelay) : this()
         {
             _callback = action;
             _delay = secondDelay;
@@ -55,8 +61,6 @@ namespace SocketNetworking.Misc
             {
                 return;
             }
-            _token = new CancellationTokenSource(); 
-            _token.Token.Register(Cleanup);
             _task = Task.Run(() => 
             {
                 TimeSpan span = TimeSpan.FromSeconds(_delay);
@@ -65,15 +69,15 @@ namespace SocketNetworking.Misc
                 {
                     if(_predicate != null && !_predicate(_data))
                     {
-                        _token.Cancel();
+                        _token?.Cancel();
                     }
                     if(_checkFunc != null && !_checkFunc(_data))
                     {
-                        _token.Cancel();
+                        _token?.Cancel();
                     }
-                    _token.Token.ThrowIfCancellationRequested();
+                    _token?.Token.ThrowIfCancellationRequested();
                 }
-                _callback.Invoke(_data);
+                _callback?.Invoke(_data);
             }, _token.Token);
         }
 
@@ -87,7 +91,7 @@ namespace SocketNetworking.Misc
 
         public void Abort()
         {
-            if(_task == null)
+            if(_task == null || _token == null)
             {
                 return;
             }

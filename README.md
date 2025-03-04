@@ -74,10 +74,10 @@
 ![image](https://github.com/user-attachments/assets/6eb43c32-3c1a-4e57-800d-312b4623151f)
 
 #### NetworkClient Setup
-![image](https://github.com/user-attachments/assets/3446dafd-dfc7-4ca7-8cb4-30cee392a018)
+![image](https://github.com/user-attachments/assets/bada4602-1545-4e34-974b-46824cb4dc06)
 
 #### NetworkServer Setup
-![image](https://github.com/user-attachments/assets/09360e05-d3b8-4479-923e-474f831c5b84)
+![image](https://github.com/user-attachments/assets/8cfae43b-1f72-42a4-8e03-b1f7050a06c7)
 
 #### ExampleLogger
 ![image](https://github.com/user-attachments/assets/d90c5bff-12b3-4fed-8cc4-b26fed11915b)
@@ -95,7 +95,7 @@
 ![image](https://github.com/user-attachments/assets/306c98d2-9eb6-4e1e-8ae6-9000178ae979)
 
 #### A IPacketSerializable type
-![image](https://github.com/user-attachments/assets/db43fd08-05a9-48d4-b5b4-5257403827b8)
+![image](https://github.com/user-attachments/assets/c347f805-d5f3-40ab-be94-32a96e70636f)
 
 ### Making Custom Packets
  * Usually, the `NetworkInvoke()` method within the network client can be used for Network objects, but if you want to, you can create custom packets. 

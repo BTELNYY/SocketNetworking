@@ -28,11 +28,26 @@ namespace SocketNetworking.Misc
             Accepted = false;
         }
 
+        public void Reject(string message)
+        {
+            _message = message;
+            Reject();
+        }
+
         public void Accept()
         {
             Accepted = true;
         }
 
+        public void Accept(string message)
+        {
+            _message = message;
+            Accept();
+        }
+
+        string _message = "";
+
+        public string Message => _message;
 
         bool _final = false;
 

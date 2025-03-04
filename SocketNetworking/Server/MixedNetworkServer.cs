@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Transports;
 
@@ -85,7 +86,14 @@ namespace SocketNetworking.Server
                     client.InitRemoteClient(counter, tcpTransport);
                     AddClient(client, counter);
                     _awaitingUDPConnection.Add(client);
-                    InvokeClientConnected(counter);
+                    InvokeClientConnected(client);
+                    ClientConnectRequest disconnect = AcceptClient(client);
+                    if (!disconnect.Accepted)
+                    {
+                        client.Disconnect(disconnect.Message);
+                        socket?.Close();
+                        return;
+                    }
                     CallbackTimer<MixedNetworkClient> callback = new CallbackTimer<MixedNetworkClient>((x) =>
                     {
                         if (x == null)
