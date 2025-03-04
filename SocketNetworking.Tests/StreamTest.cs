@@ -15,7 +15,7 @@ namespace SocketNetworking.Tests
         
     }
 
-    public class TestStream : SyncedStream
+    public class TestStream : NetworkSyncedStream
     {
         public TestStream(NetworkClient client, ushort id, int bufferSize) : base(client, id, bufferSize)
         {

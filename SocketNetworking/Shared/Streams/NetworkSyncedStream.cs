@@ -9,20 +9,20 @@ using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.Streams
 {
-    public class SyncedStream : Stream
+    public class NetworkSyncedStream : Stream
     {
         /// <summary>
-        /// Called when the <see cref="SyncedStream"/> recieves a new batch of data. The <see cref="int"/> argument is the amount of data received, although <see cref="Available"/> will return the same number.
+        /// Called when the <see cref="NetworkSyncedStream"/> recieves a new batch of data. The <see cref="int"/> argument is the amount of data received, although <see cref="Available"/> will return the same number.
         /// </summary>
         public event Action<int> NewDataRecieved;
 
         /// <summary>
-        /// Called when the <see cref="SyncedStream"/> is opened.
+        /// Called when the <see cref="NetworkSyncedStream"/> is opened.
         /// </summary>
         public event Action StreamOpened;
 
         /// <summary>
-        /// Called when the <see cref="SyncedStream"/> is closed within the <see cref="SyncedStream.Close"/> method.
+        /// Called when the <see cref="NetworkSyncedStream"/> is closed within the <see cref="NetworkSyncedStream.Close"/> method.
         /// </summary>
         public event Action StreamClosed;
 
@@ -31,7 +31,7 @@ namespace SocketNetworking.Shared.Streams
         /// </summary>
         public const int MAX_BYTES_PER_SEND = 62 * 1024;
 
-        SyncedStream(NetworkClient client)
+        NetworkSyncedStream(NetworkClient client)
         {
             Client = client;
             Log = new Log($"[Stream {id}, Client {client.ClientID}]");
@@ -52,7 +52,7 @@ namespace SocketNetworking.Shared.Streams
         }
 
         /// <summary>
-        /// The Length of the <see cref="SyncedStream"/>. Same as <see cref="Available"/>
+        /// The Length of the <see cref="NetworkSyncedStream"/>. Same as <see cref="Available"/>
         /// </summary>
         public override long Length => Available;
 
@@ -73,7 +73,7 @@ namespace SocketNetworking.Shared.Streams
             }
         }
 
-        public SyncedStream(NetworkClient client, ushort id, long bufferSize) : this(client)
+        public NetworkSyncedStream(NetworkClient client, ushort id, long bufferSize) : this(client)
         {
             this.id = id;
             this._bufferSize = bufferSize;
@@ -174,7 +174,7 @@ namespace SocketNetworking.Shared.Streams
         }
 
         /// <summary>
-        /// Called when the <see cref="SyncedStream"/> is opened on the remote.
+        /// Called when the <see cref="NetworkSyncedStream"/> is opened on the remote.
         /// </summary>
         public virtual void OnStreamOpenedRemote()
         {
@@ -359,7 +359,7 @@ namespace SocketNetworking.Shared.Streams
         public bool CompressStream { get; set; } = false;
 
         /// <summary>
-        /// The position in a stream does nothing within the <see cref="SyncedStream"/> class as you cannot rewind or fast forward the internet.
+        /// The position in a stream does nothing within the <see cref="NetworkSyncedStream"/> class as you cannot rewind or fast forward the internet.
         /// </summary>
         public override long Position { get; set; }
 

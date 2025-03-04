@@ -13,9 +13,9 @@ namespace SocketNetworking.Shared
     {
         public event EventHandler<StreamOpenRequestEvent> StreamOpenRequest;
 
-        public event Action<SyncedStream> StreamOpened;
+        public event Action<NetworkSyncedStream> StreamOpened;
 
-        public event Action<SyncedStream> StreamClosed;
+        public event Action<NetworkSyncedStream> StreamClosed;
 
         public NetworkClient Client { get; }
 
@@ -24,7 +24,7 @@ namespace SocketNetworking.Shared
             Client = client;
         }
 
-        List<SyncedStream> _streams = new List<SyncedStream>();
+        List<NetworkSyncedStream> _streams = new List<NetworkSyncedStream>();
 
         public ushort NextID
         {
@@ -40,7 +40,7 @@ namespace SocketNetworking.Shared
             }
         }
 
-        public void Open(SyncedStream stream)
+        public void Open(NetworkSyncedStream stream)
         {
             OpenInternal(stream);
             StreamPacket packet = new StreamPacket();
@@ -54,7 +54,7 @@ namespace SocketNetworking.Shared
             Client.Send(packet);
         }
 
-        void OpenInternal(SyncedStream stream)
+        void OpenInternal(NetworkSyncedStream stream)
         {
             if (_streams.Contains(stream) || _streams.Select(x => x.ID).Contains(stream.ID))
             {
@@ -64,7 +64,7 @@ namespace SocketNetworking.Shared
             _streams.Add(stream);
         }
 
-        public void Close(SyncedStream stream)
+        public void Close(NetworkSyncedStream stream)
         {
             _streams.Remove(stream);
             StreamClosed?.Invoke(stream);
@@ -72,7 +72,7 @@ namespace SocketNetworking.Shared
 
         public void HandlePacket(StreamPacket packet)
         {
-            SyncedStream stream = _streams.FirstOrDefault(x => x.ID == packet.StreamID);
+            NetworkSyncedStream stream = _streams.FirstOrDefault(x => x.ID == packet.StreamID);
             if (packet.Function == StreamFunction.Open)
             {
                 Type streamType = packet.StreamType;
@@ -92,7 +92,7 @@ namespace SocketNetworking.Shared
                         ByteReader reader = new ByteReader(packet.Data);
                         StreamMetaData meta = reader.ReadPacketSerialized<StreamMetaData>();
                         Client.Log.Info($"Stream open request accepted. ID: {packet.StreamID}, Buffer Size: {meta.MaxBufferSize}");
-                        SyncedStream streamBase = (SyncedStream)Activator.CreateInstance(streamType, (NetworkClient)Client, packet.StreamID, (int)meta.MaxBufferSize);
+                        NetworkSyncedStream streamBase = (NetworkSyncedStream)Activator.CreateInstance(streamType, (NetworkClient)Client, packet.StreamID, (int)meta.MaxBufferSize);
                         streamBase.ID = packet.StreamID;
                         OpenInternal(streamBase);
                         streamBase.SetOpenData(reader);

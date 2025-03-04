@@ -44,7 +44,7 @@ namespace SocketNetworking.Example.Basics.SharedData
         {
             if(Ready && CurrentClientLocation == ClientLocation.Remote)
             {
-                SyncedStream stream = new SyncedStream(this, 1, 16);
+                NetworkSyncedStream stream = new NetworkSyncedStream(this, 1, 16);
                 stream.StreamOpened += () =>
                 {
                     stream.Write(new byte[] { 10, 63, 44, 39 }, 0, 4);
