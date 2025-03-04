@@ -24,10 +24,10 @@ namespace SocketNetworking.PacketSystem.Packets
             NetworkIDTarget = sender.NetworkID;
         }
 
-        public sealed override PacketType Type => PacketType.CustomPacket;
+        public sealed override PacketType Type => PacketType.Custom;
 
         /// <summary>
-        /// This will only be a value greater then 0 if <see cref="Type"/> is <see cref="PacketType.CustomPacket"/>
+        /// This will only be a value greater then 0 if <see cref="Type"/> is <see cref="PacketType.Custom"/>
         /// </summary>
         public virtual int CustomPacketID { get; protected set; } = -1;
 

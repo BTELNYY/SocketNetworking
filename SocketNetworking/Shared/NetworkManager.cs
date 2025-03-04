@@ -851,7 +851,7 @@ namespace SocketNetworking.Shared
         public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
         {
             ClientLocation clientLocation = runningClient.CurrentClientLocation;
-            if(header.Type != PacketType.CustomPacket)
+            if(header.Type != PacketType.Custom)
             {
                 Log.Error("Non Custom packets cannot be used in PacketListeners");
                 return;

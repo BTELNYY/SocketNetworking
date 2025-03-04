@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Policy;
 using System.Threading;
 using SocketNetworking.Attributes;
 using SocketNetworking.Misc;
@@ -64,6 +65,14 @@ namespace SocketNetworking.Client
         }
 
         #region Per Client (Non-Static) Events
+
+        public event Action<long> LatencyChanged;
+
+        protected void InvokeLatencyChanged(long value)
+        {
+            LatencyChanged?.Invoke(value);
+        }
+
         /// <summary>
         /// Called on both Remote and Local clients when the connection has succeeded and the Socket is ready to use.
         /// </summary>
@@ -189,6 +198,16 @@ namespace SocketNetworking.Client
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// Maximum amount of milliseconds before a <see cref="KeepAlivePacket"/> is sent.
+        /// </summary>
+        public double MaxMSBeforeKeepAlive { get; set; } = 1000;
+
+        /// <summary>
+        /// The calculated latency. Use <see cref="CheckLatency"/> to forcibly update this. You should also see <see cref="MaxPacketsBeforeKeepAlive"/> and <see cref="MaxMSBeforeKeepAlive"/>.
+        /// </summary>
+        public long Latency => _latency;
 
         /// <summary>
         /// Does this client support SSL? By default, only <see cref="TcpNetworkClient"/>s and <see cref="MixedNetworkClient"/>s support SSL.
@@ -1312,7 +1331,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected virtual void RawWriter()
+        protected void RawWriter()
         {
             if (NoPacketHandling)
             {
@@ -1364,6 +1383,7 @@ namespace SocketNetworking.Client
                 StopClient();
                 return;
             }
+            DoLatencyCheck();
             if (!Transport.DataAvailable)
             {
                 return;
@@ -1465,12 +1485,17 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
-                case PacketType.StreamPacket:
+                case PacketType.KeepAlive:
+                    KeepAlivePacket keepAlivePacket = new KeepAlivePacket();
+                    keepAlivePacket.Deserialize(data);
+                    DoLatency(keepAlivePacket);
+                    break;
+                case PacketType.Stream:
                     StreamPacket streamPacket = new StreamPacket();
                     streamPacket.Deserialize(data);
                     Streams.HandlePacket(streamPacket);
                     break;
-                case PacketType.CustomPacket:
+                case PacketType.Custom:
                     NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
                 case PacketType.ObjectManage:
@@ -1625,7 +1650,7 @@ namespace SocketNetworking.Client
                     //Log.Debug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
                     NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
                     break;
-                case PacketType.EncryptionPacket:
+                case PacketType.Encryption:
                     EncryptionPacket encryptionPacket = new EncryptionPacket();
                     encryptionPacket.Deserialize(data);
                     //Log.Info($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
@@ -1688,12 +1713,17 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
-                case PacketType.StreamPacket:
+                case PacketType.KeepAlive:
+                    KeepAlivePacket keepAlivePacket = new KeepAlivePacket();
+                    keepAlivePacket.Deserialize(data);
+                    DoLatency(keepAlivePacket);
+                    break;
+                case PacketType.Stream:
                     StreamPacket streamPacket = new StreamPacket();
                     streamPacket.Deserialize(data);
                     Streams.HandlePacket(streamPacket);
                     break;
-                case PacketType.CustomPacket:
+                case PacketType.Custom:
                     NetworkManager.TriggerPacketListeners(header, data, this);
                     break;
                 case PacketType.ObjectManage:
@@ -1859,7 +1889,7 @@ namespace SocketNetworking.Client
                     //Log.Debug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
                     NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
                     break;
-                case PacketType.EncryptionPacket:
+                case PacketType.Encryption:
                     EncryptionPacket encryptionPacket = new EncryptionPacket();
                     encryptionPacket.Deserialize(data);
                     EncryptionPacket encryptionRecieve = new EncryptionPacket();
@@ -1968,6 +1998,37 @@ namespace SocketNetworking.Client
         }
 
         #endregion
+
+        #region Keep Alive / Latency
+
+
+        long _latency = 0;
+
+        DateTime _lastSent = DateTime.Now;
+
+        protected virtual void DoLatencyCheck()
+        {
+            if(DateTime.Now - _lastSent >= TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive))
+            {
+                CheckLatency();
+            }
+        }
+
+        protected virtual void DoLatency(KeepAlivePacket packet)
+        {
+            _latency = DateTimeOffset.Now.ToUnixTimeMilliseconds() - packet.SendTime;
+            InvokeLatencyChanged(_latency);
+        }
+
+        public virtual void CheckLatency()
+        {
+            KeepAlivePacket packet = new KeepAlivePacket();
+            Send(packet);
+            _lastSent = DateTime.Now;
+        }
+
+        #endregion
+
 
         #region Misc
 

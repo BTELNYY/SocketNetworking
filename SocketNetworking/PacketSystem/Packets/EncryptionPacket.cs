@@ -14,7 +14,7 @@ namespace SocketNetworking.PacketSystem.Packets
     /// </summary>
     public sealed class EncryptionPacket : Packet
     {
-        public override PacketType Type => PacketType.EncryptionPacket;
+        public override PacketType Type => PacketType.Encryption;
 
         public EncryptionFunction EncryptionFunction { get; set; } = EncryptionFunction.None;
 

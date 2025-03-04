@@ -12,7 +12,7 @@ namespace SocketNetworking.PacketSystem.Packets
 {
     public sealed class StreamPacket : Packet
     {
-        public override PacketType Type => PacketType.StreamPacket;
+        public override PacketType Type => PacketType.Stream;
 
         public StreamFunction Function { get; set; }
 

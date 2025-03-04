@@ -1,4 +1,5 @@
-﻿using SocketNetworking.Client;
+﻿using System;
+using SocketNetworking.Client;
 using SocketNetworking.Example.Basics.SharedData;
 using SocketNetworking.Shared;
 
@@ -7,6 +8,8 @@ namespace SocketNetworking.Example.Basics.Client
     public class Program
     {
         public static NetworkClient Client;
+
+        static string Title = "ClientID: {id}, Latency: {ms}";
 
         public static void Main(string[] args)
         {
@@ -22,6 +25,14 @@ namespace SocketNetworking.Example.Basics.Client
             client.Streams.StreamOpenRequest += (sender, @event) =>
             {
                 @event.Accept();
+            };
+            client.ClientIdUpdated += () =>
+            {
+                Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
+            };
+            client.LatencyChanged += (latency) =>
+            {
+                Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
             };
             client.Connect("127.0.0.1", 7777, "DefaultPassword");
         }

@@ -85,6 +85,7 @@ namespace SocketNetworking.Server
                     client.InitRemoteClient(counter, tcpTransport);
                     AddClient(client, counter);
                     _awaitingUDPConnection.Add(client);
+                    InvokeClientConnected(counter);
                     CallbackTimer<MixedNetworkClient> callback = new CallbackTimer<MixedNetworkClient>((x) =>
                     {
                         if (x == null)
@@ -112,7 +113,6 @@ namespace SocketNetworking.Server
                         return true;
                     });
                     callback.Start();
-                    InvokeClientConnected(counter);
                 });
                 counter++;
             }

@@ -15,9 +15,20 @@ namespace SocketNetworking.Example.Basics.Server
 {
     public class Program
     {
+
+        static string Title = "Clients: {count}";
+
         public static void Main(string[] args)
         {
             Log.OnLog += ExampleLogger.HandleNetworkLog;
+            AppDomain.CurrentDomain.ProcessExit += (sender, evtArgs) => 
+            {
+                NetworkServer.ServerInstance.StopServer();
+            };
+            Console.CancelKeyPress += (sender, e) => 
+            {
+                NetworkServer.ServerInstance.StopServer();
+            };
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
             MixedNetworkServer server = new MixedNetworkServer();
             NetworkServer.ClientType = typeof(TestClient);
@@ -70,7 +81,7 @@ namespace SocketNetworking.Example.Basics.Server
 
         private static void OnClientConnected(int id)
         {
-            
+            Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());
         }
     }
 }
