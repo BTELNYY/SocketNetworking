@@ -98,7 +98,7 @@
 ![image](https://github.com/user-attachments/assets/db43fd08-05a9-48d4-b5b4-5257403827b8)
 
 ### Making Custom Packets
- * Usually, the `NetworkInoke()` method within the network client can be used for Network objects, but if you want to, you can create custom packets. 
+ * Usually, the `NetworkInvoke()` method within the network client can be used for Network objects, but if you want to, you can create custom packets. 
  * Inherit from the `CustomPacket` class in `SocketNetworking.PacketSystem.Packets`
  * Ensure you have the attribute `PacketDefinition()`
  * Ensure you override the `Serialize()` and `Deserialize()` methods, you **must** call the `base.Serialize()` and `base.Deserialize()` methods. 
