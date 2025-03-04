@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Transports;
 
@@ -86,10 +87,10 @@ namespace SocketNetworking.Server
                     AddClient(client, counter);
                     _awaitingUDPConnection.Add(client);
                     InvokeClientConnected(client);
-                    bool disconnect = !AcceptClient(client);
-                    if (disconnect)
+                    ClientConnectRequest disconnect = AcceptClient(client);
+                    if (!disconnect.Accepted)
                     {
-                        client.Disconnect();
+                        client.Disconnect(disconnect.Message);
                         socket?.Close();
                         return;
                     }

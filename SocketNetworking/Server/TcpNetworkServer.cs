@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using SocketNetworking.Shared.Events;
 
 namespace SocketNetworking.Server
 {
@@ -79,10 +80,10 @@ namespace SocketNetworking.Server
                     client.InitRemoteClient(counter, tcpTransport);
                     client.TcpNoDelay = true;
                     AddClient(client, counter);
-                    bool disconnect = !AcceptClient(client);
-                    if (disconnect)
+                    ClientConnectRequest disconnect = AcceptClient(client);
+                    if (!disconnect.Accepted)
                     {
-                        client.Disconnect();
+                        client.Disconnect(disconnect.Message);
                         socket?.Close();
                         return;
                     }

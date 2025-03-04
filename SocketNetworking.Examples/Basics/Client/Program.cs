@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using SocketNetworking.Client;
 using SocketNetworking.Example.Basics.SharedData;
 using SocketNetworking.Shared;
@@ -40,6 +41,9 @@ namespace SocketNetworking.Example.Basics.Client
         private static void Client_Stopped()
         {
             Client = null;
+            Console.WriteLine("Client stopped, press any key to continue.....");
+            Console.ReadKey();
+            Environment.Exit(0);
         }
     }
 }

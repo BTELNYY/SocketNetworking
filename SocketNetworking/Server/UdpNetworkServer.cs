@@ -10,6 +10,8 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.Events;
 
 namespace SocketNetworking.Server
 {
@@ -61,11 +63,11 @@ namespace SocketNetworking.Server
                     AddClient(client, counter);
                     _udpClients.Add(remoteIpEndPoint, client as UdpNetworkClient);
                     transport.ServerRecieve(recieve, remoteIpEndPoint);
-                    bool disconnect = !AcceptClient(client);
-                    if (disconnect)
+                    ClientConnectRequest disconnect = AcceptClient(client);
+                    if (!disconnect.Accepted)
                     {
-                        client.Disconnect();
-                        continue;
+                        client.Disconnect(disconnect.Message);
+                        return;
                     }
                     CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                     {

@@ -900,7 +900,6 @@ namespace SocketNetworking.Client
             Log.Info("Closing Client!");
             _shuttingDown = true;
             NoPacketHandling = true;
-            NetworkManager.SendDisconnectedPulse(this);
             _connectionState = ConnectionState.Disconnected;
             Transport?.Close();
             if (CurrentClientLocation == ClientLocation.Remote)
@@ -924,6 +923,7 @@ namespace SocketNetworking.Client
 
         protected virtual void OnLocalStopClient()
         {
+            NetworkManager.SendDisconnectedPulse(this);
             _packetReaderThread?.Abort();
             _packetSenderThread?.Abort();
             _packetReaderThread = null;
@@ -1163,7 +1163,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if(NoPacketSending)
+            if (NoPacketSending)
             {
                 return;
             }
@@ -1325,7 +1325,7 @@ namespace SocketNetworking.Client
 
         void PacketSenderThreadMethod()
         {
-            while (true)
+            while (!_shuttingDown)
             {
                 RawWriter();
             }
@@ -1355,26 +1355,18 @@ namespace SocketNetworking.Client
         /// </summary>
         protected virtual void PacketReaderThreadMethod()
         {
-            Log.Info($"Client thread started, ID {ClientID}");
-            while (true)
+            while (!_shuttingDown)
             {
-                if (_shuttingDown)
-                {
-                    Log.Info("Shutting down loop");
-                    break;
-                }
                 RawReader();
             }
-            Log.Info("Shutting down client, Closing socket.");
-            Transport.Close();
         }
 
         /// <summary>
-        /// Method which reads actual data and proccesses it from the Network I/O, this is a blocking, single read method, it will not attempt to keep reading if there is not data on the <see cref="Transport"/>.
+        /// Method which reads actual data and processes it from the Network I/O, this is a blocking, single read method, it will not attempt to keep reading if there is not data on the <see cref="Transport"/>.
         /// </summary>
         protected virtual void RawReader()
         {
-            if(NoPacketHandling)
+            if (NoPacketHandling)
             {
                 return;
             }
@@ -1391,7 +1383,7 @@ namespace SocketNetworking.Client
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
             if (packet.Item1 == null)
             {
-                Log.Warning("Transport recieved a null byte array.");
+                Log.Warning("Transport received a null byte array.");
                 return;
             }
             try

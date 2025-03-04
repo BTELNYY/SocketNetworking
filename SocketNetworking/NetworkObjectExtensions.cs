@@ -473,6 +473,20 @@ namespace SocketNetworking
             obj.ObjectVisibilityMode = mode;
         }
 
+
+        public static bool CheckVisibility(this INetworkObject obj, NetworkClient viewer)
+        {
+            if(obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
+            {
+                return false;
+            }
+            if(obj.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
+            {
+                return true;
+            }
+            return obj.OwnerClientID == viewer.ClientID;
+        }
+
         /// <summary>
         /// This method should never be called on spawned objects, isntead, call <see cref="NetworkSetID(INetworkObject, int)"/>.
         /// </summary>
