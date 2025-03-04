@@ -16,6 +16,7 @@ namespace SocketNetworking.Shared.SyncVars
         /// The <see cref="INetworkObject"/> where this is registered.
         /// </summary>
         INetworkObject OwnerObject { get; set; }
+
         /// <summary>
         /// The direction in which the <see cref="INetworkSyncVar"/> accepts changes to its state.
         /// </summary>
@@ -27,17 +28,29 @@ namespace SocketNetworking.Shared.SyncVars
         object ValueRaw { get; set; }
 
         /// <summary>
-        /// This value should not update the state of the object on the network, instead it should accept the name change in state.
+        /// This value should not update the state of the object on the network, instead it should accept the value change in state.
         /// </summary>
         /// <param name="value"></param>
         /// <param name="who"></param>
         void RawSet(object value, NetworkClient who);
 
         /// <summary>
+        /// This value should not update the state of the object on the network, instead it should accept the mode change.
+        /// </summary>
+        /// <param name="mode"></param>
+        /// <param name="who"></param>
+        void RawSet(OwnershipMode mode, NetworkClient who);
+
+        /// <summary>
         /// Called when the object has been spawned by the <see cref="NetworkClient"/> in order to sync the current value to them.
         /// </summary>
         /// <param name="who"></param>
         void SyncTo(NetworkClient who);
+
+        /// <summary>
+        /// Forces the <see cref="INetworkSyncVar"/> to be synced to everyone (as applicable by <see cref="SyncOwner"/> and the <see cref="OwnerObject"/>s <see cref="ObjectVisibilityMode"/>)
+        /// </summary>
+        void Sync();
 
         /// <summary>
         /// Get the <see cref="SyncVarData"/> to send.

@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketNetworking.Example.SharedData
+namespace SocketNetworking.Example.Basics.SharedData
 {
     public class Utility
     {
@@ -19,6 +19,7 @@ namespace SocketNetworking.Example.SharedData
 
         public static Assembly GetAssembly()
         {
+            Log.Levels = Log.FULL_LOG;
             return Assembly.GetExecutingAssembly();
         }
     }

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using System.Net;
 using SocketNetworking.PacketSystem.TypeWrappers;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem
 {
@@ -27,7 +28,7 @@ namespace SocketNetworking.PacketSystem
 
         public static byte[] SerializeSupportedType(object value)
         {
-            return NetworkConvert.Serialize(value).Data;
+            return ByteConvert.Serialize(value).Data;
         }
 
         /// <summary>
@@ -79,16 +80,6 @@ namespace SocketNetworking.PacketSystem
         }
 
         /// <summary>
-        /// The NetworkID of the object which this packet is being sent to. 0 Means only sent to the other clients class.
-        /// </summary>
-        public int NetowrkIDTarget { get; set; } = 0;
-
-        /// <summary>
-        /// This will only be a value greater then 0 if <see cref="Type"/> is <see cref="PacketType.CustomPacket"/>
-        /// </summary>
-        public virtual int CustomPacketID { get; private set; } = -1;
-
-        /// <summary>
         /// The Destination of the packet.
         /// </summary>
         public IPEndPoint Destination { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
@@ -97,6 +88,11 @@ namespace SocketNetworking.PacketSystem
         /// The source of the packet. This isn't trusted on the recieving client, so it will be overwritten.
         /// </summary>
         public IPEndPoint Source { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
+
+        /// <summary>
+        /// The unix timestemp when the <see cref="Packet"/> was sent in milliseconds
+        /// </summary>
+        public long SendTime { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
         /// <summary>
         /// This method will validate the packet and modify it as needed. For example, it will change flags if need be, or the content if it isn't properly defined.
@@ -120,12 +116,11 @@ namespace SocketNetworking.PacketSystem
             ByteWriter writer = new ByteWriter();
             writer.WriteByte((byte)Type);
             writer.WriteByte((byte)Flags);
-            writer.WriteInt(NetowrkIDTarget);
-            writer.WriteInt(CustomPacketID);
             SerializableIPEndPoint destination = new SerializableIPEndPoint(Destination);
             SerializableIPEndPoint source = new SerializableIPEndPoint(Source);
             writer.WriteWrapper<SerializableIPEndPoint, IPEndPoint>(destination);
             writer.WriteWrapper<SerializableIPEndPoint, IPEndPoint>(source);
+            writer.WriteLong(SendTime);
             return writer;
         }
 
@@ -147,15 +142,16 @@ namespace SocketNetworking.PacketSystem
                 throw new InvalidNetworkDataException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
             }
             Flags = (PacketFlags)reader.ReadByte();
-            NetowrkIDTarget = reader.ReadInt();
-            CustomPacketID = reader.ReadInt();
             Destination = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
             Source = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
-            //if (expectedLength != reader.DataLength)
-            //{
-            //    throw new InvalidNetworkDataException("Packet Deserializer stole more bytes then it should!");
-            //}
+            SendTime = reader.ReadLong();
             return reader;
+        }
+
+        public override string ToString()
+        {
+            string result = $"Size: {Size}, Type: {Type}, Flags: {Flags.GetActiveFlagsString()}, Destination: {Destination}, Source: {Source}, SendTime: {SendTime}";
+            return result;
         }
     }
 
@@ -164,39 +160,25 @@ namespace SocketNetworking.PacketSystem
     /// </summary>
     public struct PacketHeader
     {
-        public const int HeaderLength = 14;
+        public const int HeaderLength = 6;
 
         public int Size;
         public PacketType Type;
         public PacketFlags Flags;
-        public int NetworkIDTarget;
-        public int CustomPacketID;
 
-        public PacketHeader(PacketType type, int networkIDTarget, int customPacketID, int size)
+
+        public PacketHeader(PacketType type, int size)
         {
             Type = type;
-            NetworkIDTarget = networkIDTarget;
-            CustomPacketID = customPacketID;
             Size = size;
             Flags = PacketFlags.None;
         }
 
-        public PacketHeader(PacketType type, int networkIDTarget, int size)
-        {
-            Type = type;
-            NetworkIDTarget = networkIDTarget;
-            CustomPacketID = 0;
-            Size = size;
-            Flags = PacketFlags.None;
-        }
-
-        public PacketHeader(int size, PacketType type, PacketFlags flags, int networkIDTarget, int customPacketID)
+        public PacketHeader(int size, PacketType type, PacketFlags flags)
         {
             Size = size;
             Type = type;
             Flags = flags;
-            NetworkIDTarget = networkIDTarget;
-            CustomPacketID = customPacketID;
         }
 
         /// <summary>
@@ -223,9 +205,7 @@ namespace SocketNetworking.PacketSystem
             int size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadByte();
             PacketFlags flags = (PacketFlags)reader.ReadByte();
-            int networkTarget = reader.ReadInt();
-            int customPacketID = reader.ReadInt();
-            return new PacketHeader(size, type, flags, networkTarget, customPacketID);
+            return new PacketHeader(size, type, flags);
         }
     }
 }

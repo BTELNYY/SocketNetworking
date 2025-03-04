@@ -8,6 +8,7 @@ using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem.TypeWrappers
 {
@@ -34,7 +35,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             {
                 TType = typeof(T);
             }
-            if (!NetworkConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)) && !NetworkManager.TypeToTypeWrapper.ContainsKey(TType))
+            if (!ByteConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)) && !NetworkManager.TypeToTypeWrapper.ContainsKey(TType))
             {
                 throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", "values");
             }
@@ -44,7 +45,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
         public SerializableList()
         {
             TType = typeof(T);
-            if (!NetworkConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)))
+            if (!ByteConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)))
             {
                 throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", "values");
             }
@@ -74,7 +75,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             }
         }
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             if(_internalList.Count > 0)
             {
@@ -84,7 +85,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             ByteReader reader = new ByteReader(data);
             if (reader.IsEmpty)
             {
-                return usedBytes;
+                return reader;
             }
             int length = reader.ReadInt();
             usedBytes += 4;
@@ -101,7 +102,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
                 //reader.Remove(currentChunkLength);
                 usedBytes += currentChunkLength;
             }
-            return usedBytes;
+            return reader;
         }
 
         private void DeserializeAndAdd(byte[] data)
@@ -110,21 +111,21 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             {
                 _internalList = new List<T>();
             }
-            _internalList.Add(NetworkConvert.DeserializeRaw<T>(data));
+            _internalList.Add(ByteConvert.DeserializeRaw<T>(data));
         }
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return Serialize().Data.Length;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             foreach(T element in _internalList)
             {
                 //Dont need to worry about type safety as we check in constructor
-                byte[] finalBytes = NetworkConvert.Serialize(element).Data;
+                byte[] finalBytes = ByteConvert.Serialize(element).Data;
                 int dataLength = finalBytes.Length;
                 writer.WriteInt(dataLength);
                 writer.Write(finalBytes);
@@ -132,7 +133,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             ByteWriter finalWriter = new ByteWriter();
             finalWriter.WriteInt(writer.DataLength);
             finalWriter.Write(writer.Data);
-            return finalWriter.Data;
+            return finalWriter;
         }
 
         public int IndexOf(T item)

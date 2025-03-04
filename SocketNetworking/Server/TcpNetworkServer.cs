@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using System.Security.Cryptography.X509Certificates;
+using System.IO;
 
 namespace SocketNetworking.Server
 {
@@ -24,10 +25,21 @@ namespace SocketNetworking.Server
             else
             {
                 Log.Info($"Found an SSL Certificate: {Config.CertificatePath}, Checking.");
-                var cert = X509Certificate.CreateFromCertFile(Config.CertificatePath);
-                if (cert == null)
+                if(!File.Exists(Config.CertificatePath))
                 {
-                    Log.Warning("Certificate couldn't be loaded.");
+                    Log.Warning($"Certificate couldn't be loaded: '{Config.CertificatePath}' is not found.");
+                }
+                else
+                {
+                    var cert = X509Certificate.CreateFromCertFile(Config.CertificatePath);
+                    if (cert == null)
+                    {
+                        Log.Warning("Certificate couldn't be loaded.");
+                    }
+                    else
+                    {
+                        Config.Certificate = cert;
+                    }
                 }
             }
             base.StartServer();
@@ -41,8 +53,8 @@ namespace SocketNetworking.Server
             Log.Info("Socket Started.");
             Log.Info($"Listening on {Config.BindIP}:{Config.Port}");
             int counter = 0;
-            InvokeServerReady();
             _serverState = ServerState.Ready;
+            InvokeServerReady();
             while (true)
             {
                 if (_isShuttingDown)
@@ -58,26 +70,38 @@ namespace SocketNetworking.Server
                     continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();
-                TcpTransport tcpTransport = new TcpTransport(socket);
-                socket.NoDelay = true;
-                IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
-                Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
-                NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
-                client.InitRemoteClient(counter, tcpTransport);
-                AddClient(client, counter);
-                CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
+                _ = Task.Run(() => 
                 {
-                    if (x == null)
+                    TcpTransport tcpTransport = new TcpTransport(socket);
+                    IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
+                    Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
+                    TcpNetworkClient client = (TcpNetworkClient)Activator.CreateInstance(ClientType);
+                    client.InitRemoteClient(counter, tcpTransport);
+                    client.TcpNoDelay = true;
+                    AddClient(client, counter);
+                    bool disconnect = !AcceptClient(client);
+                    if (disconnect)
                     {
-                        return;
+                        client.Disconnect();
+                        socket?.Close();
                     }
-                    if (x.CurrentConnectionState != ConnectionState.Connected)
+                    else
                     {
-                        x.Disconnect("Failed to handshake in time.");
+                        CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
+                        {
+                            if (x == null)
+                            {
+                                return;
+                            }
+                            if (x.CurrentConnectionState != ConnectionState.Connected)
+                            {
+                                x.Disconnect("Failed to handshake in time.");
+                            }
+                        }, client, Config.HandshakeTime);
+                        callback.Start();
+                        InvokeClientConnected(counter);
                     }
-                }, client, Config.HandshakeTime);
-                callback.Start();
-                InvokeClientConnected(counter);
+                });
                 counter++;
             }
             Log.Info("Shutting down!");

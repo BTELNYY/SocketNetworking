@@ -262,7 +262,7 @@ namespace SocketNetworking.UnityEngine.Components
                 }
             }
             NetworkAnimatorFloatValueUpdatePacket packet = new NetworkAnimatorFloatValueUpdatePacket(name, value);
-            packet.NetowrkIDTarget = NetworkID;
+            packet.NetworkIDTarget = NetworkID;
             Send(packet);
         }
 
@@ -295,7 +295,7 @@ namespace SocketNetworking.UnityEngine.Components
                 }
             }
             NetworkAnimatorFloatValueUpdatePacket packet = new NetworkAnimatorFloatValueUpdatePacket(name, value, dampTime, deltaTime);
-            packet.NetowrkIDTarget = NetworkID;
+            packet.NetworkIDTarget = NetworkID;
             Send(packet);
         }
 
@@ -328,7 +328,7 @@ namespace SocketNetworking.UnityEngine.Components
                 }
             }
             NetworkAnimatorFloatValueUpdatePacket packet = new NetworkAnimatorFloatValueUpdatePacket(id, value);
-            packet.NetowrkIDTarget = NetworkID;
+            packet.NetworkIDTarget = NetworkID;
             Send(packet);
         }
 
@@ -361,7 +361,7 @@ namespace SocketNetworking.UnityEngine.Components
                 }
             }
             NetworkAnimatorFloatValueUpdatePacket packet = new NetworkAnimatorFloatValueUpdatePacket(id, value, dampTime, deltaTime);
-            packet.NetowrkIDTarget = NetworkID;
+            packet.NetworkIDTarget = NetworkID;
             Send(packet);
         }
 
@@ -395,7 +395,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
             NetworkAnimatorBoolValueUpdatePacket packet = new NetworkAnimatorBoolValueUpdatePacket(name, value)
             {
-                NetowrkIDTarget = NetworkID
+                NetworkIDTarget = NetworkID
             };
             Send(packet);
         }
@@ -430,7 +430,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
             NetworkAnimatorBoolValueUpdatePacket packet = new NetworkAnimatorBoolValueUpdatePacket(id, value)
             {
-                NetowrkIDTarget = NetworkID
+                NetworkIDTarget = NetworkID
             };
             Send(packet);
         }
@@ -464,7 +464,7 @@ namespace SocketNetworking.UnityEngine.Components
                 }
             }
             NetworkAnimatorIntValueUpdatePacket packet = new NetworkAnimatorIntValueUpdatePacket(name, value);
-            packet.NetowrkIDTarget = NetworkID;
+            packet.NetworkIDTarget = NetworkID;
             Send(packet);
         }
 
@@ -497,7 +497,7 @@ namespace SocketNetworking.UnityEngine.Components
                 }
             }
             NetworkAnimatorIntValueUpdatePacket packet = new NetworkAnimatorIntValueUpdatePacket(id, value);
-            packet.NetowrkIDTarget = NetworkID;
+            packet.NetworkIDTarget = NetworkID;
             Send(packet);
         }
 
@@ -513,7 +513,7 @@ namespace SocketNetworking.UnityEngine.Components
                 return;
             }
             NetworkAnimatorTriggerPacket packet = new NetworkAnimatorTriggerPacket();
-            packet.NetowrkIDTarget = NetworkID;
+            packet.NetworkIDTarget = NetworkID;
             packet.WriteName(name);
             packet.SetTrigger = true;
             Send(packet);
@@ -531,7 +531,7 @@ namespace SocketNetworking.UnityEngine.Components
                 return;
             }
             NetworkAnimatorTriggerPacket packet = new NetworkAnimatorTriggerPacket();
-            packet.NetowrkIDTarget = NetworkID;
+            packet.NetworkIDTarget = NetworkID;
             packet.Hash = id;
             packet.SetTrigger = true;
             Send(packet);
@@ -549,7 +549,7 @@ namespace SocketNetworking.UnityEngine.Components
                 return;
             }
             NetworkAnimatorTriggerPacket packet = new NetworkAnimatorTriggerPacket();
-            packet.NetowrkIDTarget = NetworkID;
+            packet.NetworkIDTarget = NetworkID;
             packet.WriteName(name);
             packet.SetTrigger = false;
             Send(packet);
@@ -567,7 +567,7 @@ namespace SocketNetworking.UnityEngine.Components
                 return;
             }
             NetworkAnimatorTriggerPacket packet = new NetworkAnimatorTriggerPacket();
-            packet.NetowrkIDTarget = NetworkID;
+            packet.NetworkIDTarget = NetworkID;
             packet.Hash = id;
             packet.SetTrigger = false;
             Send(packet);

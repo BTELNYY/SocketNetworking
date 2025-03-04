@@ -13,22 +13,40 @@ namespace SocketNetworking.Misc
     {
         public Thread Thread { get; }
 
-        /// <summary>
-        /// Not thread safe.
-        /// </summary>
-        public List<NetworkClient> Clients { get; }
+        public List<NetworkClient> Clients
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _clients;
+                }
+            }
+            private set
+            {
+                lock (_lock)
+                {
+                    _clients = value;
+                }
+            }
+        }
+
+        private List<NetworkClient> _clients;
 
         public ClientHandler(IEnumerable<NetworkClient> clients)
         {
             Thread = new Thread(Run);
-            Clients = new List<NetworkClient>(clients);
+            _clients = new List<NetworkClient>(clients);
         }
 
         public int CurrentClientCount
         {
             get
             {
-                return Clients.Count;
+                lock (_lock)
+                {
+                    return Clients.Count;
+                }
             }
         }
 
@@ -80,14 +98,30 @@ namespace SocketNetworking.Misc
                 if (die) return;
                 lock (_lock)
                 {
-                    for (int i = 0; i < Clients.Count; i++)
+                    for (int i = 0; i < _clients.Count; i++)
                     {
-                        NetworkClient client = Clients[i];
-                        client.ReadNext();
-                        client.WriteNext();
+                        if(i >= _clients.Count)
+                        {
+                            break;
+                        }
+                        NetworkClient client = _clients[i];
+                        if(client.CurrentConnectionState == Shared.ConnectionState.Disconnected || client.ShuttingDown)
+                        {
+                            _clients.RemoveAt(i);
+                        }
+                        else
+                        {
+                            client.ReadNext();
+                            client.WriteNext();
+                        }
                     }
                 }
             }
+        }
+
+        public override string ToString()
+        {
+            return $"Clients: {CurrentClientCount}, Thread: {Thread}";
         }
     }
 }

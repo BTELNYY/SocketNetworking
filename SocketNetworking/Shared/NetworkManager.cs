@@ -17,6 +17,7 @@ using System.Reflection;
 using System.Security;
 using System.Reflection.Emit;
 using System.CodeDom;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared
 {
@@ -83,23 +84,23 @@ namespace SocketNetworking.Shared
             {
                 if (NetworkServer.Active)
                 {
-                    if (NetworkClient.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() == 0)
+                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Count() == 0)
                     {
                         return ClientLocation.Remote;
                     }
-                    if (NetworkClient.Clients.Where(x => x.CurrnetClientLocation == ClientLocation.Local).Count() != 0)
+                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Count() != 0)
                     {
                         return ClientLocation.Unknown;
                     }
                 }
                 else
                 {
-                    if (NetworkClient.Clients.Any(x => x.CurrnetClientLocation == ClientLocation.Remote))
+                    if (NetworkClient.Clients.Any(x => x.CurrentClientLocation == ClientLocation.Remote))
                     {
                         Log.Error("There are active remote clients even though the server is closed, these clients will now be terminated.");
                         foreach (var x in NetworkClient.Clients)
                         {
-                            if (x.CurrnetClientLocation == ClientLocation.Local)
+                            if (x.CurrentClientLocation == ClientLocation.Local)
                             {
                                 continue;
                             }
@@ -285,7 +286,7 @@ namespace SocketNetworking.Shared
 
         #region Network Objects
 
-        private static readonly Dictionary<INetworkObject, NetworkObjectData> NetworkObjects = new Dictionary<INetworkObject, NetworkObjectData>();
+        private static readonly ConcurrentDictionary<INetworkObject, NetworkObjectData> NetworkObjects = new ConcurrentDictionary<INetworkObject, NetworkObjectData>();
 
         private static readonly List<NetworkObjectData> PreCache = new List<NetworkObjectData>();
 
@@ -373,7 +374,7 @@ namespace SocketNetworking.Shared
         internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
         {
             //Spawning
-            if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && GetNetworkObjectByID(packet.NetowrkIDTarget).Item1 == null)
+            if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && GetNetworkObjectByID(packet.NetworkIDTarget).Item1 == null)
             {
                 Type objType = Assembly.Load(packet.AssmeblyName)?.GetType(packet.ObjectClassName);
                 if (objType == null)
@@ -394,13 +395,13 @@ namespace SocketNetworking.Shared
                 {
                     throw new NullReferenceException($"Failed to spawn {objType.FullName}");
                 }
-                netObj.NetworkID = packet.NetowrkIDTarget;
+                netObj.NetworkID = packet.NetworkIDTarget;
                 netObj.OwnerClientID = packet.OwnerID;
                 netObj.OwnershipMode = packet.OwnershipMode;
                 netObj.Active = packet.Active;
                 ObjectManagePacket creationConfirmation = new ObjectManagePacket()
                 {
-                    NetowrkIDTarget = packet.NetowrkIDTarget,
+                    NetworkIDTarget = packet.NetworkIDTarget,
                     Action = ObjectManagePacket.ObjectManageAction.ConfirmCreate,
                 };
                 AddNetworkObject(netObj);
@@ -409,7 +410,7 @@ namespace SocketNetworking.Shared
                 return;
             }
 
-            foreach (INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetowrkIDTarget))
+            foreach (INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget))
             {
                 //Security
                 if (packet.Action != ObjectManagePacket.ObjectManageAction.Create && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy)
@@ -460,14 +461,14 @@ namespace SocketNetworking.Shared
                         INetworkObject destructionTarget = @object;
                         if (destructionTarget == default(INetworkObject))
                         {
-                            throw new NullReferenceException($"Can't find the object that should be destroyed. ID: {packet.NetowrkIDTarget}");
+                            throw new NullReferenceException($"Can't find the object that should be destroyed. ID: {packet.NetworkIDTarget}");
                         }
                         SendDestroyedPulse(handle.Client, destructionTarget);
                         RemoveNetworkObject(destructionTarget);
                         destructionTarget.OnClientDestroy(handle.Client);
                         ObjectManagePacket destroyConfirmPacket = new ObjectManagePacket()
                         {
-                            NetowrkIDTarget = destructionTarget.NetworkID,
+                            NetworkIDTarget = destructionTarget.NetworkID,
                             Action = ObjectManagePacket.ObjectManageAction.ConfirmDestroy,
                         };
                         handle.Client.Send(destroyConfirmPacket);
@@ -481,7 +482,7 @@ namespace SocketNetworking.Shared
                         INetworkObject modificationTarget = @object;
                         if (modificationTarget == default(INetworkObject))
                         {
-                            throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetowrkIDTarget}");
+                            throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetworkIDTarget}");
                         }
                         modificationTarget.OnModify(packet, handle.Client);
                         modificationTarget.NetworkID = packet.NewNetworkID;
@@ -496,7 +497,7 @@ namespace SocketNetworking.Shared
                         INetworkObject modificationConfirmTarget = @object;
                         if (modificationConfirmTarget == default(INetworkObject))
                         {
-                            throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetowrkIDTarget}");
+                            throw new NullReferenceException($"Can't find the object to modify. ID: {packet.NetworkIDTarget}");
                         }
                         modificationConfirmTarget.OnModified(handle.Client);
                         SendModifiedPulse(handle.Client, modificationConfirmTarget);
@@ -634,7 +635,7 @@ namespace SocketNetworking.Shared
             else
             {
                 NetworkObjectData data = GetNetworkObjectData(networkObject);
-                NetworkObjects.Add(networkObject, data);
+                NetworkObjects.TryAdd(networkObject, data);
                 SendAddedPulse(networkObject);
                 return true;
             }
@@ -683,7 +684,7 @@ namespace SocketNetworking.Shared
             }
             else
             {
-                NetworkObjects.Remove(networkObject);
+                NetworkObjects.TryRemove(networkObject, out var value);
                 SendRemovedPulse(networkObject);
                 return true;
             }
@@ -852,22 +853,30 @@ namespace SocketNetworking.Shared
         /// </param>
         public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
         {
-            ClientLocation clientLocation = runningClient.CurrnetClientLocation;
-            if (!AdditionalPacketTypes.ContainsKey(header.CustomPacketID))
+            ClientLocation clientLocation = runningClient.CurrentClientLocation;
+            if(header.Type != PacketType.Custom)
             {
-                Log.Error("Unknown Custom packet. ID: " + header.CustomPacketID);
+                Log.Error("Non Custom packets cannot be used in PacketListeners");
                 return;
             }
-            Type packetType = AdditionalPacketTypes[header.CustomPacketID];
-            Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[header.CustomPacketID]);
+            CustomPacket cPacket = new CustomPacket();
+            cPacket.Deserialize(data);
+            if (!AdditionalPacketTypes.ContainsKey(cPacket.CustomPacketID))
+            {
+                Log.Error("Unknown Custom packet. ID: " + cPacket.CustomPacketID);
+                return;
+            }
+            Type packetType = AdditionalPacketTypes[cPacket.CustomPacketID];
+            //Log.Debug(packetType.Name);
+            Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[cPacket.CustomPacketID]);
             ByteReader reader = packet.Deserialize(data);
             if (reader.ReadBytes < header.Size)
             {
-                Log.Warning($"Packet with ID {header.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read. Actual: {reader.ReadBytes}, Header: {header.Size}");
+                //Log.Warning($"Packet with ID {cPacket.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read. Actual: {reader.ReadBytes}, Header: {header.Size}");
             }
             object changedPacket = Convert.ChangeType(packet, packetType);
             NetworkHandle handle = new NetworkHandle(runningClient, (Packet)changedPacket);
-            if (header.NetworkIDTarget == 0)
+            if (cPacket.NetworkIDTarget == 0)
             {
                 //Log.Debug("Handle Client-Client communication!");
                 MethodInfo[] clientMethods = runningClient.GetType().GetMethods().ToArray();
@@ -910,10 +919,10 @@ namespace SocketNetworking.Shared
                 }
                 return;
             }
-            List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == header.NetworkIDTarget && x.Active).ToList();
+            List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == cPacket.NetworkIDTarget && x.Active).ToList();
             if (objects.Count == 0)
             {
-                Log.Warning("Target NetworkID revealed no active objects registered!");
+                Log.Warning($"Target NetworkID revealed no active objects registered! ID: {cPacket.NetworkIDTarget}");
                 return;
             }
             //This may look not very effecient, but you arent checking EVERY possible object, only the ones which match the TargetID.
@@ -987,8 +996,9 @@ namespace SocketNetworking.Shared
                             }
                         }
                     }
-                    object value = NetworkConvert.Deserialize(data.Data, out int read);
+                    object value = ByteConvert.Deserialize(data.Data, out int read);
                     syncVar.RawSet(value, runner);
+                    syncVar.RawSet(data.Mode, runner);
                     syncVar.OwnerObject.OnSyncVarChanged(runner, syncVar);
                     if (WhereAmI == ClientLocation.Remote && syncVar.OwnerObject.ObjectVisibilityMode != ObjectVisibilityMode.OwnerAndServer)
                     {
@@ -1107,9 +1117,9 @@ namespace SocketNetworking.Shared
             }
             object target = reciever;
             List<object> targets = new List<object>();
-            if (packet.NetworkObjectTarget != 0)
+            if (packet.NetworkIDTarget != 0)
             {
-                List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkObjectTarget && x.GetType() == targetType).ToList();
+                List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget && x.GetType() == targetType).ToList();
                 if (netObjs.Count != 0)
                 {
                     targets.AddRange(netObjs);
@@ -1121,7 +1131,7 @@ namespace SocketNetworking.Shared
             }
             if (targets.Count == 0)
             {
-                throw new NetworkInvocationException("Unable to find any networkobjects with ID: " + packet.NetworkObjectTarget);
+                throw new NetworkInvocationException("Unable to find any networkobjects with ID: " + packet.NetworkIDTarget);
             }
             if (target == null)
             {
@@ -1135,15 +1145,15 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvokable invokable = method.GetCustomAttribute<NetworkInvokable>();
-            if (invokable.Direction == NetworkDirection.Server && reciever.CurrnetClientLocation == ClientLocation.Remote)
+            if (invokable.Direction == NetworkDirection.Server && reciever.CurrentClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
-            if (invokable.Direction == NetworkDirection.Client && reciever.CurrnetClientLocation == ClientLocation.Local)
+            if (invokable.Direction == NetworkDirection.Client && reciever.CurrentClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
-            if (invokable.SecureMode && reciever.CurrnetClientLocation != ClientLocation.Local)
+            if (invokable.SecureMode && reciever.CurrentClientLocation != ClientLocation.Local)
             {
                 if (target is NetworkClient client && client.ClientID != reciever.ClientID)
                 {
@@ -1155,7 +1165,7 @@ namespace SocketNetworking.Shared
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if (owned.OwnershipMode == OwnershipMode.Server && reciever.CurrnetClientLocation != ClientLocation.Local)
+                    else if (owned.OwnershipMode == OwnershipMode.Server && reciever.CurrentClientLocation != ClientLocation.Local)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
@@ -1184,7 +1194,7 @@ namespace SocketNetworking.Shared
             }
             foreach (SerializedData data in packet.Arguments)
             {
-                object obj = NetworkConvert.Deserialize(data, out int read);
+                object obj = ByteConvert.Deserialize(data, out int read);
                 args.Add(obj);
             }
             object result = null;
@@ -1202,10 +1212,10 @@ namespace SocketNetworking.Shared
                     method.Invoke(obj, args.ToArray());
                 }
             }
-            NetworkInvokations.Remove(packet.NetworkObjectTarget);
+            NetworkInvokations.Remove(packet.NetworkIDTarget);
             NetworkInvokationResultPacket resultPacket = new NetworkInvokationResultPacket();
             resultPacket.CallbackID = packet.CallbackID;
-            resultPacket.Result = NetworkConvert.Serialize(result);
+            resultPacket.Result = ByteConvert.Serialize(result);
             resultPacket.IgnoreResult = packet.IgnoreResult;
             reciever.Send(resultPacket);
             return result;
@@ -1224,7 +1234,7 @@ namespace SocketNetworking.Shared
         /// The method name of the object from target argument. Note that the method msut be a non-static method. The access modifier does not matter.
         /// </param>
         /// <param name="args">
-        /// The arguments that should be provided to the method. Note that these arguments are serialized by <see cref="NetworkConvert"/>. Note: if your method has <see cref="NetworkClient"/> as its first argument, you do not have to inlude it, but you can.
+        /// The arguments that should be provided to the method. Note that these arguments are serialized by <see cref="ByteConvert"/>. Note: if your method has <see cref="NetworkClient"/> as its first argument, you do not have to inlude it, but you can.
         /// </param>
         /// <exception cref="NetworkInvocationException"></exception>
         /// <exception cref="SecurityException"></exception>
@@ -1251,11 +1261,11 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvokable invocable = method.GetCustomAttribute<NetworkInvokable>();
-            if (invocable.Direction == NetworkDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == NetworkDirection.Client && sender.CurrentClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
-            if (invocable.Direction == NetworkDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == NetworkDirection.Server && sender.CurrentClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
@@ -1271,7 +1281,7 @@ namespace SocketNetworking.Shared
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrnetClientLocation != ClientLocation.Remote)
+                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrentClientLocation != ClientLocation.Remote)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
@@ -1290,11 +1300,11 @@ namespace SocketNetworking.Shared
             }
             NetworkInvokationPacket packet = new NetworkInvokationPacket();
             packet.TargetTypeAssmebly = Assembly.GetAssembly(target.GetType()).GetName().FullName;
-            packet.NetworkObjectTarget = targetID;
+            packet.NetworkIDTarget = targetID;
             packet.MethodName = methodName;
             foreach (var arg in args)
             {
-                SocketNetworking.Shared.SerializedData data = NetworkConvert.Serialize(arg);
+                SerializedData data = ByteConvert.Serialize(arg);
                 packet.Arguments.Add(data);
             }
             packet.TargetType = target.GetType().FullName;
@@ -1332,11 +1342,11 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvokable invocable = method.GetCustomAttribute<NetworkInvokable>();
-            if (invocable.Direction == NetworkDirection.Client && sender.CurrnetClientLocation == ClientLocation.Remote)
+            if (invocable.Direction == NetworkDirection.Client && sender.CurrentClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
-            if (invocable.Direction == NetworkDirection.Server && sender.CurrnetClientLocation == ClientLocation.Local)
+            if (invocable.Direction == NetworkDirection.Server && sender.CurrentClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
@@ -1352,7 +1362,7 @@ namespace SocketNetworking.Shared
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrnetClientLocation != ClientLocation.Remote)
+                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrentClientLocation != ClientLocation.Remote)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
@@ -1371,12 +1381,12 @@ namespace SocketNetworking.Shared
             }
             NetworkInvokationPacket packet = new NetworkInvokationPacket();
             packet.TargetTypeAssmebly = Assembly.GetAssembly(target.GetType()).GetName().FullName;
-            packet.NetworkObjectTarget = targetID;
+            packet.NetworkIDTarget = targetID;
             packet.MethodName = methodName;
             packet.IgnoreResult = false;
             foreach (var arg in args)
             {
-                SerializedData data = NetworkConvert.Serialize(arg);
+                SerializedData data = ByteConvert.Serialize(arg);
                 packet.Arguments.Add(data);
             }
             packet.TargetType = target.GetType().FullName;
@@ -1415,7 +1425,7 @@ namespace SocketNetworking.Shared
                 Log.Error($"NetworkInvoke on method {methodName} failed remotely! Error: " + resultPacket.ErrorMessage);
                 return default;
             }
-            object result = NetworkConvert.Deserialize(resultPacket.Result, out int read);
+            object result = ByteConvert.Deserialize(resultPacket.Result, out int read);
             if (result == null)
             {
                 return default;

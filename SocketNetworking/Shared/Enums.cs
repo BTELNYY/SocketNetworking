@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SocketNetworking.Client;
+using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Shared
 {
@@ -27,12 +24,13 @@ namespace SocketNetworking.Shared
         ServerData,
         NetworkInvocation,
         NetworkInvocationResult,
-        EncryptionPacket,
+        Encryption,
         SyncVarUpdate,
         ObjectManage,
         KeepAlive,
         SSLUpgrade,
-        CustomPacket,
+        Stream,
+        Custom,
     }
 
     /// <summary>

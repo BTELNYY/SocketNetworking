@@ -5,6 +5,7 @@ using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
@@ -13,7 +14,7 @@ namespace SocketNetworking.PacketSystem.Packets
     /// </summary>
     public sealed class EncryptionPacket : Packet
     {
-        public override PacketType Type => PacketType.EncryptionPacket;
+        public override PacketType Type => PacketType.Encryption;
 
         public EncryptionFunction EncryptionFunction { get; set; } = EncryptionFunction.None;
 

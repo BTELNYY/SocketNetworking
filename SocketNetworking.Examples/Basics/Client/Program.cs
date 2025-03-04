@@ -1,19 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking;
-using SocketNetworking.Example.SharedData;
-using SocketNetworking.Transports;
-using SocketNetworking.Shared;
 using SocketNetworking.Client;
+using SocketNetworking.Example.Basics.SharedData;
+using SocketNetworking.Shared;
 
-namespace SocketNetworking.Example.Client
+namespace SocketNetworking.Example.Basics.Client
 {
     public class Program
     {
         public static NetworkClient Client;
+
+        static string Title = "ClientID: {id}, Latency: {ms}";
 
         public static void Main(string[] args)
         {
@@ -25,6 +21,19 @@ namespace SocketNetworking.Example.Client
             client.ClientStopped += Client_Stopped;
             //This allows untrusted root certificates if you are using it.
             client.AllowUntrustedRootCertificates = true;
+            //Accept all streams
+            client.Streams.StreamOpenRequest += (sender, @event) =>
+            {
+                @event.Accept();
+            };
+            client.ClientIdUpdated += () =>
+            {
+                Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
+            };
+            client.LatencyChanged += (latency) =>
+            {
+                Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
+            };
             client.Connect("127.0.0.1", 7777, "DefaultPassword");
         }
 

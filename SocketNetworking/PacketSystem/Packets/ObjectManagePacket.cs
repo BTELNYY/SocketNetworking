@@ -1,6 +1,7 @@
 ﻿using SocketNetworking.Shared;
 using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
-    public sealed class ObjectManagePacket : Packet
+    public sealed class ObjectManagePacket : TargetedPacket
     {
         public override PacketType Type => PacketType.ObjectManage;
 

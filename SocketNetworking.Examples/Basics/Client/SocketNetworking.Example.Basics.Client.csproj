@@ -4,14 +4,29 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F8CBB59A-172D-4BF6-BCE7-9D53154F61B3}</ProjectGuid>
+    <ProjectGuid>{604C49D0-F0D5-4CA4-A627-5B47DF2D76A3}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>SocketNetworking.Example.Server</RootNamespace>
-    <AssemblyName>SocketNetworking.Example.Server</AssemblyName>
+    <RootNamespace>SocketNetworking.Example.Client</RootNamespace>
+    <AssemblyName>SocketNetworking.Example.Basics.Client</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -70,14 +85,26 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SharedData\SocketNetworking.Example.SharedData.csproj">
+    <ProjectReference Include="..\SharedData\SocketNetworking.Example.Basics.SharedData.csproj">
       <Project>{8d731ee2-ae7e-48a8-9a26-8f370d9fa1a2}</Project>
-      <Name>SocketNetworking.Example.SharedData</Name>
+      <Name>SocketNetworking.Example.Basics.SharedData</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\SocketNetworking\SocketNetworking.csproj">
+    <ProjectReference Include="..\..\..\SocketNetworking\SocketNetworking.csproj">
       <Project>{ab97887e-ef11-4ce3-83b6-7e91456cf035}</Project>
       <Name>SocketNetworking</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.8 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -15,6 +15,7 @@ using System.Reflection;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Server;
+using System.Collections;
 
 namespace SocketNetworking
 {
@@ -41,15 +42,32 @@ namespace SocketNetworking
         /// </exception>
         public static T[] RemoveFromStart<T>(this T[] array, int amount)
         {
-            //Log.Debug("Old Size: " + array.Length);
             if (array.Length < amount)
             {
                 throw new ArgumentOutOfRangeException("amount", "Amount is out of range for specified array.");
             }
             List<T> newArray = array.ToList();
             newArray.RemoveRange(0, amount);
-            //Log.Debug("New size: " + newArray.ToArray().Length + " Should have removed: " + amount);
             return newArray.ToArray();
+        }
+
+
+        public static T[] Push<T>(this T[] array, T[] newData)
+        {
+            if(array.Length <= newData.Length)
+            {
+                array = newData.Take(array.Length).ToArray();
+                return array;
+            }
+            else
+            {
+                foreach(T t in newData.Reverse())
+                {
+                    array = array.Prepend(t).ToArray();
+                }
+                array = array.Take(array.Length - newData.Length).ToArray();
+                return array;
+            }
         }
 
         /// <summary>
@@ -67,7 +85,7 @@ namespace SocketNetworking
         {
             foreach(T item in value)
             {
-                target.Append(item);
+                target = target.Append(item).ToArray();
             }
             return target;
         }
@@ -207,21 +225,67 @@ namespace SocketNetworking
             return s;
         }
 
-        //I mean, AI is getting *better* but your O(1) time means jack shit becuase we have linear time now since you just iterate.
         public static int GetFirstEmptySlot(this IEnumerable<int> ints)
         {
-            // Convert the list to a HashSet for O(1) lookup time.
             HashSet<int> set = new HashSet<int>(ints);
-
             int i = 1;
-            // Iterate from 1 upward to find the first "free" spot.
             while (set.Contains(i))
             {
                 i++;
             }
-
-            return i; // Return the first "free" spot.
+            return i;
         }
+
+        public static ushort GetFirstEmptySlot(this IEnumerable<ushort> ushorts)
+        {
+            HashSet<ushort> set = new HashSet<ushort>(ushorts);
+            ushort i = 1;
+            while (set.Contains(i))
+            {
+                i++;
+            }
+            return i;
+        }
+
+        public static IEnumerable<TSource> SkipLong<TSource>(this IEnumerable<TSource> source, long count)
+        {
+            while (count > int.MaxValue)
+            {
+                source = source.Skip((int)int.MaxValue).ToList();
+                count -= int.MaxValue;
+            }
+            source = source.Skip((int)int.MaxValue).ToList();
+            return source;
+        }
+
+        public static IEnumerable<TSource> TakeLong<TSource>(this IEnumerable<TSource> source, long count)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException("source");
+            }
+            return TakeIterator(source, count);
+        }
+
+        private static IEnumerable<TSource> TakeIterator<TSource>(IEnumerable<TSource> source, long count)
+        {
+            if (count <= 0)
+            {
+                yield break;
+            }
+
+            foreach (TSource item in source)
+            {
+                yield return item;
+                long num = count - 1;
+                count = num;
+                if (num == 0)
+                {
+                    break;
+                }
+            }
+        }
+
 
         /// <summary>
         /// Checks if the type is a sublcass of the generic type <paramref name="generic"/>.

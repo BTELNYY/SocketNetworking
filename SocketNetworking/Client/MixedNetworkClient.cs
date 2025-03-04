@@ -12,6 +12,7 @@ using SocketNetworking.Shared;
 using System.Net.Sockets;
 using System.Threading;
 using System.Diagnostics;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Client
 {
@@ -20,7 +21,19 @@ namespace SocketNetworking.Client
         public MixedNetworkClient()
         {
             Transport = new TcpTransport();
-            _networkEncryptionManager = new NetworkEncryption();
+            _networkEncryptionManager = new NetworkEncryption(this);
+        }
+
+        protected override void OnLocalStopClient()
+        {
+            UdpTransport?.Close();
+            base.OnLocalStopClient();
+        }
+
+        protected override void OnRemoteStopClient()
+        {
+            UdpTransport?.Close();
+            base.OnRemoteStopClient();
         }
 
         public int UDPFailures = 0;
@@ -76,6 +89,7 @@ namespace SocketNetworking.Client
             }
         }
 
+
         protected override void SendNextPacketInternal()
         {
             if (NoPacketHandling)
@@ -95,7 +109,11 @@ namespace SocketNetworking.Client
             {
                 _toSendPackets.TryDequeue(out Packet packet);
                 PreparePacket(ref packet);
-                if(packet.Flags.HasFlag(PacketFlags.Priority))
+                if (!InvokePacketSendRequest(packet))
+                {
+                    return;
+                }
+                if (packet.Flags.HasFlag(PacketFlags.Priority))
                 {
                     packet.Destination = UdpTransport.Peer;
                 }
@@ -109,10 +127,18 @@ namespace SocketNetworking.Client
                     Exception ex;
                     if (packet.Flags.HasFlag(PacketFlags.Priority))
                     {
+                        if(!UdpTransport.IsConnected)
+                        {
+                            return;
+                        }
                         ex = UdpTransport.Send(fullBytes, packet.Destination);
                     }
                     else
                     {
+                        if(!TcpTransport.IsConnected)
+                        {
+                            return;
+                        }
                         ex = Transport.Send(fullBytes, packet.Destination);
                     }
                     //Log.Debug("Packet sent!");
@@ -127,6 +153,7 @@ namespace SocketNetworking.Client
                     NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
                     InvokeConnectionError(networkErrorData);
                 }
+                InvokePacketSent(packet);
             }
         }
 

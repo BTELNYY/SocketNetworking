@@ -1,18 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
-using SocketNetworking.Server;
-using SocketNetworking.Shared;
 
 namespace SocketNetworking.Transports
 {
@@ -40,7 +34,7 @@ namespace SocketNetworking.Transports
 
         public override int PeerPort => Peer.Port;
 
-        public override bool IsConnected => Client.Connected;
+        public override bool IsConnected => Client != null && Client.Connected;
 
         public SslStream SslStream { get; set; }
 
@@ -61,27 +55,31 @@ namespace SocketNetworking.Transports
         {
             get
             {
+                if(!IsConnected)
+                {
+                    return null;
+                }
                 if(UsingSSL)
                 {
                     return SslStream;
                 }
-                return Client.GetStream();
+                return Client?.GetStream();
             }
         }
 
         public TcpClient Client { get; set; } = new TcpClient();
 
-        public override Socket Socket => Client.Client;
+        public override Socket Socket => Client?.Client;
 
         public override bool DataAvailable
         {
             get
             {
-                return Stream.CanRead && Socket.Available > 0;
+                return Stream != null && Stream.CanRead && DataAmountAvailable > 0;
             }
         }
-
-        public override int DataAmountAvailable => Socket.Available;
+        
+        public override int DataAmountAvailable => Socket == null ? 0 : Socket.Available;
 
         public override Exception Connect(string hostname, int port)
         {
@@ -236,9 +234,33 @@ namespace SocketNetworking.Transports
 
         public override void Close()
         {
-            Client.Close();
-            Client.Dispose();
+            Client?.Close();
+            Client?.Dispose();
             Client = null;
+        }
+
+        public async override Task<Exception> SendAsync(byte[] data, IPEndPoint destination)
+        {
+            return await SendAsync(data);
+        }
+
+        public async override Task<Exception> SendAsync(byte[] data)
+        {
+            try
+            {
+                await Stream.WriteAsync(data, 0, data.Length);
+                Thread.Sleep(1);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return ex;
+            }
+        }
+
+        public async override Task<(byte[], Exception, IPEndPoint)> ReceiveAsync()
+        {
+            return Receive();
         }
     }
 }

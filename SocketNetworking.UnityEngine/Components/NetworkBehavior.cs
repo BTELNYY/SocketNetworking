@@ -13,6 +13,7 @@ using SocketNetworking.Shared;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.SyncVars;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.UnityEngine.Components
 {
@@ -242,7 +243,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual bool ShouldBeReceivingPacketsFrom(NetworkClient client)
         {
-            if (OwnershipMode == OwnershipMode.Server && client.CurrnetClientLocation == ClientLocation.Local)
+            if (OwnershipMode == OwnershipMode.Server && client.CurrentClientLocation == ClientLocation.Local)
             {
                 return true;
             }
@@ -269,7 +270,7 @@ namespace SocketNetworking.UnityEngine.Components
         /// Preforms a send operation and syncs data across network, can be called on either client or server, method handles what happens.
         /// </summary>
         /// <param name="packet"></param>
-        public virtual void Send(Packet packet, bool priority = false)
+        public virtual void Send(TargetedPacket packet, bool priority = false)
         {
             Send(packet, this, priority);
         }
@@ -278,7 +279,7 @@ namespace SocketNetworking.UnityEngine.Components
         /// Preforms a send operation and syncs data across network, can be called on either client or server, method handles what happens.
         /// </summary>
         /// <param name="packet"></param>
-        public virtual void Send(Packet packet, INetworkObject target, bool priority)
+        public virtual void Send(TargetedPacket packet, INetworkObject target, bool priority)
         {
             if (NetworkID == -1)
             {

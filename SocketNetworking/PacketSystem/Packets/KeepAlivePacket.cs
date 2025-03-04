@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
@@ -11,20 +12,20 @@ namespace SocketNetworking.PacketSystem.Packets
     {
         public override PacketType Type => PacketType.KeepAlive;
 
-        public ulong SentTime { get; set; } = 0;
-
-        public override ByteWriter Serialize()
-        {
-            ByteWriter writer = base.Serialize();
-            writer.WriteULong(SentTime);
-            return writer;
-        }
+        public long RecievedTime { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
         public override ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = base.Deserialize(data);
-            SentTime = reader.ReadULong();
+            RecievedTime = reader.ReadLong();
             return reader;
         }
+
+        public override ByteWriter Serialize()
+        {
+            ByteWriter writer = base.Serialize();
+            writer.WriteLong(RecievedTime);
+            return writer;
+        }  
     }
 }

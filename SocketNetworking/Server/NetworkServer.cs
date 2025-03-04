@@ -1,21 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
-using System.Net;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.Misc;
-using SocketNetworking.Transports;
 using SocketNetworking.Client;
+using SocketNetworking.Misc;
+using SocketNetworking.PacketSystem;
 using SocketNetworking.Shared;
-using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Messages;
-using System.Collections.Concurrent;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Diagnostics;
+using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Server
 {
@@ -35,11 +28,11 @@ namespace SocketNetworking.Server
             ClientConnected?.Invoke(id);
         }
 
-        public static event Action<int> ClientDisconnected;
+        public static event Action<NetworkClient> ClientDisconnected;
 
-        protected static void InvokeClientDisconnected(int id)
+        protected static void InvokeClientDisconnected(NetworkClient client)
         {
-            ClientDisconnected?.Invoke(id);
+            ClientDisconnected?.Invoke(client);
         } 
 
         public static event Action ServerStarted;
@@ -54,6 +47,18 @@ namespace SocketNetworking.Server
         protected static void InvokeServerStopped()
         {
             ServerStopped?.Invoke();
+        }
+
+        /// <summary>
+        /// Called when a <see cref="NetworkClient"/> is first connecting. At this point, this <see cref="NetworkClient"/> is fresh.
+        /// </summary>
+        public static event EventHandler<ClientConnectRequest> ClientConnecting;
+
+        protected static bool AcceptClient(NetworkClient client)
+        {
+            ClientConnectRequest req = new ClientConnectRequest(client, true);
+            ClientConnecting?.Invoke(null, req);
+            return req.Accepted;
         }
 
         protected static ServerState _serverState = ServerState.NotStarted;
@@ -273,26 +278,40 @@ namespace SocketNetworking.Server
             return bestHandler;
         }
 
-        static object clientLock = new object();
+        protected static object clientLock = new object();
 
-        public static void RemoveClient(int clientId)
+        public static void RemoveClient(NetworkClient myClient)
         {
             lock(clientLock)
             {
-                if (_clients.ContainsKey(clientId))
+                if (_clients.ContainsKey(myClient.ClientID))
                 {
-                    ClientDisconnected?.Invoke(clientId);
-                    ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(_clients[clientId]));
+                    ClientDisconnected?.Invoke(myClient);
+                    ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(_clients[myClient.ClientID]));
                     if (handler == null)
                     {
-                        Log.Error("Unable to find the handler responsible for Client ID " + clientId);
+                        Log.Error("Unable to find the handler responsible for Client ID " + myClient.ClientID);
                     }
-                    handler.RemoveClient(_clients[clientId]);
-                    _clients.Remove(clientId);
+                    else
+                    {
+                        handler.RemoveClient(_clients[myClient.ClientID]);
+                    }
+                    InvokeClientDisconnected(myClient);
+                    Log.Debug($"Removed client {myClient.ClientID} from handler {handler?.ToString()}");
+                    _clients.Remove(myClient.ClientID);
                 }
                 else
                 {
-                    Log.Warning($"Can't remove client ID {clientId}, not found!");
+                    Log.Warning($"Can't remove client ID {myClient.ClientID}, not found!");
+                    ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(myClient));
+                    if (handler == null)
+                    {
+                        Log.Error("Unable to find the handler responsible for Client ID " + myClient.ClientID);
+                    }
+                    else
+                    {
+                        handler.RemoveClient(_clients[myClient.ClientID]);
+                    }
                 }
             }
         }
@@ -342,22 +361,35 @@ namespace SocketNetworking.Server
         /// <param name="packet"></param>
         /// <param name="toReadyOnly"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        public static void SendToAll(Packet packet, bool toReadyOnly = false)
+        public static void SendToAll(Packet packet)
+        {
+            SendToAll(packet, (x => true));
+        }
+
+        public static void SendToAll(TargetedPacket packet, INetworkObject @object)
+        {
+            packet.NetworkIDTarget = @object.NetworkID;
+            SendToAll(packet);
+        }
+
+        public static void SendToAll(Packet packet, Predicate<NetworkClient> predicate)
         {
             if (!Active)
             {
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
-            if (toReadyOnly)
+            lock (clientLock)
             {
-                SendToReady(packet);
-                return;
-            }
-            foreach(NetworkClient client in _clients.Values)
-            {
-                client.Send(packet);
+                foreach (NetworkClient client in _clients.Values)
+                {
+                    if (predicate(client))
+                    {
+                        client.Send(packet);
+                    }
+                }
             }
         }
+
 
         /// <summary>
         /// Sends a <see cref="Packet"/> to all connected clients.
@@ -366,30 +398,23 @@ namespace SocketNetworking.Server
         /// <param name="target"></param>
         /// <param name="toReadyOnly"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        public static void SendToAll(Packet packet, INetworkObject target, bool toReadyOnly = false)
+        public static void SendToAll(TargetedPacket packet, INetworkObject target, Predicate<NetworkClient> predicate)
         {
             if (!Active)
             {
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
-            if (toReadyOnly)
-            {
-                SendToReady(packet);
-                return;
-            }
-            foreach (NetworkClient client in _clients.Values)
-            {
-                client.Send(packet, target);
-            }
+            packet.NetworkIDTarget = target.NetworkID;
+            SendToAll(packet, predicate);
         }
 
-        public static void SentToAll(Packet packet, INetworkObject target, bool priority, bool toReadyOnly = false)
+        public static void SentToAll(TargetedPacket packet, INetworkObject target, bool priority, bool toReadyOnly = false)
         {
             if(priority)
             {
                 packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
             }
-            SendToAll(packet, target, toReadyOnly);
+            SendToAll(packet, target, (x) => toReadyOnly ? x.Ready : true);
         }
 
         /// <summary>
@@ -400,14 +425,36 @@ namespace SocketNetworking.Server
         /// </param>
         public static void DisconnectNotReady(string reason = "Failed to ready in time.")
         {
+            Disconnect(x => !x.Ready, reason);
+        }
+
+        public static void Disconnect(Predicate<NetworkClient> predicate)
+        {
             if (!Active)
             {
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
-            List<NetworkClient> readyClients = _clients.Values.Where(x => !x.Ready).ToList();
-            foreach (NetworkClient client in readyClients)
+            lock (clientLock)
             {
-                client.Disconnect(reason);
+                foreach(NetworkClient client in _clients.Values)
+                {
+                    client.Disconnect();
+                }
+            }
+        }
+
+        public static void Disconnect(Predicate<NetworkClient> predicate, string reason)
+        {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
+            lock (clientLock)
+            {
+                foreach (NetworkClient client in _clients.Values)
+                {
+                    client.Disconnect(reason);
+                }
             }
         }
 
@@ -419,15 +466,7 @@ namespace SocketNetworking.Server
         /// </param>
         public static void SendToReady(Packet packet)
         {
-            if (!Active)
-            {
-                throw new InvalidOperationException("Server method called when server is not active!");
-            }
-            List<NetworkClient> readyClients = _clients.Values.Where(x => x.Ready).ToList();
-            foreach(NetworkClient client in readyClients)
-            {
-                client.Send(packet);
-            }
+            SendToAll(packet, x => x.Ready);
         }
 
         /// <summary>
@@ -439,7 +478,7 @@ namespace SocketNetworking.Server
         /// <param name="target">
         /// The <see cref="INetworkObject"/> which is the target.
         /// </param>
-        public static void SendToReady(Packet packet, INetworkObject target)
+        public static void SendToReady(TargetedPacket packet, INetworkObject target)
         {
             if (!Active)
             {

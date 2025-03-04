@@ -1,12 +1,12 @@
 ﻿using SocketNetworking.Client;
 using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.PacketSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared.SyncVars;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.NetworkObjects
 {
@@ -21,7 +21,9 @@ namespace SocketNetworking.Shared.NetworkObjects
         public virtual OwnershipMode FallBackIfOwnerDisconnects => OwnershipMode.Server;
 
         public virtual ObjectVisibilityMode ObjectVisibilityMode { get; set; }
+
         public virtual int NetworkID { get; set; }
+
         public virtual bool Active { get; set; }
 
         public virtual bool Spawnable => true;

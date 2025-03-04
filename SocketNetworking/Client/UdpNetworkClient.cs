@@ -79,9 +79,9 @@ namespace SocketNetworking.Client
             Send(packet);
         }
 
-        public void Send(Packet packet, INetworkObject sender, IPEndPoint peer)
+        public void Send(TargetedPacket packet, INetworkObject sender, IPEndPoint peer)
         {
-            packet.NetowrkIDTarget = sender.NetworkID;
+            packet.NetworkIDTarget = sender.NetworkID;
             Send(packet, peer);
         }
 

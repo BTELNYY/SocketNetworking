@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SocketNetworking.PacketSystem;
 using System.Configuration;
 using SocketNetworking;
 using UnityEngine;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
 {

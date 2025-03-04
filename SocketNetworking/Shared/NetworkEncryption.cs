@@ -4,12 +4,16 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Threading;
+using SocketNetworking.Client;
 using SocketNetworking.PacketSystem.Packets;
 
 namespace SocketNetworking.Shared
 {
     public class NetworkEncryption
     {
+        public NetworkClient Client { get; }
+
+
         public const int KEY_SIZE = 2048;
 
         public static int MaxBytesForAsym
@@ -105,8 +109,9 @@ namespace SocketNetworking.Shared
             }
         }
 
-        public NetworkEncryption()
+        public NetworkEncryption(NetworkClient client)
         {
+            Client = client;
             SharedAes = new AesCryptoServiceProvider();
             SharedAes.GenerateIV();
             SharedAes.GenerateKey();

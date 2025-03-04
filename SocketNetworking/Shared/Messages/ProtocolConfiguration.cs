@@ -1,4 +1,5 @@
 ﻿using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,24 +48,24 @@ namespace SocketNetworking.Shared.Messages
 
         public int GetLength()
         {
-            int count = Serialize().Length;
+            int count = Serialize().Data.Length;
             return count;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteString(_version);
             writer.WriteString(_protocol);
-            return writer.Data;
+            return writer;
         }
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             _version = reader.ReadString();
             _protocol = reader.ReadString();
-            return reader.ReadBytes;
+            return reader;
         }
     }
 }

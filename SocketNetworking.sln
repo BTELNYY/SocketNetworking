@@ -9,11 +9,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.UnityEngin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Tests", "SocketNetworking.Tests\SocketNetworking.Tests.csproj", "{F8A3DDFE-39A6-403E-BFD4-47F7CFD1A5F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.Client", "SocketNetworking.Examples\Client\SocketNetworking.Example.Client.csproj", "{604C49D0-F0D5-4CA4-A627-5B47DF2D76A3}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{7AB7E9B4-4999-4CA9-B176-31D858F2C53F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.Server", "SocketNetworking.Examples\Server\SocketNetworking.Example.Server.csproj", "{F8CBB59A-172D-4BF6-BCE7-9D53154F61B3}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Basics", "Basics", "{7E58342A-ECC9-4EA0-AF5A-FC144614A16A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.SharedData", "SocketNetworking.Examples\SharedData\SocketNetworking.Example.SharedData.csproj", "{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.Basics.Client", "SocketNetworking.Examples\Basics\Client\SocketNetworking.Example.Basics.Client.csproj", "{604C49D0-F0D5-4CA4-A627-5B47DF2D76A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.Basics.Server", "SocketNetworking.Examples\Basics\Server\SocketNetworking.Example.Basics.Server.csproj", "{F8CBB59A-172D-4BF6-BCE7-9D53154F61B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Example.Basics.SharedData", "SocketNetworking.Examples\Basics\SharedData\SocketNetworking.Example.Basics.SharedData.csproj", "{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "External", "External", "{7A370070-17B2-4AAE-B821-B1056741913A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Testing", "Testing", "{722A1631-41DA-4FD7-A600-2CDF8081045F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -74,6 +82,14 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B7A10214-8A6C-480F-B411-0508060C352D} = {7A370070-17B2-4AAE-B821-B1056741913A}
+		{F8A3DDFE-39A6-403E-BFD4-47F7CFD1A5F8} = {722A1631-41DA-4FD7-A600-2CDF8081045F}
+		{7E58342A-ECC9-4EA0-AF5A-FC144614A16A} = {7AB7E9B4-4999-4CA9-B176-31D858F2C53F}
+		{604C49D0-F0D5-4CA4-A627-5B47DF2D76A3} = {7E58342A-ECC9-4EA0-AF5A-FC144614A16A}
+		{F8CBB59A-172D-4BF6-BCE7-9D53154F61B3} = {7E58342A-ECC9-4EA0-AF5A-FC144614A16A}
+		{8D731EE2-AE7E-48A8-9A26-8F370D9FA1A2} = {7E58342A-ECC9-4EA0-AF5A-FC144614A16A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FBF7F5CF-0FE9-44E5-A4AB-BFE26D43DA8A}

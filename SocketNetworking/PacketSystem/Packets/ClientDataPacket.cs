@@ -7,6 +7,7 @@ using SocketNetworking.Attributes;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Messages;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem.Packets
 {

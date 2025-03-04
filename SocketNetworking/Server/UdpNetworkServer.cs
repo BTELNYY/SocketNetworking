@@ -61,6 +61,12 @@ namespace SocketNetworking.Server
                     AddClient(client, counter);
                     _udpClients.Add(remoteIpEndPoint, client as UdpNetworkClient);
                     transport.ServerRecieve(recieve, remoteIpEndPoint);
+                    bool disconnect = !AcceptClient(client);
+                    if (disconnect)
+                    {
+                        client.Disconnect();
+                        continue;
+                    }
                     CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                     {
                         if (x == null)

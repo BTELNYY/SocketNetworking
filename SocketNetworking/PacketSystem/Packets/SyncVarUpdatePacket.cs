@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
@@ -39,27 +40,31 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public SerializedData Data;
 
-        public int Deserialize(byte[] data)
+        public OwnershipMode Mode;
+
+        public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             NetworkIDTarget = reader.ReadInt();
             TargetVar = reader.ReadString();
             Data = reader.ReadPacketSerialized<SerializedData>();
-            return reader.ReadBytes;
+            Mode = (OwnershipMode)reader.ReadByte();
+            return reader;
         }
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return Serialize().DataLength;
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteInt(NetworkIDTarget);
             writer.WriteString(TargetVar);
             writer.WritePacketSerialized<SerializedData>(Data);
-            return writer.Data;
+            writer.WriteByte((byte)Mode);
+            return writer;
         }
     }
 }

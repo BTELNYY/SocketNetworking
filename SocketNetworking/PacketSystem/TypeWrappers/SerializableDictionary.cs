@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem.TypeWrappers
 {
@@ -115,7 +116,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             }
         }
 
-        public int Deserialize(byte[] data)
+        public ByteReader Deserialize(byte[] data)
         {
             int removeAmount = 0;
             ByteReader reader = new ByteReader(data);
@@ -123,7 +124,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             keys = reader.ReadPacketSerialized<SerializableList<TKey>>();
             values = reader.ReadPacketSerialized<SerializableList<TValue>>();
             removeAmount += reader.ReadBytes;
-            return removeAmount;
+            return reader;
         }
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
@@ -156,13 +157,13 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
             return Remove(item.Key);
         }
 
-        public byte[] Serialize()
+        public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteInt(GetLength());
             writer.WritePacketSerialized<SerializableList<TKey>>(keys);
             writer.WritePacketSerialized<SerializableList<TValue>>(values);
-            return writer.Data;
+            return writer;
         }
 
         public bool TryGetValue(TKey key, out TValue value)
