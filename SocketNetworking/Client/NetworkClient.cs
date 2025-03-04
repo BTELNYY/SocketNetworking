@@ -893,7 +893,7 @@ namespace SocketNetworking.Client
         /// </summary>
         public virtual void StopClient()
         {
-            if(!_shuttingDown)
+            if(_shuttingDown)
             {
                 return;
             }

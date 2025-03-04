@@ -79,7 +79,7 @@ namespace SocketNetworking.Server
                         }
                     }, client, Config.HandshakeTime);
                     callback.Start();
-                    InvokeClientConnected(counter);
+                    InvokeClientConnected(client);
                     counter++;
                 }
                 else

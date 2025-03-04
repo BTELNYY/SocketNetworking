@@ -84,23 +84,21 @@ namespace SocketNetworking.Server
                     {
                         client.Disconnect();
                         socket?.Close();
+                        return;
                     }
-                    else
+                    CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                     {
-                        CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
+                        if (x == null)
                         {
-                            if (x == null)
-                            {
-                                return;
-                            }
-                            if (x.CurrentConnectionState != ConnectionState.Connected)
-                            {
-                                x.Disconnect("Failed to handshake in time.");
-                            }
-                        }, client, Config.HandshakeTime);
-                        callback.Start();
-                        InvokeClientConnected(counter);
-                    }
+                            return;
+                        }
+                        if (x.CurrentConnectionState != ConnectionState.Connected)
+                        {
+                            x.Disconnect("Failed to handshake in time.");
+                        }
+                    }, client, Config.HandshakeTime);
+                    callback.Start();
+                    InvokeClientConnected(client);
                 });
                 counter++;
             }

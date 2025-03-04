@@ -21,11 +21,11 @@ namespace SocketNetworking.Server
             ServerReady?.Invoke();
         }
 
-        public static event Action<int> ClientConnected;
+        public static event Action<NetworkClient> ClientConnected;
 
-        protected static void InvokeClientConnected(int id)
+        protected static void InvokeClientConnected(NetworkClient client)
         {
-            ClientConnected?.Invoke(id);
+            ClientConnected?.Invoke(client);
         }
 
         public static event Action<NetworkClient> ClientDisconnected;

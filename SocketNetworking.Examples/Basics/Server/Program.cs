@@ -36,7 +36,14 @@ namespace SocketNetworking.Example.Basics.Server
             NetworkServer.Config.HandshakeTime = 10f;
             NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
             NetworkServer.Config.CertificatePath = "./exmaple.cert";
-            NetworkServer.ClientConnected += OnClientConnected;
+            NetworkServer.ClientConnected += (x) => 
+            {
+                Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());
+            };
+            NetworkServer.ClientDisconnected += (x) =>
+            {
+                Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());
+            };
             server.StartServer();
             Thread t = new Thread(SpamThread);
             t.Start();
@@ -77,11 +84,6 @@ namespace SocketNetworking.Example.Basics.Server
                     }
                 }
             }
-        }
-
-        private static void OnClientConnected(int id)
-        {
-            Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());
         }
     }
 }
