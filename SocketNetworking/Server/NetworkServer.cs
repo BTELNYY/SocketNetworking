@@ -241,6 +241,11 @@ namespace SocketNetworking.Server
             {
                 Log.Warning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
             }
+            if(!ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)) && ClientAvatar != null)
+            {
+                Log.Error("Server start error. Your client avatar must implement INetworkAvatar through either NetworkAvatarBase or a custom implementation.");
+                return false;
+            }
             return true;
         }
 

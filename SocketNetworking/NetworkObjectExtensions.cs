@@ -13,6 +13,16 @@ namespace SocketNetworking
 {
     public static class NetworkObjectExtensions
     {
+        public static NetworkClient GetOwner(this INetworkObject obj)
+        {
+            if(NetworkManager.WhereAmI != ClientLocation.Remote)
+            {
+                return null;
+            }
+            return NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
+        }
+
+
         /// <summary>
         /// Invokes a network method on the current <see cref="INetworkObject"></see>, provide a <see cref="NetworkClient"/> which will get the network invoke.
         /// </summary>

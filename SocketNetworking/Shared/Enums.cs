@@ -30,6 +30,7 @@ namespace SocketNetworking.Shared
         KeepAlive,
         SSLUpgrade,
         Stream,
+        ClientToClient,
         Custom,
     }
 

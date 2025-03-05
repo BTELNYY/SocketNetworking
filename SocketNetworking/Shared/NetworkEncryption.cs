@@ -95,6 +95,10 @@ namespace SocketNetworking.Shared
 
         public string OthersPublicKey
         {
+            get
+            {
+                return OthersRSA.ToXmlString(false);
+            }
             set
             {
                 OthersRSA.FromXmlString(value);

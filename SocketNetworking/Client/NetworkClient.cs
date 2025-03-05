@@ -222,7 +222,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// The Avatar of the <see cref="NetworkClient"/>. This can be specified in 
         /// </summary>
-        public INetworkObject Avatar { get; private set; }
+        public INetworkAvatar Avatar { get; private set; }
 
         /// <summary>
         /// Only has instances on the local client. Use <see cref="NetworkServer.ConnectedClients"/> for server side clients.
@@ -1477,6 +1477,21 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.ClientToClient:
+                    ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
+                    clientToClientPacket.Deserialize(data);
+                    INetworkObject obj = NetworkManager.GetNetworkObjectByID(clientToClientPacket.NetworkIDTarget).Item1;
+                    if(obj == null)
+                    {
+                        return;
+                    }
+                    NetworkClient owner = obj.GetOwner();
+                    if(owner == null)
+                    {
+                        return;
+                    }
+                    owner.Send(clientToClientPacket);
+                    break;
                 case PacketType.KeepAlive:
                     KeepAlivePacket keepAlivePacket = new KeepAlivePacket();
                     keepAlivePacket.Deserialize(data);
@@ -1705,6 +1720,19 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.ClientToClient:
+                    ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
+                    clientToClientPacket.Deserialize(data);
+                    if(Avatar == null)
+                    {
+                        return;
+                    }
+                    if(Avatar.NetworkID != clientToClientPacket.NetworkIDTarget)
+                    {
+                        return;
+                    }
+                    Avatar.ReceivePrivate(clientToClientPacket);
+                    break;
                 case PacketType.KeepAlive:
                     KeepAlivePacket keepAlivePacket = new KeepAlivePacket();
                     keepAlivePacket.Deserialize(data);
@@ -2093,7 +2121,7 @@ namespace SocketNetworking.Client
                 Log.Warning("Got a client avatar, can't find the ID? ID: " + id);
                 return;
             }
-            Avatar = result.Item1;
+            Avatar = (INetworkAvatar)result.Item1;
         }
 
         #endregion
