@@ -95,7 +95,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         }
 
-        public virtual ByteReader RecieveExtraData(byte[] extraData)
+        public virtual ByteReader ReceiveExtraData(byte[] extraData)
         {
             return new ByteReader(extraData);
         }

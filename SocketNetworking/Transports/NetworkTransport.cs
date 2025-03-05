@@ -113,7 +113,7 @@ namespace SocketNetworking.Transports
         public abstract Task<Exception> SendAsync(byte[] data);
 
         /// <summary>
-        /// Recieve Data, this is a blocking task. See <see cref="DataAvailable"/> to implement a non-blocking approach.
+        /// Receive Data, this is a blocking task. See <see cref="DataAvailable"/> to implement a non-blocking approach.
         /// </summary>
         /// <param name="offset"></param>
         /// <param name="size"></param>

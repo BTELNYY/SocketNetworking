@@ -35,7 +35,7 @@ namespace SocketNetworking.Example.Basics.Client
             {
                 Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
             };
-            client.Connect("127.0.0.1", 7777, "DefaultPassword");
+            client.Connect("127.0.0.1", 7777);
         }
 
         private static void Client_Stopped()

@@ -91,7 +91,7 @@ namespace SocketNetworking.Transports
             _emulatedMe = me;
         }
 
-        public virtual void ServerRecieve(byte[] data, IPEndPoint endPoint)
+        public virtual void ServerReceive(byte[] data, IPEndPoint endPoint)
         {
             _receivedBytes.Enqueue((data, endPoint));
         }

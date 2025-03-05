@@ -34,25 +34,31 @@ namespace SocketNetworking.Shared.NetworkObjects
         public override void OnNetworkSpawned(NetworkClient spawner)
         {
             base.OnNetworkSpawned(spawner);
-            if(spawner.ClientID == OwnerClientID)
-            {
-                _pubKey.Value = spawner.EncryptionManager.OthersPublicKey;
-            }
         }
 
         public override void OnLocalSpawned(ObjectManagePacket packet)
         {
             base.OnLocalSpawned(packet);
-            if(NetworkManager.WhereAmI == ClientLocation.Local)
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 _provider.FromXmlString(NetworkClient.LocalClient.EncryptionManager.MyRSA.ToXmlString(true));
+            }
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                _provider.FromXmlString(this.GetOwner()?.EncryptionManager.OthersRSA.ToXmlString(false));
+                _pubKey.ValueRaw = _provider.ToXmlString(false);
             }
         }
 
         public override void OnSyncVarsChanged()
         {
             base.OnSyncVarsChanged();
-            _provider.FromXmlString(this.PublicKey);
+            _provider.FromXmlString(PublicKey);
+        }
+
+        public override void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
+        {
+            base.OnSyncVarChanged(client, what);
         }
 
         RSACryptoServiceProvider _provider = new RSACryptoServiceProvider();

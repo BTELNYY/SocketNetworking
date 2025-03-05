@@ -12,19 +12,19 @@ namespace SocketNetworking.PacketSystem.Packets
     {
         public override PacketType Type => PacketType.KeepAlive;
 
-        public long RecievedTime { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        public long ReceivedTime { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
         public override ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = base.Deserialize(data);
-            RecievedTime = reader.ReadLong();
+            ReceivedTime = reader.ReadLong();
             return reader;
         }
 
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
-            writer.WriteLong(RecievedTime);
+            writer.WriteLong(ReceivedTime);
             return writer;
         }  
     }

@@ -49,11 +49,11 @@ namespace SocketNetworking.Attributes
         /// <param name="type">
         /// The type of the packet you are waiting for. Note that it must be registered and inherit from <see cref="CustomPacket"/> as well as use the <see cref="PacketDefinition"/> attribute.
         /// </param>
-        /// <param name="directionFromWhichPacketCanBeRecieved">
+        /// <param name="directionFromWhichPacketCanBeReceived">
         /// From where are you accepting packets from. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only
         /// </param>
         /// <exception cref="InvalidOperationException"></exception>
-        public PacketListener(Type type, NetworkDirection directionFromWhichPacketCanBeRecieved = NetworkDirection.Any) 
+        public PacketListener(Type type, NetworkDirection directionFromWhichPacketCanBeReceived = NetworkDirection.Any) 
         {
             if (!type.IsSubclassOf(typeof(CustomPacket)) || type.GetCustomAttribute(typeof(PacketDefinition)) == null)
             {
@@ -63,7 +63,7 @@ namespace SocketNetworking.Attributes
                 }
             }
             _type = type;
-            _direction = directionFromWhichPacketCanBeRecieved;
+            _direction = directionFromWhichPacketCanBeReceived;
         }
     }
 }

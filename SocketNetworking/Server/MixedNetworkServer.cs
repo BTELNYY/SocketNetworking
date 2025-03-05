@@ -147,11 +147,11 @@ namespace SocketNetworking.Server
                 }
                 try
                 {
-                    byte[] recieve = udpClient.Receive(ref listener);
+                    byte[] Receive = udpClient.Receive(ref listener);
                     IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
                     if (!_udpClients.ContainsKey(remoteIpEndPoint))
                     {
-                        ByteReader reader = new ByteReader(recieve);
+                        ByteReader reader = new ByteReader(Receive);
                         int netId = reader.ReadInt();
                         int passKey = reader.ReadInt();
                         Log.Info($"Connecting client {netId} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on UDP.");
@@ -175,7 +175,7 @@ namespace SocketNetworking.Server
                     {
                         MixedNetworkClient client = _udpClients[remoteIpEndPoint];
                         client.UDPFailures = 0;
-                        client.UdpTransport.ServerRecieve(recieve, remoteIpEndPoint);
+                        client.UdpTransport.ServerReceive(Receive, remoteIpEndPoint);
                     }
                 }
                 catch(Exception ex)

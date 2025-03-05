@@ -50,7 +50,7 @@ namespace SocketNetworking.Server
                 {
                     continue;
                 }
-                byte[] recieve = udpClient.Receive(ref listener);
+                byte[] Receive = udpClient.Receive(ref listener);
                 IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
                 if (!_udpClients.ContainsKey(remoteIpEndPoint))
                 {
@@ -62,7 +62,7 @@ namespace SocketNetworking.Server
                     client.InitRemoteClient(counter, transport);
                     AddClient(client, counter);
                     _udpClients.Add(remoteIpEndPoint, client as UdpNetworkClient);
-                    transport.ServerRecieve(recieve, remoteIpEndPoint);
+                    transport.ServerReceive(Receive, remoteIpEndPoint);
                     ClientConnectRequest disconnect = AcceptClient(client);
                     if (!disconnect.Accepted)
                     {
@@ -88,7 +88,7 @@ namespace SocketNetworking.Server
                 {
                     UdpNetworkClient client = _udpClients[remoteIpEndPoint];
                     UdpTransport transport = client.UdpTransport;
-                    transport.ServerRecieve(recieve, remoteIpEndPoint);
+                    transport.ServerReceive(Receive, remoteIpEndPoint);
                 }
             }
             Log.GlobalInfo("Shutting down!");

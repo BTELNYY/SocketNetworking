@@ -99,7 +99,7 @@ namespace SocketNetworking.Client
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
             if(packet.Item1 == null)
             {
-                Log.Warning("Transport recieved a null byte array.");
+                Log.Warning("Transport Received a null byte array.");
                 return;
             }
             Deserialize(packet.Item1, packet.Item3);
