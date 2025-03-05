@@ -33,7 +33,7 @@ namespace BasicChat.Shared
         public override void OnLocalSpawned(ObjectManagePacket packet)
         {
             base.OnLocalSpawned(packet);
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if(NetworkManager.WhereAmI == ClientLocation.Remote && packet.NewNetworkID == NetworkID)
             {
                 _name.Value = $"Client {OwnerClientID}";
             }
