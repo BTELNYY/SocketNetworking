@@ -2089,7 +2089,7 @@ namespace SocketNetworking.Client
                 @object.OnSync(this);
                 @object.NetworkSpawn(this);
             }
-            if (NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkObject)))
+            if (NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
             {
                 INetworkObject result = null;
                 NetworkObjectSpawner spawner = NetworkManager.GetBestSpawner(NetworkServer.ClientAvatar);
@@ -2108,6 +2108,7 @@ namespace SocketNetworking.Client
                     result.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
                     NetworkManager.AddNetworkObject(result);
                     result.NetworkSpawn();
+                    _avatar = (INetworkAvatar)result;
                     NetworkInvoke(nameof(GetClientAvatar), new object[] { result.NetworkID });
                 }
             }

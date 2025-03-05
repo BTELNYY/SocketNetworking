@@ -1125,12 +1125,16 @@ namespace SocketNetworking.Shared
                 List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget && x.GetType() == targetType).ToList();
                 if (netObjs.Count != 0)
                 {
+                    target = netObjs[0];
                     targets.AddRange(netObjs);
                 }
             }
-            else if (targetType.IsSubclassDeep(typeof(NetworkClient)))
+            else
             {
-                targets.Add(target);
+                if (targetType.IsSubclassDeep(typeof(NetworkClient)))
+                {
+                    targets.Add(target);
+                }
             }
             if (targets.Count == 0)
             {
@@ -1259,7 +1263,7 @@ namespace SocketNetworking.Shared
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
             MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invokables.Select(x => x.Item1).ToArray();
             MethodInfo method = GetNetworkInvokeMethod(methods, arguments, methodName);
-            if (method == null)
+            if (method == null) 
             {
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }

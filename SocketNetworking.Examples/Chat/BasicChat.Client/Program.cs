@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using BasicChat.Shared;
 using SocketNetworking;
 using SocketNetworking.Client;
+using SocketNetworking.Shared;
 
 namespace BasicChat.Client
 {
@@ -24,6 +25,7 @@ namespace BasicChat.Client
         public static void Main(string[] args)
         {
             Log.OnLog += Logger.HandleNetworkLog;
+            NetworkManager.ImportAssmebly(Utility.GetAssembly());
             reader = new Thread(HandleInput);
             Console.WriteLine("Enter your name");
             Name = Console.ReadLine();

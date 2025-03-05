@@ -1,6 +1,6 @@
 [
   {
-    "Name": "Basics",
+    "Name": "Basic",
     "Projects": [
       {
         "Path": "SocketNetworking.Examples\\Basics\\Server\\SocketNetworking.Example.Basics.Server.csproj",
