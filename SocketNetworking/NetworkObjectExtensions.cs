@@ -9,6 +9,7 @@ using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.SyncVars;
+using System.Security;
 
 namespace SocketNetworking
 {
@@ -164,9 +165,15 @@ namespace SocketNetworking
                     INetworkSyncVar var = (INetworkSyncVar)data.GetValue(obj);
                     var.Sync();
                 }
-                catch(Exception)
+                catch(SecurityException sex)
                 {
-
+                    //blah blah whatever
+                    //Since these can happen, we ignore them. yes its slower. Cope harder.
+                    //See how its unused? means whoever is reading this wont be getting any ever.
+                }
+                catch (Exception ex)
+                {
+                    Log.GlobalError($"SyncVar general error: {ex}");
                 }
             }
         }
