@@ -62,6 +62,11 @@ namespace SocketNetworking.PacketSystem.Packets
             return reader;
         }
 
+        public override string ToString()
+        {
+            return base.ToString() + $" Action: {Action}";
+        }
+
         public enum ObjectManageAction : byte
         {
             Create,

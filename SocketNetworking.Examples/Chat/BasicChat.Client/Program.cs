@@ -25,6 +25,7 @@ namespace BasicChat.Client
         public static void Main(string[] args)
         {
             Log.OnLog += Logger.HandleNetworkLog;
+            Log.Levels = Log.FULL_LOG;
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
             reader = new Thread(HandleInput);
             Console.WriteLine("Enter your name");
@@ -45,7 +46,7 @@ namespace BasicChat.Client
             ChatClient client = new ChatClient();
             client.ClientConnected += () =>
             {
-                Console.Clear();
+                //Console.Clear();
             };
             client.ClientDisconnected += () =>
             {

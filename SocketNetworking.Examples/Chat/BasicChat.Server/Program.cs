@@ -18,6 +18,7 @@ namespace BasicChat.Server
         public static void Main(string[] args)
         {
             Log.OnLog += Logger.HandleNetworkLog;
+            Log.Levels = Log.FULL_LOG;
             AppDomain.CurrentDomain.ProcessExit += (sender, evtArgs) =>
             {
                 NetworkServer.ServerInstance.StopServer();

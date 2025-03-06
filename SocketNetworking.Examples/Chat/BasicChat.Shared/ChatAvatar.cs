@@ -33,9 +33,9 @@ namespace BasicChat.Shared
         public override void OnLocalSpawned(ObjectManagePacket packet)
         {
             base.OnLocalSpawned(packet);
-            if(NetworkManager.WhereAmI == ClientLocation.Remote && packet.NewNetworkID == NetworkID)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote && _name.Value == default)
             {
-                _name.Value = $"Client {OwnerClientID}";
+                _name.RawSet($"Client {OwnerClientID}", null);
             }
         }
 
@@ -48,11 +48,6 @@ namespace BasicChat.Shared
         private void ServerGetNameChangeRequest(NetworkHandle handle, string name)
         {
             _name.Value = name;
-        }
-
-        public override void OnNetworkSpawned(NetworkClient spawner)
-        {
-            base.OnNetworkSpawned(spawner);
         }
     }
 }

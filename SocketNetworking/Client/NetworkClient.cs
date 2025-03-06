@@ -2086,8 +2086,8 @@ namespace SocketNetworking.Client
             NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
             foreach (INetworkObject @object in objects)
             {
-                @object.OnSync(this);
                 @object.NetworkSpawn(this);
+                @object.OnSync(this);
             }
             if (NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
             {
@@ -2106,7 +2106,8 @@ namespace SocketNetworking.Client
                     result.OwnerClientID = ClientID;
                     result.OwnershipMode = OwnershipMode.Client;
                     result.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
-                    NetworkManager.AddNetworkObject(result);
+                    bool bRes = NetworkManager.AddNetworkObject(result);
+                    Log.Debug(bRes.ToString());
                     result.NetworkSpawn();
                     _avatar = (INetworkAvatar)result;
                     NetworkInvoke(nameof(GetClientAvatar), new object[] { result.NetworkID });

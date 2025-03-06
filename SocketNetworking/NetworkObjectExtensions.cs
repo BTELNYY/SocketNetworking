@@ -8,6 +8,7 @@ using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking
 {
@@ -146,6 +147,29 @@ namespace SocketNetworking
             }
             obj.OnServerDestroy();
             obj.Destroy();
+        }
+
+
+        /// <summary>
+        /// Forces all <see cref="INetworkSyncVar"/>s to sync by calling <see cref="INetworkSyncVar.Sync"/>
+        /// </summary>
+        /// <param name="obj"></param>
+        public static void SyncVars(this INetworkObject obj)
+        {
+            NetworkObjectData datas = NetworkManager.GetNetworkObjectData(obj);
+            foreach(var data in datas.SyncVars)
+            {
+                try
+                {
+                    INetworkSyncVar var = (INetworkSyncVar)data.GetValue(obj);
+                    var.Sync();
+                    Log.GlobalDebug($"Sync Obj {obj.NetworkID}, Var: {var.Name}, Value: {var.ValueRaw}");
+                }
+                catch(Exception)
+                {
+
+                }
+            }
         }
 
         /// <summary>

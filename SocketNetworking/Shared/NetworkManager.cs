@@ -373,13 +373,15 @@ namespace SocketNetworking.Shared
 
         internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
         {
+            Log.Debug(packet.ToString());
+
             //Spawning
             if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && GetNetworkObjectByID(packet.NetworkIDTarget).Item1 == null)
             {
                 Type objType = Assembly.Load(packet.AssmeblyName)?.GetType(packet.ObjectClassName);
                 if (objType == null)
                 {
-                    throw new NullReferenceException("Cannot find type by name or assmebly.");
+                    throw new NullReferenceException("Cannot find type by name or assembly.");
                 }
                 NetworkObjectSpawner objSpawner = GetBestSpawner(objType);
                 INetworkObject netObj;
@@ -395,17 +397,17 @@ namespace SocketNetworking.Shared
                 {
                     throw new NullReferenceException($"Failed to spawn {objType.FullName}");
                 }
-                netObj.NetworkID = packet.NetworkIDTarget;
+                netObj.NetworkID = packet.NewNetworkID;
                 netObj.OwnerClientID = packet.OwnerID;
                 netObj.OwnershipMode = packet.OwnershipMode;
                 netObj.Active = packet.Active;
                 ObjectManagePacket creationConfirmation = new ObjectManagePacket()
                 {
-                    NetworkIDTarget = packet.NetworkIDTarget,
+                    NetworkIDTarget = netObj.NetworkID,
                     Action = ObjectManagePacket.ObjectManageAction.ConfirmCreate,
                 };
-                AddNetworkObject(netObj);
                 handle.Client.Send(creationConfirmation);
+                AddNetworkObject(netObj);
                 netObj.OnLocalSpawned(packet);
                 return;
             }
@@ -435,27 +437,11 @@ namespace SocketNetworking.Shared
                 {
                     //Unused
                     case ObjectManagePacket.ObjectManageAction.Create:
-                        throw new InvalidOperationException("Creation in modifiction loop (Internal Error)");
+                        throw new InvalidOperationException("Creation in modification loop (Internal Error)");
                     case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
-                        NetworkObjectData data = GetNetworkObjectData(@object);
-                        List<SyncVarData> datas = new List<SyncVarData>();
-                        foreach(var info in data.SyncVars)
-                        {
-                            INetworkSyncVar var = (INetworkSyncVar)info.GetValue(@object);
-                            datas.Add(var.GetData());
-                        }
-                        while (datas.Count > 0)
-                        {
-                            SyncVarUpdatePacket syncVarUpdatePacket = new SyncVarUpdatePacket();
-                            syncVarUpdatePacket.Data = datas.Take(3).ToList();
-                            for (int i = 0; i < syncVarUpdatePacket.Data.Count; i++)
-                            {
-                                datas.RemoveAt(0);
-                            }
-                            handle.Client.Send(syncVarUpdatePacket);
-                        }
                         @object.OnNetworkSpawned(handle.Client);
                         SendCreatedPulse(handle.Client, @object);
+                        @object.SyncVars();
                         break;
                     case ObjectManagePacket.ObjectManageAction.Destroy:
                         INetworkObject destructionTarget = @object;
