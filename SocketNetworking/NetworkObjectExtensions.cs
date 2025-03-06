@@ -163,7 +163,6 @@ namespace SocketNetworking
                 {
                     INetworkSyncVar var = (INetworkSyncVar)data.GetValue(obj);
                     var.Sync();
-                    Log.GlobalDebug($"Sync Obj {obj.NetworkID}, Var: {var.Name}, Value: {var.ValueRaw}");
                 }
                 catch(Exception)
                 {

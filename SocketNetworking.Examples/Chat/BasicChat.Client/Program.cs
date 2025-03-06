@@ -46,7 +46,7 @@ namespace BasicChat.Client
             ChatClient client = new ChatClient();
             client.ClientConnected += () =>
             {
-                //Console.Clear();
+                Console.Clear();
             };
             client.ClientDisconnected += () =>
             {

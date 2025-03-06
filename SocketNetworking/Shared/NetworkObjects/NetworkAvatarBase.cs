@@ -31,12 +31,6 @@ namespace SocketNetworking.Shared.NetworkObjects
             }
         }
 
-        public override void OnNetworkSpawned(NetworkClient spawner)
-        {
-            base.OnNetworkSpawned(spawner);
-            Log.GlobalDebug($"Object {NetworkID} was spawned by {spawner.ClientID}");
-        }
-
         public override void OnLocalSpawned(ObjectManagePacket packet)
         {
             base.OnLocalSpawned(packet);

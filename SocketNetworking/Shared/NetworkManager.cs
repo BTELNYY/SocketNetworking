@@ -373,8 +373,6 @@ namespace SocketNetworking.Shared
 
         internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
         {
-            Log.Debug(packet.ToString());
-
             //Spawning
             if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && GetNetworkObjectByID(packet.NetworkIDTarget).Item1 == null)
             {
