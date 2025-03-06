@@ -455,7 +455,7 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return Serialize().DataLength;
+            return Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -486,7 +486,7 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return Serialize().DataLength;
+            return Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -529,7 +529,7 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return Serialize().DataLength;
+            return Serialize().Length;
         }
 
         public ByteWriter Serialize()

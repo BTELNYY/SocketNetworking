@@ -14,6 +14,8 @@ namespace SocketNetworking.Shared.NetworkObjects
     {
         public virtual int OwnerClientID { get; set; }
 
+        public NetworkClient OwnerClient => this.GetOwner();
+
         public virtual OwnershipMode OwnershipMode { get; set; }
 
         public virtual bool AllowPublicModification => false;

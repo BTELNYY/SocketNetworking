@@ -76,6 +76,7 @@
     <Compile Include="Misc\ClientHandler.cs" />
     <Compile Include="Misc\ObjectPool.cs" />
     <Compile Include="NetworkObjectExtensions.cs" />
+    <Compile Include="PacketSystem\Packets\AuthenticationPacket.cs" />
     <Compile Include="PacketSystem\Packets\ClientToClientPacket.cs" />
     <Compile Include="PacketSystem\Packets\KeepAlivePacket.cs" />
     <Compile Include="PacketSystem\Packets\ObjectManagePacket.cs" />

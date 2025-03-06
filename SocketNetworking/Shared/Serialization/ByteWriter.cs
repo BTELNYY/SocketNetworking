@@ -19,7 +19,7 @@ namespace SocketNetworking.Shared.Serialization
         /// <summary>
         /// The current length of the buffer.
         /// </summary>
-        public int DataLength
+        public int Length
         {
             get
             {

@@ -31,6 +31,7 @@ namespace SocketNetworking.Shared
         SSLUpgrade,
         Stream,
         ClientToClient,
+        Authentication,
         Custom,
     }
 

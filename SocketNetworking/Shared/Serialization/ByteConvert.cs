@@ -495,7 +495,7 @@ namespace SocketNetworking.Shared.Serialization
 
         public int GetLength()
         {
-            return Serialize().DataLength;
+            return Serialize().Length;
         }
 
         public ByteWriter Serialize()

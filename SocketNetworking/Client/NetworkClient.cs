@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Security.Policy;
 using System.Threading;
 using SocketNetworking.Attributes;
 using SocketNetworking.Misc;
@@ -11,6 +10,7 @@ using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Authentication;
 using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
@@ -74,6 +74,11 @@ namespace SocketNetworking.Client
         {
             LatencyChanged?.Invoke(value);
         }
+
+        /// <summary>
+        /// Called when <see cref="Authenticated"/> changes states.
+        /// </summary>
+        public event Action AuthenticationStateChanged;
 
         /// <summary>
         /// Called on both Remote and Local clients when the connection has succeeded and the Socket is ready to use.
@@ -292,6 +297,20 @@ namespace SocketNetworking.Client
             }
         }
 
+        protected AuthenticationProvider _provider;
+
+        public AuthenticationProvider AuthenticationProvider
+        {
+            get
+            {
+                return _provider;
+            }
+            set
+            {
+                _provider = value;
+            }
+        }
+
         /// <summary>
         /// Returns the Address to which the socket is connected too, In the format IP:Port
         /// </summary>
@@ -340,6 +359,7 @@ namespace SocketNetworking.Client
             {
                 NetworkInvoke(nameof(ClientGetAuthenticatedState), new object[] { value });
                 _authenticated = value;
+                AuthenticationStateChanged?.Invoke();
             }
         }
 
@@ -347,7 +367,8 @@ namespace SocketNetworking.Client
         private void ClientGetAuthenticatedState(NetworkHandle handle, bool state)
         {
             Log.Info("Authentication has been successful.");
-            _authenticated = true;
+            _authenticated = state;
+            AuthenticationStateChanged?.Invoke();
         }
 
 
@@ -1310,7 +1331,7 @@ namespace SocketNetworking.Client
             //Log.Debug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
             writer.WriteInt(packetFull.Length);
             writer.Write(packetFull);
-            int written = writer.DataLength;
+            int written = writer.Length;
             if(written != (packetFull.Length + 4))
             {
                 Log.Error($"Trying to send corrupted size! {packet.ToString()}");
@@ -1485,6 +1506,31 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.Authentication:
+                    AuthenticationPacket authPacket = new AuthenticationPacket();
+                    authPacket.Deserialize(data);
+                    if (AuthenticationProvider == null)
+                    {
+                        Log.Warning("Got an auth request but not AuthenticationProvider is specified.");
+                        return;
+                    }
+                    NetworkHandle handle = new NetworkHandle(this);
+                    if (authPacket.IsResult)
+                    {
+                        AuthenticationProvider.HandleAuthResult(handle, authPacket);
+                        Authenticated = authPacket.Result.Approved;
+                    }
+                    else
+                    {
+                        var result = AuthenticationProvider.Authenticate(handle, authPacket);
+                        AuthenticationPacket newPacket = new AuthenticationPacket();
+                        newPacket.IsResult = true;
+                        newPacket.Result = result.Item1;
+                        newPacket.AuthData = result.Item2;
+                        Send(newPacket);
+                        Authenticated = newPacket.Result.Approved;
+                    }
+                    break;
                 case PacketType.ClientToClient:
                     ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
                     clientToClientPacket.Deserialize(data);
@@ -1703,6 +1749,11 @@ namespace SocketNetworking.Client
                                 State = EncryptionState.Encrypted
                             };
                             Send(updateEncryptionStateFinal); 
+                            if(AuthenticationProvider != null && !AuthenticationProvider.ClientInitiate)
+                            {
+                                var authpack = AuthenticationProvider.BeginAuthentication();
+                                Send(authpack);
+                            }
                             Log.Success("Encryption Successful.");
                             if (NetworkServer.Config.DefaultReady == true)
                             {
@@ -1728,6 +1779,29 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.Authentication:
+                    AuthenticationPacket authPacket = new AuthenticationPacket();
+                    authPacket.Deserialize(data);
+                    if(AuthenticationProvider == null)
+                    {
+                        Log.Warning("Got an auth request but not AuthenticationProvider is specified.");
+                        return;
+                    }
+                    NetworkHandle handle = new NetworkHandle(this);
+                    if (authPacket.IsResult)
+                    {
+                        AuthenticationProvider.HandleAuthResult(handle, authPacket);
+                    }
+                    else
+                    {
+                        var result = AuthenticationProvider.Authenticate(handle, authPacket);
+                        AuthenticationPacket newPacket = new AuthenticationPacket();
+                        newPacket.IsResult = true;
+                        newPacket.Result = result.Item1;
+                        newPacket.AuthData = result.Item2;
+                        Send(newPacket);
+                    }
+                    break;
                 case PacketType.ClientToClient:
                     ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
                     clientToClientPacket.Deserialize(data);
@@ -1962,6 +2036,11 @@ namespace SocketNetworking.Client
                             if(encryptionPacket.State == EncryptionState.Encrypted)
                             {
                                 Log.Success("Encryption Successful.");
+                            }
+                            if(AuthenticationProvider != null && AuthenticationProvider.ClientInitiate)
+                            {
+                                var authpack = AuthenticationProvider.BeginAuthentication();
+                                Send(authpack);
                             }
                             break;
                         default:

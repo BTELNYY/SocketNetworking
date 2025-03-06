@@ -1,0 +1,75 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using SocketNetworking.Client;
+using SocketNetworking.PacketSystem;
+using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.Authentication;
+using SocketNetworking.Shared.Serialization;
+
+namespace BasicChat.Shared
+{
+    public class ChatAuthProvider : AuthenticationProvider
+    {
+        public ChatAuthProvider(ChatClient client) : base(client)
+        {
+        }
+
+        public override (AuthenticationResult, byte[]) Authenticate(NetworkHandle handle, AuthenticationPacket packet)
+        {
+            ChatClient client = (ChatClient)Client;
+            ChatAuthData data;
+            ByteReader reader = new ByteReader(packet.AuthData);
+            data = reader.ReadPacketSerialized<ChatAuthData>();
+            client.RequestedName = data.Name;
+            return (new AuthenticationResult()
+            {
+                Approved = true,
+                Message = "",
+            }, new byte[] { });
+        }
+
+        public override AuthenticationPacket BeginAuthentication()
+        {
+            AuthenticationPacket packet = new AuthenticationPacket();
+            ChatAuthData data = new ChatAuthData();
+            data.Name = ((ChatClient)Client).RequestedName;
+            ByteWriter writer = new ByteWriter();
+            writer.WritePacketSerialized<ChatAuthData>(data);
+            packet.AuthData = writer.Data;
+            return packet;
+        }
+
+        public override void HandleAuthResult(NetworkHandle handle, AuthenticationPacket packet)
+        {
+            
+        }
+    }
+
+    public struct ChatAuthData : IPacketSerializable
+    {
+        public string Name;
+
+        public ByteReader Deserialize(byte[] data)
+        {
+            ByteReader reader = new ByteReader(data);
+            Name = reader.ReadString();
+            return reader;
+        }
+
+        public int GetLength()
+        {
+            return Serialize().Length;
+        }
+
+        public ByteWriter Serialize()
+        {
+            ByteWriter writer = new ByteWriter();
+            writer.WriteString(Name);
+            return writer;
+        }
+    }
+}

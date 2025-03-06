@@ -47,6 +47,11 @@ namespace BasicChat.Shared
         [NetworkInvokable(NetworkDirection.Client)]
         private void ServerGetNameChangeRequest(NetworkHandle handle, string name)
         {
+            if(name == "")
+            {
+                _name.Value = handle.Client.ConnectedHostname;
+                return;
+            }
             _name.Value = name;
         }
     }

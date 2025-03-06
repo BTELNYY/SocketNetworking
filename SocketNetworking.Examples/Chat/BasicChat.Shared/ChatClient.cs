@@ -12,6 +12,28 @@ namespace BasicChat.Shared
 {
     public class ChatClient : TcpNetworkClient
     {
+        public string RequestedName;
+
+        public ChatClient()
+        {
+            AuthenticationProvider = new ChatAuthProvider(this);
+            AuthenticationStateChanged += () => 
+            {
+                if(NetworkManager.WhereAmI == ClientLocation.Remote)
+                {
+                    ServerSendMessage(new Message()
+                    {
+                        Target = 0,
+                        Sender = 0,
+                        Color = ConsoleColor.Magenta,
+                        Content = Config.MOTD,
+                    });
+                }
+            };
+        }
+
+        public event Action<NetworkHandle, Message> MessageReceived;
+
         public void ClientSendMessage(string message)
         {
             Message msg = new Message();
@@ -19,6 +41,11 @@ namespace BasicChat.Shared
             msg.Sender = ClientID;
             msg.Target = 0;
             NetworkInvoke(nameof(ServerGetMessage), new object[] { msg });
+        }
+
+        public void ServerSendMessage(Message message)
+        {
+            NetworkInvoke(nameof(ClientGetMessage), new object[] { message });
         }
 
         [NetworkInvokable(NetworkDirection.Client)]
@@ -29,7 +56,13 @@ namespace BasicChat.Shared
                 Log.Warning("Tried to send message as not myself!");
                 return;
             }
+            if(string.IsNullOrWhiteSpace(message.Content))
+            {
+                return;
+            }
             Log.Info($"Message: \"{message.Content}\", Target: {message.Target}, Source Name: {((ChatAvatar)Avatar).Name}");
+            message.Color = ConsoleColor.White;
+            MessageReceived?.Invoke(handle, message);
             if(message.Target == 0)
             {
                 NetworkServer.NetworkInvokeOnAll(this, nameof(ClientGetMessage), new object[] { message });
@@ -62,7 +95,7 @@ namespace BasicChat.Shared
             {
                 return;
             }
-            Console.WriteLine($"{avatar.Name}: {message.Content}");
+            MessageReceived?.Invoke(handle, message);
         }
     }
 
@@ -74,18 +107,21 @@ namespace BasicChat.Shared
 
         public int Sender;
 
+        public ConsoleColor Color;
+
         public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             Content = reader.ReadString();
             Target = reader.ReadInt();
             Sender = reader.ReadInt();
+            Color = (ConsoleColor)reader.ReadByte();
             return reader;
         }
 
         public int GetLength()
         {
-            return Serialize().DataLength;
+            return Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -94,6 +130,7 @@ namespace BasicChat.Shared
             writer.WriteString(Content);
             writer.WriteInt(Target);
             writer.WriteInt(Sender);
+            writer.WriteByte((byte)Color);
             return writer;
         }
     }

@@ -131,7 +131,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
                 writer.Write(finalBytes);
             }
             ByteWriter finalWriter = new ByteWriter();
-            finalWriter.WriteInt(writer.DataLength);
+            finalWriter.WriteInt(writer.Length);
             finalWriter.Write(writer.Data);
             return finalWriter;
         }

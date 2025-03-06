@@ -54,7 +54,7 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public int GetLength()
         {
-            return Serialize().DataLength;
+            return Serialize().Length;
         }
 
         public ByteWriter Serialize()
