@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using SocketNetworking.Shared.Events;
 
 namespace SocketNetworking.Server
 {
@@ -79,28 +80,26 @@ namespace SocketNetworking.Server
                     client.InitRemoteClient(counter, tcpTransport);
                     client.TcpNoDelay = true;
                     AddClient(client, counter);
-                    bool disconnect = !AcceptClient(client);
-                    if (disconnect)
+                    ClientConnectRequest disconnect = AcceptClient(client);
+                    if (!disconnect.Accepted)
                     {
-                        client.Disconnect();
+                        client.Disconnect(disconnect.Message);
                         socket?.Close();
+                        return;
                     }
-                    else
+                    CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                     {
-                        CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
+                        if (x == null)
                         {
-                            if (x == null)
-                            {
-                                return;
-                            }
-                            if (x.CurrentConnectionState != ConnectionState.Connected)
-                            {
-                                x.Disconnect("Failed to handshake in time.");
-                            }
-                        }, client, Config.HandshakeTime);
-                        callback.Start();
-                        InvokeClientConnected(counter);
-                    }
+                            return;
+                        }
+                        if (x.CurrentConnectionState != ConnectionState.Connected)
+                        {
+                            x.Disconnect("Failed to handshake in time.");
+                        }
+                    }, client, Config.HandshakeTime);
+                    callback.Start();
+                    InvokeClientConnected(client);
                 });
                 counter++;
             }

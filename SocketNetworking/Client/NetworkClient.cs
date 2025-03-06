@@ -66,6 +66,8 @@ namespace SocketNetworking.Client
 
         #region Per Client (Non-Static) Events
 
+        public event Action<INetworkAvatar> AvatarChanged;
+
         public event Action<long> LatencyChanged;
 
         protected void InvokeLatencyChanged(long value)
@@ -219,10 +221,20 @@ namespace SocketNetworking.Client
         /// </summary>
         public Log Log { get; }
 
+        INetworkAvatar _avatar;
+
         /// <summary>
         /// The Avatar of the <see cref="NetworkClient"/>. This can be specified in 
         /// </summary>
-        public INetworkObject Avatar { get; private set; }
+        public INetworkAvatar Avatar 
+        { 
+            get => _avatar;
+            private set
+            {
+                _avatar = value;
+                AvatarChanged?.Invoke(value);
+            }
+        }
 
         /// <summary>
         /// Only has instances on the local client. Use <see cref="NetworkServer.ConnectedClients"/> for server side clients.
@@ -614,7 +626,7 @@ namespace SocketNetworking.Client
         private bool _noPacketHandling = false;
 
         /// <summary>
-        /// When true, no <see cref="Packet"/>s can be sent or recieved by the <see cref="NetworkClient"/>. This is usually used with the <see cref="SupportsSSL"/> property to ensure proper SSL communication.
+        /// When true, no <see cref="Packet"/>s can be sent or Received by the <see cref="NetworkClient"/>. This is usually used with the <see cref="SupportsSSL"/> property to ensure proper SSL communication.
         /// </summary>
         public bool NoPacketHandling
         {
@@ -784,15 +796,12 @@ namespace SocketNetworking.Client
         /// A <see cref="string"/> of the hostname.
         /// </param>
         /// <param name="port">
-        /// An <see cref="int"/> representation of the port
-        /// </param>
-        /// <param name="password">
-        /// A <see cref="string"/> representing the password. Note that it will be hashed when sending to the server.
+        /// An <see cref="ushort"/> representation of the port
         /// </param>
         /// <returns>
         /// A <see cref="bool"/> indicating connection success. Note this only returns the status of the socket connection, not of the full connection action. E.g. you can still fail to connect if the server refuses to accept the client.
         /// </returns>
-        public bool Connect(string hostname, int port, string password)
+        public bool Connect(string hostname, ushort port)
         {
             if(CurrentClientLocation == ClientLocation.Remote)
             {
@@ -846,7 +855,6 @@ namespace SocketNetworking.Client
                 Log.Error($"Failed to connect: \n {ex}");
                 return false;
             }
-            _clientPassword = password;
             StartClient();
             return true;
         }
@@ -893,14 +901,13 @@ namespace SocketNetworking.Client
         /// </summary>
         public virtual void StopClient()
         {
-            if(!_shuttingDown)
+            if(_shuttingDown)
             {
                 return;
             }
             Log.Info("Closing Client!");
             _shuttingDown = true;
             NoPacketHandling = true;
-            NetworkManager.SendDisconnectedPulse(this);
             _connectionState = ConnectionState.Disconnected;
             Transport?.Close();
             if (CurrentClientLocation == ClientLocation.Remote)
@@ -924,6 +931,7 @@ namespace SocketNetworking.Client
 
         protected virtual void OnLocalStopClient()
         {
+            NetworkManager.SendDisconnectedPulse(this);
             _packetReaderThread?.Abort();
             _packetSenderThread?.Abort();
             _packetReaderThread = null;
@@ -1163,7 +1171,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if(NoPacketSending)
+            if (NoPacketSending)
             {
                 return;
             }
@@ -1325,7 +1333,7 @@ namespace SocketNetworking.Client
 
         void PacketSenderThreadMethod()
         {
-            while (true)
+            while (!_shuttingDown)
             {
                 RawWriter();
             }
@@ -1355,26 +1363,18 @@ namespace SocketNetworking.Client
         /// </summary>
         protected virtual void PacketReaderThreadMethod()
         {
-            Log.Info($"Client thread started, ID {ClientID}");
-            while (true)
+            while (!_shuttingDown)
             {
-                if (_shuttingDown)
-                {
-                    Log.Info("Shutting down loop");
-                    break;
-                }
                 RawReader();
             }
-            Log.Info("Shutting down client, Closing socket.");
-            Transport.Close();
         }
 
         /// <summary>
-        /// Method which reads actual data and proccesses it from the Network I/O, this is a blocking, single read method, it will not attempt to keep reading if there is not data on the <see cref="Transport"/>.
+        /// Method which reads actual data and processes it from the Network I/O, this is a blocking, single read method, it will not attempt to keep reading if there is not data on the <see cref="Transport"/>.
         /// </summary>
         protected virtual void RawReader()
         {
-            if(NoPacketHandling)
+            if (NoPacketHandling)
             {
                 return;
             }
@@ -1391,7 +1391,7 @@ namespace SocketNetworking.Client
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
             if (packet.Item1 == null)
             {
-                Log.Warning("Transport recieved a null byte array.");
+                Log.Warning("Transport received a null byte array.");
                 return;
             }
             try
@@ -1485,6 +1485,21 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.ClientToClient:
+                    ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
+                    clientToClientPacket.Deserialize(data);
+                    INetworkObject obj = NetworkManager.GetNetworkObjectByID(clientToClientPacket.NetworkIDTarget).Item1;
+                    if(obj == null)
+                    {
+                        return;
+                    }
+                    NetworkClient owner = obj.GetOwner();
+                    if(owner == null)
+                    {
+                        return;
+                    }
+                    owner.Send(clientToClientPacket);
+                    break;
                 case PacketType.KeepAlive:
                     KeepAlivePacket keepAlivePacket = new KeepAlivePacket();
                     keepAlivePacket.Deserialize(data);
@@ -1662,7 +1677,7 @@ namespace SocketNetworking.Client
                             EncryptionManager.OthersPublicKey = encryptionPacket.PublicKey;
                             EncryptionPacket gotYourPublicKey = new EncryptionPacket
                             {
-                                EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve
+                                EncryptionFunction = EncryptionFunction.AsymmetricalKeyReceive
                             };
                             Send(gotYourPublicKey);
                             EncryptionState = EncryptionState.AsymmetricalReady;
@@ -1676,10 +1691,10 @@ namespace SocketNetworking.Client
                         case EncryptionFunction.SymmetricalKeySend:
                             Disconnect("Illegal encryption handshake: Cannot send own symmetry key, wait for server.");
                             break;
-                        case EncryptionFunction.AsymmetricalKeyRecieve:
+                        case EncryptionFunction.AsymmetricalKeyReceive:
                             //Log.Info($"Client Got Asymmetrical Encryption Key, ID: {ClientID}");
                             break;
-                        case EncryptionFunction.SymetricalKeyRecieve:
+                        case EncryptionFunction.SymetricalKeyReceive:
                             EncryptionState = EncryptionState.SymmetricalReady;
                             //Log.Info($"Client Got Symmetrical Encryption Key, ID: {ClientID}");
                             EncryptionPacket updateEncryptionStateFinal = new EncryptionPacket
@@ -1713,6 +1728,19 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.ClientToClient:
+                    ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
+                    clientToClientPacket.Deserialize(data);
+                    if(Avatar == null)
+                    {
+                        return;
+                    }
+                    if(Avatar.NetworkID != clientToClientPacket.NetworkIDTarget)
+                    {
+                        return;
+                    }
+                    Avatar.ReceivePrivate(clientToClientPacket);
+                    break;
                 case PacketType.KeepAlive:
                     KeepAlivePacket keepAlivePacket = new KeepAlivePacket();
                     keepAlivePacket.Deserialize(data);
@@ -1892,7 +1920,7 @@ namespace SocketNetworking.Client
                 case PacketType.Encryption:
                     EncryptionPacket encryptionPacket = new EncryptionPacket();
                     encryptionPacket.Deserialize(data);
-                    EncryptionPacket encryptionRecieve = new EncryptionPacket();
+                    EncryptionPacket encryptionReceive = new EncryptionPacket();
                     //Log.Info($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
                     switch (encryptionPacket.EncryptionFunction)
                     {
@@ -1902,30 +1930,30 @@ namespace SocketNetworking.Client
                             EncryptionManager.OthersPublicKey = encryptionPacket.PublicKey;
                             EncryptionPacket gotYourPublicKey = new EncryptionPacket
                             {
-                                EncryptionFunction = EncryptionFunction.AsymmetricalKeyRecieve
+                                EncryptionFunction = EncryptionFunction.AsymmetricalKeyReceive
                             };
                             //Log.Info("Got Servers Public key, Sending mine.");
                             Send(gotYourPublicKey);
                             EncryptionState = EncryptionState.AsymmetricalReady;
-                            encryptionRecieve.PublicKey = EncryptionManager.MyPublicKey;
-                            encryptionRecieve.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
-                            Send(encryptionRecieve);
+                            encryptionReceive.PublicKey = EncryptionManager.MyPublicKey;
+                            encryptionReceive.EncryptionFunction = EncryptionFunction.AsymmetricalKeySend;
+                            Send(encryptionReceive);
                             break;
                         case EncryptionFunction.SymmetricalKeySend:
                             //Log.Info($"Got servers symetrical key.");
                             EncryptionManager.SharedAesKey = new Tuple<byte[], byte[]>(encryptionPacket.SymKey, encryptionPacket.SymIV);
                             EncryptionPacket gotYourSymmetricalKey = new EncryptionPacket
                             {
-                                EncryptionFunction = EncryptionFunction.SymetricalKeyRecieve
+                                EncryptionFunction = EncryptionFunction.SymetricalKeyReceive
                             };
                             Send(gotYourSymmetricalKey);
                             EncryptionState = EncryptionState.SymmetricalReady;
                             break;
-                        case EncryptionFunction.AsymmetricalKeyRecieve:
+                        case EncryptionFunction.AsymmetricalKeyReceive:
                             EncryptionState = EncryptionState.AsymmetricalReady;
                             //Log.Info("Server got my Asymmetrical key.");
                             break;
-                        case EncryptionFunction.SymetricalKeyRecieve:
+                        case EncryptionFunction.SymetricalKeyReceive:
                             Log.Error("Server should not be recieving my symmetrical key!");
                             break;
                         case EncryptionFunction.UpdateEncryptionStatus:
@@ -2058,10 +2086,10 @@ namespace SocketNetworking.Client
             NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
             foreach (INetworkObject @object in objects)
             {
-                @object.OnSync(this);
                 @object.NetworkSpawn(this);
+                @object.OnSync(this);
             }
-            if (NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkObject)))
+            if (NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
             {
                 INetworkObject result = null;
                 NetworkObjectSpawner spawner = NetworkManager.GetBestSpawner(NetworkServer.ClientAvatar);
@@ -2078,8 +2106,10 @@ namespace SocketNetworking.Client
                     result.OwnerClientID = ClientID;
                     result.OwnershipMode = OwnershipMode.Client;
                     result.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
-                    NetworkManager.AddNetworkObject(result);
+                    bool bRes = NetworkManager.AddNetworkObject(result);
+                    Log.Debug(bRes.ToString());
                     result.NetworkSpawn();
+                    _avatar = (INetworkAvatar)result;
                     NetworkInvoke(nameof(GetClientAvatar), new object[] { result.NetworkID });
                 }
             }
@@ -2101,7 +2131,7 @@ namespace SocketNetworking.Client
                 Log.Warning("Got a client avatar, can't find the ID? ID: " + id);
                 return;
             }
-            Avatar = result.Item1;
+            Avatar = (INetworkAvatar)result.Item1;
         }
 
         #endregion

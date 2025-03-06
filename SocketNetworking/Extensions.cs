@@ -174,6 +174,17 @@ namespace SocketNetworking
                 return algorithm.ComputeHash(Encoding.UTF8.GetBytes(inputString));
         }
 
+        public static FieldInfo[] GetAllFields(this Type type, BindingFlags bindingAttr)
+        {
+            List<FieldInfo> fields = new List<FieldInfo>();
+            while(type != typeof(object))
+            {
+                fields.AddRange(type.GetFields(bindingAttr));
+                type = type.BaseType;
+            }
+            return fields.ToArray();
+        }
+
         public static byte[] Compress(this byte[] bytes)
         {
             using (var memoryStream = new MemoryStream())

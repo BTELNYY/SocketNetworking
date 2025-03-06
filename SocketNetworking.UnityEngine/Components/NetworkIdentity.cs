@@ -49,9 +49,9 @@ namespace SocketNetworking.UnityEngine.Components
 
         public int PrefabID; 
 
-        public override ByteReader RecieveExtraData(byte[] extraData)
+        public override ByteReader ReceiveExtraData(byte[] extraData)
         {
-            ByteReader reader = base.RecieveExtraData(extraData);
+            ByteReader reader = base.ReceiveExtraData(extraData);
             ObjectData = reader.ReadPacketSerialized<UnityNetworkBehavior>();
             return reader;
         }

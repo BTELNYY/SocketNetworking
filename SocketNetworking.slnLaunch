@@ -1,0 +1,28 @@
+[
+  {
+    "Name": "Basic",
+    "Projects": [
+      {
+        "Path": "SocketNetworking.Examples\\Basics\\Server\\SocketNetworking.Example.Basics.Server.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "SocketNetworking.Examples\\Basics\\Client\\SocketNetworking.Example.Basics.Client.csproj",
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "Basic Chat",
+    "Projects": [
+      {
+        "Path": "SocketNetworking.Examples\\Chat\\BasicChat.Server\\BasicChat.Server.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "SocketNetworking.Examples\\Chat\\BasicChat.Client\\BasicChat.Client.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

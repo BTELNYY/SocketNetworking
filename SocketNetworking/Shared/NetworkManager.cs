@@ -373,13 +373,15 @@ namespace SocketNetworking.Shared
 
         internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
         {
+            Log.Debug(packet.ToString());
+
             //Spawning
             if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && GetNetworkObjectByID(packet.NetworkIDTarget).Item1 == null)
             {
                 Type objType = Assembly.Load(packet.AssmeblyName)?.GetType(packet.ObjectClassName);
                 if (objType == null)
                 {
-                    throw new NullReferenceException("Cannot find type by name or assmebly.");
+                    throw new NullReferenceException("Cannot find type by name or assembly.");
                 }
                 NetworkObjectSpawner objSpawner = GetBestSpawner(objType);
                 INetworkObject netObj;
@@ -395,17 +397,17 @@ namespace SocketNetworking.Shared
                 {
                     throw new NullReferenceException($"Failed to spawn {objType.FullName}");
                 }
-                netObj.NetworkID = packet.NetworkIDTarget;
+                netObj.NetworkID = packet.NewNetworkID;
                 netObj.OwnerClientID = packet.OwnerID;
                 netObj.OwnershipMode = packet.OwnershipMode;
                 netObj.Active = packet.Active;
                 ObjectManagePacket creationConfirmation = new ObjectManagePacket()
                 {
-                    NetworkIDTarget = packet.NetworkIDTarget,
+                    NetworkIDTarget = netObj.NetworkID,
                     Action = ObjectManagePacket.ObjectManageAction.ConfirmCreate,
                 };
-                AddNetworkObject(netObj);
                 handle.Client.Send(creationConfirmation);
+                AddNetworkObject(netObj);
                 netObj.OnLocalSpawned(packet);
                 return;
             }
@@ -435,27 +437,11 @@ namespace SocketNetworking.Shared
                 {
                     //Unused
                     case ObjectManagePacket.ObjectManageAction.Create:
-                        throw new InvalidOperationException("Creation in modifiction loop (Internal Error)");
+                        throw new InvalidOperationException("Creation in modification loop (Internal Error)");
                     case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
-                        NetworkObjectData data = GetNetworkObjectData(@object);
-                        List<SyncVarData> datas = new List<SyncVarData>();
-                        foreach(var info in data.SyncVars)
-                        {
-                            INetworkSyncVar var = (INetworkSyncVar)info.GetValue(@object);
-                            datas.Add(var.GetData());
-                        }
-                        while (datas.Count > 0)
-                        {
-                            SyncVarUpdatePacket syncVarUpdatePacket = new SyncVarUpdatePacket();
-                            syncVarUpdatePacket.Data = datas.Take(3).ToList();
-                            for (int i = 0; i < syncVarUpdatePacket.Data.Count; i++)
-                            {
-                                datas.RemoveAt(0);
-                            }
-                            handle.Client.Send(syncVarUpdatePacket);
-                        }
                         @object.OnNetworkSpawned(handle.Client);
                         SendCreatedPulse(handle.Client, @object);
+                        @object.SyncVars();
                         break;
                     case ObjectManagePacket.ObjectManageAction.Destroy:
                         INetworkObject destructionTarget = @object;
@@ -788,7 +774,7 @@ namespace SocketNetworking.Shared
                 }
             }
             List<FieldInfo> syncVars = new List<FieldInfo>();
-            FieldInfo[] fields = t.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            FieldInfo[] fields = t.GetAllFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             foreach (FieldInfo field in fields)
             {
                 if (!field.FieldType.GetInterfaces().Contains(typeof(INetworkSyncVar)))
@@ -1007,6 +993,9 @@ namespace SocketNetworking.Shared
                             publicReplicated.Add(data);
                         }
                     }
+                }
+                foreach (INetworkObject obj in NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget))
+                {
                     obj.OnSyncVarsChanged();
                 }
             }
@@ -1093,7 +1082,7 @@ namespace SocketNetworking.Shared
             return null;
         }
 
-        internal static void NetworkInvoke(NetworkInvokationResultPacket packet, NetworkClient reciever)
+        internal static void NetworkInvoke(NetworkInvokationResultPacket packet, NetworkClient Receiver)
         {
             if (packet.IgnoreResult)
             {
@@ -1107,7 +1096,7 @@ namespace SocketNetworking.Shared
             OnNetworkInvokationResult?.Invoke(packet);
         }
 
-        internal static object NetworkInvoke(NetworkInvokationPacket packet, NetworkClient reciever)
+        internal static object NetworkInvoke(NetworkInvokationPacket packet, NetworkClient Receiver)
         {
             Assembly assmebly = Assembly.Load(packet.TargetTypeAssmebly);
             Type targetType = assmebly.GetType(packet.TargetType);
@@ -1115,19 +1104,23 @@ namespace SocketNetworking.Shared
             {
                 throw new NetworkInvocationException($"Cannot find type: '{packet.TargetType}'.", new NullReferenceException());
             }
-            object target = reciever;
+            object target = Receiver;
             List<object> targets = new List<object>();
             if (packet.NetworkIDTarget != 0)
             {
                 List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget && x.GetType() == targetType).ToList();
                 if (netObjs.Count != 0)
                 {
+                    target = netObjs[0];
                     targets.AddRange(netObjs);
                 }
             }
-            else if (targetType.IsSubclassDeep(typeof(NetworkClient)))
+            else
             {
-                targets.Add(target);
+                if (targetType.IsSubclassDeep(typeof(NetworkClient)))
+                {
+                    targets.Add(target);
+                }
             }
             if (targets.Count == 0)
             {
@@ -1145,27 +1138,27 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvokable invokable = method.GetCustomAttribute<NetworkInvokable>();
-            if (invokable.Direction == NetworkDirection.Server && reciever.CurrentClientLocation == ClientLocation.Remote)
+            if (invokable.Direction == NetworkDirection.Server && Receiver.CurrentClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
-            if (invokable.Direction == NetworkDirection.Client && reciever.CurrentClientLocation == ClientLocation.Local)
+            if (invokable.Direction == NetworkDirection.Client && Receiver.CurrentClientLocation == ClientLocation.Local)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
             }
-            if (invokable.SecureMode && reciever.CurrentClientLocation != ClientLocation.Local)
+            if (invokable.SecureMode && Receiver.CurrentClientLocation != ClientLocation.Local)
             {
-                if (target is NetworkClient client && client.ClientID != reciever.ClientID)
+                if (target is NetworkClient client && client.ClientID != Receiver.ClientID)
                 {
                     throw new SecurityException($"Attempted to invoke network method which the client does not own. {method.Name}");
                 }
                 if (target is INetworkObject owned)
                 {
-                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != reciever.ClientID)
+                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != Receiver.ClientID)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
-                    else if (owned.OwnershipMode == OwnershipMode.Server && reciever.CurrentClientLocation != ClientLocation.Local)
+                    else if (owned.OwnershipMode == OwnershipMode.Server && Receiver.CurrentClientLocation != ClientLocation.Local)
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
@@ -1185,11 +1178,11 @@ namespace SocketNetworking.Shared
             List<object> args = new List<object>();
             if (method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
             {
-                args.Add(reciever);
+                args.Add(Receiver);
             }
             if (method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkHandle)))
             {
-                NetworkHandle handle = new NetworkHandle(reciever, packet);
+                NetworkHandle handle = new NetworkHandle(Receiver, packet);
                 args.Add(handle);
             }
             foreach (SerializedData data in packet.Arguments)
@@ -1217,7 +1210,7 @@ namespace SocketNetworking.Shared
             resultPacket.CallbackID = packet.CallbackID;
             resultPacket.Result = ByteConvert.Serialize(result);
             resultPacket.IgnoreResult = packet.IgnoreResult;
-            reciever.Send(resultPacket);
+            Receiver.Send(resultPacket);
             return result;
         }
 
@@ -1256,7 +1249,7 @@ namespace SocketNetworking.Shared
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
             MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invokables.Select(x => x.Item1).ToArray();
             MethodInfo method = GetNetworkInvokeMethod(methods, arguments, methodName);
-            if (method == null)
+            if (method == null) 
             {
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }

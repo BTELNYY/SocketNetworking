@@ -8,24 +8,24 @@ using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
-    public sealed class KeepAlivePacket : Packet
+    public sealed class ClientToClientPacket : TargetedPacket
     {
-        public override PacketType Type => PacketType.KeepAlive;
+        public override PacketType Type => PacketType.ClientToClient;
 
-        public long ReceivedTime { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        public byte[] Data { get; set; }
 
         public override ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = base.Deserialize(data);
-            ReceivedTime = reader.ReadLong();
+            Data = reader.ReadByteArray();
             return reader;
         }
 
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
-            writer.WriteLong(ReceivedTime);
+            writer.WriteByteArray(Data);
             return writer;
-        }  
+        }
     }
 }

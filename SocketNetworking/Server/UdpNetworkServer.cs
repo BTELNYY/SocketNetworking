@@ -10,6 +10,8 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.Events;
 
 namespace SocketNetworking.Server
 {
@@ -48,7 +50,7 @@ namespace SocketNetworking.Server
                 {
                     continue;
                 }
-                byte[] recieve = udpClient.Receive(ref listener);
+                byte[] Receive = udpClient.Receive(ref listener);
                 IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
                 if (!_udpClients.ContainsKey(remoteIpEndPoint))
                 {
@@ -60,12 +62,12 @@ namespace SocketNetworking.Server
                     client.InitRemoteClient(counter, transport);
                     AddClient(client, counter);
                     _udpClients.Add(remoteIpEndPoint, client as UdpNetworkClient);
-                    transport.ServerRecieve(recieve, remoteIpEndPoint);
-                    bool disconnect = !AcceptClient(client);
-                    if (disconnect)
+                    transport.ServerReceive(Receive, remoteIpEndPoint);
+                    ClientConnectRequest disconnect = AcceptClient(client);
+                    if (!disconnect.Accepted)
                     {
-                        client.Disconnect();
-                        continue;
+                        client.Disconnect(disconnect.Message);
+                        return;
                     }
                     CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                     {
@@ -79,14 +81,14 @@ namespace SocketNetworking.Server
                         }
                     }, client, Config.HandshakeTime);
                     callback.Start();
-                    InvokeClientConnected(counter);
+                    InvokeClientConnected(client);
                     counter++;
                 }
                 else
                 {
                     UdpNetworkClient client = _udpClients[remoteIpEndPoint];
                     UdpTransport transport = client.UdpTransport;
-                    transport.ServerRecieve(recieve, remoteIpEndPoint);
+                    transport.ServerReceive(Receive, remoteIpEndPoint);
                 }
             }
             Log.GlobalInfo("Shutting down!");

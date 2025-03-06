@@ -8,11 +8,22 @@ using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking
 {
     public static class NetworkObjectExtensions
     {
+        public static NetworkClient GetOwner(this INetworkObject obj)
+        {
+            if(NetworkManager.WhereAmI != ClientLocation.Remote)
+            {
+                return null;
+            }
+            return NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
+        }
+
+
         /// <summary>
         /// Invokes a network method on the current <see cref="INetworkObject"></see>, provide a <see cref="NetworkClient"/> which will get the network invoke.
         /// </summary>
@@ -136,6 +147,29 @@ namespace SocketNetworking
             }
             obj.OnServerDestroy();
             obj.Destroy();
+        }
+
+
+        /// <summary>
+        /// Forces all <see cref="INetworkSyncVar"/>s to sync by calling <see cref="INetworkSyncVar.Sync"/>
+        /// </summary>
+        /// <param name="obj"></param>
+        public static void SyncVars(this INetworkObject obj)
+        {
+            NetworkObjectData datas = NetworkManager.GetNetworkObjectData(obj);
+            foreach(var data in datas.SyncVars)
+            {
+                try
+                {
+                    INetworkSyncVar var = (INetworkSyncVar)data.GetValue(obj);
+                    var.Sync();
+                    Log.GlobalDebug($"Sync Obj {obj.NetworkID}, Var: {var.Name}, Value: {var.ValueRaw}");
+                }
+                catch(Exception)
+                {
+
+                }
+            }
         }
 
         /// <summary>
@@ -471,6 +505,20 @@ namespace SocketNetworking
                 }
             }
             obj.ObjectVisibilityMode = mode;
+        }
+
+
+        public static bool CheckVisibility(this INetworkObject obj, NetworkClient viewer)
+        {
+            if(obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
+            {
+                return false;
+            }
+            if(obj.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
+            {
+                return true;
+            }
+            return obj.OwnerClientID == viewer.ClientID;
         }
 
         /// <summary>

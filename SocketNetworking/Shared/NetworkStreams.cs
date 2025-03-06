@@ -126,7 +126,7 @@ namespace SocketNetworking.Shared
                     Client.Log.Error($"No such Stream '{packet.StreamID}'");
                     return;
                 }
-                stream.RecieveNetworkData(packet);
+                stream.ReceiveNetworkData(packet);
             }
         }
     }

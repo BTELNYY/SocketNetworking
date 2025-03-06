@@ -12,9 +12,9 @@ namespace SocketNetworking.Shared.Streams
     public class NetworkSyncedStream : Stream
     {
         /// <summary>
-        /// Called when the <see cref="NetworkSyncedStream"/> recieves a new batch of data. The <see cref="int"/> argument is the amount of data received, although <see cref="Available"/> will return the same number.
+        /// Called when the <see cref="NetworkSyncedStream"/> Receives a new batch of data. The <see cref="int"/> argument is the amount of data received, although <see cref="Available"/> will return the same number.
         /// </summary>
-        public event Action<int> NewDataRecieved;
+        public event Action<int> NewDataReceived;
 
         /// <summary>
         /// Called when the <see cref="NetworkSyncedStream"/> is opened.
@@ -186,19 +186,17 @@ namespace SocketNetworking.Shared.Streams
 
         protected virtual void HandleNewData(StreamPacket packet, StreamData data)
         {
-            Log.Debug($"New Data recieved! Size: {data.Chunk.Length}, Data: {string.Join("-", data.Chunk)}");
             if (data.RequestID == 0)
             {
                 if (data.Chunk.Length > BufferSize)
                 {
-                    Log.Warning($"Buffer is too small for this size of transmission! Buffer is {BufferSize} bytes long and the transmission is {data.Chunk.Length} bytes long. The last bytes of the tranmission have been discarded.");
+                    Log.Warning($"Buffer is too small for this size of transmission! Buffer is {BufferSize} bytes long and the transmission is {data.Chunk.Length} bytes long. The last bytes of the transmission have been discarded.");
                     data.Chunk = data.Chunk.TakeLong(BufferSize).ToArray();
                     Log.Warning($"New chunk size: {data.Chunk.Length}");
                 }
                 if(Available + data.Chunk.Length > BufferSize)
                 {
                     int diff = (int)((Available + data.Chunk.Length) - BufferSize);
-                    Log.Debug(diff.ToString());
                     buffer = buffer.RemoveFromStart(diff);
                     buffer = buffer.AppendAll(data.Chunk);
                 }
@@ -211,24 +209,23 @@ namespace SocketNetworking.Shared.Streams
                     }
                 }
                 Available += data.Chunk.LongLength;
-                NewDataRecieved?.Invoke(data.Chunk.Length);
+                NewDataReceived?.Invoke(data.Chunk.Length);
             }
             else
             {
                 if (_requests.ContainsKey(data.RequestID))
                 {
-                    Log.Error($"Request ID {data.RequestID} has already been recieved! There is no way you have {ushort.MaxValue} pending data requests right?");
+                    Log.Error($"Request ID {data.RequestID} has already been received! There is no way you have {ushort.MaxValue} pending data requests right?");
                 }
                 else
                 {
                     _requests.TryAdd(data.RequestID, data.Chunk);
                 }
             }
-            Log.Debug(string.Join("-", buffer));
-            NewDataRecieved?.Invoke(data.Chunk.Length);
+            NewDataReceived?.Invoke(data.Chunk.Length);
         }
 
-        public virtual void RecieveCustomData(StreamPacket packet, byte[] data)
+        public virtual void ReceiveCustomData(StreamPacket packet, byte[] data)
         {
 
         }
@@ -242,7 +239,7 @@ namespace SocketNetworking.Shared.Streams
             Send(packet);
         }
 
-        public virtual void RecieveNetworkData(StreamPacket packet)
+        public virtual void ReceiveNetworkData(StreamPacket packet)
         {
             ByteReader reader = new ByteReader(packet.Data);
             if(packet.Error)
@@ -252,7 +249,7 @@ namespace SocketNetworking.Shared.Streams
             switch(packet.Function)
             {
                 case StreamFunction.CustomData:
-                    RecieveCustomData(packet, packet.Data);
+                    ReceiveCustomData(packet, packet.Data);
                     break;
                 case StreamFunction.DataSend:
                     StreamData data = reader.ReadPacketSerialized<StreamData>();

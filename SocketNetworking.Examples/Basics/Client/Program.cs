@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using SocketNetworking.Client;
 using SocketNetworking.Example.Basics.SharedData;
 using SocketNetworking.Shared;
@@ -34,12 +35,15 @@ namespace SocketNetworking.Example.Basics.Client
             {
                 Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
             };
-            client.Connect("127.0.0.1", 7777, "DefaultPassword");
+            client.Connect("127.0.0.1", 7777);
         }
 
         private static void Client_Stopped()
         {
             Client = null;
+            Console.WriteLine("Client stopped, press any key to continue.....");
+            Console.ReadKey();
+            Environment.Exit(0);
         }
     }
 }

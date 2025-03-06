@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
@@ -21,11 +22,11 @@ namespace SocketNetworking.Server
             ServerReady?.Invoke();
         }
 
-        public static event Action<int> ClientConnected;
+        public static event Action<NetworkClient> ClientConnected;
 
-        protected static void InvokeClientConnected(int id)
+        protected static void InvokeClientConnected(NetworkClient client)
         {
-            ClientConnected?.Invoke(id);
+            ClientConnected?.Invoke(client);
         }
 
         public static event Action<NetworkClient> ClientDisconnected;
@@ -54,11 +55,11 @@ namespace SocketNetworking.Server
         /// </summary>
         public static event EventHandler<ClientConnectRequest> ClientConnecting;
 
-        protected static bool AcceptClient(NetworkClient client)
+        protected static ClientConnectRequest AcceptClient(NetworkClient client)
         {
             ClientConnectRequest req = new ClientConnectRequest(client, true);
             ClientConnecting?.Invoke(null, req);
-            return req.Accepted;
+            return req;
         }
 
         protected static ServerState _serverState = ServerState.NotStarted;
@@ -215,6 +216,15 @@ namespace SocketNetworking.Server
                 handler.Start();
             }
             ServerThread = new Thread(ServerStartThread);
+            ClientConnecting += (sender, req) => 
+            {
+                if (Clients.Count >= Config.MaximumClients)
+                {
+                    //Do not accept.
+                    Log.Info("Rejected a client because the server is full.");
+                    req.Reject();
+                }
+            };
             ServerThread.Start();
             ServerStarted?.Invoke();
             _serverState = ServerState.NotReady;
@@ -231,6 +241,11 @@ namespace SocketNetworking.Server
             {
                 Log.Warning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
             }
+            if(!ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)) && ClientAvatar != null)
+            {
+                Log.Error("Server start error. Your client avatar must implement INetworkAvatar through either NetworkAvatarBase or a custom implementation.");
+                return false;
+            }
             return true;
         }
 
@@ -241,14 +256,14 @@ namespace SocketNetworking.Server
                 if (_clients.ContainsKey(clientId))
                 {
                     Log.Error("Something really got fucked up!");
-                    //we throw becuase the whole server will die if we cant add the client.
+                    //we throw because the whole server will die if we cant add the client.
                     throw new InvalidOperationException("Client ID to add already taken!");
                 }
                 else
                 {
                     NetworkClient cursedClient = (NetworkClient)Convert.ChangeType(client, ClientType);
                     _clients.Add(clientId, cursedClient);
-                    ClientHandler handler = NextHanlder();
+                    ClientHandler handler = NextHandler();
                     handler.AddClient(cursedClient);
                     //Log.Debug($"Handler Client count: {handler.CurrentClientCount}");
                     //Log.Debug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
@@ -256,7 +271,7 @@ namespace SocketNetworking.Server
             }
         }
 
-        static ClientHandler NextHanlder()
+        static ClientHandler NextHandler()
         {
             ClientHandler bestHandler = null;
             foreach (var handler in handlers)
@@ -286,8 +301,7 @@ namespace SocketNetworking.Server
             {
                 if (_clients.ContainsKey(myClient.ClientID))
                 {
-                    ClientDisconnected?.Invoke(myClient);
-                    ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(_clients[myClient.ClientID]));
+                    ClientHandler handler = handlers.FirstOrDefault(x => x.HasClient(myClient));
                     if (handler == null)
                     {
                         Log.Error("Unable to find the handler responsible for Client ID " + myClient.ClientID);
@@ -296,9 +310,10 @@ namespace SocketNetworking.Server
                     {
                         handler.RemoveClient(_clients[myClient.ClientID]);
                     }
-                    InvokeClientDisconnected(myClient);
                     Log.Debug($"Removed client {myClient.ClientID} from handler {handler?.ToString()}");
                     _clients.Remove(myClient.ClientID);
+                    InvokeClientDisconnected(myClient);
+                    NetworkManager.SendDisconnectedPulse(myClient);
                 }
                 else
                 {
@@ -311,6 +326,8 @@ namespace SocketNetworking.Server
                     else
                     {
                         handler.RemoveClient(_clients[myClient.ClientID]);
+                        InvokeClientDisconnected(myClient);
+                        NetworkManager.SendDisconnectedPulse(myClient);
                     }
                 }
             }
@@ -352,7 +369,7 @@ namespace SocketNetworking.Server
 
         protected virtual void ServerStartThread()
         {
-            throw new NotImplementedException("Trying to use the non-overriden server thread, you should probably override it, do not run the base method!");
+            throw new NotImplementedException("Trying to use the non-overridden server thread, you should probably override it, do not run the base method!");
         }
 
         /// <summary>

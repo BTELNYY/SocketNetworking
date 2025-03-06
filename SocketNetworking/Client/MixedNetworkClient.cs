@@ -214,11 +214,11 @@ namespace SocketNetworking.Client
 
         private void ServerSendUDPInfo(int passKey)
         {
-            NetworkInvoke(nameof(ClientRecieveUDPInfo), new object[] { passKey });  
+            NetworkInvoke(nameof(ClientReceiveUDPInfo), new object[] { passKey });  
         }
 
         [NetworkInvokable(NetworkDirection.Server)]
-        private void ClientRecieveUDPInfo(int passKey)
+        private void ClientReceiveUDPInfo(int passKey)
         {
             if(_udpConnected)
             {

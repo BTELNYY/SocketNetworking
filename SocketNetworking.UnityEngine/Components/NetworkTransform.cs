@@ -39,9 +39,9 @@ namespace SocketNetworking.UnityEngine.Components
             return writer;
         }
 
-        public override ByteReader RecieveExtraData(byte[] extraData)
+        public override ByteReader ReceiveExtraData(byte[] extraData)
         {
-            ByteReader reader = base.RecieveExtraData(extraData);
+            ByteReader reader = base.ReceiveExtraData(extraData);
             transform.position = reader.ReadVector3();
             transform.rotation = reader.ReadQuaternion();
             return reader;

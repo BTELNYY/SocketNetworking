@@ -88,9 +88,9 @@ namespace SocketNetworking.PacketSystem.Packets
     {
         None,
         AsymmetricalKeySend,
-        AsymmetricalKeyRecieve,
+        AsymmetricalKeyReceive,
         SymmetricalKeySend,
-        SymetricalKeyRecieve,
+        SymetricalKeyReceive,
         UpdateEncryptionStatus,
     }
 }
