@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Client;
-using SocketNetworking.Shared;
-using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.Shared.Serialization;
-using SocketNetworking.Server;
-using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking;
+using SocketNetworking.Attributes;
+using SocketNetworking.Client;
+using SocketNetworking.PacketSystem;
+using SocketNetworking.Server;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.Serialization;
 
 namespace BasicChat.Shared
 {
@@ -33,7 +29,7 @@ namespace BasicChat.Shared
                 Log.Warning("Tried to send message as not myself!");
                 return;
             }
-            Log.Info($"Message: \"{message.Content}\", Target: {message.Target}");
+            Log.Info($"Message: \"{message.Content}\", Target: {message.Target}, Source Name: {((ChatAvatar)Avatar).Name}");
             if(message.Target == 0)
             {
                 NetworkServer.NetworkInvokeOnAll(this, nameof(ClientGetMessage), new object[] { message });

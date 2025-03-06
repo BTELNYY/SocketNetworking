@@ -46,9 +46,9 @@ namespace SocketNetworking
             {
                 throw new ArgumentOutOfRangeException("amount", "Amount is out of range for specified array.");
             }
-            List<T> newArray = array.ToList();
-            newArray.RemoveRange(0, amount);
-            return newArray.ToArray();
+            T[] result = new T[array.Length - amount];
+            Array.Copy(array, amount, result, 0, array.Length - amount);
+            return result;
         }
 
 

@@ -26,16 +26,20 @@ namespace BasicChat.Client
         {
             Log.OnLog += Logger.HandleNetworkLog;
             Log.Levels = Log.FULL_LOG;
+
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
             reader = new Thread(HandleInput);
+
             Console.WriteLine("Enter your name");
             Name = Console.ReadLine();
+
             Console.WriteLine("Enter destination IP address (127.0.0.1):");
             IP = Console.ReadLine();
             if(IP == "")
             {
                 IP = "127.0.0.1";
             }
+
             Console.WriteLine("Enter destination port (7777):");
             string portStr = Console.ReadLine();
             if(portStr == "")
@@ -43,6 +47,7 @@ namespace BasicChat.Client
                 portStr = "7777";
             }
             Port = ushort.Parse(portStr);
+
             ChatClient client = new ChatClient();
             client.ClientConnected += () =>
             {

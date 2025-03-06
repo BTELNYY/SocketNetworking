@@ -1400,7 +1400,7 @@ namespace SocketNetworking.Shared
                 }
                 if (stopwatch.ElapsedMilliseconds > msTimeOut)
                 {
-                    Log.Error($"NetworkInvoke on method {methodName} timed out after {msTimeOut}ms of proccessing.");
+                    Log.Error($"NetworkInvoke on method {methodName} timed out after {msTimeOut}ms of processing.");
                     break;
                 }
             }
