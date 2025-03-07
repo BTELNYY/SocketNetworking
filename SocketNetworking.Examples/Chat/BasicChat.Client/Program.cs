@@ -9,6 +9,7 @@ using System.Xml.Linq;
 using BasicChat.Shared;
 using SocketNetworking;
 using SocketNetworking.Client;
+using SocketNetworking.Misc;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
 
@@ -57,7 +58,7 @@ namespace BasicChat.Client
             {
                 if(client.Authenticated)
                 {
-                    //Console.Clear();
+                    Console.Clear();
                 }
             };
             client.ClientDisconnected += () =>
@@ -82,6 +83,11 @@ namespace BasicChat.Client
             };
             client.MessageReceived += (handle, message) =>
             {
+                if(message.Sender == 0)
+                {
+                    FancyConsole.WriteLine(message.Content, message.Color);
+                    return;
+                }
                 INetworkObject obj = NetworkManager.GetNetworkObjectByID(message.Sender).Item1;
                 if (obj == null)
                 {
@@ -91,15 +97,7 @@ namespace BasicChat.Client
                 {
                     return;
                 }
-                lock (locker)
-                {
-                    Console.Write(new string('\b', buffer.Count));
-                    var msg = $"{avatar.Name}: {message.Content}";
-                    var excess = buffer.Count - msg.Length;
-                    if (excess > 0) msg += new string(' ', excess);
-                    Logger.WriteLineColor(msg, message.Color);
-                    Console.Write(new string(buffer.ToArray()));
-                }
+                FancyConsole.WriteLine($"{avatar.Name}: {message.Content}", message.Color);
             };
             client.ClientIdUpdated += () =>
             {
@@ -114,40 +112,13 @@ namespace BasicChat.Client
             client.Connect(IP, Port);
         }
 
-        static object locker = new object();
-        static List<char> buffer = new List<char>();
-
         static void HandleInput()
         {
             while (NetworkClient.LocalClient.IsConnected)
             {
-                var k = Console.ReadKey();
-                if (k.Key == ConsoleKey.Enter && buffer.Count > 0)
-                {
-                    lock (locker)
-                    {
-                        if (NetworkClient.LocalClient is ChatClient chatClient)
-                        {
-                            if (buffer[0] == '>')
-                            {
-                                buffer.RemoveRange(0, Math.Min(2, buffer.Count));
-                            }
-                            chatClient.ClientSendMessage(string.Join("", buffer));
-                        }
-                        Console.WriteLine();
-                        buffer.Clear();
-                        buffer.AddRange("> ");
-                        Console.Write(buffer.ToArray());
-                    }
-                }
-                else
-                {
-                    if(k.Key == ConsoleKey.Backspace)
-                    {
-                        buffer.RemoveAt(buffer.Count - 1);
-                    }
-                    buffer.Add(k.KeyChar);
-                }
+                string input = FancyConsole.ReadLine();
+                ChatClient client = NetworkClient.LocalClient as ChatClient;
+                client.ClientSendMessage(input);
             }
         }
     }

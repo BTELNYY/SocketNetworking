@@ -86,6 +86,11 @@ namespace BasicChat.Shared
         [NetworkInvokable(NetworkDirection.Server)]
         private void ClientGetMessage(NetworkHandle handle, Message message)
         {
+            if(message.Sender == 0)
+            {
+                MessageReceived?.Invoke(handle, message);
+                return;
+            }
             INetworkObject obj = NetworkManager.GetNetworkObjectByID(message.Sender).Item1;
             if(obj == null)
             {

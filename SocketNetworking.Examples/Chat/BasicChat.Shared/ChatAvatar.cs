@@ -39,6 +39,41 @@ namespace BasicChat.Shared
             }
         }
 
+        public override void OnDisconnected(NetworkClient client)
+        {
+            if (client.ClientID == OwnerClientID)
+            {
+                ChatClient cClient = client as ChatClient;
+                ChatServer.SendMessage(new Message()
+                {
+                    Content = $"{cClient.RequestedName} disconnected.",
+                    Color = ConsoleColor.Yellow,
+                    Sender = 0,
+                    Target = 0,
+                });
+            }
+            base.OnDisconnected(client);
+        }
+
+        bool _broadcasted = false;
+
+        public override void OnNetworkSpawned(NetworkClient spawner)
+        {
+            base.OnNetworkSpawned(spawner);
+            ChatClient client = spawner as ChatClient;
+            _name.Value = client.RequestedName;
+            if(spawner.ClientID == OwnerClientID)
+            {
+                ChatServer.SendMessage(new Message()
+                {
+                    Content = $"{client.RequestedName} connected.",
+                    Color = ConsoleColor.Yellow,
+                    Sender = 0,
+                    Target = 0,
+                });
+            }
+        }
+
         public void ClientSetName(string name)
         {
             NetworkClient.LocalClient.NetworkInvoke(this, nameof(ServerGetNameChangeRequest), new object[] { name });

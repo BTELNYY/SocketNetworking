@@ -28,7 +28,7 @@ namespace BasicChat.Server
                 NetworkServer.ServerInstance.StopServer();
             };
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
-            TcpNetworkServer server = new TcpNetworkServer();
+            ChatServer server = new ChatServer();
             NetworkServer.ClientType = typeof(ChatClient);
             NetworkServer.ClientAvatar = typeof(ChatAvatar);
             NetworkServer.Config.HandshakeTime = 5f;
