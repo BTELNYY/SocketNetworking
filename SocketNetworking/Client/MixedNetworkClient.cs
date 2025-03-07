@@ -1,18 +1,10 @@
-﻿using SocketNetworking.PacketSystem;
-using SocketNetworking.Transports;
-using System;
-using System.CodeDom;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using SocketNetworking.Attributes;
+using SocketNetworking.PacketSystem;
 using SocketNetworking.Shared;
-using System.Net.Sockets;
-using System.Threading;
-using System.Diagnostics;
 using SocketNetworking.Shared.Serialization;
+using SocketNetworking.Transports;
 
 namespace SocketNetworking.Client
 {

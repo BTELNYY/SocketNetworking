@@ -1,16 +1,9 @@
-﻿using SocketNetworking.Client;
-using SocketNetworking.Exceptions;
-using SocketNetworking.PacketSystem;
+﻿using System;
+using System.Collections.Generic;
+using SocketNetworking.Client;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
-using System;
-using System.Collections.Generic;
 using SocketNetworking.Shared.NetworkObjects;
-using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net.Http.Headers;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.SyncVars

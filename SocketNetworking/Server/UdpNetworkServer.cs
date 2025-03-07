@@ -1,17 +1,13 @@
-﻿using SocketNetworking.Client;
-using SocketNetworking.Misc;
-using SocketNetworking.Transports;
-using SocketNetworking.Shared;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
-using SocketNetworking.PacketSystem;
+using System.Net.Sockets;
+using SocketNetworking.Client;
+using SocketNetworking.Misc;
+using SocketNetworking.Shared;
 using SocketNetworking.Shared.Events;
+using SocketNetworking.Transports;
 
 namespace SocketNetworking.Server
 {

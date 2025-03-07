@@ -1,21 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO.Compression;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
-using System.Reflection.Emit;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Security.Policy;
 using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.Serialization.Formatters.Binary;
-using SocketNetworking.PacketSystem;
-using System.Reflection;
-using SocketNetworking.Client;
-using SocketNetworking.Shared;
-using SocketNetworking.Server;
-using System.Collections;
 
 namespace SocketNetworking
 {

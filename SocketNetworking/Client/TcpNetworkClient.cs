@@ -1,18 +1,9 @@
-﻿using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.Server;
-using SocketNetworking.Shared;
-using SocketNetworking.Transports;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
+﻿using System;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
+using SocketNetworking.Server;
+using SocketNetworking.Transports;
 
 namespace SocketNetworking.Client
 {

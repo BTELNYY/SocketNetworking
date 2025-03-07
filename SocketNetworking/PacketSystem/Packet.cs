@@ -1,15 +1,8 @@
-﻿using SocketNetworking.Exceptions;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Shared;
+﻿using System;
 using System.Net;
+using SocketNetworking.Exceptions;
 using SocketNetworking.PacketSystem.TypeWrappers;
+using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.PacketSystem

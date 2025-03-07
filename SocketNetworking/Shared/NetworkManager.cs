@@ -1,23 +1,20 @@
-﻿using SocketNetworking.Attributes;
-using SocketNetworking.Client;
-using SocketNetworking.Exceptions;
-using SocketNetworking.Misc;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.Shared.NetworkObjects;
-using SocketNetworking.Shared.SyncVars;
-using SocketNetworking.Shared.Messages;
-using SocketNetworking.Server;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Security;
-using System.Reflection.Emit;
-using System.CodeDom;
+using SocketNetworking.Attributes;
+using SocketNetworking.Client;
+using SocketNetworking.Exceptions;
+using SocketNetworking.Misc;
+using SocketNetworking.PacketSystem;
+using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Server;
+using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.Serialization;
+using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared
 {

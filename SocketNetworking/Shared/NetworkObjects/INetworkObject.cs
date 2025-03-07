@@ -1,12 +1,6 @@
-﻿using SocketNetworking.PacketSystem.Packets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SocketNetworking.Attributes;
 using SocketNetworking.Client;
-using SocketNetworking.Shared.NetworkObjects;
-using SocketNetworking.Attributes;
+using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared.NetworkObjects

@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using SocketNetworking.PacketSystem;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Shared;
 using SocketNetworking.Client;
-using SocketNetworking.Server;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.Attributes
 {

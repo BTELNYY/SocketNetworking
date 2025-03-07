@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Security;
 using SocketNetworking.Client;
 using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.SyncVars;
-using System.Security;
 
 namespace SocketNetworking
 {

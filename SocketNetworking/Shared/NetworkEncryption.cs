@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
-using System.Threading;
 using SocketNetworking.Client;
-using SocketNetworking.PacketSystem.Packets;
 
 namespace SocketNetworking.Shared
 {

@@ -1,11 +1,6 @@
-﻿using SocketNetworking.Attributes;
+﻿using System.Net;
+using SocketNetworking.Attributes;
 using SocketNetworking.Shared.Serialization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocketNetworking.PacketSystem.TypeWrappers
 {
