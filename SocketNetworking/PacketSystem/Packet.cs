@@ -92,7 +92,7 @@ namespace SocketNetworking.PacketSystem
         /// <summary>
         /// The unix timestemp when the <see cref="Packet"/> was sent in milliseconds
         /// </summary>
-        public long SendTime { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        public long SendTime { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         /// <summary>
         /// This method will validate the packet and modify it as needed. For example, it will change flags if need be, or the content if it isn't properly defined.

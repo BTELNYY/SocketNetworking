@@ -1236,7 +1236,7 @@ namespace SocketNetworking.Client
         protected virtual void PreparePacket(ref Packet packet)
         {
             packet.Source = Transport.LocalEndPoint;
-            packet.SendTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            packet.SendTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             //Port 0 is not a valid port.
             if(packet.Destination.Port == 0)
             {
@@ -2111,11 +2111,11 @@ namespace SocketNetworking.Client
 
         long _latency = 0;
 
-        DateTime _lastSent = DateTime.Now;
+        DateTime _lastSent = DateTime.UtcNow;
 
         protected virtual void DoLatencyCheck()
         {
-            if(DateTime.Now - _lastSent >= TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive))
+            if(DateTime.UtcNow - _lastSent >= TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive))
             {
                 CheckLatency();
             }
@@ -2123,7 +2123,7 @@ namespace SocketNetworking.Client
 
         protected virtual void DoLatency(KeepAlivePacket packet)
         {
-            _latency = DateTimeOffset.Now.ToUnixTimeMilliseconds() - packet.SendTime;
+            _latency = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - packet.SendTime;
             InvokeLatencyChanged(_latency);
         }
 
@@ -2131,7 +2131,7 @@ namespace SocketNetworking.Client
         {
             KeepAlivePacket packet = new KeepAlivePacket();
             Send(packet);
-            _lastSent = DateTime.Now;
+            _lastSent = DateTime.UtcNow;
         }
 
         #endregion

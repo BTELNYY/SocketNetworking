@@ -24,6 +24,10 @@ namespace BasicChat.Shared
             ChatAuthData data;
             ByteReader reader = new ByteReader(packet.AuthData);
             data = reader.ReadPacketSerialized<ChatAuthData>();
+            if(string.IsNullOrWhiteSpace(data.Name))
+            {
+                data.Name = handle.Client.ConnectedHostname;
+            }
             client.RequestedName = data.Name;
             return (new AuthenticationResult()
             {

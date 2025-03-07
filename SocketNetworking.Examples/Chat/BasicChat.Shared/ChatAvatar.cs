@@ -47,17 +47,11 @@ namespace BasicChat.Shared
             base.OnOwnerDisconnected(client);
         }
 
-        public override void OnNetworkSpawned(NetworkClient spawner)
-        {
-            base.OnNetworkSpawned(spawner);
-            ChatClient client = spawner as ChatClient;
-            _name.Value = client.RequestedName;
-        }
-
         public override void OnOwnerNetworkSpawned(NetworkClient spawner)
         {
             base.OnOwnerNetworkSpawned(spawner);
             ChatClient client = spawner as ChatClient;
+            _name.Value = client.RequestedName;
             ChatServer.SendMessage(new Message()
             {
                 Content = $"{client.RequestedName} connected.",

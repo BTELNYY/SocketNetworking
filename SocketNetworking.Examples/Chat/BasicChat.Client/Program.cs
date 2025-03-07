@@ -11,7 +11,7 @@ namespace BasicChat.Client
 {
     public class Program
     {
-        static string Title = "ClientID: {id}, Latency: {ms}";
+        static string Title = "ClientID: {id}, Latency: {ms}ms";
 
         static string IP = "127.0.0.1";
 
