@@ -34,39 +34,37 @@ namespace BasicChat.Shared
             }
         }
 
-        public override void OnDisconnected(NetworkClient client)
+        public override void OnOwnerDisconnected(NetworkClient client)
         {
-            if (client.ClientID == OwnerClientID)
+            ChatClient cClient = client as ChatClient;
+            ChatServer.SendMessage(new Message()
             {
-                ChatClient cClient = client as ChatClient;
-                ChatServer.SendMessage(new Message()
-                {
-                    Content = $"{cClient.RequestedName} disconnected.",
-                    Color = ConsoleColor.Yellow,
-                    Sender = 0,
-                    Target = 0,
-                });
-            }
-            base.OnDisconnected(client);
+                Content = $"{cClient.RequestedName} disconnected.",
+                Color = ConsoleColor.Yellow,
+                Sender = 0,
+                Target = 0,
+            });
+            base.OnOwnerDisconnected(client);
         }
-
-        bool _broadcasted = false;
 
         public override void OnNetworkSpawned(NetworkClient spawner)
         {
             base.OnNetworkSpawned(spawner);
             ChatClient client = spawner as ChatClient;
             _name.Value = client.RequestedName;
-            if(spawner.ClientID == OwnerClientID)
+        }
+
+        public override void OnOwnerNetworkSpawned(NetworkClient spawner)
+        {
+            base.OnOwnerNetworkSpawned(spawner);
+            ChatClient client = spawner as ChatClient;
+            ChatServer.SendMessage(new Message()
             {
-                ChatServer.SendMessage(new Message()
-                {
-                    Content = $"{client.RequestedName} connected.",
-                    Color = ConsoleColor.Yellow,
-                    Sender = 0,
-                    Target = 0,
-                });
-            }
+                Content = $"{client.RequestedName} connected.",
+                Color = ConsoleColor.Yellow,
+                Sender = 0,
+                Target = 0,
+            });
         }
 
         public void ClientSetName(string name)
