@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Shared.NetworkObjects;
-using SocketNetworking.Shared.SyncVars;
-using SocketNetworking.Shared;
+using SocketNetworking.Attributes;
 using SocketNetworking.Client;
 using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.Attributes;
-using SocketNetworking;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.SyncVars;
 
 namespace BasicChat.Shared
 {

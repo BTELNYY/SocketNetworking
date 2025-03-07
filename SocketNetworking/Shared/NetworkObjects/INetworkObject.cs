@@ -57,6 +57,10 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// </summary>
         void OnNetworkSpawned(NetworkClient spawner);
 
+        void OnOwnerNetworkSpawned(NetworkClient spawner);
+
+        void OnOwnerLocalSpawned(NetworkClient spawner);
+
         /// <summary>
         /// Called when the object is being destroyed by the peer.
         /// </summary>
@@ -132,6 +136,8 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// </summary>
         /// <param name="client"></param>
         void OnDisconnected(NetworkClient client);
+
+        void OnOwnerDisconnected(NetworkClient client);
 
         /// <summary>
         /// Called on the server when a client has begun the sync state of the connection, if its enabled.

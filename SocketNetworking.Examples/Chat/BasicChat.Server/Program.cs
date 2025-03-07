@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using BasicChat.Shared;
+using SocketNetworking;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
-using SocketNetworking;
-using BasicChat.Shared;
 
 namespace BasicChat.Server
 {

@@ -227,6 +227,11 @@ namespace SocketNetworking
                     break;
             }
             obj.OnLocalSpawned(packet);
+            NetworkClient owner = obj.GetOwner();
+            if(owner != null)
+            {
+                obj.OnOwnerLocalSpawned(owner);
+            }
         }
 
         /// <summary>
@@ -282,6 +287,10 @@ namespace SocketNetworking
                     break;
             }
             obj.OnLocalSpawned(packet);
+            if(obj.OwnerClientID == target.ClientID)
+            {
+                obj.OnOwnerLocalSpawned(target);
+            }
         }
 
         public static void NetworkSetActive(this INetworkObject obj, bool state)

@@ -407,6 +407,10 @@ namespace SocketNetworking.Shared
                 handle.Client.Send(creationConfirmation);
                 AddNetworkObject(netObj);
                 netObj.OnLocalSpawned(packet);
+                if(netObj.OwnerClientID == handle.Client.ClientID)
+                {
+                    netObj.OnOwnerLocalSpawned(handle.Client);
+                }
                 return;
             }
 
@@ -438,6 +442,10 @@ namespace SocketNetworking.Shared
                         throw new InvalidOperationException("Creation in modification loop (Internal Error)");
                     case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
                         @object.OnNetworkSpawned(handle.Client);
+                        if(@object.OwnerClientID == handle.Client.ClientID)
+                        {
+                            @object.OnOwnerNetworkSpawned(handle.Client);
+                        }
                         SendCreatedPulse(handle.Client, @object);
                         @object.SyncVars();
                         break;
@@ -545,6 +553,10 @@ namespace SocketNetworking.Shared
             foreach (INetworkObject @object in NetworkObjects.Keys)
             {
                 @object.OnDisconnected(networkClient);
+                if(@object.OwnerClientID == networkClient.ClientID)
+                {
+                    @object.OnOwnerDisconnected(networkClient);
+                }
             }
         }
 

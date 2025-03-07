@@ -22,13 +22,10 @@ namespace SocketNetworking.Shared.NetworkObjects
             _pubKey = new NetworkSyncVar<string>(this, OwnershipMode.Client);
         }
 
-        public override void OnDisconnected(NetworkClient client)
+        public override void OnOwnerDisconnected(NetworkClient client)
         {
-            base.OnDisconnected(client);
-            if(client.ClientID == OwnerClientID)
-            {
-                this.NetworkDestroy();
-            }
+            base.OnOwnerDisconnected(client);
+            this.NetworkDestroy();
         }
 
         public override void OnLocalSpawned(ObjectManagePacket packet)

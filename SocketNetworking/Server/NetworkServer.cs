@@ -310,7 +310,6 @@ namespace SocketNetworking.Server
                     {
                         handler.RemoveClient(_clients[myClient.ClientID]);
                     }
-                    Log.Debug($"Removed client {myClient.ClientID} from handler {handler?.ToString()}");
                     _clients.Remove(myClient.ClientID);
                     InvokeClientDisconnected(myClient);
                     NetworkManager.SendDisconnectedPulse(myClient);

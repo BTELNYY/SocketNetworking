@@ -334,5 +334,20 @@ namespace SocketNetworking.UnityEngine.Components
         {
             
         }
+
+        public virtual void OnOwnerNetworkSpawned(NetworkClient spawner)
+        {
+            
+        }
+
+        public virtual void OnOwnerLocalSpawned(NetworkClient spawner)
+        {
+            
+        }
+
+        public virtual void OnOwnerDisconnected(NetworkClient client)
+        {
+            
+        }
     }
 }

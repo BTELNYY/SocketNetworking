@@ -1,12 +1,7 @@
 ﻿using SocketNetworking.Client;
 using SocketNetworking.PacketSystem.Packets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Shared.SyncVars;
 using SocketNetworking.Shared.Serialization;
+using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared.NetworkObjects
 {
@@ -86,6 +81,21 @@ namespace SocketNetworking.Shared.NetworkObjects
         }
 
         public virtual void OnNetworkSpawned(NetworkClient spawner)
+        {
+            
+        }
+
+        public virtual void OnOwnerDisconnected(NetworkClient client)
+        {
+            
+        }
+
+        public virtual void OnOwnerLocalSpawned(NetworkClient spawner)
+        {
+            
+        }
+
+        public virtual void OnOwnerNetworkSpawned(NetworkClient spawner)
         {
             
         }
