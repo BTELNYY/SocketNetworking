@@ -101,6 +101,12 @@ namespace BasicChat.Client
             {
                 Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
             };
+
+            Console.CancelKeyPress += (sender, @event) =>
+            {
+                NetworkClient.LocalClient.Disconnect();
+            };
+
             client.InitLocalClient();
             client.RequestedName = Name;
             client.Connect(IP, Port);

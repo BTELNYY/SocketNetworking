@@ -38,7 +38,7 @@ namespace BasicChat.Shared
         {
             Message msg = new Message();
             msg.Content = message;
-            msg.Sender = ClientID;
+            msg.Sender = Avatar.NetworkID;
             msg.Target = 0;
             NetworkInvoke(nameof(ServerGetMessage), new object[] { msg });
         }
@@ -53,7 +53,7 @@ namespace BasicChat.Shared
         {
             if(message.Sender != Avatar.NetworkID)
             {
-                Log.Warning("Tried to send message as not myself!");
+                Log.Warning($"Tried to send message as not myself! Avatar: {Avatar.NetworkID}, Sender: {message.Sender}");
                 return;
             }
             if(string.IsNullOrWhiteSpace(message.Content))

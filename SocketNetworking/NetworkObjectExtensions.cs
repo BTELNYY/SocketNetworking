@@ -148,6 +148,7 @@ namespace SocketNetworking
             }
             obj.OnServerDestroy();
             obj.Destroy();
+            NetworkManager.RemoveNetworkObject(obj);
         }
 
 

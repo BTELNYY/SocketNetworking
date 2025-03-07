@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Runtime.Serialization;
-using System.Security.Policy;
 using System.Text;
-using System.Threading.Tasks;
 using SocketNetworking.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
@@ -121,6 +117,15 @@ namespace SocketNetworking.Shared.Serialization
             {
                 byte[] data = _workingSetData.Take(length).ToArray();
                 Remove(length);
+                return data;
+            }
+        }
+
+        public byte[] ReadNoRemove(int length)
+        {
+            lock(_lock)
+            {
+                byte[] data = _workingSetData.Take(length).ToArray();
                 return data;
             }
         }
@@ -295,7 +300,7 @@ namespace SocketNetworking.Shared.Serialization
                 string result = Encoding.UTF8.GetString(stringArray, 0, stringArray.Length);
                 if (_workingSetData.Length != expectedBytes)
                 {
-                    throw new InvalidOperationException("StringReader stole more bytes then it should have!");
+                    throw new InvalidOperationException($"StringReader stole more bytes then it should have! Expected: {expectedBytes}, Actual: {_workingSetData.Length}, Read Length: {lenghtOfString}");
                 }
                 return result;
             }

@@ -20,6 +20,17 @@ namespace SocketNetworking.Shared.NetworkObjects
         public NetworkAvatarBase()
         {
             _pubKey = new NetworkSyncVar<string>(this, OwnershipMode.Client);
+            _pubKey.Changed += (x) =>
+            {
+                if(x != null)
+                {
+                    _provider.FromXmlString(x);
+                }
+                else
+                {
+                    Log.GlobalDebug(x);
+                }
+            };
         }
 
         public override void OnOwnerDisconnected(NetworkClient client)
@@ -37,15 +48,14 @@ namespace SocketNetworking.Shared.NetworkObjects
             }
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                _provider.FromXmlString(this.GetOwner()?.EncryptionManager.OthersRSA.ToXmlString(false));
+                if(OwnerClient == null)
+                {
+                    this.NetworkDestroy();
+                    return;
+                }
+                _provider.FromXmlString(OwnerClient.EncryptionManager.OthersPublicKey);
                 _pubKey.ValueRaw = _provider.ToXmlString(false);
             }
-        }
-
-        public override void OnSyncVarsChanged()
-        {
-            base.OnSyncVarsChanged();
-            _provider.FromXmlString(PublicKey);
         }
 
         public override void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)

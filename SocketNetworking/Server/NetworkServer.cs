@@ -357,7 +357,9 @@ namespace SocketNetworking.Server
             {
                 Log.Error("Server already stopped.");
             }
-            foreach(NetworkClient client in _clients.Values)
+            ShouldAcceptConnections = false;
+            List<NetworkClient> _clients = Clients;
+            foreach(NetworkClient client in _clients)
             {
                 client.Disconnect("Server shutting down");
             }

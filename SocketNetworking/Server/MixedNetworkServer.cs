@@ -79,7 +79,6 @@ namespace SocketNetworking.Server
                 _ = Task.Run(() => 
                 {
                     TcpTransport tcpTransport = new TcpTransport(socket);
-                    socket.NoDelay = true;
                     IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                     Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on TCP.");
                     MixedNetworkClient client = (MixedNetworkClient)Activator.CreateInstance(ClientType);

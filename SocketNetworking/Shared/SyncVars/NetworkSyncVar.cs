@@ -49,6 +49,7 @@ namespace SocketNetworking.Shared.SyncVars
             {
                 this.value = value;
                 ValueRaw = value;
+                Changed?.Invoke(value);
             }
         }
 
@@ -61,6 +62,8 @@ namespace SocketNetworking.Shared.SyncVars
                 Sync();
             }
         }
+
+        public event Action<T> Changed;
 
         public void Sync()
         {
@@ -155,6 +158,7 @@ namespace SocketNetworking.Shared.SyncVars
             if(value is T t)
             {
                 this.value = t;
+                Changed?.Invoke(t);
             }
         }
 

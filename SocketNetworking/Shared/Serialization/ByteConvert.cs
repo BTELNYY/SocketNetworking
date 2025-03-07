@@ -1,18 +1,15 @@
-﻿using SocketNetworking.Attributes;
-using SocketNetworking.Exceptions;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.TypeWrappers;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using SocketNetworking.Attributes;
 using SocketNetworking.Client;
+using SocketNetworking.Exceptions;
+using SocketNetworking.PacketSystem;
+using SocketNetworking.PacketSystem.TypeWrappers;
 using SocketNetworking.Server;
-using System.CodeDom;
-using System.Configuration.Assemblies;
-using System.Runtime.InteropServices;
 
 namespace SocketNetworking.Shared.Serialization
 {

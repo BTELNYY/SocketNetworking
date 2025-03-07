@@ -78,7 +78,6 @@ namespace SocketNetworking.Server
                     Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
                     TcpNetworkClient client = (TcpNetworkClient)Activator.CreateInstance(ClientType);
                     client.InitRemoteClient(counter, tcpTransport);
-                    client.TcpNoDelay = true;
                     AddClient(client, counter);
                     ClientConnectRequest disconnect = AcceptClient(client);
                     if (!disconnect.Accepted)
