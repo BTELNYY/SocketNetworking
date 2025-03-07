@@ -1,16 +1,9 @@
-﻿using SocketNetworking.UnityEngine.Packets.NetworkAnimator;
-using SocketNetworking;
+﻿using System.Collections.Generic;
 using SocketNetworking.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization.Formatters;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-using SocketNetworking.Server;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.UnityEngine.Packets.NetworkAnimator;
+using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {

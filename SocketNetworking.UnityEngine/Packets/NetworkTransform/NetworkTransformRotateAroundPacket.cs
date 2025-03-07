@@ -1,13 +1,6 @@
-﻿using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.UnityEngine;
-using SocketNetworking.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using SocketNetworking.Attributes;
 using SocketNetworking.Shared.Serialization;
+using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
 {

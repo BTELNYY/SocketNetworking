@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
-using UnityEditor.SearchService;
-using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {

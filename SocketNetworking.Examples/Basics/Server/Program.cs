@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using SocketNetworking.Misc;
-using SocketNetworking.Server;
 using SocketNetworking.Client;
-using SocketNetworking.Shared;
 using SocketNetworking.Example.Basics.SharedData;
+using SocketNetworking.Server;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.Example.Basics.Server
 {

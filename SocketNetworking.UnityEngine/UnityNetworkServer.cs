@@ -1,25 +1,20 @@
-﻿using SocketNetworking.PacketSystem;
-using SocketNetworking.UnityEngine.Components;
-using SocketNetworking.UnityEngine.Packets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using System;
 using SocketNetworking.Server;
-using SocketNetworking.Client;
-using SocketNetworking.Shared;
-using System.Data.SqlTypes;
+using SocketNetworking.UnityEngine.Components;
 
 namespace SocketNetworking.UnityEngine
 {
-    public class UnityNetworkServer : NetworkServer
+    public class UnityNetworkServer : MixedNetworkServer
     {
         public override void StopServer()
         {
             base.StopServer();
+            UnityNetworkManager.Init();
+        }
+
+        public override void StartServer()
+        {
+            base.StartServer();
             UnityNetworkManager.Init();
         }
 

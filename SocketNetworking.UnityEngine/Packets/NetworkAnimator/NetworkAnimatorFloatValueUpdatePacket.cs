@@ -1,14 +1,7 @@
-﻿using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Configuration;
-using SocketNetworking;
-using UnityEngine;
+﻿using SocketNetworking.Attributes;
+using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
+using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
 {

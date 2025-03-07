@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SocketNetworking.Attributes;
-using System.Threading.Tasks;
+﻿using SocketNetworking.Attributes;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 

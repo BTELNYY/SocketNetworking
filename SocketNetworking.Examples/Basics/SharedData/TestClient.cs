@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Streams;

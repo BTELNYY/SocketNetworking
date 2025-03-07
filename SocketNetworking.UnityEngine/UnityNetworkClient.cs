@@ -1,19 +1,7 @@
-﻿using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.UnityEngine.Components;
-using SocketNetworking.UnityEngine.Packets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-using UnityEngine.UIElements;
-using SocketNetworking.Server;
+﻿using System.Collections;
 using SocketNetworking.Client;
-using SocketNetworking.Shared;
-using System.Security.Policy;
-using System.Collections;
+using SocketNetworking.UnityEngine.Components;
+using UnityEngine;
 
 namespace SocketNetworking.UnityEngine
 {

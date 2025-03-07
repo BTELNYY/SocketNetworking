@@ -2,20 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEditor;
-using UnityEngine;
-using SocketNetworking.UnityEngine.Components;
-using SocketNetworking.Server;
-using SocketNetworking.Client;
-using SocketNetworking.Shared;
-using JetBrains.Annotations;
 using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.UnityEngine.Utility;
+using SocketNetworking.Server;
+using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.Serialization;
+using SocketNetworking.UnityEngine.Components;
+using UnityEngine;
 
 namespace SocketNetworking.UnityEngine
 {

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking;
-using SocketNetworking.Shared.Serialization;
+﻿using SocketNetworking.Shared.Serialization;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine
