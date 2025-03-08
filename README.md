@@ -5,6 +5,14 @@
 
 ## Install Requirements
  * .NET Framework 4.8
+ * Visual Studio 2022
+
+## Import directions
+ * Create a git submodule for this project within your project files.
+
+**OR**
+
+ * Build the .dll from the project and use it.
 
 ## Understanding the design
  * This is a complicated library, and you should understand how its meant to be used! The library is designed for Server/Client communication, so you should understand how to treat both sides of the connection. (Tip: If you are ever lost, `NetworkManager.WhereAmI` can help you!)
@@ -118,6 +126,14 @@
 
 #### Using Network Objects
  Network objects can have various properties and methods, you will need to know about `NetworkInvoke`, `PacketListener`s and `NetworkSyncVar`s
+
+#### Network Avatars
+ * Network Avatars are NetworkObjects which are owned by a certain client and visible to everyone.
+ * All Network Avatars can be created from the `INetworkAvatar` interface. They also behave just like `INetworkObject`s. I strongly recommend using `NetworkAvatarBase` as the base class as it provides additional functions like public key broadcasting and auto destruction on client disconnect.
+ * To specify and Avatar, You can specify its type in `NetworkServer.ClientAvatar` which accepts a `Type`.
+
+#### Basic Network Avatar code (From the examples chat program)
+![image](https://github.com/user-attachments/assets/cf9ea1b2-a5bf-4042-9316-c9300010cb32)
 
 #### NetworkInvoke
  * A Network Invocation is a call to run a method on another object somewhere.
