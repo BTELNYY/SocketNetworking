@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {
-    public class NetworkAnimator : NetworkBehavior
+    public class NetworkAnimator : NetworkComponent
     {
         private Animator _animator;
 
