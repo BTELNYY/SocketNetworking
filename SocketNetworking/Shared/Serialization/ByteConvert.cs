@@ -49,6 +49,8 @@ namespace SocketNetworking.Shared.Serialization
             typeof(float),
             typeof(double),
 
+            typeof(NetworkClient),
+            typeof(INetworkObject),
             typeof(IPacketSerializable),
         };
 

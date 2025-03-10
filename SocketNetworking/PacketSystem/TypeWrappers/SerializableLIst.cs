@@ -40,7 +40,7 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
         public SerializableList()
         {
             TType = typeof(T);
-            if (!ByteConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)))
+            if (!ByteConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)) && !NetworkManager.TypeToTypeWrapper.ContainsKey(TType))
             {
                 throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", "values");
             }
