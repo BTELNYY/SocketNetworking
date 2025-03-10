@@ -2136,7 +2136,6 @@ namespace SocketNetworking.Client
 
         #endregion
 
-
         #region Misc
 
         /// <summary>
@@ -2161,13 +2160,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
-            NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
-            foreach (INetworkObject @object in objects)
-            {
-                @object.NetworkSpawn(this);
-                @object.OnSync(this);
-            }
+            ServerBeginSync();
             if (NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
             {
                 INetworkObject result = null;
@@ -2182,15 +2175,19 @@ namespace SocketNetworking.Client
                 }
                 if (result != null)
                 {
-                    result.OwnerClientID = ClientID;
-                    result.OwnershipMode = OwnershipMode.Client;
-                    result.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
-                    NetworkManager.AddNetworkObject(result);
-                    //Log.Debug(bRes.ToString());
-                    result.NetworkSpawn();
-                    _avatar = (INetworkAvatar)result;
-                    NetworkInvoke(nameof(GetClientAvatar), new object[] { result.NetworkID });
+                    ServerSpecifyAvatar((INetworkAvatar)result);
                 }
+            }
+        }
+
+        public void ServerBeginSync()
+        {
+            List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
+            NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
+            foreach (INetworkObject @object in objects)
+            {
+                @object.NetworkSpawn(this);
+                @object.OnSync(this);
             }
         }
 
@@ -2198,6 +2195,16 @@ namespace SocketNetworking.Client
         private void OnSyncBegin(NetworkHandle handle, int objCount)
         {
             Log.Info("Total of Network Objects that will be spawned automatically: " + objCount);
+        }
+
+        public void ServerSpecifyAvatar(INetworkAvatar avatar)
+        {
+            avatar.OwnerClientID = ClientID;
+            avatar.OwnershipMode = OwnershipMode.Client;
+            avatar.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
+            avatar.NetworkSpawn();
+            NetworkInvoke(nameof(GetClientAvatar), new object[] { avatar.NetworkID });
+            _avatar = avatar;
         }
 
         [NetworkInvokable(Direction = NetworkDirection.Server)]
