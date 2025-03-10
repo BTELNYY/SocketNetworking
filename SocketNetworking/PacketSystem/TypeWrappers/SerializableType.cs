@@ -13,6 +13,10 @@ namespace SocketNetworking.PacketSystem.TypeWrappers
 
         public SerializableType(Type type)
         {
+            if(type == null)
+            {
+                type = typeof(void);
+            }
             Value = type;
         }
 

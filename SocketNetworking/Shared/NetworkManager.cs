@@ -371,12 +371,31 @@ namespace SocketNetworking.Shared
         internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
         {
             //Spawning
-            if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && GetNetworkObjectByID(packet.NetworkIDTarget).Item1 == null)
+            if (packet.Action == ObjectManagePacket.ObjectManageAction.Create)
             {
-                Type objType = Assembly.Load(packet.AssmeblyName)?.GetType(packet.ObjectClassName);
+                Type objType = packet.ObjectType;
                 if (objType == null)
                 {
                     throw new NullReferenceException("Cannot find type by name or assembly.");
+                }
+                (INetworkObject, NetworkObjectData) existingObject = GetNetworkObjectByID(packet.NewNetworkID);
+                if (existingObject.Item1 != null)
+                {
+                    if(existingObject.Item1.GetType() != objType)
+                    {
+                        existingObject.Item1.LocalDestroy();
+                    }
+                    else
+                    {
+                        ObjectManagePacket alreadyExistsPacket = new ObjectManagePacket()
+                        {
+                            Action = ObjectManagePacket.ObjectManageAction.AlreadyExists,
+                            ObjectType = objType,
+                            NewNetworkID = packet.NewNetworkID,
+                        };
+                        handle.Client.Send(alreadyExistsPacket);
+                        return;
+                    }
                 }
                 NetworkObjectSpawner objSpawner = GetBestSpawner(objType);
                 INetworkObject netObj;
@@ -414,7 +433,7 @@ namespace SocketNetworking.Shared
             foreach (INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget))
             {
                 //Security
-                if (packet.Action != ObjectManagePacket.ObjectManageAction.Create && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy)
+                if (packet.Action != ObjectManagePacket.ObjectManageAction.Create && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy && packet.Action != ObjectManagePacket.ObjectManageAction.AlreadyExists)
                 {
                     if (WhereAmI == ClientLocation.Remote)
                     {
@@ -444,7 +463,10 @@ namespace SocketNetworking.Shared
                             @object.OnOwnerNetworkSpawned(handle.Client);
                         }
                         SendCreatedPulse(handle.Client, @object);
-                        @object.SyncVars();
+                        @object.SyncVars(handle.Client);
+                        break;
+                    case ObjectManagePacket.ObjectManageAction.AlreadyExists:
+                        //this is fine, just ignore it!
                         break;
                     case ObjectManagePacket.ObjectManageAction.Destroy:
                         INetworkObject destructionTarget = @object;

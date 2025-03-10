@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Security;
+using SocketNetworking.Attributes;
 using SocketNetworking.Client;
 using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
@@ -76,8 +78,7 @@ namespace SocketNetworking
             ObjectManagePacket packet = new ObjectManagePacket()
             {
                 Action = ObjectManagePacket.ObjectManageAction.Create,
-                AssmeblyName = obj.GetType().Assembly.FullName,
-                ObjectClassName = obj.GetType().FullName,
+                ObjectType = obj.GetType(),
                 ExtraData = obj.SendExtraData().Data,
             };
             NetworkServer.SendToAll(packet);
@@ -93,12 +94,18 @@ namespace SocketNetworking
             ObjectManagePacket packet = new ObjectManagePacket()
             {
                 Action = ObjectManagePacket.ObjectManageAction.Create,
-                AssmeblyName = obj.GetType().Assembly.FullName,
-                ObjectClassName = obj.GetType().FullName,
+                ObjectType = obj.GetType(),
+                
                 ExtraData = obj.SendExtraData().Data,
             };
             target.Send(packet);
             obj.OnLocalSpawned(packet);
+        }
+
+        public static void LocalDestroy(this INetworkObject obj)
+        {
+            obj.Destroy();
+            NetworkManager.RemoveNetworkObject(obj);
         }
 
         public static void NetworkDestroy(this INetworkObject obj)
@@ -119,9 +126,8 @@ namespace SocketNetworking
             ObjectManagePacket packet = new ObjectManagePacket()
             {
                 Action = ObjectManagePacket.ObjectManageAction.Destroy,
-                AssmeblyName = obj.GetType().Assembly.FullName,
+                ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                ObjectClassName = obj.GetType().FullName,
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 Active = obj.Active,
@@ -161,9 +167,46 @@ namespace SocketNetworking
                 try
                 {
                     INetworkSyncVar var = (INetworkSyncVar)data.GetValue(obj);
+                    if(var.ValueRaw != null && var.ValueRaw.GetType().GetInterfaces().Contains(typeof(INetworkObject)) && data.GetCustomAttribute<NoAutoSpawnAttribute>() == null)
+                    {
+                        INetworkObject innerObj = var.ValueRaw as INetworkObject;
+                        innerObj.NetworkSpawn();
+                    }
                     var.Sync();
                 }
                 catch(SecurityException sex)
+                {
+                    //blah blah whatever
+                    //Since these can happen, we ignore them. yes its slower. Cope harder.
+                    //See how its unused? means whoever is reading this wont be getting any ever.
+                }
+                catch (Exception ex)
+                {
+                    Log.GlobalError($"SyncVar general error: {ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Forces all <see cref="INetworkSyncVar"/>s to sync by calling <see cref="INetworkSyncVar.Sync"/>
+        /// </summary>
+        /// <param name="obj"></param>
+        public static void SyncVars(this INetworkObject obj, NetworkClient spawner)
+        {
+            NetworkObjectData datas = NetworkManager.GetNetworkObjectData(obj);
+            foreach (var data in datas.SyncVars)
+            {
+                try
+                {
+                    INetworkSyncVar var = (INetworkSyncVar)data.GetValue(obj);
+                    if (var.ValueRaw != null && var.ValueRaw.GetType().GetInterfaces().Contains(typeof(INetworkObject)) && data.GetCustomAttribute<NoAutoSpawnAttribute>() == null)
+                    {
+                        INetworkObject innerObj = var.ValueRaw as INetworkObject;
+                        innerObj.NetworkSpawn(spawner);
+                    }
+                    var.Sync();
+                }
+                catch (SecurityException sex)
                 {
                     //blah blah whatever
                     //Since these can happen, we ignore them. yes its slower. Cope harder.
@@ -194,9 +237,9 @@ namespace SocketNetworking
             ObjectManagePacket packet = new ObjectManagePacket()
             {
                 Action = ObjectManagePacket.ObjectManageAction.Create,
-                AssmeblyName = obj.GetType().Assembly.FullName,
+                ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                ObjectClassName = obj.GetType().FullName,
+                
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
@@ -250,9 +293,9 @@ namespace SocketNetworking
             ObjectManagePacket packet = new ObjectManagePacket()
             {
                 Action = ObjectManagePacket.ObjectManageAction.Create,
-                AssmeblyName = obj.GetType().Assembly.FullName,
+                ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                ObjectClassName = obj.GetType().FullName,
+                
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
@@ -296,9 +339,9 @@ namespace SocketNetworking
             ObjectManagePacket packet = new ObjectManagePacket()
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                AssmeblyName = obj.GetType().Assembly.FullName,
+                ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                ObjectClassName = obj.GetType().FullName,
+                
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 Active = state,
@@ -341,9 +384,9 @@ namespace SocketNetworking
             ObjectManagePacket packet = new ObjectManagePacket()
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                AssmeblyName = obj.GetType().Assembly.FullName,
+                ObjectType = obj.GetType(),
                 OwnerID = ownerId,
-                ObjectClassName = obj.GetType().FullName,
+                
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 Active = obj.Active,
@@ -386,9 +429,9 @@ namespace SocketNetworking
             ObjectManagePacket packet = new ObjectManagePacket()
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                AssmeblyName = obj.GetType().Assembly.FullName,
+                ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                ObjectClassName = obj.GetType().FullName,
+                
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = mode,
                 Active = obj.Active,
@@ -432,9 +475,9 @@ namespace SocketNetworking
             ObjectManagePacket packet = new ObjectManagePacket()
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                AssmeblyName = obj.GetType().Assembly.FullName,
+                ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                ObjectClassName = obj.GetType().FullName,
+                
                 NewNetworkID = newId,
                 OwnershipMode = obj.OwnershipMode,
                 Active = obj.Active,
@@ -477,9 +520,9 @@ namespace SocketNetworking
             ObjectManagePacket packet = new ObjectManagePacket()
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                AssmeblyName = obj.GetType().Assembly.FullName,
+                ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                ObjectClassName = obj.GetType().FullName,
+                
                 OwnershipMode = obj.OwnershipMode,
                 Active = obj.Active,
                 NewNetworkID = obj.NetworkID,

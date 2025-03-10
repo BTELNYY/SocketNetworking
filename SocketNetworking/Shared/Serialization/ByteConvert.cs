@@ -10,6 +10,7 @@ using SocketNetworking.Exceptions;
 using SocketNetworking.PacketSystem;
 using SocketNetworking.PacketSystem.TypeWrappers;
 using SocketNetworking.Server;
+using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Shared.Serialization
 {
@@ -81,6 +82,16 @@ namespace SocketNetworking.Shared.Serialization
                 sData.Data = writer.Data;
                 return sData;
             }
+
+            if (dataType.IsSubclassDeep(typeof(INetworkObject)))
+            {
+                INetworkObject networkObject = data as INetworkObject;
+                writer.WriteInt(networkObject.NetworkID);
+                sData.Type = data.GetType();
+                sData.Data = writer.Data;
+                return sData;
+            }
+
             if (data is IPacketSerializable serializable)
             {
                 writer.WritePacketSerialized<IPacketSerializable>(serializable);
@@ -280,6 +291,18 @@ namespace SocketNetworking.Shared.Serialization
                 }
                 read = reader.ReadBytes;
                 return client;
+            }
+
+            if(data.Type.GetInterfaces().Contains(typeof(INetworkObject)))
+            {
+                int id = reader.ReadInt();
+                read = reader.ReadBytes;
+                (INetworkObject, NetworkObjectData) obj = NetworkManager.GetNetworkObjectByID(id);
+                if(obj.Item1 == null)
+                {
+                    return null;
+                }
+                return obj.Item1 as INetworkObject;
             }
 
             if (data.Type.GetInterfaces().Contains(typeof(IPacketSerializable)))

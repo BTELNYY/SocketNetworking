@@ -1,5 +1,7 @@
-﻿using SocketNetworking.Shared;
+﻿using SocketNetworking.PacketSystem.TypeWrappers;
+using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
+using System;
 
 namespace SocketNetworking.PacketSystem.Packets
 {
@@ -9,9 +11,7 @@ namespace SocketNetworking.PacketSystem.Packets
 
         public ObjectManageAction Action { get; set; }
 
-        public string ObjectClassName { get; set; } = "";
-
-        public string AssmeblyName { get; set; } = "";
+        public Type ObjectType { get; set; }
 
         public OwnershipMode OwnershipMode { get; set; }
 
@@ -29,8 +29,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteWriter writer = base.Serialize();
             writer.WriteByte((byte)Action);
-            writer.WriteString(ObjectClassName);
-            writer.WriteString(AssmeblyName);
+            writer.WriteWrapper<SerializableType, Type>(new SerializableType(ObjectType));
             writer.WriteByte((byte)OwnershipMode);
             writer.WriteInt(OwnerID);
             writer.WriteByte((byte)ObjectVisibilityMode);
@@ -44,8 +43,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             ByteReader reader = base.Deserialize(data);
             Action = (ObjectManageAction)reader.ReadByte();
-            ObjectClassName = reader.ReadString();
-            AssmeblyName = reader.ReadString();
+            ObjectType = reader.ReadWrapper<SerializableType, Type>();
             OwnershipMode = (OwnershipMode)reader.ReadByte();
             OwnerID = reader.ReadInt();
             ObjectVisibilityMode = (ObjectVisibilityMode)reader.ReadByte();
@@ -64,6 +62,7 @@ namespace SocketNetworking.PacketSystem.Packets
         {
             Create,
             ConfirmCreate,
+            AlreadyExists,
             Destroy,
             ConfirmDestroy,
             Modify,
