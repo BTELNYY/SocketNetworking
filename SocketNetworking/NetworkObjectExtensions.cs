@@ -239,7 +239,6 @@ namespace SocketNetworking
                 Action = ObjectManagePacket.ObjectManageAction.Create,
                 ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,

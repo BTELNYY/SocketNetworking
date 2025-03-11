@@ -2199,11 +2199,13 @@ namespace SocketNetworking.Client
 
         public void ServerSpecifyAvatar(INetworkAvatar avatar)
         {
+            NetworkManager.AddNetworkObject(avatar);
             avatar.OwnerClientID = ClientID;
             avatar.OwnershipMode = OwnershipMode.Client;
             avatar.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
             avatar.NetworkSpawn();
             NetworkInvoke(nameof(GetClientAvatar), new object[] { avatar.NetworkID });
+            Log.Info($"Avatar Specify: {avatar.NetworkID}");
             _avatar = avatar;
         }
 

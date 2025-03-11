@@ -77,6 +77,7 @@
     <Compile Include="Misc\ChoiceEvent.cs" />
     <Compile Include="Misc\ClientHandler.cs" />
     <Compile Include="Misc\FancyConsole.cs" />
+    <Compile Include="Misc\NetworkInvocationCallback.cs" />
     <Compile Include="Misc\ObjectPool.cs" />
     <Compile Include="NetworkObjectExtensions.cs" />
     <Compile Include="PacketSystem\Packets\AuthenticationPacket.cs" />

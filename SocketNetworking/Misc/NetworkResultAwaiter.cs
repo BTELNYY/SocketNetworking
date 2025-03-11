@@ -20,7 +20,7 @@ namespace SocketNetworking.Misc
         public NetworkResultAwaiter(int callBackID) 
         {
             CallbackID = callBackID;
-            NetworkManager.OnNetworkInvokationResult += NetworkInvocationResultArrived;
+            NetworkManager.OnNetworkInvocationResult += NetworkInvocationResultArrived;
         }
 
         private void NetworkInvocationResultArrived(NetworkInvokationResultPacket obj)
@@ -42,7 +42,7 @@ namespace SocketNetworking.Misc
 
         ~NetworkResultAwaiter()
         {
-            NetworkManager.OnNetworkInvokationResult -= NetworkInvocationResultArrived;
+            NetworkManager.OnNetworkInvocationResult -= NetworkInvocationResultArrived;
             CallbackID = 0;
             ResultPacket = null;
             Consume();

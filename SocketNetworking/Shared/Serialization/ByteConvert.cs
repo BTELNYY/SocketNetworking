@@ -411,6 +411,7 @@ namespace SocketNetworking.Shared.Serialization
                 return Convert.ChangeType(value, data.Type);
             }
 
+            throw new NetworkSerializationException($"Type '{data.GetType().FullName}' cannot be deserialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
             object newObject = Activator.CreateInstance(data.Type);
             List<SerializedData> fieldData = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;
             List<SerializedData> propertyData = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;
