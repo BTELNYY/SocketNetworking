@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace SocketNetworking.Transports
+namespace SocketNetworking.Shared.Transports
 {
     public class UdpTransport : NetworkTransport
     {

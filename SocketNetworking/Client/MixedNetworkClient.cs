@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Net;
-using SocketNetworking.Attributes;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
-using SocketNetworking.Transports;
+using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
 {

@@ -1,4 +1,4 @@
-﻿using SocketNetworking.Attributes;
+﻿using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 

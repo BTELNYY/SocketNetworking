@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using SocketNetworking.Shared.PacketSystem;
 
-namespace SocketNetworking.Transports
+namespace SocketNetworking.Shared.Transports
 {
     /// <summary>
     /// A generic class to represent a connection to a peer in a managed way.

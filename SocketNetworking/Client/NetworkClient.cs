@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using SocketNetworking.Attributes;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
@@ -16,7 +16,7 @@ using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.Serialization;
-using SocketNetworking.Transports;
+using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
 {

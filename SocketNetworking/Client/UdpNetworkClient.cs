@@ -3,7 +3,7 @@ using System.Net;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
-using SocketNetworking.Transports;
+using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
 {

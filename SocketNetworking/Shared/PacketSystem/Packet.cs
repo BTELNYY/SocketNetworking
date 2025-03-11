@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Net;
-using SocketNetworking.Exceptions;
+using SocketNetworking.Shared.Exceptions;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;

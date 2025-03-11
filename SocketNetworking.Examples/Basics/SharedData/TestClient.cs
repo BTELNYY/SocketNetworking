@@ -1,5 +1,5 @@
 ﻿using System;
-using SocketNetworking.Attributes;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Streams;

@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.Shared.PacketSystem;
 
-namespace SocketNetworking.Transports
+namespace SocketNetworking.Shared.Transports
 {
     public class TcpTransport : NetworkTransport
     {

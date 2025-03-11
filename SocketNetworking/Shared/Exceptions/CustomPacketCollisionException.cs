@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SocketNetworking.Exceptions
+namespace SocketNetworking.Shared.Exceptions
 {
     public class CustomPacketCollisionException : Exception
     {

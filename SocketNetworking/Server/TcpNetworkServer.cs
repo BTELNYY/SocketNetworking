@@ -8,7 +8,7 @@ using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Events;
-using SocketNetworking.Transports;
+using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Server
 {

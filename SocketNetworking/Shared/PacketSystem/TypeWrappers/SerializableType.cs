@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using SocketNetworking.Attributes;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 

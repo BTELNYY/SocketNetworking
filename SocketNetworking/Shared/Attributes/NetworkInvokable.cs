@@ -1,8 +1,7 @@
 ﻿using System;
 using SocketNetworking.Client;
-using SocketNetworking.Shared;
 
-namespace SocketNetworking.Attributes
+namespace SocketNetworking.Shared.Attributes
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class NetworkInvokable : Attribute

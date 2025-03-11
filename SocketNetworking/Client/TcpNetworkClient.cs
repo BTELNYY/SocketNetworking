@@ -3,7 +3,7 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using SocketNetworking.Server;
-using SocketNetworking.Transports;
+using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
 {

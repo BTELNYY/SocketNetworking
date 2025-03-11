@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Reflection;
 using SocketNetworking.Shared.PacketSystem.Packets;
-using SocketNetworking.Shared;
 
-namespace SocketNetworking.Attributes
+namespace SocketNetworking.Shared.Attributes
 {
     /// <summary>
     /// This attribute should be applied to all methods on <see cref="INetworkObject"/> objects which should listen for Packets. Note that the method should take specific arguments, the library will print a warning if it ignores the method becuase it has inproper arguments. The <see cref="NetworkDirection"/> represents from where the packet must originate to be accepted, for example, if your method is using <see cref="NetworkDirection.Server"/>, it will only accept packets sent by the server.

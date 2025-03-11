@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using System.Security;
-using SocketNetworking.Attributes;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Client;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Server;
