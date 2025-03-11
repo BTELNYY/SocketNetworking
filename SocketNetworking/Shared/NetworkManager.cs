@@ -1339,6 +1339,12 @@ namespace SocketNetworking.Shared
             return packet;
         }
 
+        public static NetworkInvocationCallback<T> NetworkInvoke<T>(object target, NetworkClient sender, string methodName, object[] args, bool priority = false)
+        {
+            NetworkInvokationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
+            return new NetworkInvocationCallback<T>(packet.CallbackID);
+        }
+
         public static T NetworkInvoke<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000, bool priority = false)
         {
             NetworkInvokationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
