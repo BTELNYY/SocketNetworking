@@ -1,15 +1,8 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SocketNetworking.Shared.PacketSystem.TypeWrappers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Server;
-using SocketNetworking.Client;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Tests
@@ -20,7 +13,7 @@ namespace SocketNetworking.Tests
         [TestMethod]
         public void IPEndPointTesting()
         {
-            NetworkManager.ImportAssmebly(Assembly.GetExecutingAssembly()); 
+            NetworkManager.ImportAssmebly(Assembly.GetExecutingAssembly());
             IPAddress iPAddress = IPAddress.Loopback;
             IPEndPoint endPoint = new IPEndPoint(iPAddress, 3877);
             SerializableIPEndPoint serializedEndpoint = new SerializableIPEndPoint();

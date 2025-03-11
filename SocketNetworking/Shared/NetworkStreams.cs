@@ -145,7 +145,7 @@ namespace SocketNetworking.Shared
             StreamType = packet.StreamType;
         }
 
-        public Type StreamType { get;  }
+        public Type StreamType { get; }
 
         public StreamPacket Packet { get; }
 

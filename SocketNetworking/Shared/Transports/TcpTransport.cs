@@ -40,7 +40,7 @@ namespace SocketNetworking.Shared.Transports
 
         public void SetSSLState(bool state)
         {
-            lock(_lock)
+            lock (_lock)
             {
                 if (SslStream == null)
                 {
@@ -55,11 +55,11 @@ namespace SocketNetworking.Shared.Transports
         {
             get
             {
-                if(!IsConnected)
+                if (!IsConnected)
                 {
                     return null;
                 }
-                if(UsingSSL)
+                if (UsingSSL)
                 {
                     return SslStream;
                 }
@@ -78,12 +78,12 @@ namespace SocketNetworking.Shared.Transports
                 return Stream != null && Stream.CanRead && DataAmountAvailable > 0;
             }
         }
-        
+
         public override int DataAmountAvailable => Socket == null ? 0 : Socket.Available;
 
         public override Exception Connect(string hostname, int port)
         {
-            if(Client == null)
+            if (Client == null)
             {
                 Client = new TcpClient();
             }
@@ -102,7 +102,7 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
-                lock(_lock)
+                lock (_lock)
                 {
                     Buffer = ReceiveInternal();
                 }
@@ -141,8 +141,8 @@ namespace SocketNetworking.Shared.Transports
         /// <returns></returns>
         private byte[] ReceiveInternal()
         {
-            while(true)
-            {  
+            while (true)
+            {
                 if (!IsConnected)
                 {
                     Log.GlobalWarning("Tcp Transport is not connecting but is trying to read.");
@@ -181,7 +181,7 @@ namespace SocketNetworking.Shared.Transports
                                          // read the rest of the whole packet
                 if (bodySize > Packet.MaxPacketSize || bodySize < 0)
                 {
-                    
+
                     string s = string.Empty;
                     for (int i = 0; i < buffer.Length; i++)
                     {
@@ -224,7 +224,7 @@ namespace SocketNetworking.Shared.Transports
             catch (Exception ex)
             {
                 return ex;
-            }   
+            }
         }
 
         public override Exception Send(byte[] data)

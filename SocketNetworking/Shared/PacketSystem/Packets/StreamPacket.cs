@@ -1,6 +1,5 @@
 ﻿using System;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
-using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
@@ -27,7 +26,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             writer.WriteByte((byte)Function);
             writer.WriteUShort(StreamID);
             writer.WriteBool(Error);
-            if(Error)
+            if (Error)
             {
                 writer.WriteString(ErrorMessage);
             }
@@ -42,7 +41,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             Function = (StreamFunction)reader.ReadByte();
             StreamID = reader.ReadUShort();
             Error = reader.ReadBool();
-            if(Error)
+            if (Error)
             {
                 ErrorMessage = reader.ReadString();
             }

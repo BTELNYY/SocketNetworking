@@ -1,7 +1,7 @@
-﻿using SocketNetworking.Shared.PacketSystem;
-using SocketNetworking.Shared.PacketSystem.Packets;
-using SocketNetworking.Shared;
+﻿using SocketNetworking.Shared;
 using SocketNetworking.Shared.Authentication;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
 namespace BasicChat.Shared
@@ -18,7 +18,7 @@ namespace BasicChat.Shared
             ChatAuthData data;
             ByteReader reader = new ByteReader(packet.AuthData);
             data = reader.ReadPacketSerialized<ChatAuthData>();
-            if(string.IsNullOrWhiteSpace(data.Name))
+            if (string.IsNullOrWhiteSpace(data.Name))
             {
                 data.Name = handle.Client.ConnectedHostname;
             }
@@ -43,7 +43,7 @@ namespace BasicChat.Shared
 
         public override void HandleAuthResult(NetworkHandle handle, AuthenticationPacket packet)
         {
-            
+
         }
     }
 

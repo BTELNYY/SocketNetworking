@@ -1,5 +1,4 @@
-﻿using SocketNetworking.Shared;
-using SocketNetworking.Shared.Serialization;
+﻿using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
 {
@@ -22,7 +21,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public override ByteWriter Serialize()
         {
-            if(EncryptionFunction == EncryptionFunction.SymmetricalKeySend)
+            if (EncryptionFunction == EncryptionFunction.SymmetricalKeySend)
             {
                 Flags = Flags.SetFlag(PacketFlags.AsymetricalEncrypted, true);
             }

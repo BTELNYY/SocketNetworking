@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
@@ -13,11 +9,11 @@ namespace SocketNetworking.Misc
         public NetworkInvocationCallback(int id)
         {
             CallbackIID = id;
-            NetworkManager.OnNetworkInvocationResult += (x) => 
+            NetworkManager.OnNetworkInvocationResult += (x) =>
             {
-                if(x.CallbackID == CallbackIID)
+                if (x.CallbackID == CallbackIID)
                 {
-                    if(!Cancelled)
+                    if (!Cancelled)
                     {
                         object obj = ByteConvert.Deserialize(x.Result, out _);
                         Callback?.Invoke((T)obj);

@@ -13,7 +13,7 @@ namespace SocketNetworking.Server
 {
     public class UdpNetworkServer : NetworkServer
     {
-        protected Dictionary<IPEndPoint, UdpNetworkClient> _udpClients = new Dictionary<IPEndPoint, UdpNetworkClient> ();
+        protected Dictionary<IPEndPoint, UdpNetworkClient> _udpClients = new Dictionary<IPEndPoint, UdpNetworkClient>();
 
         public static IPEndPoint MyEndPoint
         {
@@ -42,7 +42,7 @@ namespace SocketNetworking.Server
                 {
                     continue;
                 }
-                if(Clients.Count >= Config.MaximumClients)
+                if (Clients.Count >= Config.MaximumClients)
                 {
                     continue;
                 }

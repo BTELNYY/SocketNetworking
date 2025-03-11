@@ -67,15 +67,15 @@ namespace SocketNetworking.Misc.Console
                     lock (locker)
                     {
                         bool stripCursor = true;
-                        for(int i = 0; i < cursorArray.Length; i++)
+                        for (int i = 0; i < cursorArray.Length; i++)
                         {
-                            if(buffer[i] != cursorArray[i])
+                            if (buffer[i] != cursorArray[i])
                             {
                                 stripCursor = false;
                                 break;
                             }
                         }
-                        if(stripCursor)
+                        if (stripCursor)
                         {
                             buffer.RemoveRange(0, cursorArray.Length);
                         }
@@ -91,7 +91,7 @@ namespace SocketNetworking.Misc.Console
                 {
                     if (k.Key == ConsoleKey.Backspace)
                     {
-                        if(buffer.Count == cursorArray.Length)
+                        if (buffer.Count == cursorArray.Length)
                         {
                             oldOut.Write(cursorArray[cursorArray.Length - 1]);
                             continue;

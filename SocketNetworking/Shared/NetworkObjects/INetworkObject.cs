@@ -1,5 +1,5 @@
-﻿using SocketNetworking.Shared.Attributes;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
 

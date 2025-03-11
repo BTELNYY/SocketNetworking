@@ -1,5 +1,4 @@
-﻿using SocketNetworking.Shared;
-using SocketNetworking.Shared.NetworkObjects;
+﻿using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
@@ -9,7 +8,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
     /// </summary>
     public class CustomPacket : TargetedPacket
     {
-        public CustomPacket() 
+        public CustomPacket()
         {
             CustomPacketID = NetworkManager.GetAutoPacketID(this);
         }

@@ -1,6 +1,6 @@
 ﻿using System;
-using SocketNetworking.Shared.SyncVars;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared.Attributes
 {

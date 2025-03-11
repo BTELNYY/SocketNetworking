@@ -16,7 +16,7 @@ namespace SocketNetworking.UnityEngine
         static void RecursiveTree(GameObject current, ref List<string> tree)
         {
             tree.Append(current.name);
-            if(current.transform.parent != null)
+            if (current.transform.parent != null)
             {
                 RecursiveTree(current.transform.parent.gameObject, ref tree);
             }

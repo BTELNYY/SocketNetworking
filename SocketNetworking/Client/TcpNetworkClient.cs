@@ -24,7 +24,7 @@ namespace SocketNetworking.Client
             }
             set
             {
-                if(value is TcpTransport tcp)
+                if (value is TcpTransport tcp)
                 {
                     base.Transport = tcp;
                 }
@@ -154,7 +154,7 @@ namespace SocketNetworking.Client
                 }
                 if (flags.HasFlag(X509ChainStatusFlags.UntrustedRoot))
                 {
-                    if(AllowUntrustedRootCertificates)
+                    if (AllowUntrustedRootCertificates)
                     {
                         Log.Warning("Untrusted root certificate detected. However, this client accepts this. Continue at your own risk!");
                         return true;

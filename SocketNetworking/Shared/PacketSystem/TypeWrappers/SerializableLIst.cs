@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
@@ -15,9 +14,9 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 
         public SerializableList(IEnumerable<T> values)
         {
-            if(typeof(T) == typeof(object))
+            if (typeof(T) == typeof(object))
             {
-                if(values.Count() != 0)
+                if (values.Count() != 0)
                 {
                     TType = values.ElementAt(0).GetType();
                 }
@@ -58,8 +57,8 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 
         public bool IsReadOnly => false;
 
-        public T this[int index] 
-        { 
+        public T this[int index]
+        {
             get
             {
                 return _internalList[index];
@@ -72,7 +71,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 
         public ByteReader Deserialize(byte[] data)
         {
-            if(_internalList.Count > 0)
+            if (_internalList.Count > 0)
             {
                 throw new InvalidOperationException("The array must be empty in order to deserialize.");
             }
@@ -117,7 +116,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
         public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            foreach(T element in _internalList)
+            foreach (T element in _internalList)
             {
                 //Dont need to worry about type safety as we check in constructor
                 byte[] finalBytes = ByteConvert.Serialize(element).Data;

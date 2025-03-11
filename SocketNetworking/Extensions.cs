@@ -45,14 +45,14 @@ namespace SocketNetworking
 
         public static T[] Push<T>(this T[] array, T[] newData)
         {
-            if(array.Length <= newData.Length)
+            if (array.Length <= newData.Length)
             {
                 array = newData.Take(array.Length).ToArray();
                 return array;
             }
             else
             {
-                foreach(T t in newData.Reverse())
+                foreach (T t in newData.Reverse())
                 {
                     array = array.Prepend(t).ToArray();
                 }
@@ -74,7 +74,7 @@ namespace SocketNetworking
         /// </returns>
         public static T[] AppendAll<T>(this T[] target, T[] value)
         {
-            foreach(T item in value)
+            foreach (T item in value)
             {
                 target = target.Append(item).ToArray();
             }
@@ -168,7 +168,7 @@ namespace SocketNetworking
         public static FieldInfo[] GetAllFields(this Type type, BindingFlags bindingAttr)
         {
             List<FieldInfo> fields = new List<FieldInfo>();
-            while(type != typeof(object))
+            while (type != typeof(object))
             {
                 fields.AddRange(type.GetFields(bindingAttr));
                 type = type.BaseType;
@@ -184,7 +184,7 @@ namespace SocketNetworking
                 {
                     gzipStream.Write(bytes, 0, bytes.Length);
                 }
-                byte[] finalArray  = memoryStream.ToArray();
+                byte[] finalArray = memoryStream.ToArray();
 #if DEBUG
                 Log.GlobalDebug($"Compression Data. Input Length: {bytes.Length}, Compressed Length: {finalArray.Length}");
 #endif
@@ -344,11 +344,11 @@ namespace SocketNetworking
             return (T)valueAsInt;
         }
 
-        public static List<T> GetActiveFlags<T>(this T value) where  T : Enum
+        public static List<T> GetActiveFlags<T>(this T value) where T : Enum
         {
             List<T> allValues = Enum.GetValues(typeof(T)).Cast<T>().ToList();
             List<T> activeFlags = new List<T>();
-            foreach(T t in allValues)
+            foreach (T t in allValues)
             {
                 if (value.HasFlag(t))
                 {
@@ -366,14 +366,14 @@ namespace SocketNetworking
         public static IEnumerable<MethodInfo> GetMethodsDeep(this Type type, BindingFlags flags = BindingFlags.Default)
         {
             List<MethodInfo> list = new List<MethodInfo>();
-            if(type == null)
+            if (type == null)
             {
                 return list;
             }
-            while(type != typeof(object))
+            while (type != typeof(object))
             {
                 MethodInfo[] methods = type.GetMethods(flags);
-                foreach(MethodInfo m in methods)
+                foreach (MethodInfo m in methods)
                 {
                     if (list.Contains(m))
                     {
@@ -401,17 +401,17 @@ namespace SocketNetworking
         /// </returns>
         public static IEnumerable<object> MatchParameters(this MethodInfo method, List<object> parameters)
         {
-            if(method == null)
+            if (method == null)
             {
                 return null;
             }
             //Fuck... optional params...
-            if(!method.GetParameters().Any(x => x.IsOptional) && method.GetParameters().Length > parameters.Count)
+            if (!method.GetParameters().Any(x => x.IsOptional) && method.GetParameters().Length > parameters.Count)
             {
                 return null;
             }
             object[] result = new object[method.GetParameters().Length];
-            for(int i = 0; i < method.GetParameters().Length; i++)
+            for (int i = 0; i < method.GetParameters().Length; i++)
             {
                 ParameterInfo parameter = method.GetParameters()[i];
                 int index = -1;
@@ -423,7 +423,7 @@ namespace SocketNetworking
                     }
                 }
                 //didnt find one
-                if(index == -1)
+                if (index == -1)
                 {
                     if (parameter.IsOptional)
                     {

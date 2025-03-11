@@ -82,22 +82,22 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual void OnNetworkSpawned(NetworkClient spawner)
         {
-            
+
         }
 
         public virtual void OnOwnerDisconnected(NetworkClient client)
         {
-            
+
         }
 
         public virtual void OnOwnerLocalSpawned(NetworkClient spawner)
         {
-            
+
         }
 
         public virtual void OnOwnerNetworkSpawned(NetworkClient spawner)
         {
-            
+
         }
 
         public virtual void OnReady(NetworkClient client, bool isReady)
@@ -122,12 +122,12 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
         {
-            
+
         }
 
         public virtual void OnSyncVarsChanged()
         {
-            
+
         }
 
         public virtual ByteReader ReceiveExtraData(byte[] extraData)

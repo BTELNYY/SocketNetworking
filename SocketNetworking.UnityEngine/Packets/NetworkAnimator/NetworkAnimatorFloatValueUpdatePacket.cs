@@ -73,7 +73,7 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
             if (ReadFloatSpecificValues)
             {
                 DampTime = reader.ReadFloat();
-                DeltaTime = reader.ReadFloat();   
+                DeltaTime = reader.ReadFloat();
             }
             return reader;
         }

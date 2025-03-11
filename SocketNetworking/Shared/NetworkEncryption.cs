@@ -26,7 +26,7 @@ namespace SocketNetworking.Shared
 
         public void RegisterRSA(IPEndPoint endPoint, string publicKey)
         {
-            if(OthersRSAKeys.ContainsKey(endPoint))
+            if (OthersRSAKeys.ContainsKey(endPoint))
             {
                 OthersRSAKeys[endPoint] = publicKey;
             }

@@ -16,11 +16,11 @@ namespace SocketNetworking.Example.Basics.Server
         public static void Main(string[] args)
         {
             Log.OnLog += ExampleLogger.HandleNetworkLog;
-            AppDomain.CurrentDomain.ProcessExit += (sender, evtArgs) => 
+            AppDomain.CurrentDomain.ProcessExit += (sender, evtArgs) =>
             {
                 NetworkServer.ServerInstance.StopServer();
             };
-            Console.CancelKeyPress += (sender, e) => 
+            Console.CancelKeyPress += (sender, e) =>
             {
                 NetworkServer.ServerInstance.StopServer();
             };
@@ -32,7 +32,7 @@ namespace SocketNetworking.Example.Basics.Server
             NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
             //speeeling
             NetworkServer.Config.CertificatePath = "./example.cert";
-            NetworkServer.ClientConnected += (x) => 
+            NetworkServer.ClientConnected += (x) =>
             {
                 Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());
             };

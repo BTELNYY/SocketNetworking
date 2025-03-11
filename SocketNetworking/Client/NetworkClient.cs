@@ -5,16 +5,16 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Misc;
-using SocketNetworking.Shared.PacketSystem;
-using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Authentication;
 using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.Transports;
 
@@ -31,7 +31,7 @@ namespace SocketNetworking.Client
         {
             get
             {
-                if(NetworkManager.WhereAmI == ClientLocation.Remote)
+                if (NetworkManager.WhereAmI == ClientLocation.Remote)
                 {
                     throw new InvalidOperationException("Cannot get local client from the server.");
                 }
@@ -55,7 +55,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Forcefully remove client on destruction
         /// </summary>
-        ~NetworkClient() 
+        ~NetworkClient()
         {
             ClientDestroyed?.Invoke(ClientID);
             if (Clients.Contains(this))
@@ -232,8 +232,8 @@ namespace SocketNetworking.Client
         /// <summary>
         /// The Avatar of the <see cref="NetworkClient"/>. This can be specified in 
         /// </summary>
-        public INetworkAvatar Avatar 
-        { 
+        public INetworkAvatar Avatar
+        {
             get => _avatar;
             private set
             {
@@ -253,9 +253,9 @@ namespace SocketNetworking.Client
         /// <summary>
         /// The clients Network Synced ID
         /// </summary>
-        public int ClientID 
-        { 
-            get 
+        public int ClientID
+        {
+            get
             {
                 return _clientId;
             }
@@ -382,7 +382,7 @@ namespace SocketNetworking.Client
         {
             get
             {
-                if(!IsConnected)
+                if (!IsConnected)
                 {
                     return false;
                 }
@@ -390,7 +390,7 @@ namespace SocketNetworking.Client
             }
             set
             {
-                if(!IsTransportConnected || CurrentConnectionState != ConnectionState.Connected) 
+                if (!IsTransportConnected || CurrentConnectionState != ConnectionState.Connected)
                 {
                     Log.Warning("Can't change ready state becuase the socket is not connected or the handshake isn't done.");
                     return;
@@ -400,7 +400,7 @@ namespace SocketNetworking.Client
                     Ready = value
                 };
                 Send(readyStateUpdatePacket);
-                if (CurrentClientLocation == ClientLocation.Remote) 
+                if (CurrentClientLocation == ClientLocation.Remote)
                 {
                     _ready = value;
                     ReadyStateChanged?.Invoke(!_ready, _ready);
@@ -425,9 +425,9 @@ namespace SocketNetworking.Client
         public bool ManualPacketHandle
         {
             get => _manualPacketHandle;
-            set 
+            set
             {
-                if(CurrentConnectionState == ConnectionState.Handshake)
+                if (CurrentConnectionState == ConnectionState.Handshake)
                 {
                     Log.Warning("Changing Packet read mode while the handshake has not yet finished, this may cause issues!");
                 }
@@ -443,7 +443,7 @@ namespace SocketNetworking.Client
             get => _manualPacketSend;
             set
             {
-                if(CurrentConnectionState == ConnectionState.Handshake)
+                if (CurrentConnectionState == ConnectionState.Handshake)
                 {
                     Log.Warning("Changing Packet write mode while in handshake, things may break!");
                 }
@@ -458,11 +458,11 @@ namespace SocketNetworking.Client
         {
             get
             {
-                if(Transport == null)
+                if (Transport == null)
                 {
                     return false;
                 }
-                if(CurrentClientLocation == ClientLocation.Remote && Transport.IsConnected)
+                if (CurrentClientLocation == ClientLocation.Remote && Transport.IsConnected)
                 {
                     return true;
                 }
@@ -481,7 +481,7 @@ namespace SocketNetworking.Client
             }
             set
             {
-                if(!value)
+                if (!value)
                 {
                     Disconnect();
                 }
@@ -503,7 +503,7 @@ namespace SocketNetworking.Client
             get => _connectionState;
             set
             {
-                if(CurrentClientLocation != ClientLocation.Remote)
+                if (CurrentClientLocation != ClientLocation.Remote)
                 {
                     Log.Error("Local client tried changing state of connection, only servers can do so.");
                     return;
@@ -518,7 +518,7 @@ namespace SocketNetworking.Client
                 ConnectionStateUpdated?.Invoke(value);
                 ClientConnectionStateChanged?.Invoke(this);
                 NetworkManager.SendConnectedPulse(this);
-                if(value == ConnectionState.Connected)
+                if (value == ConnectionState.Connected)
                 {
                     Log.Success("Handshake Successful.");
                 }
@@ -540,7 +540,7 @@ namespace SocketNetworking.Client
             {
                 _encryptionState = value;
                 //Log.Debug($"Encryption State Updated: {_encryptionState}, As Number: {(int)_encryptionState}");
-                if(value >= EncryptionState.SymmetricalReady)
+                if (value >= EncryptionState.SymmetricalReady)
                 {
                     EncryptionComplete?.Invoke();
                 }
@@ -652,7 +652,7 @@ namespace SocketNetworking.Client
         /// </summary>
         public bool NoPacketHandling
         {
-            get 
+            get
             {
                 return _noPacketHandling;
             }
@@ -766,7 +766,7 @@ namespace SocketNetworking.Client
 
         private void PrivateInit()
         {
-            
+
         }
 
         /// <summary>
@@ -825,7 +825,7 @@ namespace SocketNetworking.Client
         /// </returns>
         public bool Connect(string hostname, ushort port)
         {
-            if(CurrentClientLocation == ClientLocation.Remote)
+            if (CurrentClientLocation == ClientLocation.Remote)
             {
                 Log.Error("Cannot connect to other servers from remote.");
                 return false;
@@ -836,12 +836,12 @@ namespace SocketNetworking.Client
                 return false;
             }
             string finalHostname = "";
-            if(!IPAddress.TryParse(hostname, out IPAddress ip))
+            if (!IPAddress.TryParse(hostname, out IPAddress ip))
             {
                 try
                 {
                     IPHostEntry entry = Dns.GetHostEntry(hostname);
-                    if(entry.AddressList.Count() == 0)
+                    if (entry.AddressList.Count() == 0)
                     {
                         Log.Error($"Can't find host {hostname}");
                         return false;
@@ -851,7 +851,7 @@ namespace SocketNetworking.Client
                         finalHostname = entry.AddressList[0].ToString();
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Log.Error("DNS Resolution failed. " + ex.ToString());
                     return false;
@@ -870,7 +870,7 @@ namespace SocketNetworking.Client
                     throw ex;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 NetworkErrorData networkErrorData = new NetworkErrorData("Connection Failed: " + ex.ToString(), false);
                 ConnectionError?.Invoke(networkErrorData);
@@ -923,7 +923,7 @@ namespace SocketNetworking.Client
         /// </summary>
         public virtual void StopClient()
         {
-            if(_shuttingDown)
+            if (_shuttingDown)
             {
                 return;
             }
@@ -1014,11 +1014,11 @@ namespace SocketNetworking.Client
         /// <param name="packet"></param>
         public virtual void SendImmediate(Packet packet)
         {
-            if(NoPacketHandling)
+            if (NoPacketHandling)
             {
                 return;
             }
-            if(!Transport.IsConnected)
+            if (!Transport.IsConnected)
             {
                 return;
             }
@@ -1252,7 +1252,7 @@ namespace SocketNetworking.Client
             packet.Source = Transport.LocalEndPoint;
             packet.SendTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             //Port 0 is not a valid port.
-            if(packet.Destination.Port == 0)
+            if (packet.Destination.Port == 0)
             {
                 packet.Destination = Transport.Peer;
             }
@@ -1315,7 +1315,7 @@ namespace SocketNetworking.Client
                     Log.Error("Encryption cannot be done at this point: Not ready.");
                     return null;
                 }
-                if(packetDataBytes.Length > NetworkEncryption.MaxBytesForAsym)
+                if (packetDataBytes.Length > NetworkEncryption.MaxBytesForAsym)
                 {
                     Log.Warning($"Packet is too large for RSA! Packet Size: {packetDataBytes.Length}, Max Packet Size: {NetworkEncryption.MaxBytesForAsym}");
                 }
@@ -1334,7 +1334,7 @@ namespace SocketNetworking.Client
                 }
                 //Log.Debug("Encrypting Packet: Symmetrical");
                 packetDataBytes = EncryptionManager.Encrypt(packetDataBytes);
-                if(packetDataBytes.Length == 0)
+                if (packetDataBytes.Length == 0)
                 {
                     Log.Error("Encryption resulted in a null!");
                     return null;
@@ -1346,7 +1346,7 @@ namespace SocketNetworking.Client
             writer.WriteInt(packetFull.Length);
             writer.Write(packetFull);
             int written = writer.Length;
-            if(written != (packetFull.Length + 4))
+            if (written != (packetFull.Length + 4))
             {
                 Log.Error($"Trying to send corrupted size! {packet.ToString()}");
                 return null;
@@ -1549,12 +1549,12 @@ namespace SocketNetworking.Client
                     ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
                     clientToClientPacket.Deserialize(data);
                     INetworkObject obj = NetworkManager.GetNetworkObjectByID(clientToClientPacket.NetworkIDTarget).Item1;
-                    if(obj == null)
+                    if (obj == null)
                     {
                         return;
                     }
                     NetworkClient owner = obj.GetOwner();
-                    if(owner == null)
+                    if (owner == null)
                     {
                         return;
                     }
@@ -1603,7 +1603,7 @@ namespace SocketNetworking.Client
                 case PacketType.SSLUpgrade:
                     SSLUpgradePacket sslUpgradePacket = new SSLUpgradePacket();
                     sslUpgradePacket.Deserialize(data);
-                    if(sslUpgradePacket.Result)
+                    if (sslUpgradePacket.Result)
                     {
                         SSLUpgradePacket sslUpgradeResponse = new SSLUpgradePacket()
                         {
@@ -1678,7 +1678,7 @@ namespace SocketNetworking.Client
                         UpgradeToSSL = NetworkServer.Config.Certificate != null && SupportsSSL,
                     };
                     SendImmediate(serverDataPacket);
-                    if(serverDataPacket.UpgradeToSSL && SupportsSSL)
+                    if (serverDataPacket.UpgradeToSSL && SupportsSSL)
                     {
                         NoPacketSending = true;
                         SSLUpgradePacket upgradePacket = new SSLUpgradePacket();
@@ -1762,8 +1762,8 @@ namespace SocketNetworking.Client
                                 EncryptionFunction = EncryptionFunction.UpdateEncryptionStatus,
                                 State = EncryptionState.Encrypted
                             };
-                            Send(updateEncryptionStateFinal); 
-                            if(AuthenticationProvider != null && !AuthenticationProvider.ClientInitiate)
+                            Send(updateEncryptionStateFinal);
+                            if (AuthenticationProvider != null && !AuthenticationProvider.ClientInitiate)
                             {
                                 var authpack = AuthenticationProvider.BeginAuthentication();
                                 Send(authpack);
@@ -1796,7 +1796,7 @@ namespace SocketNetworking.Client
                 case PacketType.Authentication:
                     AuthenticationPacket authPacket = new AuthenticationPacket();
                     authPacket.Deserialize(data);
-                    if(AuthenticationProvider == null)
+                    if (AuthenticationProvider == null)
                     {
                         Log.Warning("Got an auth request but not AuthenticationProvider is specified.");
                         return;
@@ -1819,11 +1819,11 @@ namespace SocketNetworking.Client
                 case PacketType.ClientToClient:
                     ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
                     clientToClientPacket.Deserialize(data);
-                    if(Avatar == null)
+                    if (Avatar == null)
                     {
                         return;
                     }
-                    if(Avatar.NetworkID != clientToClientPacket.NetworkIDTarget)
+                    if (Avatar.NetworkID != clientToClientPacket.NetworkIDTarget)
                     {
                         return;
                     }
@@ -1850,7 +1850,7 @@ namespace SocketNetworking.Client
                     {
                         NetworkManager.ModifyNetworkObjectLocal(objectManagePacket, networkHandle);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Log.Error(ex.ToString());
                         SendLog(ex.Message, LogSeverity.Error);
@@ -1863,7 +1863,7 @@ namespace SocketNetworking.Client
                     {
                         NetworkManager.UpdateSyncVarsInternal(syncVarUpdate, this);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Log.Error(ex.ToString());
                         SendLog(ex.Message, LogSeverity.Error);
@@ -1933,7 +1933,7 @@ namespace SocketNetworking.Client
                 case PacketType.SSLUpgrade:
                     SSLUpgradePacket ssLUpgradePacket = new SSLUpgradePacket();
                     ssLUpgradePacket.Deserialize(data);
-                    if(ssLUpgradePacket.Continue)
+                    if (ssLUpgradePacket.Continue)
                     {
                         ConfirmSSL();
                         NoPacketSending = false;
@@ -2047,11 +2047,11 @@ namespace SocketNetworking.Client
                         case EncryptionFunction.UpdateEncryptionStatus:
                             //Log.Info($"Server updated my encryption state: {encryptionPacket.State.ToString()}");
                             EncryptionState = encryptionPacket.State;
-                            if(encryptionPacket.State == EncryptionState.Encrypted)
+                            if (encryptionPacket.State == EncryptionState.Encrypted)
                             {
                                 Log.Success("Encryption Successful.");
                             }
-                            if(AuthenticationProvider != null && AuthenticationProvider.ClientInitiate)
+                            if (AuthenticationProvider != null && AuthenticationProvider.ClientInitiate)
                             {
                                 var authpack = AuthenticationProvider.BeginAuthentication();
                                 Send(authpack);
@@ -2129,7 +2129,7 @@ namespace SocketNetworking.Client
 
         protected virtual void DoLatencyCheck()
         {
-            if(DateTime.UtcNow - _lastSent >= TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive))
+            if (DateTime.UtcNow - _lastSent >= TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive))
             {
                 CheckLatency();
             }
@@ -2196,7 +2196,7 @@ namespace SocketNetworking.Client
 
         public void ServerBeginSync()
         {
-            _ = Task.Run(() => 
+            _ = Task.Run(() =>
             {
                 List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
                 NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
@@ -2250,7 +2250,7 @@ namespace SocketNetworking.Client
 
     public struct NetworkErrorData
     {
-        public string Error { get; private set; } 
+        public string Error { get; private set; }
         public bool IsConnected { get; private set; }
 
         public NetworkErrorData(string error, bool isConnected)

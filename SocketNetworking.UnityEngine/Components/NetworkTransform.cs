@@ -1,6 +1,6 @@
-﻿using SocketNetworking.Shared.Attributes;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.UnityEngine.TypeWrappers;
 using UnityEngine;
@@ -97,7 +97,7 @@ namespace SocketNetworking.UnityEngine.Components
         private void GetNewNetworkRotation(SerializableQuaternion rotation)
         {
             transform.rotation = rotation.Quaternion;
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkRotation = rotation.Quaternion;
             }
@@ -158,7 +158,7 @@ namespace SocketNetworking.UnityEngine.Components
         private void GetNetworkRotation(SerializableVector3 point, SerializableVector3 axis, float angle)
         {
             transform.RotateAround(point.Vector, axis.Vector, angle);
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkRotateAround(point.Vector, point.Vector, angle);
             }
@@ -177,7 +177,7 @@ namespace SocketNetworking.UnityEngine.Components
         private void GetNetworkTranslate(SerializableVector3 vector3, Space space)
         {
             transform.Translate(vector3.Vector, space);
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkTranslate(vector3.Vector, space);
             }
@@ -196,7 +196,7 @@ namespace SocketNetworking.UnityEngine.Components
         private void GetNetworkLookAt(SerializableVector3 vector3)
         {
             transform.LookAt(vector3.Vector);
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkLookAt(vector3.Vector);
             }

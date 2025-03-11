@@ -38,11 +38,11 @@ namespace SocketNetworking.UnityEngine.Components
             }
             private set
             {
-                
+
             }
         }
 
-        public int PrefabID; 
+        public int PrefabID;
 
         public override ByteReader ReceiveExtraData(byte[] extraData)
         {

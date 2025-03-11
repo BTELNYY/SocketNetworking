@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
-using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Client;
+using SocketNetworking.Server;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Exceptions;
+using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
-using SocketNetworking.Server;
-using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Shared.Serialization
 {
@@ -295,12 +295,12 @@ namespace SocketNetworking.Shared.Serialization
                 return client;
             }
 
-            if(data.Type.GetInterfaces().Contains(typeof(INetworkObject)))
+            if (data.Type.GetInterfaces().Contains(typeof(INetworkObject)))
             {
                 int id = reader.ReadInt();
                 read = reader.ReadBytes;
                 (INetworkObject, NetworkObjectData) obj = NetworkManager.GetNetworkObjectByID(id);
-                if(obj.Item1 == null)
+                if (obj.Item1 == null)
                 {
                     return null;
                 }

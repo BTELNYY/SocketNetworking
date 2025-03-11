@@ -93,7 +93,7 @@ namespace SocketNetworking.Shared.Streams
             }
             set
             {
-                if(IsOpen)
+                if (IsOpen)
                 {
                     return;
                 }
@@ -114,7 +114,7 @@ namespace SocketNetworking.Shared.Streams
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            if(count < MAX_BYTES_PER_SEND)
+            if (count < MAX_BYTES_PER_SEND)
             {
                 StreamData data = new StreamData()
                 {
@@ -132,10 +132,10 @@ namespace SocketNetworking.Shared.Streams
             else
             {
                 byte[] bufferPart = buffer.Skip(offset).Take(count).ToArray();
-                while(bufferPart.Length > 0)
+                while (bufferPart.Length > 0)
                 {
                     byte[] slice = new byte[Math.Min(bufferPart.Length, MAX_BYTES_PER_SEND)];
-                    for(int i = 0; i < count && i < MAX_BYTES_PER_SEND; i++)
+                    for (int i = 0; i < count && i < MAX_BYTES_PER_SEND; i++)
                     {
                         slice[i] = bufferPart[i];
                     }
@@ -158,12 +158,12 @@ namespace SocketNetworking.Shared.Streams
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            if(offset > Available)
+            if (offset > Available)
             {
                 throw new ArgumentException("Offset out of range.");
             }
             int readCount = 0;
-            for(int i = offset; i < count && i < Available; i++)
+            for (int i = offset; i < count && i < Available; i++)
             {
                 buffer[i - offset] = this.buffer[i];
                 readCount = i;
@@ -194,7 +194,7 @@ namespace SocketNetworking.Shared.Streams
                     data.Chunk = data.Chunk.TakeLong(BufferSize).ToArray();
                     Log.Warning($"New chunk size: {data.Chunk.Length}");
                 }
-                if(Available + data.Chunk.Length > BufferSize)
+                if (Available + data.Chunk.Length > BufferSize)
                 {
                     int diff = (int)((Available + data.Chunk.Length) - BufferSize);
                     buffer = buffer.RemoveFromStart(diff);
@@ -205,7 +205,7 @@ namespace SocketNetworking.Shared.Streams
                     long index = Math.Max(0, Available);
                     for (int i = 0; i < data.Chunk.Length; i++)
                     {
-                        buffer[i+index] = data.Chunk[i];
+                        buffer[i + index] = data.Chunk[i];
                     }
                 }
                 Available += data.Chunk.LongLength;
@@ -242,11 +242,11 @@ namespace SocketNetworking.Shared.Streams
         public virtual void ReceiveNetworkData(StreamPacket packet)
         {
             ByteReader reader = new ByteReader(packet.Data);
-            if(packet.Error)
+            if (packet.Error)
             {
                 Log.Error($"Remote error: {packet.ErrorMessage}");
             }
-            switch(packet.Function)
+            switch (packet.Function)
             {
                 case StreamFunction.CustomData:
                     ReceiveCustomData(packet, packet.Data);
@@ -258,7 +258,7 @@ namespace SocketNetworking.Shared.Streams
                 case StreamFunction.Accept:
                 case StreamFunction.MetaData:
                     StreamMetaData metaData = reader.ReadPacketSerialized<StreamMetaData>();
-                    if(packet.Function == StreamFunction.Accept)
+                    if (packet.Function == StreamFunction.Accept)
                     {
                         _isOpen = true;
                         OnStreamOpenedRemote();
@@ -379,7 +379,7 @@ namespace SocketNetworking.Shared.Streams
         public virtual void OpenBlocking()
         {
             Open();
-            while(!IsOpen)
+            while (!IsOpen)
             {
 
             }
@@ -399,7 +399,7 @@ namespace SocketNetworking.Shared.Streams
 
         public virtual void Send(Packet packet, bool usePriority)
         {
-            if(CompressStream)
+            if (CompressStream)
             {
                 packet.Flags |= PacketFlags.Compressed;
             }
@@ -411,7 +411,7 @@ namespace SocketNetworking.Shared.Streams
         /// </summary>
         public override void Flush()
         {
-            
+
         }
 
         /// <summary>
@@ -431,7 +431,7 @@ namespace SocketNetworking.Shared.Streams
         /// <param name="value"></param>
         public override void SetLength(long value)
         {
-            
+
         }
     }
 

@@ -2,7 +2,6 @@
 using System.Net;
 using SocketNetworking.Shared.Exceptions;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
-using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem
@@ -51,9 +50,9 @@ namespace SocketNetworking.Shared.PacketSystem
         /// <summary>
         /// <see cref="PacketFlags"/> are used to determine metadata about the packet, such as encryption status or compression. Default value is <see cref="PacketFlags.None"/>. Setting this value on the sender applies the flags in transit, setting these flags otherwise causes no effects.
         /// </summary>
-        public virtual PacketFlags Flags 
-        { 
-            get; 
+        public virtual PacketFlags Flags
+        {
+            get;
             set;
         } = PacketFlags.None;
 
@@ -65,7 +64,7 @@ namespace SocketNetworking.Shared.PacketSystem
         /// </returns>
         public bool ValidateFlags()
         {
-            if(Flags.HasFlag(PacketFlags.AsymetricalEncrypted) && Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            if (Flags.HasFlag(PacketFlags.AsymetricalEncrypted) && Flags.HasFlag(PacketFlags.SymetricalEncrypted))
             {
                 return false;
             }
@@ -130,7 +129,7 @@ namespace SocketNetworking.Shared.PacketSystem
             int expectedLength = reader.DataLength - PacketHeader.HeaderLength;
             Size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadByte();
-            if(type != Type)
+            if (type != Type)
             {
                 throw new InvalidNetworkDataException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
             }
@@ -186,11 +185,11 @@ namespace SocketNetworking.Shared.PacketSystem
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         public static PacketHeader GetHeader(byte[] data)
         {
-            if(data == null)
+            if (data == null)
             {
                 return new PacketHeader();
             }
-            if(data.Length < HeaderLength)
+            if (data.Length < HeaderLength)
             {
                 throw new ArgumentOutOfRangeException("data", $"Data must be at least {HeaderLength} bytes long!");
             }

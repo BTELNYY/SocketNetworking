@@ -7,7 +7,7 @@ namespace BasicChat.Shared
     {
         public static void SendMessage(Message message)
         {
-            foreach(NetworkClient client in Clients)
+            foreach (NetworkClient client in Clients)
             {
                 client.NetworkInvoke("ClientGetMessage", new object[] { message });
             }

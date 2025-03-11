@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Net;
+using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.PacketSystem;
-using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.Transports;
 
@@ -40,11 +40,11 @@ namespace SocketNetworking.Client
             }
             set
             {
-                if(value is TcpTransport tcpTransport)
+                if (value is TcpTransport tcpTransport)
                 {
                     base.Transport = tcpTransport;
                 }
-                else if(value is UdpTransport udpTransport)
+                else if (value is UdpTransport udpTransport)
                 {
                     UdpTransport = udpTransport;
                 }
@@ -110,7 +110,7 @@ namespace SocketNetworking.Client
                     packet.Destination = UdpTransport.Peer;
                 }
                 byte[] fullBytes = SerializePacket(packet);
-                if(fullBytes == null)
+                if (fullBytes == null)
                 {
                     return;
                 }
@@ -119,7 +119,7 @@ namespace SocketNetworking.Client
                     Exception ex;
                     if (packet.Flags.HasFlag(PacketFlags.Priority))
                     {
-                        if(!UdpTransport.IsConnected)
+                        if (!UdpTransport.IsConnected)
                         {
                             return;
                         }
@@ -127,7 +127,7 @@ namespace SocketNetworking.Client
                     }
                     else
                     {
-                        if(!TcpTransport.IsConnected)
+                        if (!TcpTransport.IsConnected)
                         {
                             return;
                         }
@@ -178,7 +178,7 @@ namespace SocketNetworking.Client
             {
                 Deserialize(packet.Item1, packet.Item3);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Log.Warning($"Malformed Packet. Length: {packet.Item1.Length}, From: {packet.Item2}. Error: {ex.Message}");
             }
@@ -206,13 +206,13 @@ namespace SocketNetworking.Client
 
         private void ServerSendUDPInfo(int passKey)
         {
-            NetworkInvoke(nameof(ClientReceiveUDPInfo), new object[] { passKey });  
+            NetworkInvoke(nameof(ClientReceiveUDPInfo), new object[] { passKey });
         }
 
         [NetworkInvokable(NetworkDirection.Server)]
         private void ClientReceiveUDPInfo(int passKey)
         {
-            if(_udpConnected)
+            if (_udpConnected)
             {
                 return;
             }

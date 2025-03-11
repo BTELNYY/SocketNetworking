@@ -1,5 +1,4 @@
-﻿using SocketNetworking.Shared;
-using SocketNetworking.Shared.Serialization;
+﻿using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
 {
@@ -7,9 +6,9 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
     {
         public sealed override PacketType Type => PacketType.ConnectionStateUpdate;
 
-        public ConnectionState State  = ConnectionState.Disconnected;
+        public ConnectionState State = ConnectionState.Disconnected;
 
-        public string Reason  = "";
+        public string Reason = "";
 
         public override ByteReader Deserialize(byte[] data)
         {

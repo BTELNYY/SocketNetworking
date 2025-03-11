@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.UnityEngine.Components;
 using UnityEngine;
@@ -61,7 +61,7 @@ namespace SocketNetworking.UnityEngine
             trueTree.RemoveAt(0);
             trueTree.Reverse();
             GameObject parent = Utility.Utility.FindByTree(trueTree);
-            if(parent == null)
+            if (parent == null)
             {
                 Log.GlobalError("Can't find parent by tree! Tree: " + string.Join("/", trueTree));
             }
@@ -81,7 +81,7 @@ namespace SocketNetworking.UnityEngine
         public static List<NetworkBehavior> GetNetworkBehaviors()
         {
             List<NetworkBehavior> behaviors = new List<NetworkBehavior>();
-            foreach(INetworkObject obj in GetNetworkBehaviors().Where(x => x is NetworkBehavior))
+            foreach (INetworkObject obj in GetNetworkBehaviors().Where(x => x is NetworkBehavior))
             {
                 behaviors.Add(obj as NetworkBehavior);
             }
@@ -133,14 +133,14 @@ namespace SocketNetworking.UnityEngine
         /// <exception cref="NullReferenceException"></exception>
         public static bool RegisterPrefab(int id, GameObject prefab)
         {
-            if(_prefabSpawnIds.ContainsKey(id))
+            if (_prefabSpawnIds.ContainsKey(id))
             {
                 Log.GlobalWarning($"Tried to register prefab (ID: {id}, ObjectName: {prefab.name}) with an ID that is already taken. ");
                 return false;
             }
             _prefabSpawnIds.Add(id, prefab);
             NetworkIdentity netPrefab = prefab.GetComponent<NetworkIdentity>();
-            if(netPrefab == null)
+            if (netPrefab == null)
             {
                 throw new NullReferenceException("All prefabs must have a valid NetworkIdentity.");
             }

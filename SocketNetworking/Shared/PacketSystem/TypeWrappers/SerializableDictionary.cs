@@ -26,7 +26,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
             get
             {
                 Dictionary<TKey, TValue> dict = new Dictionary<TKey, TValue>();
-                for(int i = 0; i < keys.Count; i++)
+                for (int i = 0; i < keys.Count; i++)
                 {
                     dict.Add(keys[i], values[i]);
                 }
@@ -58,8 +58,8 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
             values = new SerializableList<TValue>();
         }
 
-        public TValue this[TKey key] 
-        { 
+        public TValue this[TKey key]
+        {
             get
             {
                 return ContainedDict[key];
@@ -108,7 +108,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            for(int i = arrayIndex; i < keys.Count; i++)
+            for (int i = arrayIndex; i < keys.Count; i++)
             {
                 array.Append(new KeyValuePair<TKey, TValue>(keys[i], values[i]));
             }

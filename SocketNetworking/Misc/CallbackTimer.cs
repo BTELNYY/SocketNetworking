@@ -48,7 +48,7 @@ namespace SocketNetworking.Misc
             _checkFunc = checkFunc;
         }
 
-        ~CallbackTimer() 
+        ~CallbackTimer()
         {
             _task = null;
             _callback = null;
@@ -57,21 +57,21 @@ namespace SocketNetworking.Misc
 
         public void Start()
         {
-            if(_task != null)
+            if (_task != null)
             {
                 return;
             }
-            _task = Task.Run(() => 
+            _task = Task.Run(() =>
             {
                 TimeSpan span = TimeSpan.FromSeconds(_delay);
                 DateTime expires = DateTime.Now + span;
-                while(expires > DateTime.Now)
+                while (expires > DateTime.Now)
                 {
-                    if(_predicate != null && !_predicate(_data))
+                    if (_predicate != null && !_predicate(_data))
                     {
                         _token?.Cancel();
                     }
-                    if(_checkFunc != null && !_checkFunc(_data))
+                    if (_checkFunc != null && !_checkFunc(_data))
                     {
                         _token?.Cancel();
                     }
@@ -91,7 +91,7 @@ namespace SocketNetworking.Misc
 
         public void Abort()
         {
-            if(_task == null || _token == null)
+            if (_task == null || _token == null)
             {
                 return;
             }

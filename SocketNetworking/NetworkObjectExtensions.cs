@@ -2,12 +2,12 @@
 using System.Linq;
 using System.Reflection;
 using System.Security;
-using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Client;
-using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking
@@ -16,7 +16,7 @@ namespace SocketNetworking
     {
         public static NetworkClient GetOwner(this INetworkObject obj)
         {
-            if(NetworkManager.WhereAmI != ClientLocation.Remote)
+            if (NetworkManager.WhereAmI != ClientLocation.Remote)
             {
                 return null;
             }
@@ -111,7 +111,7 @@ namespace SocketNetworking
         {
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
-                if(NetworkClient.LocalClient != null && !NetworkClient.LocalClient.IsConnected)
+                if (NetworkClient.LocalClient != null && !NetworkClient.LocalClient.IsConnected)
                 {
                     Log.GlobalInfo($"Destroying object ID {obj.NetworkID} as the connection has been stopped.");
                     obj.Destroy();
@@ -162,19 +162,19 @@ namespace SocketNetworking
         public static void SyncVars(this INetworkObject obj)
         {
             NetworkObjectData datas = NetworkManager.GetNetworkObjectData(obj);
-            foreach(var data in datas.SyncVars)
+            foreach (var data in datas.SyncVars)
             {
                 try
                 {
                     INetworkSyncVar var = (INetworkSyncVar)data.GetValue(obj);
-                    if(var.ValueRaw != null && var.ValueRaw.GetType().GetInterfaces().Contains(typeof(INetworkObject)) && data.GetCustomAttribute<NoAutoSpawnAttribute>() == null)
+                    if (var.ValueRaw != null && var.ValueRaw.GetType().GetInterfaces().Contains(typeof(INetworkObject)) && data.GetCustomAttribute<NoAutoSpawnAttribute>() == null)
                     {
                         INetworkObject innerObj = var.ValueRaw as INetworkObject;
                         innerObj.NetworkSpawn();
                     }
                     var.Sync();
                 }
-                catch(SecurityException sex)
+                catch (SecurityException sex)
                 {
                     //blah blah whatever
                     //Since these can happen, we ignore them. yes its slower. Cope harder.
@@ -226,22 +226,22 @@ namespace SocketNetworking
         /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSpawn(this INetworkObject obj)
         {
-            if(!obj.Spawnable)
+            if (!obj.Spawnable)
             {
                 throw new InvalidOperationException("This object is not spawnable.");
             }
-            if(NetworkManager.WhereAmI == ClientLocation.Local)
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");
             }
             var result = NetworkManager.GetNetworkObjectByID(obj.NetworkID);
-            if(result.Item1 == null)
+            if (result.Item1 == null)
             {
                 NetworkManager.AddNetworkObject(obj);
             }
             else
             {
-                if(result.Item1.GetType() != obj.GetType())
+                if (result.Item1.GetType() != obj.GetType())
                 {
                     throw new InvalidOperationException("It seems this objects ID has been added and the type does not match.");
                 }
@@ -258,7 +258,7 @@ namespace SocketNetworking
                 Active = obj.Active,
                 ExtraData = obj.SendExtraData().Data,
             };
-            if(obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
+            if (obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
             {
                 packet.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
                 obj.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
@@ -281,7 +281,7 @@ namespace SocketNetworking
             }
             obj.OnLocalSpawned(packet);
             NetworkClient owner = obj.GetOwner();
-            if(owner != null)
+            if (owner != null)
             {
                 obj.OnOwnerLocalSpawned(owner);
             }
@@ -329,7 +329,7 @@ namespace SocketNetworking
                     {
                         throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
                     }
-                    if(client.ClientID != target.ClientID)
+                    if (client.ClientID != target.ClientID)
                     {
                         throw new InvalidOperationException($"Can't spawn an object with a targetted client while the object is hidden to non-owner client and the targetted client is not the owner client.");
                     }
@@ -340,7 +340,7 @@ namespace SocketNetworking
                     break;
             }
             obj.OnLocalSpawned(packet);
-            if(obj.OwnerClientID == target.ClientID)
+            if (obj.OwnerClientID == target.ClientID)
             {
                 obj.OnOwnerLocalSpawned(target);
             }
@@ -449,19 +449,19 @@ namespace SocketNetworking
                 Active = obj.Active,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
-            if(NetworkManager.WhereAmI == ClientLocation.Local)
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 NetworkClient.LocalClient.Send(packet);
             }
-            else if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            else if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                switch(obj.ObjectVisibilityMode)
+                switch (obj.ObjectVisibilityMode)
                 {
                     case ObjectVisibilityMode.ServerOnly:
                         break;
                     case ObjectVisibilityMode.OwnerAndServer:
                         NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
-                        if(client == null)
+                        if (client == null)
                         {
                             throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
                         }
@@ -579,11 +579,11 @@ namespace SocketNetworking
                 NewNetworkID = obj.NetworkID,
                 ObjectVisibilityMode = mode,
             };
-            if(mode == obj.ObjectVisibilityMode)
+            if (mode == obj.ObjectVisibilityMode)
             {
                 return;
             }
-            if(mode == ObjectVisibilityMode.ServerOnly)
+            if (mode == ObjectVisibilityMode.ServerOnly)
             {
                 throw new InvalidOperationException("You must destroy the object, do not change its visibility to server only!");
             }
@@ -617,11 +617,11 @@ namespace SocketNetworking
 
         public static bool CheckVisibility(this INetworkObject obj, NetworkClient viewer)
         {
-            if(obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
+            if (obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
             {
                 return false;
             }
-            if(obj.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
+            if (obj.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
             {
                 return true;
             }
@@ -634,7 +634,7 @@ namespace SocketNetworking
         /// <param name="obj"></param>
         public static void EnsureNetworkIDIsGiven(this INetworkObject obj)
         {
-            if(obj.NetworkID != 0 && obj.NetworkID != -1)
+            if (obj.NetworkID != 0 && obj.NetworkID != -1)
             {
                 return;
             }

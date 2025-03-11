@@ -1,11 +1,11 @@
 ﻿using System;
 using SocketNetworking;
-using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Client;
-using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
 
 namespace BasicChat.Shared
@@ -17,9 +17,9 @@ namespace BasicChat.Shared
         public ChatClient()
         {
             AuthenticationProvider = new ChatAuthProvider(this);
-            AuthenticationStateChanged += () => 
+            AuthenticationStateChanged += () =>
             {
-                if(NetworkManager.WhereAmI == ClientLocation.Remote)
+                if (NetworkManager.WhereAmI == ClientLocation.Remote)
                 {
                     ServerSendMessage(new Message()
                     {
@@ -51,31 +51,31 @@ namespace BasicChat.Shared
         [NetworkInvokable(NetworkDirection.Client)]
         private void ServerGetMessage(NetworkHandle handle, Message message)
         {
-            if(message.Sender != Avatar.NetworkID)
+            if (message.Sender != Avatar.NetworkID)
             {
                 Log.Warning($"Tried to send message as not myself! Avatar: {Avatar.NetworkID}, Sender: {message.Sender}");
                 return;
             }
-            if(string.IsNullOrWhiteSpace(message.Content))
+            if (string.IsNullOrWhiteSpace(message.Content))
             {
                 return;
             }
             Log.Info($"Message: \"{message.Content}\", Target: {message.Target}, Source Name: {((ChatAvatar)Avatar).Name}");
             message.Color = ConsoleColor.White;
             MessageReceived?.Invoke(handle, message);
-            if(message.Target == 0)
+            if (message.Target == 0)
             {
                 NetworkServer.NetworkInvokeOnAll(this, nameof(ClientGetMessage), new object[] { message });
             }
             else
             {
                 INetworkObject targetAvatar = NetworkManager.GetNetworkObjectByID(message.Target).Item1;
-                if(targetAvatar == null)
+                if (targetAvatar == null)
                 {
                     return;
                 }
                 NetworkClient owner = targetAvatar.GetOwner();
-                if(owner == null)
+                if (owner == null)
                 {
                     return;
                 }
@@ -86,17 +86,17 @@ namespace BasicChat.Shared
         [NetworkInvokable(NetworkDirection.Server)]
         private void ClientGetMessage(NetworkHandle handle, Message message)
         {
-            if(message.Sender == 0)
+            if (message.Sender == 0)
             {
                 MessageReceived?.Invoke(handle, message);
                 return;
             }
             INetworkObject obj = NetworkManager.GetNetworkObjectByID(message.Sender).Item1;
-            if(obj == null)
+            if (obj == null)
             {
                 return;
             }
-            if(!(obj is ChatAvatar avatar))
+            if (!(obj is ChatAvatar avatar))
             {
                 return;
             }

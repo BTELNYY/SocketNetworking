@@ -23,7 +23,7 @@ namespace SocketNetworking.Server
             else
             {
                 Log.Info($"Found an SSL Certificate: {Config.CertificatePath}, Checking.");
-                if(!File.Exists(Config.CertificatePath))
+                if (!File.Exists(Config.CertificatePath))
                 {
                     Log.Warning($"Certificate couldn't be loaded: '{Config.CertificatePath}' is not found.");
                 }
@@ -68,7 +68,7 @@ namespace SocketNetworking.Server
                     continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();
-                _ = Task.Run(() => 
+                _ = Task.Run(() =>
                 {
                     TcpTransport tcpTransport = new TcpTransport(socket);
                     IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;

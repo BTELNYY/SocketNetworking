@@ -10,9 +10,9 @@ namespace SocketNetworking.UnityEngine.Utility
         {
             GameObject obj = GameObject.Find(path.ElementAt(0));
             int counter = 0;
-            while(obj != null)
+            while (obj != null)
             {
-                if(path.Count() == counter + 1)
+                if (path.Count() == counter + 1)
                 {
                     return obj;
                 }

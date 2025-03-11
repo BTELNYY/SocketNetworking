@@ -17,7 +17,7 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
             Value = value;
         }
 
-        public NetworkAnimatorBoolValueUpdatePacket(string name, bool value) 
+        public NetworkAnimatorBoolValueUpdatePacket(string name, bool value)
         {
             ValueHash = Animator.StringToHash(name);
             Value = value;

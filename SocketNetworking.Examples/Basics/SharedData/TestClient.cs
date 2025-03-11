@@ -1,7 +1,7 @@
 ﻿using System;
-using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Streams;
 
 namespace SocketNetworking.Example.Basics.SharedData
@@ -37,7 +37,7 @@ namespace SocketNetworking.Example.Basics.SharedData
 
         private void TestClient_ReadyStateChanged(bool arg1, bool arg2)
         {
-            if(Ready && CurrentClientLocation == ClientLocation.Remote)
+            if (Ready && CurrentClientLocation == ClientLocation.Remote)
             {
                 NetworkSyncedStream stream = new NetworkSyncedStream(this, 1, 16);
                 stream.StreamOpened += () =>

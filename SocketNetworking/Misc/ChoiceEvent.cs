@@ -65,7 +65,7 @@ namespace SocketNetworking.Misc
             }
             set
             {
-                if(!_final)
+                if (!_final)
                 {
                     _innerState = value;
                 }

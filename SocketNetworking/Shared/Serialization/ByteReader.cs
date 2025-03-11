@@ -87,7 +87,7 @@ namespace SocketNetworking.Shared.Serialization
 
         public void Remove(int length)
         {
-            lock(_lock)
+            lock (_lock)
             {
                 _workingSetData = _workingSetData.RemoveFromStart(length);
             }
@@ -123,7 +123,7 @@ namespace SocketNetworking.Shared.Serialization
 
         public byte[] ReadNoRemove(int length)
         {
-            lock(_lock)
+            lock (_lock)
             {
                 byte[] data = _workingSetData.Take(length).ToArray();
                 return data;
@@ -258,7 +258,7 @@ namespace SocketNetworking.Shared.Serialization
 
         public short ReadShort()
         {
-            lock(_lock)
+            lock (_lock)
             {
                 int sizeToRemove = sizeof(short);
                 short result = BitConverter.ToInt16(_workingSetData, 0);

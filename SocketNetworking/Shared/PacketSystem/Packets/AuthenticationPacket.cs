@@ -1,5 +1,4 @@
-﻿using SocketNetworking.Shared;
-using SocketNetworking.Shared.Authentication;
+﻿using SocketNetworking.Shared.Authentication;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets

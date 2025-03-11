@@ -1,5 +1,4 @@
-﻿using SocketNetworking.Shared;
-using SocketNetworking.Shared.Serialization;
+﻿using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
 {
@@ -24,7 +23,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             ByteReader reader = base.Deserialize(data);
             Result = reader.ReadBool();
             Continue = reader.ReadBool();
-            return reader; 
+            return reader;
         }
     }
 }

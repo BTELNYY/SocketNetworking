@@ -1,19 +1,18 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Security;
-using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Client;
-using SocketNetworking.Shared.Exceptions;
 using SocketNetworking.Misc;
+using SocketNetworking.Server;
+using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.Exceptions;
+using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
-using SocketNetworking.Server;
-using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.SyncVars;
 
@@ -143,7 +142,7 @@ namespace SocketNetworking.Shared
 
         internal static Assembly GetAssemblyFromHash(ulong hash)
         {
-            if(assemblyNames.ContainsKey(hash))
+            if (assemblyNames.ContainsKey(hash))
             {
                 return assemblyNames[hash];
             }
@@ -153,7 +152,7 @@ namespace SocketNetworking.Shared
         internal static ulong GetHashFromAssembly(Assembly assembly)
         {
             ulong hash = assembly.FullName.GetULongStringHash();
-            if(!assemblyNames.ContainsKey(hash))
+            if (!assemblyNames.ContainsKey(hash))
             {
                 assemblyNames.TryAdd(hash, assembly);
             }
@@ -171,7 +170,7 @@ namespace SocketNetworking.Shared
             foreach (Type t in applicableTypes)
             {
                 var data = GetNetworkObjectData(t);
-                if(data == null)
+                if (data == null)
                 {
                     continue;
                 }
@@ -310,7 +309,7 @@ namespace SocketNetworking.Shared
 
         public static bool RegisterSpawner(Type type, NetworkObjectSpawnerDelegate spawner, bool allowSubclasses)
         {
-            if(NetworkObjectSpawners.Any(x => x.TargetType == type))
+            if (NetworkObjectSpawners.Any(x => x.TargetType == type))
             {
                 Log.Error("Can't register that spawner: The type is already registered.");
                 return false;
@@ -382,7 +381,7 @@ namespace SocketNetworking.Shared
                 (INetworkObject, NetworkObjectData) existingObject = GetNetworkObjectByID(packet.NewNetworkID);
                 if (existingObject.Item1 != null)
                 {
-                    if(existingObject.Item1.GetType() != objType)
+                    if (existingObject.Item1.GetType() != objType)
                     {
                         existingObject.Item1.LocalDestroy();
                     }
@@ -426,7 +425,7 @@ namespace SocketNetworking.Shared
                 handle.Client.Send(creationConfirmation);
                 AddNetworkObject(netObj);
                 netObj.OnLocalSpawned(packet);
-                if(netObj.OwnerClientID == handle.Client.ClientID)
+                if (netObj.OwnerClientID == handle.Client.ClientID)
                 {
                     netObj.OnOwnerLocalSpawned(handle.Client);
                 }
@@ -461,7 +460,7 @@ namespace SocketNetworking.Shared
                         throw new InvalidOperationException("Creation in modification loop (Internal Error)");
                     case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
                         @object.OnNetworkSpawned(handle.Client);
-                        if(@object.OwnerClientID == handle.Client.ClientID)
+                        if (@object.OwnerClientID == handle.Client.ClientID)
                         {
                             @object.OnOwnerNetworkSpawned(handle.Client);
                         }
@@ -576,7 +575,7 @@ namespace SocketNetworking.Shared
             foreach (INetworkObject @object in NetworkObjects.Keys)
             {
                 @object.OnDisconnected(networkClient);
-                if(@object.OwnerClientID == networkClient.ClientID)
+                if (@object.OwnerClientID == networkClient.ClientID)
                 {
                     @object.OnOwnerDisconnected(networkClient);
                 }
@@ -829,10 +828,10 @@ namespace SocketNetworking.Shared
         {
             Type typeOfObject = target.GetType();
             NetworkObjectData data = GetNetworkObjectData(typeOfObject);
-            foreach(FieldInfo field in data.SyncVars)
+            foreach (FieldInfo field in data.SyncVars)
             {
                 INetworkSyncVar var;
-                if(field.GetValue(target) == null)
+                if (field.GetValue(target) == null)
                 {
                     var = (INetworkSyncVar)Activator.CreateInstance(field.FieldType, target, target.OwnershipMode);
                 }
@@ -840,11 +839,11 @@ namespace SocketNetworking.Shared
                 {
                     var = (INetworkSyncVar)field.GetValue(target);
                 }
-                if(var.OwnerObject == default)
+                if (var.OwnerObject == default)
                 {
                     var.OwnerObject = target;
                 }
-                if(var.Name == string.Empty)
+                if (var.Name == string.Empty)
                 {
                     var.Name = field.Name;
                 }
@@ -873,7 +872,7 @@ namespace SocketNetworking.Shared
         public static void TriggerPacketListeners(PacketHeader header, byte[] data, NetworkClient runningClient)
         {
             ClientLocation clientLocation = runningClient.CurrentClientLocation;
-            if(header.Type != PacketType.Custom)
+            if (header.Type != PacketType.Custom)
             {
                 Log.Error("Non Custom packets cannot be used in PacketListeners");
                 return;
@@ -988,9 +987,9 @@ namespace SocketNetworking.Shared
         internal static void UpdateSyncVarsInternal(SyncVarUpdatePacket packet, NetworkClient runner)
         {
             List<SyncVarData> publicReplicated = new List<SyncVarData>();
-            foreach(SyncVarData data in packet.Data)
+            foreach (SyncVarData data in packet.Data)
             {
-                foreach(INetworkObject obj in NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget))
+                foreach (INetworkObject obj in NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget))
                 {
                     NetworkObjectData networkObjectData = NetworkObjects[obj];
                     FieldInfo field = networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar);
@@ -1000,7 +999,7 @@ namespace SocketNetworking.Shared
                         continue;
                     }
                     INetworkSyncVar syncVar = field.GetValue(obj) as INetworkSyncVar;
-                    if(syncVar == default)
+                    if (syncVar == default)
                     {
                         Log.Warning($"Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName} is not an actual sync var, but is listed as one.");
                         continue;
@@ -1021,7 +1020,7 @@ namespace SocketNetworking.Shared
                     syncVar.OwnerObject.OnSyncVarChanged(runner, syncVar);
                     if (WhereAmI == ClientLocation.Remote && syncVar.OwnerObject.ObjectVisibilityMode != ObjectVisibilityMode.OwnerAndServer)
                     {
-                        if(!publicReplicated.Any(x => x.NetworkIDTarget == data.NetworkIDTarget && x.TargetVar == data.TargetVar))
+                        if (!publicReplicated.Any(x => x.NetworkIDTarget == data.NetworkIDTarget && x.TargetVar == data.TargetVar))
                         {
                             publicReplicated.Add(data);
                         }
@@ -1032,7 +1031,7 @@ namespace SocketNetworking.Shared
                     obj.OnSyncVarsChanged();
                 }
             }
-            if(WhereAmI == ClientLocation.Remote)
+            if (WhereAmI == ClientLocation.Remote)
             {
                 SyncVarUpdatePacket replicatePacket = new SyncVarUpdatePacket()
                 {
@@ -1082,16 +1081,16 @@ namespace SocketNetworking.Shared
             string[] expectedArgs = arguments.Select(x => x.FullName).ToArray();
             foreach (MethodInfo curMethod in methods)
             {
-                if(curMethod.Name != name)
+                if (curMethod.Name != name)
                 {
                     continue;
                 }
                 List<string> methodArgs = curMethod.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if(!methodArgs.Any() && expectedArgs.Any())
+                if (!methodArgs.Any() && expectedArgs.Any())
                 {
                     continue;
                 }
-                if(expectedArgs.Any())
+                if (expectedArgs.Any())
                 {
                     if (curMethod.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)) && !arguments[0].IsSubclassDeep(typeof(NetworkClient)))
                     {
@@ -1282,7 +1281,7 @@ namespace SocketNetworking.Shared
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
             MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invokables.Select(x => x.Item1).ToArray();
             MethodInfo method = GetNetworkInvokeMethod(methods, arguments, methodName);
-            if (method == null) 
+            if (method == null)
             {
                 throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
@@ -1351,8 +1350,8 @@ namespace SocketNetworking.Shared
         public static T NetworkInvokeBlocking<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000, bool priority = false)
         {
             NetworkInvokationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
-            MethodInfo method = target.GetType().GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public |BindingFlags.NonPublic).FirstOrDefault(x => x.Name == methodName);
-            if(method != null && method.ReturnType == typeof(void))
+            MethodInfo method = target.GetType().GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault(x => x.Name == methodName);
+            if (method != null && method.ReturnType == typeof(void))
             {
                 return default;
             }

@@ -1,9 +1,9 @@
 ﻿using System;
-using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Client;
-using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
 
 namespace BasicChat.Shared
@@ -69,7 +69,7 @@ namespace BasicChat.Shared
         [NetworkInvokable(NetworkDirection.Client)]
         private void ServerGetNameChangeRequest(NetworkHandle handle, string name)
         {
-            if(name == "")
+            if (name == "")
             {
                 _name.Value = handle.Client.ConnectedHostname;
                 return;

@@ -25,7 +25,7 @@ namespace SocketNetworking
 
         public static Log GetInstance()
         {
-            if(_instance != null)
+            if (_instance != null)
             {
                 return _instance;
             }
@@ -204,7 +204,7 @@ namespace SocketNetworking
             }
             else
             {
-                if(ShowStackTrace)
+                if (ShowStackTrace)
                 {
                     data.Message += $"\nStack Trace:\n{GetStackTrace().ToString()}";
                 }

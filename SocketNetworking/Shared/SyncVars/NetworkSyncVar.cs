@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using SocketNetworking.Client;
-using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.SyncVars
@@ -46,7 +46,7 @@ namespace SocketNetworking.Shared.SyncVars
             }
         }
 
-        public object ValueRaw 
+        public object ValueRaw
         {
             get => (object)Value;
             set
@@ -61,9 +61,9 @@ namespace SocketNetworking.Shared.SyncVars
         public void Sync()
         {
             SyncVarUpdatePacket packet = GetPacket();
-            if(NetworkManager.WhereAmI == ClientLocation.Local)
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
-                if(NetworkClient.LocalClient == null)
+                if (NetworkClient.LocalClient == null)
                 {
                     throw new InvalidOperationException("Tried to modify a SyncVar while the local client was null!");
                 }
@@ -73,20 +73,20 @@ namespace SocketNetworking.Shared.SyncVars
                 }
                 NetworkClient.LocalClient.Send(packet);
             }
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                if(SyncOwner == OwnershipMode.Client)
+                if (SyncOwner == OwnershipMode.Client)
                 {
-                    if(OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.OwnerAndServer)
+                    if (OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.OwnerAndServer)
                     {
                         NetworkClient owner = NetworkServer.GetClient(OwnerObject.OwnerClientID);
-                        if(owner == null)
+                        if (owner == null)
                         {
                             throw new InvalidOperationException("Can't find the owner of this object!");
                         }
                         owner.Send(packet);
                     }
-                    else if(OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
+                    else if (OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
                     {
                         NetworkServer.SendToAll(packet);
                     }
@@ -148,7 +148,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         public virtual void RawSet(object value, NetworkClient who)
         {
-            if(value is T t)
+            if (value is T t)
             {
                 this.value = t;
                 Changed?.Invoke(t);

@@ -25,7 +25,7 @@ namespace SocketNetworking.Shared.Attributes
         /// Creates a new instance of the <see cref="NetworkInvokable"/> attribute. If <see cref="SecureMode"/> is <see cref="true"/>, the method that is attached to this attribute must have the object implement <see cref="INetworkOwned"/>, or be a <see cref="NetworkClient"/>. OR, the method may take a <see cref="NetworkClient"/> as its first argument, this does not garrauntee safety, but does allow you to check manually. Not doing any of these will generate a warning at runtime. Note that if called from the server, security checks aren't applied.
         /// </summary>
         /// <param name="secureMode"></param>
-        public NetworkInvokable(bool secureMode) 
+        public NetworkInvokable(bool secureMode)
         {
             SecureMode = secureMode;
         }

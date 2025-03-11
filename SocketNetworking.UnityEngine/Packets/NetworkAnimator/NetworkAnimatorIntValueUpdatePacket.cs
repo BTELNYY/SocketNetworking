@@ -10,13 +10,13 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
     {
         public NetworkAnimatorIntValueUpdatePacket() { }
 
-        public NetworkAnimatorIntValueUpdatePacket(int id, int value) 
+        public NetworkAnimatorIntValueUpdatePacket(int id, int value)
         {
-            ValueHash = id; 
+            ValueHash = id;
             Value = value;
         }
 
-        public NetworkAnimatorIntValueUpdatePacket(string name, int value) 
+        public NetworkAnimatorIntValueUpdatePacket(string name, int value)
         {
             ValueHash = Animator.StringToHash(name);
             Value = value;

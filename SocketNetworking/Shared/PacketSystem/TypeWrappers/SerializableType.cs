@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using SocketNetworking.Shared.Attributes;
-using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
@@ -13,7 +12,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 
         public SerializableType(Type type)
         {
-            if(type == null)
+            if (type == null)
             {
                 type = typeof(void);
             }
@@ -26,11 +25,11 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
             string sType = reader.ReadString();
             bool isHash = reader.ReadBool();
             Type result;
-            if(isHash)
+            if (isHash)
             {
                 ulong hash = reader.ReadULong();
                 Assembly assembly = NetworkManager.GetAssemblyFromHash(hash);
-                if(assembly != null)
+                if (assembly != null)
                 {
                     result = assembly.GetType(sType);
                 }
@@ -52,7 +51,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteString(Value.FullName);
-            if(NetworkManager.HasAssemblyHash(Value.Assembly))
+            if (NetworkManager.HasAssemblyHash(Value.Assembly))
             {
                 writer.WriteBool(true);
                 writer.WriteULong(NetworkManager.GetHashFromAssembly(Value.Assembly));

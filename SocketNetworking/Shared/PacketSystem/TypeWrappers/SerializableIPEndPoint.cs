@@ -31,7 +31,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
         public override byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            if(Value == null)
+            if (Value == null)
             {
                 Log.GlobalWarning("Value is null! Cannot serialize, default address used.");
                 Value = new IPEndPoint(0, 0);

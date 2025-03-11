@@ -21,7 +21,7 @@ namespace SocketNetworking.Shared.NetworkObjects
             _ping = new NetworkSyncVar<long>(this, OwnershipMode.Server, 0);
             _pubKey.Changed += (x) =>
             {
-                if(x != null)
+                if (x != null)
                 {
                     _provider.FromXmlString(x);
                 }
@@ -56,7 +56,7 @@ namespace SocketNetworking.Shared.NetworkObjects
             }
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                if(OwnerClient == null)
+                if (OwnerClient == null)
                 {
                     this.NetworkDestroy();
                     return;

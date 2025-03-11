@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Shared.SyncVars
@@ -34,12 +30,12 @@ namespace SocketNetworking.Shared.SyncVars
             Value.NetworkSetOwner(OwnerObject.OwnerClientID);
             Value.NetworkSetOwnershipMode(OwnerObject.OwnershipMode);
             Value.NetworkSetVisibility(OwnerObject.ObjectVisibilityMode);
-            
+
         }
 
         public void Spawn()
         {
-            if(Value == null)
+            if (Value == null)
             {
                 throw new NullReferenceException();
             }
@@ -48,7 +44,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         public void Destroy()
         {
-            if(Value == null)
+            if (Value == null)
             {
                 throw new NullReferenceException();
             }

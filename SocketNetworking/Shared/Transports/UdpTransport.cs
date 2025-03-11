@@ -14,7 +14,7 @@ namespace SocketNetworking.Shared.Transports
         {
             get
             {
-                if(IsServerMode)
+                if (IsServerMode)
                 {
                     return _emulatedPeer;
                 }
@@ -50,13 +50,13 @@ namespace SocketNetworking.Shared.Transports
                 {
                     return OverrideConnectedStateValue;
                 }
-                if(_hasConnected)
+                if (_hasConnected)
                 {
-                    if(Client == null)
+                    if (Client == null)
                     {
                         return false;
                     }
-                    if(Client.Client == null)
+                    if (Client.Client == null)
                     {
                         return false;
                     }
@@ -101,7 +101,7 @@ namespace SocketNetworking.Shared.Transports
         {
             get
             {
-                if(IsServerMode)
+                if (IsServerMode)
                 {
                     return _receivedBytes.Count > 0;
                 }
@@ -116,7 +116,7 @@ namespace SocketNetworking.Shared.Transports
         {
             get
             {
-                if(IsServerMode)
+                if (IsServerMode)
                 {
                     return _receivedBytes.ElementAt(0).Item1.Length;
                 }
@@ -165,7 +165,7 @@ namespace SocketNetworking.Shared.Transports
             _multiCastGroups.Add(multicastGroup);
             Client.JoinMulticastGroup(multicastGroup);
         }
-        
+
         public void DropMulticastGroup(IPAddress multicastGroup)
         {
             if (_hasConnected)
@@ -184,7 +184,7 @@ namespace SocketNetworking.Shared.Transports
 
         public override void Close()
         {
-            if(_isServerMode)
+            if (_isServerMode)
             {
                 Client = null;
                 _serverIsConnected = false;
@@ -273,7 +273,7 @@ namespace SocketNetworking.Shared.Transports
                 //Log.GlobalDebug("Bytes Sent: " + sent);
                 return null;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return ex;
             }
@@ -286,7 +286,7 @@ namespace SocketNetworking.Shared.Transports
                 Client.Send(data, data.Length);
                 return null;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return ex;
             }
@@ -327,7 +327,7 @@ namespace SocketNetworking.Shared.Transports
                 //Log.GlobalDebug("Bytes Sent: " + sent);
                 return null;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return e;
             }
@@ -340,7 +340,7 @@ namespace SocketNetworking.Shared.Transports
                 await Client.SendAsync(data, data.Length);
                 return null;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return e;
             }

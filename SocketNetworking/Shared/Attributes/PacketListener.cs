@@ -46,11 +46,11 @@ namespace SocketNetworking.Shared.Attributes
         /// From where are you accepting packets from. Any = Anywhere, Client = Server-Bound packets only, Server = Client-Bound packets only
         /// </param>
         /// <exception cref="InvalidOperationException"></exception>
-        public PacketListener(Type type, NetworkDirection directionFromWhichPacketCanBeReceived = NetworkDirection.Any) 
+        public PacketListener(Type type, NetworkDirection directionFromWhichPacketCanBeReceived = NetworkDirection.Any)
         {
             if (!type.IsSubclassOf(typeof(CustomPacket)) || type.GetCustomAttribute(typeof(PacketDefinition)) == null)
             {
-                if(type != null)
+                if (type != null)
                 {
                     throw new InvalidOperationException("The type provided isn't a valid Custom Packet.");
                 }

@@ -31,7 +31,7 @@ namespace SocketNetworking.UnityEngine.Components
         void Awake()
         {
             _identity = GetComponent<NetworkIdentity>();
-            if(Identity == null)
+            if (Identity == null)
             {
                 throw new InvalidOperationException("All Network Objects must have a NetowrkIdentity.");
             }

@@ -1,10 +1,10 @@
 ﻿using System;
 using SocketNetworking.Client;
-using SocketNetworking.Shared.PacketSystem;
-using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.SyncVars;
 using UnityEngine;
@@ -52,7 +52,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnAdded(INetworkObject addedObject)
         {
-            
+
         }
 
         public virtual void OnRemoved(INetworkObject removedObject)
@@ -62,8 +62,8 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnDisconnected(NetworkClient client)
         {
-            if(NetworkManager.WhereAmI != ClientLocation.Remote) { return; }
-            if(client.ClientID == OwnerClientID)
+            if (NetworkManager.WhereAmI != ClientLocation.Remote) { return; }
+            if (client.ClientID == OwnerClientID)
             {
                 OwnershipMode = FallBackIfOwnerDisconnects;
             }
@@ -71,12 +71,12 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnReady(NetworkClient client, bool isReady)
         {
-            
+
         }
 
         public virtual void OnConnected(NetworkClient client)
         {
-            
+
         }
 
         public virtual void OnNetworkSpawned(NetworkClient spawner)
@@ -146,11 +146,11 @@ namespace SocketNetworking.UnityEngine.Components
         /// </summary>
         public virtual void RegisterObject()
         {
-            if(NetworkID == -1)
+            if (NetworkID == -1)
             {
                 return;
             }
-            if(NetworkManager.IsRegistered(this))
+            if (NetworkManager.IsRegistered(this))
             {
                 return;
             }
@@ -306,9 +306,9 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 NetworkServer.NetworkInvokeOnAll(this, methodName, args);
             }
-            else if(NetworkManager.WhereAmI == ClientLocation.Local)
+            else if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
-                if(NetworkClient.LocalClient == null)
+                if (NetworkClient.LocalClient == null)
                 {
                     throw new InvalidOperationException("Attempted to networkinvoke using a client when the game client is not set!");
                 }
@@ -321,27 +321,27 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
         {
-            
+
         }
 
         public virtual void OnSyncVarsChanged()
         {
-            
+
         }
 
         public virtual void OnOwnerNetworkSpawned(NetworkClient spawner)
         {
-            
+
         }
 
         public virtual void OnOwnerLocalSpawned(NetworkClient spawner)
         {
-            
+
         }
 
         public virtual void OnOwnerDisconnected(NetworkClient client)
         {
-            
+
         }
     }
 }

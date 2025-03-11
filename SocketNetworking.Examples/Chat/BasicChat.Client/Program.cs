@@ -15,7 +15,7 @@ namespace BasicChat.Client
 
         static string IP = "127.0.0.1";
 
-        static ushort Port = 7777; 
+        static ushort Port = 7777;
 
         public static string Name = "???";
 
@@ -34,14 +34,14 @@ namespace BasicChat.Client
 
             Console.WriteLine("Enter destination IP address (127.0.0.1):");
             IP = Console.ReadLine();
-            if(IP == "")
+            if (IP == "")
             {
                 IP = "127.0.0.1";
             }
 
             Console.WriteLine("Enter destination port (7777):");
             string portStr = Console.ReadLine();
-            if(portStr == "")
+            if (portStr == "")
             {
                 portStr = "7777";
             }
@@ -50,7 +50,7 @@ namespace BasicChat.Client
             ChatClient client = new ChatClient();
             client.AuthenticationStateChanged += () =>
             {
-                if(client.Authenticated)
+                if (client.Authenticated)
                 {
                     Console.Clear();
                 }
@@ -61,9 +61,9 @@ namespace BasicChat.Client
                 Console.ReadKey();
                 Environment.Exit(0);
             };
-            client.ReadyStateChanged += (old, @new) => 
+            client.ReadyStateChanged += (old, @new) =>
             {
-                if(@new)
+                if (@new)
                 {
                     Program.reader.Start();
                 }
@@ -77,7 +77,7 @@ namespace BasicChat.Client
             };
             client.MessageReceived += (handle, message) =>
             {
-                if(message.Sender == 0)
+                if (message.Sender == 0)
                 {
                     FancyConsole.WriteLine(message.Content, message.Color);
                     return;

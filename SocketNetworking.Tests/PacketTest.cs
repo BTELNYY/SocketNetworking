@@ -1,9 +1,7 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using SocketNetworking;
-using SocketNetworking.Shared.PacketSystem.Packets;
+﻿using System;
 using System.Linq;
-using System.Diagnostics;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SocketNetworking.Shared.PacketSystem.Packets;
 
 namespace SocketNetworking.Tests
 {
@@ -22,7 +20,7 @@ namespace SocketNetworking.Tests
             byte[] returnedReSerial = returned.Serialize().Data;
             returnedReSerial = BitConverter.GetBytes(returnedReSerial.Length).Concat(returnedReSerial).ToArray();
             Assert.AreEqual(complete.Length, returnedReSerial.Length);
-            for(int i = 0; i < returnedReSerial.Length; i++)
+            for (int i = 0; i < returnedReSerial.Length; i++)
             {
                 byte comp = complete[i];
                 byte ret = returnedReSerial[i];

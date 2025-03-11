@@ -1,5 +1,4 @@
 ﻿using System;
-using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
@@ -22,6 +21,6 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             ByteWriter writer = base.Serialize();
             writer.WriteLong(ReceivedTime);
             return writer;
-        }  
+        }
     }
 }
