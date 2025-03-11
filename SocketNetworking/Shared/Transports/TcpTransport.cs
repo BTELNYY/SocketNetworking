@@ -114,7 +114,7 @@ namespace SocketNetworking.Shared.Transports
             }
         }
 
-        [Obsolete("Use Receive(int, int) instead.")]
+        [Obsolete("Use Receive() instead.")]
         public (byte[], Exception, IPEndPoint) ClassicReceive(int offset, int size)
         {
             try
