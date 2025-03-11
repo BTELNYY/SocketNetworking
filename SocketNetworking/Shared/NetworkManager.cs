@@ -393,6 +393,7 @@ namespace SocketNetworking.Shared
                             Action = ObjectManagePacket.ObjectManageAction.AlreadyExists,
                             ObjectType = objType,
                             NewNetworkID = packet.NewNetworkID,
+                            NetworkIDTarget = packet.NetworkIDTarget,
                         };
                         handle.Client.Send(alreadyExistsPacket);
                         return;
@@ -419,6 +420,7 @@ namespace SocketNetworking.Shared
                 ObjectManagePacket creationConfirmation = new ObjectManagePacket()
                 {
                     NetworkIDTarget = netObj.NetworkID,
+                    NewNetworkID = netObj.NetworkID,
                     Action = ObjectManagePacket.ObjectManageAction.ConfirmCreate,
                 };
                 handle.Client.Send(creationConfirmation);
@@ -481,6 +483,7 @@ namespace SocketNetworking.Shared
                         ObjectManagePacket destroyConfirmPacket = new ObjectManagePacket()
                         {
                             NetworkIDTarget = destructionTarget.NetworkID,
+                            NewNetworkID = destructionTarget.NetworkID,
                             Action = ObjectManagePacket.ObjectManageAction.ConfirmDestroy,
                         };
                         handle.Client.Send(destroyConfirmPacket);

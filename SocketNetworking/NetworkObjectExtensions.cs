@@ -95,7 +95,6 @@ namespace SocketNetworking
             {
                 Action = ObjectManagePacket.ObjectManageAction.Create,
                 ObjectType = obj.GetType(),
-                
                 ExtraData = obj.SendExtraData().Data,
             };
             target.Send(packet);
@@ -120,7 +119,7 @@ namespace SocketNetworking
                 }
                 else
                 {
-                    throw new InvalidOperationException("Only servers can spawn objects this way.");
+                    throw new InvalidOperationException("Only servers can destroy objects this way.");
                 }
             }
             ObjectManagePacket packet = new ObjectManagePacket()
@@ -129,6 +128,7 @@ namespace SocketNetworking
                 ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
                 NewNetworkID = obj.NetworkID,
+                NetworkIDTarget = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 Active = obj.Active,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
@@ -252,6 +252,7 @@ namespace SocketNetworking
                 ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
                 NewNetworkID = obj.NetworkID,
+                NetworkIDTarget = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
                 Active = obj.Active,
@@ -306,8 +307,8 @@ namespace SocketNetworking
                 Action = ObjectManagePacket.ObjectManageAction.Create,
                 ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                
                 NewNetworkID = obj.NetworkID,
+                NetworkIDTarget = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
                 Active = obj.Active,
@@ -352,7 +353,7 @@ namespace SocketNetworking
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
                 ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                
+                NetworkIDTarget = obj.NetworkID,
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 Active = state,
@@ -397,7 +398,7 @@ namespace SocketNetworking
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
                 ObjectType = obj.GetType(),
                 OwnerID = ownerId,
-                
+                NetworkIDTarget = obj.NetworkID,
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = obj.OwnershipMode,
                 Active = obj.Active,
@@ -442,7 +443,7 @@ namespace SocketNetworking
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
                 ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                
+                NetworkIDTarget = obj.NetworkID,
                 NewNetworkID = obj.NetworkID,
                 OwnershipMode = mode,
                 Active = obj.Active,
@@ -488,7 +489,7 @@ namespace SocketNetworking
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
                 ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                
+                NetworkIDTarget = obj.NetworkID,
                 NewNetworkID = newId,
                 OwnershipMode = obj.OwnershipMode,
                 Active = obj.Active,
@@ -520,6 +521,45 @@ namespace SocketNetworking
             obj.NetworkID = newId;
         }
 
+        public static void NetworkSync(this INetworkObject obj)
+        {
+            ObjectManagePacket packet = new ObjectManagePacket()
+            {
+                Action = ObjectManagePacket.ObjectManageAction.Modify,
+                ObjectType = obj.GetType(),
+                OwnerID = obj.OwnerClientID,
+                OwnershipMode = obj.OwnershipMode,
+                Active = obj.Active,
+                NetworkIDTarget = obj.NetworkID,
+                NewNetworkID = obj.NetworkID,
+                ObjectVisibilityMode = obj.ObjectVisibilityMode,
+            };
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                NetworkClient.LocalClient.Send(packet);
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                switch (obj.ObjectVisibilityMode)
+                {
+                    case ObjectVisibilityMode.ServerOnly:
+                        Log.GlobalWarning("You should not be changing the visibility of a Network object from server. Please spawn the object first.");
+                        break;
+                    case ObjectVisibilityMode.OwnerAndServer:
+                        NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
+                        if (client == null)
+                        {
+                            throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
+                        }
+                        client.Send(packet);
+                        break;
+                    case ObjectVisibilityMode.Everyone:
+                        NetworkServer.SendToAll(packet, obj);
+                        break;
+                }
+            }
+        }
+
         /// <summary>
         /// Sets the <see cref="INetworkObject.ObjectVisibilityMode"/> network wide. If the <see cref="INetworkObject.ObjectVisibilityMode"/> is <see cref="ObjectVisibilityMode.ServerOnly"/>, this method will fail. Use <see cref="NetworkSpawn(INetworkObject)"/>.
         /// </summary>
@@ -533,9 +573,9 @@ namespace SocketNetworking
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
                 ObjectType = obj.GetType(),
                 OwnerID = obj.OwnerClientID,
-                
                 OwnershipMode = obj.OwnershipMode,
                 Active = obj.Active,
+                NetworkIDTarget = obj.NetworkID,
                 NewNetworkID = obj.NetworkID,
                 ObjectVisibilityMode = mode,
             };

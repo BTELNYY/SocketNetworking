@@ -60,20 +60,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\NoAutoSpawn.cs" />
-    <Compile Include="Attributes\NetworkInvokable.cs" />
-    <Compile Include="Attributes\NetworkNonSerialized.cs" />
-    <Compile Include="Attributes\NetworkSerialized.cs" />
-    <Compile Include="Attributes\PacketDefinition.cs" />
-    <Compile Include="Attributes\PacketListener.cs" />
-    <Compile Include="Attributes\TypeWrapperAttribute.cs" />
+    <Compile Include="Shared\Attributes\NoAutoSpawn.cs" />
+    <Compile Include="Shared\Attributes\NetworkInvokable.cs" />
+    <Compile Include="Shared\Attributes\NetworkNonSerialized.cs" />
+    <Compile Include="Shared\Attributes\NetworkSerialized.cs" />
+    <Compile Include="Shared\Attributes\PacketDefinition.cs" />
+    <Compile Include="Shared\Attributes\PacketListener.cs" />
+    <Compile Include="Shared\Attributes\TypeWrapperAttribute.cs" />
     <Compile Include="Client\MixedNetworkClient.cs" />
     <Compile Include="Client\TcpNetworkClient.cs" />
     <Compile Include="Client\UdpNetworkClient.cs" />
     <Compile Include="Misc\CallbackTimer.cs" />
-    <Compile Include="Exceptions\NetworkDeserializationException.cs" />
-    <Compile Include="Exceptions\NetworkInvocationException.cs" />
-    <Compile Include="Exceptions\NetworkSerializationException.cs" />
+    <Compile Include="Shared\Exceptions\NetworkDeserializationException.cs" />
+    <Compile Include="Shared\Exceptions\NetworkInvocationException.cs" />
+    <Compile Include="Shared\Exceptions\NetworkSerializationException.cs" />
     <Compile Include="Misc\ChoiceEvent.cs" />
     <Compile Include="Misc\ClientHandler.cs" />
     <Compile Include="Misc\Console\FancyConsole.cs" />
@@ -104,8 +104,9 @@
     <Compile Include="Shared\NetworkObjects\NetworkAvatarBase.cs" />
     <Compile Include="Shared\NetworkHandle.cs" />
     <Compile Include="Shared\NetworkObjects\NetworkObjectBase.cs" />
+    <Compile Include="Shared\SyncVars\NetworkObjectSyncVar.cs" />
     <Compile Include="Shared\SyncVars\NetworkSyncVar.cs" />
-    <Compile Include="Transports\NetworkTransport.cs" />
+    <Compile Include="Shared\Transports\NetworkTransport.cs" />
     <Compile Include="Shared\Serialization\ByteConvert.cs" />
     <Compile Include="Shared\NetworkEncryption.cs" />
     <Compile Include="Shared\NetworkManager.cs" />
@@ -119,12 +120,12 @@
     <Compile Include="Shared\PacketSystem\TypeWrappers\SerializableDictionary.cs" />
     <Compile Include="Shared\Messages\ProtocolConfiguration.cs" />
     <Compile Include="Shared\Enums.cs" />
-    <Compile Include="Exceptions\CustomPacketCollisionException.cs" />
+    <Compile Include="Shared\Exceptions\CustomPacketCollisionException.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Client\NetworkClient.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Server\NetworkServer.cs" />
-    <Compile Include="Exceptions\InvalidNetworkDataException.cs" />
+    <Compile Include="Shared\Exceptions\InvalidNetworkDataException.cs" />
     <Compile Include="Shared\NetworkObjects\INetworkObject.cs" />
     <Compile Include="Shared\PacketSystem\IPacketSerializable.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ConnectionUpdatePacket.cs" />
@@ -137,8 +138,8 @@
     <Compile Include="Shared\PacketSystem\TypeWrappers\SerializableIPEndPoint.cs" />
     <Compile Include="Shared\PacketSystem\TypeWrappers\SerializableList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Transports\TcpTransport.cs" />
-    <Compile Include="Transports\UdpTransport.cs" />
+    <Compile Include="Shared\Transports\TcpTransport.cs" />
+    <Compile Include="Shared\Transports\UdpTransport.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup />
