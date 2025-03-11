@@ -223,7 +223,7 @@ namespace SocketNetworking.Client
         public virtual bool SupportsSSL { get; } = false;
 
         /// <summary>
-        /// Provdies the <see cref="SocketNetworking.Log"/> instance for this client. The <see cref="Log.Prefix"/> is set to contain the client ID for logging purposes.
+        /// Provides the <see cref="SocketNetworking.Log"/> instance for this client. The <see cref="Log.Prefix"/> is set to contain the client ID for logging purposes.
         /// </summary>
         public Log Log { get; }
 
@@ -392,7 +392,7 @@ namespace SocketNetworking.Client
             {
                 if (!IsTransportConnected || CurrentConnectionState != ConnectionState.Connected)
                 {
-                    Log.Warning("Can't change ready state becuase the socket is not connected or the handshake isn't done.");
+                    Log.Warning("Can't change ready state because the socket is not connected or the handshake isn't done.");
                     return;
                 }
                 ReadyStateUpdatePacket readyStateUpdatePacket = new ReadyStateUpdatePacket
@@ -548,10 +548,6 @@ namespace SocketNetworking.Client
         }
 
         private bool _clientActive = false;
-
-        private string _clientPassword = "DefaultPassword";
-
-        public string PasswordHash => _clientPassword.GetStringHash();
 
         private Thread _packetSenderThread;
 
@@ -835,7 +831,7 @@ namespace SocketNetworking.Client
                 Log.Error("Can't connect: Already connected to a server.");
                 return false;
             }
-            string finalHostname = "";
+            string finalHostname;
             if (!IPAddress.TryParse(hostname, out IPAddress ip))
             {
                 try
@@ -1192,7 +1188,7 @@ namespace SocketNetworking.Client
 
         #endregion
 
-        #region Sending/Recieving
+        #region Sending/receiving
 
         #region Sending
 
@@ -1283,7 +1279,7 @@ namespace SocketNetworking.Client
             }
             else
             {
-                //Ensure the packet isnt ecnrypted if we don't support it.
+                //Ensure the packet isn't encrypted if we don't support it.
                 //Log.Debug("Encryption is not supported at this moment, ensuring it isn't flagged as being enabled on this packet.");
                 packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymetricalEncrypted, false);
                 packet.Flags = packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, false);
@@ -1298,10 +1294,6 @@ namespace SocketNetworking.Client
             byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
             byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
             //StringBuilder hex = new StringBuilder(packetBytes.Length * 2);
-            //foreach (byte b in packetBytes)
-            //{
-            //    hex.AppendFormat("{0:x2}", b);
-            //}
             //Log.Debug("Raw Serialized Packet: \n" + hex.ToString());
             if (packet.Flags.HasFlag(PacketFlags.Compressed))
             {
@@ -1348,7 +1340,7 @@ namespace SocketNetworking.Client
             int written = writer.Length;
             if (written != (packetFull.Length + 4))
             {
-                Log.Error($"Trying to send corrupted size! {packet.ToString()}");
+                Log.Error($"Trying to send corrupted size! {packet}");
                 return null;
             }
             byte[] fullBytes = writer.Data;
@@ -1357,12 +1349,6 @@ namespace SocketNetworking.Client
                 Log.Error("Packet too large!");
                 return null;
             }
-            //StringBuilder hex1 = new StringBuilder(fullBytes.Length * 2);
-            //foreach (byte b in fullBytes)
-            //{
-            //    hex1.AppendFormat("{0:x2}", b);
-            //}
-            //Log.Debug("Full Packet: \n" + hex1.ToString());
             return fullBytes;
         }
 
@@ -1389,7 +1375,7 @@ namespace SocketNetworking.Client
 
         #endregion
 
-        #region Recieving
+        #region receiving
 
         protected ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
 
@@ -1447,10 +1433,6 @@ namespace SocketNetworking.Client
         protected virtual void Deserialize(byte[] fullPacket, IPEndPoint endpoint)
         {
             //StringBuilder hex = new StringBuilder(fullPacket.Length * 2);
-            //foreach (byte b in fullPacket)
-            //{
-            //    hex.AppendFormat("{0:x2}", b);
-            //}
             //Log.Debug(hex.ToString());
             PacketHeader header = Packet.ReadPacketHeader(fullPacket);
             //Log.Debug("Active Flags: " + string.Join(", ", header.Flags.GetActiveFlags()));
@@ -1489,10 +1471,6 @@ namespace SocketNetworking.Client
             }
             fullPacket = headerBytes.Concat(packetBytes).ToArray();
             //StringBuilder hex1 = new StringBuilder(fullPacket.Length * 2);
-            //foreach (byte b in fullPacket)
-            //{
-            //    hex1.AppendFormat("{0:x2}", b);
-            //}
             //Log.Debug("Raw Deserialized Packet: \n" + hex1.ToString());
             PacketRead?.Invoke(header, fullPacket);
             if (ManualPacketHandle)
@@ -1521,26 +1499,28 @@ namespace SocketNetworking.Client
             switch (header.Type)
             {
                 case PacketType.Authentication:
-                    AuthenticationPacket authPacket = new AuthenticationPacket();
-                    authPacket.Deserialize(data);
+                    AuthenticationPacket authenticationPacket = new AuthenticationPacket();
+                    authenticationPacket.Deserialize(data);
                     if (AuthenticationProvider == null)
                     {
-                        Log.Warning("Got an auth request but not AuthenticationProvider is specified.");
+                        Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
                         return;
                     }
                     NetworkHandle handle = new NetworkHandle(this);
-                    if (authPacket.IsResult)
+                    if (authenticationPacket.IsResult)
                     {
-                        AuthenticationProvider.HandleAuthResult(handle, authPacket);
-                        Authenticated = authPacket.Result.Approved;
+                        AuthenticationProvider.HandleAuthResult(handle, authenticationPacket);
+                        Authenticated = authenticationPacket.Result.Approved;
                     }
                     else
                     {
-                        (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authPacket);
-                        AuthenticationPacket newPacket = new AuthenticationPacket();
-                        newPacket.IsResult = true;
-                        newPacket.Result = result.Item1;
-                        newPacket.AuthData = result.Item2;
+                        (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authenticationPacket);
+                        AuthenticationPacket newPacket = new AuthenticationPacket
+                        {
+                            IsResult = true,
+                            Result = result.Item1,
+                            AuthData = result.Item2
+                        };
                         Send(newPacket);
                         Authenticated = newPacket.Result.Approved;
                     }
@@ -1710,12 +1690,14 @@ namespace SocketNetworking.Client
                     catch (Exception ex)
                     {
                         Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
-                        NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket();
-                        errorPacket.Success = false;
-                        errorPacket.ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message;
-                        errorPacket.Result = SerializedData.NullData;
-                        errorPacket.CallbackID = networkInvocationPacket.CallbackID;
-                        errorPacket.IgnoreResult = false;
+                        NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket
+                        {
+                            Success = false,
+                            ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message,
+                            Result = SerializedData.NullData,
+                            CallbackID = networkInvocationPacket.CallbackID,
+                            IgnoreResult = false
+                        };
                         Send(errorPacket);
                     }
                     break;
@@ -1742,10 +1724,12 @@ namespace SocketNetworking.Client
                             Send(gotYourPublicKey);
                             EncryptionState = EncryptionState.AsymmetricalReady;
                             //Log.Info($"Got Asymmetrical Encryption Key, ID: {ClientID}");
-                            EncryptionPacket sendSymKey = new EncryptionPacket();
-                            sendSymKey.EncryptionFunction = EncryptionFunction.SymmetricalKeySend;
-                            sendSymKey.SymKey = EncryptionManager.SharedAesKey.Item1;
-                            sendSymKey.SymIV = EncryptionManager.SharedAesKey.Item2;
+                            EncryptionPacket sendSymKey = new EncryptionPacket
+                            {
+                                EncryptionFunction = EncryptionFunction.SymmetricalKeySend,
+                                SymKey = EncryptionManager.SharedAesKey.Item1,
+                                SymIV = EncryptionManager.SharedAesKey.Item2
+                            };
                             Send(sendSymKey);
                             break;
                         case EncryptionFunction.SymmetricalKeySend:
@@ -1765,8 +1749,8 @@ namespace SocketNetworking.Client
                             Send(updateEncryptionStateFinal);
                             if (AuthenticationProvider != null && !AuthenticationProvider.ClientInitiate)
                             {
-                                AuthenticationPacket authpack = AuthenticationProvider.BeginAuthentication();
-                                Send(authpack);
+                                AuthenticationPacket AuthenticationPacket = AuthenticationProvider.BeginAuthentication();
+                                Send(AuthenticationPacket);
                             }
                             Log.Success("Encryption Successful.");
                             if (NetworkServer.Config.DefaultReady == true)
@@ -1794,25 +1778,27 @@ namespace SocketNetworking.Client
             switch (header.Type)
             {
                 case PacketType.Authentication:
-                    AuthenticationPacket authPacket = new AuthenticationPacket();
-                    authPacket.Deserialize(data);
+                    AuthenticationPacket authenticationPacket = new AuthenticationPacket();
+                    authenticationPacket.Deserialize(data);
                     if (AuthenticationProvider == null)
                     {
-                        Log.Warning("Got an auth request but not AuthenticationProvider is specified.");
+                        Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
                         return;
                     }
                     NetworkHandle handle = new NetworkHandle(this);
-                    if (authPacket.IsResult)
+                    if (authenticationPacket.IsResult)
                     {
-                        AuthenticationProvider.HandleAuthResult(handle, authPacket);
+                        AuthenticationProvider.HandleAuthResult(handle, authenticationPacket);
                     }
                     else
                     {
-                        (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authPacket);
-                        AuthenticationPacket newPacket = new AuthenticationPacket();
-                        newPacket.IsResult = true;
-                        newPacket.Result = result.Item1;
-                        newPacket.AuthData = result.Item2;
+                        (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authenticationPacket);
+                        AuthenticationPacket newPacket = new AuthenticationPacket
+                        {
+                            IsResult = true,
+                            Result = result.Item1,
+                            AuthData = result.Item2
+                        };
                         Send(newPacket);
                     }
                     break;
@@ -1898,7 +1884,7 @@ namespace SocketNetworking.Client
                         Type t = NetworkManager.AdditionalPacketTypes.Values.FirstOrDefault(x => x.FullName == newPacketPairs[i]);
                         if (t == null)
                         {
-                            Log.Error($"Can't find packet with fullname {newPacketPairs[i]}, this will cause more errors later!");
+                            Log.Error($"Can't find packet with name {newPacketPairs[i]}, this will cause more errors later!");
                             continue;
                         }
                         if (NetworkManager.AdditionalPacketTypes.ContainsKey(i))
@@ -1926,7 +1912,7 @@ namespace SocketNetworking.Client
                     string built = "\n";
                     foreach (int i in NetworkManager.AdditionalPacketTypes.Keys)
                     {
-                        built += $"ID: {i}, Fullname: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
+                        built += $"ID: {i}, Full Name: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
                     }
                     Log.Info("Finished re-writing dynamic packets: " + built);
                     break;
@@ -1943,7 +1929,7 @@ namespace SocketNetworking.Client
                     {
                         NoPacketSending = true;
                         bool attemptResult = ClientTrySSLUpgrade();
-                        SSLUpgradePacket upgradepacketResult = new SSLUpgradePacket()
+                        SSLUpgradePacket upgradePacketResult = new SSLUpgradePacket()
                         {
                             Result = attemptResult,
                         };
@@ -1952,7 +1938,7 @@ namespace SocketNetworking.Client
                             NoPacketSending = false;
                             Disconnect("SSL Handshake failure");
                         }
-                        SendImmediate(upgradepacketResult);
+                        SendImmediate(upgradePacketResult);
                     }
                     break;
                 case PacketType.ConnectionStateUpdate:
@@ -1990,12 +1976,14 @@ namespace SocketNetworking.Client
                     catch (Exception ex)
                     {
                         Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
-                        NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket();
-                        errorPacket.Success = false;
-                        errorPacket.ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message;
-                        errorPacket.Result = SerializedData.NullData;
-                        errorPacket.CallbackID = networkInvocationPacket.CallbackID;
-                        errorPacket.IgnoreResult = false;
+                        NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket
+                        {
+                            Success = false,
+                            ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message,
+                            Result = SerializedData.NullData,
+                            CallbackID = networkInvocationPacket.CallbackID,
+                            IgnoreResult = false
+                        };
                         Send(errorPacket);
                     }
                     break;
@@ -2028,7 +2016,7 @@ namespace SocketNetworking.Client
                             Send(encryptionReceive);
                             break;
                         case EncryptionFunction.SymmetricalKeySend:
-                            //Log.Info($"Got servers symetrical key.");
+                            //Log.Info($"Got servers symmetrical key.");
                             EncryptionManager.SharedAesKey = new Tuple<byte[], byte[]>(encryptionPacket.SymKey, encryptionPacket.SymIV);
                             EncryptionPacket gotYourSymmetricalKey = new EncryptionPacket
                             {
@@ -2042,7 +2030,7 @@ namespace SocketNetworking.Client
                             //Log.Info("Server got my Asymmetrical key.");
                             break;
                         case EncryptionFunction.SymetricalKeyReceive:
-                            Log.Error("Server should not be recieving my symmetrical key!");
+                            Log.Error("Server should not be receiving my symmetrical key!");
                             break;
                         case EncryptionFunction.UpdateEncryptionStatus:
                             //Log.Info($"Server updated my encryption state: {encryptionPacket.State.ToString()}");
@@ -2053,8 +2041,8 @@ namespace SocketNetworking.Client
                             }
                             if (AuthenticationProvider != null && AuthenticationProvider.ClientInitiate)
                             {
-                                AuthenticationPacket authpack = AuthenticationProvider.BeginAuthentication();
-                                Send(authpack);
+                                AuthenticationPacket authenticationPacket2 = AuthenticationProvider.BeginAuthentication();
+                                Send(authenticationPacket2);
                             }
                             break;
                         default:

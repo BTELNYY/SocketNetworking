@@ -170,7 +170,7 @@ namespace SocketNetworking
                     }
                     var.Sync();
                 }
-                catch (SecurityException sex)
+                catch (SecurityException)
                 {
                     //blah blah whatever
                     //Since these can happen, we ignore them. yes its slower. Cope harder.
@@ -202,7 +202,7 @@ namespace SocketNetworking
                     }
                     var.Sync();
                 }
-                catch (SecurityException sex)
+                catch (SecurityException)
                 {
                     //blah blah whatever
                     //Since these can happen, we ignore them. yes its slower. Cope harder.

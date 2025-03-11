@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
-using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Exceptions;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
@@ -24,7 +23,7 @@ namespace SocketNetworking.Shared.Serialization
         public static Log Log;
 
         /// <summary>
-        /// List of allowed types for serialization. (Technically you can serialize anything but thats not a good idea, for complex structures just make use of <see cref="IPacketSerializable"/>)
+        /// List of allowed types for serialization. (Technically you can serialize anything but that's not a good idea, for complex structures just make use of <see cref="IPacketSerializable"/>)
         /// </summary>
         public static readonly Type[] SupportedTypes =
         {
@@ -73,8 +72,10 @@ namespace SocketNetworking.Shared.Serialization
                 };
             }
             Type dataType = data.GetType();
-            SerializedData sData = new SerializedData();
-            sData.Type = dataType;
+            SerializedData sData = new SerializedData
+            {
+                Type = dataType
+            };
 
             if (dataType.IsSubclassOf(typeof(NetworkClient)))
             {
@@ -207,46 +208,6 @@ namespace SocketNetworking.Shared.Serialization
             }
 
             throw new NetworkSerializationException($"Type '{data.GetType().FullName}' cannot be serialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
-            return SerializedData.NullData;
-            SerializableList<SerializedData> fieldData = new SerializableList<SerializedData>();
-            SerializableList<SerializedData> propertyData = new SerializableList<SerializedData>();
-            if (dataType.GetCustomAttribute<NetworkSerialized>() != null)
-            {
-                List<FieldInfo> fields = dataType.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkNonSerialized>() == null).ToList();
-                List<PropertyInfo> properties = dataType.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.CanWrite && x.CanRead && x.GetCustomAttributes<NetworkNonSerialized>() == null).ToList();
-
-                foreach (FieldInfo field in fields)
-                {
-                    SerializedData returneData = Serialize(field.GetValue(data));
-                    fieldData.Add(returneData);
-                }
-                foreach (PropertyInfo property in properties)
-                {
-                    SerializedData returneData = Serialize(property.GetValue(data));
-                    propertyData.Add(returneData);
-                }
-            }
-            else
-            {
-                List<FieldInfo> fields = dataType.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkSerialized>() != null).ToList();
-                List<PropertyInfo> properties = dataType.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.CanWrite && x.CanRead && x.GetCustomAttributes<NetworkSerialized>() != null).ToList();
-                foreach (FieldInfo field in fields)
-                {
-                    SerializedData returneData = Serialize(field.GetValue(data));
-                    fieldData.Add(returneData);
-                }
-                foreach (PropertyInfo property in properties)
-                {
-                    SerializedData returneData = Serialize(property.GetValue(data));
-                    propertyData.Add(returneData);
-                }
-            }
-
-            writer.WritePacketSerialized<SerializableList<SerializedData>>(fieldData);
-            writer.WritePacketSerialized<SerializableList<SerializedData>>(propertyData);
-            sData.Data = writer.Data;
-            sData.DataNull = sData.Data == null;
-            return sData;
         }
 
         public static T DeserializeRaw<T>(byte[] data)
@@ -256,7 +217,7 @@ namespace SocketNetworking.Shared.Serialization
                 Data = data,
                 Type = typeof(T),
             };
-            T output = Deserialize<T>(sData, out int read);
+            T output = Deserialize<T>(sData, out _);
             return output;
         }
 
@@ -289,7 +250,7 @@ namespace SocketNetworking.Shared.Serialization
                 }
                 if (client == default(NetworkClient))
                 {
-                    throw new Exception("Can't find the networkclient which is referenced in this serialization.");
+                    throw new Exception("Can't find the NetworkClient which is referenced in this serialization.");
                 }
                 read = reader.ReadBytes;
                 return client;
@@ -304,7 +265,7 @@ namespace SocketNetworking.Shared.Serialization
                 {
                     return null;
                 }
-                return obj.Item1 as INetworkObject;
+                return obj.Item1;
             }
 
             if (data.Type.GetInterfaces().Contains(typeof(IPacketSerializable)))
@@ -318,8 +279,8 @@ namespace SocketNetworking.Shared.Serialization
             if (NetworkManager.TypeToTypeWrapper.ContainsKey(data.Type))
             {
                 Type wrapper = NetworkManager.TypeToTypeWrapper[data.Type];
-                object typper = Activator.CreateInstance(wrapper);
-                object output = typper.GetType().GetMethod("Deserialize").Invoke(typper, new object[] { data.Data });
+                object type = Activator.CreateInstance(wrapper);
+                object output = type.GetType().GetMethod("Deserialize").Invoke(type, new object[] { data.Data });
                 FieldInfo item1 = output.GetType().GetField(nameof(ValueTuple<object, int>.Item1));
                 FieldInfo item2 = output.GetType().GetField(nameof(ValueTuple<object, int>.Item2));
                 read = (int)item2.GetValue(output);
@@ -412,46 +373,6 @@ namespace SocketNetworking.Shared.Serialization
             }
 
             throw new NetworkSerializationException($"Type '{data.GetType().FullName}' cannot be deserialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
-            object newObject = Activator.CreateInstance(data.Type);
-            List<SerializedData> fieldData = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;
-            List<SerializedData> propertyData = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;
-            int customReadBytes = 0;
-            if (data.Type.GetCustomAttribute<NetworkSerialized>() != null)
-            {
-                List<FieldInfo> fields = data.Type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkNonSerialized>() == null).ToList();
-                List<PropertyInfo> properties = data.Type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.CanWrite && x.CanRead && x.GetCustomAttributes<NetworkNonSerialized>() == null).ToList();
-                int counter = 0;
-                foreach (FieldInfo field in fields)
-                {
-                    field.SetValue(newObject, Deserialize(fieldData[counter], out int bytes));
-                    customReadBytes += bytes;
-                }
-                counter = 0;
-                foreach (PropertyInfo property in properties)
-                {
-                    property.SetValue(newObject, Deserialize(propertyData[counter], out int bytes));
-                    customReadBytes += bytes;
-                }
-            }
-            else
-            {
-                List<FieldInfo> fields = data.Type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetCustomAttribute<NetworkSerialized>() != null).ToList();
-                List<PropertyInfo> properties = data.Type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.CanWrite && x.CanRead && x.GetCustomAttributes<NetworkSerialized>() != null).ToList();
-                int counter = 0;
-                foreach (FieldInfo field in fields)
-                {
-                    field.SetValue(newObject, Deserialize(fieldData[counter], out int bytes));
-                    customReadBytes += bytes;
-                }
-                counter = 0;
-                foreach (PropertyInfo property in properties)
-                {
-                    property.SetValue(newObject, Deserialize(propertyData[counter], out int bytes));
-                    customReadBytes += bytes;
-                }
-            }
-            read = reader.ReadBytes;
-            return newObject;
         }
 
         public static T Deserialize<T>(SerializedData data, out int read)
@@ -460,7 +381,6 @@ namespace SocketNetworking.Shared.Serialization
             {
                 throw new NetworkDeserializationException("Types provided do not match.");
             }
-            read = 0;
             T output = (T)Deserialize(data, out read);
             return output;
         }
@@ -471,18 +391,18 @@ namespace SocketNetworking.Shared.Serialization
             SerializedData sData = br.ReadPacketSerialized<SerializedData>();
             if (!br.IsEmpty)
             {
-                Log.GlobalWarning("Provided Data Array was not emptied by the deseiralizer, probably extra bytes?");
+                Log.GlobalWarning("Provided Data Array was not emptied by the deserializer, probably extra bytes?");
             }
             Type givenType = sData.Type;
             if (givenType == null)
             {
-                throw new NetworkDeserializationException($"Type {givenType.Name} cannnot be found.");
+                throw new NetworkDeserializationException($"Type {givenType.Name} cannot be found.");
             }
             if (!typeof(T).IsAssignableFrom(givenType))
             {
                 throw new NetworkDeserializationException("Given Type is not Assignable from the deserialized type.");
             }
-            return Deserialize<T>(sData, out int read);
+            return Deserialize<T>(sData, out _);
         }
     }
 
@@ -547,10 +467,12 @@ namespace SocketNetworking.Shared.Serialization
         {
             get
             {
-                SerializedData data = new SerializedData();
-                data.Type = typeof(void);
-                data.DataNull = true;
-                data.Data = null;
+                SerializedData data = new SerializedData
+                {
+                    Type = typeof(void),
+                    DataNull = true,
+                    Data = null
+                };
                 return data;
             }
         }

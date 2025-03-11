@@ -77,7 +77,7 @@ namespace SocketNetworking.Shared.PacketSystem
         public IPEndPoint Destination { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
 
         /// <summary>
-        /// The source of the packet. This isn't trusted on the recieving client, so it will be overwritten.
+        /// The source of the packet. This isn't trusted on the receiving client, so it will be overwritten.
         /// </summary>
         public IPEndPoint Source { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
 
@@ -98,7 +98,7 @@ namespace SocketNetworking.Shared.PacketSystem
         }
 
         /// <summary>
-        /// Function called to serialize packets. Ensure you get the return type of this function becuase you'll need to add on to that array. creating a new array will cause issues.
+        /// Function called to serialize packets. Ensure you get the return type of this function because you'll need to add on to that array. creating a new array will cause issues.
         /// </summary>
         /// <returns>
         /// A <see cref="ByteWriter"/> which represents the packet being written, it is suggested you use this as your writer when creating subclasses.

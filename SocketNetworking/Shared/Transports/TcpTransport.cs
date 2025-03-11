@@ -47,7 +47,7 @@ namespace SocketNetworking.Shared.Transports
                     Log.GlobalError("SSL Stream is null when trying to set SSL state!");
                     return;
                 }
-                UsingSSL = true;
+                UsingSSL = state;
             }
         }
 
@@ -129,7 +129,7 @@ namespace SocketNetworking.Shared.Transports
             }
         }
 
-        object _lock = new object();
+        readonly object _lock = new object();
 
         int fillSize = 0;
 
@@ -150,9 +150,8 @@ namespace SocketNetworking.Shared.Transports
                 }
                 if (fillSize < sizeof(int))
                 {
-                    // we dont have enough data to read the length data
-                    int count = 0;
-                    int tempFillSize = fillSize;
+                    // we don't have enough data to read the length data
+                    int count;
                     if (Client.NoDelay)
                     {
                         count = Stream.Read(buffer, 0, buffer.Length - fillSize);
@@ -164,7 +163,7 @@ namespace SocketNetworking.Shared.Transports
                     fillSize += count;
                     continue;
                 }
-                int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesnt modify the buffer.
+                int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesn't modify the buffer.
                 bodySize = IPAddress.NetworkToHostOrder(bodySize);
                 //Log.GlobalDebug($"{bodySize}");
                 if (bodySize == 0)

@@ -69,7 +69,7 @@ namespace SocketNetworking.UnityEngine
             {
                 result.transform.parent = parent.transform;
             }
-            return (INetworkSpawnable)result.GetComponent<NetworkIdentity>();
+            return result.GetComponent<NetworkIdentity>();
         }
 
         private static Dictionary<GameObject, NetworkTransform> _transforms = new Dictionary<GameObject, NetworkTransform>();

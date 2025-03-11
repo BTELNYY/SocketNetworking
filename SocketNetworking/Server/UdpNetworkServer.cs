@@ -47,7 +47,7 @@ namespace SocketNetworking.Server
                     continue;
                 }
                 byte[] Receive = udpClient.Receive(ref listener);
-                IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
+                IPEndPoint remoteIpEndPoint = listener;
                 if (!_udpClients.ContainsKey(remoteIpEndPoint))
                 {
                     Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");

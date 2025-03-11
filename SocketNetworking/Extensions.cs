@@ -253,10 +253,10 @@ namespace SocketNetworking
         {
             while (count > int.MaxValue)
             {
-                source = source.Skip((int)int.MaxValue).ToList();
+                source = source.Skip(int.MaxValue).ToList();
                 count -= int.MaxValue;
             }
-            source = source.Skip((int)int.MaxValue).ToList();
+            source = source.Skip(int.MaxValue).ToList();
             return source;
         }
 

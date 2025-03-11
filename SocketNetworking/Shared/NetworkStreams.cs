@@ -92,7 +92,7 @@ namespace SocketNetworking.Shared
                         ByteReader reader = new ByteReader(packet.Data);
                         StreamMetaData meta = reader.ReadPacketSerialized<StreamMetaData>();
                         Client.Log.Info($"Stream open request accepted. ID: {packet.StreamID}, Buffer Size: {meta.MaxBufferSize}");
-                        NetworkSyncedStream streamBase = (NetworkSyncedStream)Activator.CreateInstance(streamType, (NetworkClient)Client, packet.StreamID, (int)meta.MaxBufferSize);
+                        NetworkSyncedStream streamBase = (NetworkSyncedStream)Activator.CreateInstance(streamType, Client, packet.StreamID, (int)meta.MaxBufferSize);
                         streamBase.ID = packet.StreamID;
                         OpenInternal(streamBase);
                         streamBase.SetOpenData(reader);

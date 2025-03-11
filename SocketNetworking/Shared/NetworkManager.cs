@@ -663,7 +663,7 @@ namespace SocketNetworking.Shared
         {
             if (networkObject.NetworkID == 0)
             {
-                Log.Error($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
+                Log.Error($"Network Object {networkObject.GetType().Name} was ignored because NetworkID 0 is reserved. Please choose another ID.");
                 return false;
             }
             if (!NetworkObjects.ContainsKey(networkObject))
@@ -692,7 +692,7 @@ namespace SocketNetworking.Shared
         {
             if (networkObject.NetworkID == 0)
             {
-                Log.Error($"Network Object {networkObject.GetType().Name} was ignored becuase NetworkID 0 is reserved. Please choose another ID.");
+                Log.Error($"Network Object {networkObject.GetType().Name} was ignored because NetworkID 0 is reserved. Please choose another ID.");
                 return false;
             }
             if (!NetworkObjects.ContainsKey(networkObject))
@@ -757,7 +757,7 @@ namespace SocketNetworking.Shared
                 {
                     if (method.GetParameters().Length < AcceptedMethodArugments.Length)
                     {
-                        Log.Warning("Method " + method.Name + " was ignored becuase it doesn't have the proper amount of arguments");
+                        Log.Warning("Method " + method.Name + " was ignored because it doesn't have the proper amount of arguments");
                     }
                     else
                     {
@@ -1361,7 +1361,7 @@ namespace SocketNetworking.Shared
             {
                 if (!sender.IsTransportConnected)
                 {
-                    Log.Error($"NetworkInvoke on method {methodName} failed becuase the NetworkClient is not connected.");
+                    Log.Error($"NetworkInvoke on method {methodName} failed because the NetworkClient is not connected.");
                     break;
                 }
                 if (stopwatch.ElapsedMilliseconds > msTimeOut)

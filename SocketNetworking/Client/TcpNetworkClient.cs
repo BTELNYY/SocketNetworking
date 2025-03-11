@@ -65,7 +65,7 @@ namespace SocketNetworking.Client
         public bool AllowUntrustedRootCertificates { get; set; } = false;
 
         /// <summary>
-        /// Called when SSL has finished its handshake and is now the standard tranmission route.
+        /// Called when SSL has finished its handshake and is now the standard transmission route.
         /// </summary>
         public event Action SSLConnected;
 
@@ -91,7 +91,7 @@ namespace SocketNetworking.Client
             }
             catch (AuthenticationException ex)
             {
-                Log.Error("SSL Auth failure! Error: " + ex.Message);
+                Log.Error("SSL Authentication failure! Error: " + ex.Message);
                 SSLFailure?.Invoke();
                 return false;
             }
@@ -114,7 +114,7 @@ namespace SocketNetworking.Client
             }
             catch (AuthenticationException ex)
             {
-                Log.Error("SSL Auth failure! Error: " + ex.Message);
+                Log.Error("SSL Authentication failure! Error: " + ex.Message);
                 SSLFailure?.Invoke();
                 return false;
             }

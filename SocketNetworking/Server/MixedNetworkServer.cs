@@ -72,7 +72,7 @@ namespace SocketNetworking.Server
                 if (Clients.Count >= Config.MaximumClients)
                 {
                     //Do not accept.
-                    Log.Info("Rejected a client becuase the server is full.");
+                    Log.Info("Rejected a client because the server is full.");
                     socket.Close();
                     continue;
                 }
@@ -147,7 +147,7 @@ namespace SocketNetworking.Server
                 try
                 {
                     byte[] Receive = udpClient.Receive(ref listener);
-                    IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
+                    IPEndPoint remoteIpEndPoint = listener;
                     if (!_udpClients.ContainsKey(remoteIpEndPoint))
                     {
                         ByteReader reader = new ByteReader(Receive);
@@ -168,7 +168,7 @@ namespace SocketNetworking.Server
                             _udpClients.Add(remoteIpEndPoint, client);
                         }
                         //Dont read the first message since its not actually a packet, and just the client ID and the passkey.
-                        _awaitingUDPConnection.Remove((MixedNetworkClient)client);
+                        _awaitingUDPConnection.Remove(client);
                     }
                     else
                     {

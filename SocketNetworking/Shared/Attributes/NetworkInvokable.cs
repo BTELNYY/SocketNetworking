@@ -12,7 +12,7 @@ namespace SocketNetworking.Shared.Attributes
         public NetworkDirection Direction { get; set; } = NetworkDirection.Any;
 
         /// <summary>
-        /// Attempts to make sure network invoked calls only originate from the proper client. Becuase it is Server Authoritive, this property has no effect if the Network call is coming from the server.
+        /// Attempts to make sure network invoked calls only originate from the proper client. because it is Server Authoritive, this property has no effect if the Network call is coming from the server.
         /// </summary>
         public bool SecureMode { get; set; } = true;
 

@@ -48,7 +48,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         public object ValueRaw
         {
-            get => (object)Value;
+            get => Value;
             set
             {
                 this.value = (T)value;

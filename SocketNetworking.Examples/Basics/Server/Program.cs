@@ -11,7 +11,7 @@ namespace SocketNetworking.Example.Basics.Server
     public class Program
     {
 
-        static string Title = "Clients: {count}";
+        static readonly string Title = "Clients: {count}";
 
         public static void Main(string[] args)
         {
@@ -59,8 +59,10 @@ namespace SocketNetworking.Example.Basics.Server
                     if (c is TestClient client && c.Ready)
                     {
                         //client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
-                        ExampleCustomPacket packet = new ExampleCustomPacket();
-                        packet.Data = "test";
+                        ExampleCustomPacket packet = new ExampleCustomPacket
+                        {
+                            Data = "test"
+                        };
                         packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
                         client.Send(packet);
                     }
