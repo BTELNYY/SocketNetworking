@@ -1345,7 +1345,7 @@ namespace SocketNetworking.Shared
             return new NetworkInvocationCallback<T>(packet.CallbackID);
         }
 
-        public static T NetworkInvoke<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000, bool priority = false)
+        public static T NetworkInvokeBlocking<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000, bool priority = false)
         {
             NetworkInvokationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
             MethodInfo method = target.GetType().GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public |BindingFlags.NonPublic).FirstOrDefault(x => x.Name == methodName);
@@ -1389,11 +1389,6 @@ namespace SocketNetworking.Shared
             {
                 return (T)result;
             }
-        }
-
-        public static TResult NetworkInvoke<TResult>(object target, NetworkClient sender, Func<TResult> func)
-        {
-            return NetworkInvoke<TResult>(target, sender, func.Method.Name, new object[] { });
         }
 
         #endregion

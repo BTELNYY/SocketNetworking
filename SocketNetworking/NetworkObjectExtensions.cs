@@ -50,7 +50,7 @@ namespace SocketNetworking
         /// <returns></returns>
         public static T NetworkInvoke<T>(this INetworkObject obj, NetworkClient sender, string methodName, object[] args, float timeOutMs = 5000f)
         {
-            return NetworkManager.NetworkInvoke<T>(obj, sender, methodName, args, timeOutMs);
+            return NetworkManager.NetworkInvokeBlocking<T>(obj, sender, methodName, args, timeOutMs);
         }
 
         /// <summary>
@@ -233,6 +233,18 @@ namespace SocketNetworking
             if(NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");
+            }
+            var result = NetworkManager.GetNetworkObjectByID(obj.NetworkID);
+            if(result.Item1 == null)
+            {
+                NetworkManager.AddNetworkObject(obj);
+            }
+            else
+            {
+                if(result.Item1.GetType() != obj.GetType())
+                {
+                    throw new InvalidOperationException("It seems this objects ID has been added and the type does not match.");
+                }
             }
             ObjectManagePacket packet = new ObjectManagePacket()
             {

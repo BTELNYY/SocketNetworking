@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using SocketNetworking.Attributes;
 using SocketNetworking.Misc;
 using SocketNetworking.PacketSystem;
@@ -690,7 +691,7 @@ namespace SocketNetworking.Client
         /// </returns>
         public bool ClientRequestEncryption()
         {
-            return NetworkInvoke<bool>(nameof(ServerGetEncryptionRequest), new object[] { });
+            return NetworkInvokeBlocking<bool>(nameof(ServerGetEncryptionRequest), new object[] { });
         }
 
         [NetworkInvokable(NetworkDirection.Client)]
@@ -1113,7 +1114,7 @@ namespace SocketNetworking.Client
         /// <returns></returns>
         public T NetworkInvoke<T>(object target, string methodName, object[] args, float maxTimeMs = 5000, bool priority = false)
         {
-            return NetworkManager.NetworkInvoke<T>(target, this, methodName, args, maxTimeMs, priority);
+            return NetworkManager.NetworkInvokeBlocking<T>(target, this, methodName, args, maxTimeMs, priority);
         }
 
         /// <summary>
@@ -1128,19 +1129,6 @@ namespace SocketNetworking.Client
         }
 
         /// <summary>
-        /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value. This will try to find the method on the current <see cref="NetworkClient"/>
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="methodName"></param>
-        /// <param name="args"></param>
-        /// <param name="maxTimeMs"></param>
-        /// <returns></returns>
-        public T NetworkInvoke<T>(string methodName, object[] args, float maxTimeMs = 5000, bool priority = false)
-        {
-            return NetworkManager.NetworkInvoke<T>(this, this, methodName, args, maxTimeMs, priority);
-        }
-
-        /// <summary>
         /// Preforms a non-blocking Network Invocation (Like an RPC). This will try to find the method on the current <see cref="NetworkClient"/>
         /// </summary>
         /// <param name="methodName"></param>
@@ -1148,6 +1136,32 @@ namespace SocketNetworking.Client
         public void NetworkInvoke(string methodName, object[] args, bool priority = false)
         {
             NetworkManager.NetworkInvoke(this, this, methodName, args, priority);
+        }
+
+        /// <summary>
+        /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value. This will try to find the method on the current <see cref="NetworkClient"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <param name="maxTimeMs"></param>
+        /// <returns></returns>
+        public T NetworkInvokeBlocking<T>(string methodName, object[] args, float maxTimeMs = 5000, bool priority = false)
+        {
+            return NetworkManager.NetworkInvokeBlocking<T>(this, this, methodName, args, maxTimeMs, priority);
+        }
+
+        /// <summary>
+        /// Preforms a non-blocking Network Invocation and returns a <see cref="NetworkInvocationCallback{T}"/> which contains a <see cref="NetworkInvocationCallback{T}.Callback"/> which you can listen to get the return value (if any). 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <param name="priority"></param>
+        /// <returns></returns>
+        public NetworkInvocationCallback<T> NetworkInvoke<T>(string methodName, object[] args, bool priority = false)
+        {
+            return NetworkManager.NetworkInvoke<T>(this, this, methodName, args, priority);
         }
 
         #endregion
@@ -2182,13 +2196,16 @@ namespace SocketNetworking.Client
 
         public void ServerBeginSync()
         {
-            List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
-            NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
-            foreach (INetworkObject @object in objects)
+            _ = Task.Run(() => 
             {
-                @object.NetworkSpawn(this);
-                @object.OnSync(this);
-            }
+                List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
+                NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
+                foreach (INetworkObject @object in objects)
+                {
+                    @object.NetworkSpawn(this);
+                    @object.OnSync(this);
+                }
+            });
         }
 
         [NetworkInvokable(Direction = NetworkDirection.Server)]
