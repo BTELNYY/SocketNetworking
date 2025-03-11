@@ -1,6 +1,6 @@
 ﻿using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem
+namespace SocketNetworking.Shared.PacketSystem
 {
     public interface IPacketSerializable
     {

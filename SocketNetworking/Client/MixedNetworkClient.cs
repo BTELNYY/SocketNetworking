@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Transports;

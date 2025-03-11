@@ -1,4 +1,4 @@
-﻿using SocketNetworking.PacketSystem.Packets;
+﻿using SocketNetworking.Shared.PacketSystem.Packets;
 
 namespace SocketNetworking.Shared.NetworkObjects
 {

@@ -2,7 +2,7 @@
 using SocketNetworking.Attributes;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem.TypeWrappers
+namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 {
     [TypeWrapperAttribute(typeof(IPAddress))]
     public class SerializableIPAddress : TypeWrapper<IPAddress>

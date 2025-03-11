@@ -3,7 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
 {

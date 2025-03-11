@@ -5,7 +5,7 @@ using System.Linq;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem.TypeWrappers
+namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 {
     public class SerializableList<T> : IPacketSerializable, IList<T>
     {

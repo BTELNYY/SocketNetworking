@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
-using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Messages;
@@ -164,7 +164,7 @@ namespace SocketNetworking.Server
         public bool ShouldAcceptConnections = true;
 
         /// <summary>
-        /// Should clients be able to set themselves as ready using <see cref="SocketNetworking.PacketSystem.Packets.ReadyStateUpdatePacket"/>?
+        /// Should clients be able to set themselves as ready using <see cref="SocketNetworking.Shared.PacketSystem.Packets.ReadyStateUpdatePacket"/>?
         /// </summary>
         public static bool AllowClientSelfReady = true;
 

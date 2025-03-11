@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem.TypeWrappers
+namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 {
     /// <summary>
     /// A Generic dictionary class.

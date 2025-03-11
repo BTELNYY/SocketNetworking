@@ -3,8 +3,8 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using SocketNetworking.Client;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.Streams

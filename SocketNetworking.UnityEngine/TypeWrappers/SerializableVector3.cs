@@ -1,4 +1,4 @@
-﻿using SocketNetworking.PacketSystem;
+﻿using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
 using UnityEngine;
 

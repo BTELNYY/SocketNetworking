@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem.Packets;
 
 namespace SocketNetworking.Example.Basics.SharedData
 {

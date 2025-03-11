@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Net;
 using SocketNetworking.Exceptions;
-using SocketNetworking.PacketSystem.TypeWrappers;
+using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem
+namespace SocketNetworking.Shared.PacketSystem
 {
     public class Packet
     {

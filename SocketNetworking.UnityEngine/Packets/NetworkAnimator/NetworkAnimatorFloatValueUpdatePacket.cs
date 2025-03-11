@@ -1,5 +1,5 @@
 ﻿using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using UnityEngine;
 

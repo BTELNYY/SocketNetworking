@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using SocketNetworking.Client;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.TypeWrappers;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.UnityEngine.Components

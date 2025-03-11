@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using SocketNetworking.Client;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.Serialization;

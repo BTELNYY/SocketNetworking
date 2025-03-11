@@ -2,7 +2,7 @@
 using SocketNetworking;
 using SocketNetworking.Attributes;
 using SocketNetworking.Client;
-using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;

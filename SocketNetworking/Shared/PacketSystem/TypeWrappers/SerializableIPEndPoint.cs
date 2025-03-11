@@ -3,7 +3,7 @@ using System.Net;
 using SocketNetworking.Attributes;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem.TypeWrappers
+namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 {
     [TypeWrapperAttribute(typeof(IPEndPoint))]
     public class SerializableIPEndPoint : TypeWrapper<IPEndPoint>

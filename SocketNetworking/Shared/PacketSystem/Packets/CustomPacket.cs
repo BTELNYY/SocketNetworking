@@ -2,7 +2,7 @@
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem.Packets
+namespace SocketNetworking.Shared.PacketSystem.Packets
 {
     /// <summary>
     /// Base class for all custom packets, it is the only class accepted by library. Your CustomPacketID value must be unique per class.

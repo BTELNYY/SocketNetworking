@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Transports
 {

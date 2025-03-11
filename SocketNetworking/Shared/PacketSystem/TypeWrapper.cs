@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SocketNetworking.PacketSystem
+namespace SocketNetworking.Shared.PacketSystem
 {
     public abstract class TypeWrapper<T>
     {

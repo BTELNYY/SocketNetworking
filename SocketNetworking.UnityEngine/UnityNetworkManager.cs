@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;

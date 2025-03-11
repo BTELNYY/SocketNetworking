@@ -1,5 +1,5 @@
 ﻿using SocketNetworking.Client;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Shared.SyncVars

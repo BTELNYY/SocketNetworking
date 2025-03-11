@@ -2,7 +2,7 @@
 using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem.Packets
+namespace SocketNetworking.Shared.PacketSystem.Packets
 {
     public sealed class ClientDataPacket : Packet
     {

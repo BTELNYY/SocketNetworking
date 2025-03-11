@@ -1,5 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SocketNetworking.PacketSystem.TypeWrappers;
+using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;

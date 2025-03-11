@@ -4,7 +4,7 @@ using SocketNetworking.Attributes;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem.TypeWrappers
+namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 {
     [TypeWrapper(typeof(Type))]
     public class SerializableType : TypeWrapper<Type>

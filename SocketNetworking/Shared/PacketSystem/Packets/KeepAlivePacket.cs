@@ -2,7 +2,7 @@
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem.Packets
+namespace SocketNetworking.Shared.PacketSystem.Packets
 {
     public sealed class KeepAlivePacket : Packet
     {

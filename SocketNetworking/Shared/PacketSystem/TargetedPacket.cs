@@ -1,7 +1,7 @@
-﻿using SocketNetworking.PacketSystem.Packets;
+﻿using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem
+namespace SocketNetworking.Shared.PacketSystem
 {
     public class TargetedPacket : Packet
     {

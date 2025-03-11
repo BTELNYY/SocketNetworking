@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared;
 
 namespace SocketNetworking.Attributes
@@ -38,7 +38,7 @@ namespace SocketNetworking.Attributes
         }
 
         /// <summary>
-        /// Defines a packet listener. this method attribute should be used in conjunction with <see cref="SocketNetworking.PacketSystem.INetworkObject"/> to create network objects, methods with this attribute should always have two parameters: The <see cref="CustomPacket"/> type which you are listening for and the <see cref="NetworkClient"/>. Note that custom network clients are accepted. 
+        /// Defines a packet listener. this method attribute should be used in conjunction with <see cref="SocketNetworking.Shared.PacketSystem.INetworkObject"/> to create network objects, methods with this attribute should always have two parameters: The <see cref="CustomPacket"/> type which you are listening for and the <see cref="NetworkClient"/>. Note that custom network clients are accepted. 
         /// </summary>
         /// <param name="type">
         /// The type of the packet you are waiting for. Note that it must be registered and inherit from <see cref="CustomPacket"/> as well as use the <see cref="PacketDefinition"/> attribute.

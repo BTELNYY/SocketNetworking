@@ -1,5 +1,5 @@
 ﻿using SocketNetworking.Misc;
-using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Events
 {

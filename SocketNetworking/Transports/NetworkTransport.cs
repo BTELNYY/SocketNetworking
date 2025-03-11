@@ -2,7 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using SocketNetworking.PacketSystem;
+using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Transports
 {

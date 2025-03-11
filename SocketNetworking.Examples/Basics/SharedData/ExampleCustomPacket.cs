@@ -1,6 +1,6 @@
 ﻿using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 

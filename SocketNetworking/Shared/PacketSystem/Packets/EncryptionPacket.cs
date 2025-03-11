@@ -1,7 +1,7 @@
 ﻿using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem.Packets
+namespace SocketNetworking.Shared.PacketSystem.Packets
 {
     /// <summary>
     /// <see cref="Packet"/> used for communicating encryption data, like public keys and encrypted symmetrical keys.

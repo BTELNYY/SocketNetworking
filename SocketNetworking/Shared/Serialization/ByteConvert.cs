@@ -7,8 +7,8 @@ using System.Reflection;
 using SocketNetworking.Attributes;
 using SocketNetworking.Client;
 using SocketNetworking.Exceptions;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.TypeWrappers;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.NetworkObjects;
 

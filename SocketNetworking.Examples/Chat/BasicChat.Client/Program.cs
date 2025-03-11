@@ -3,7 +3,7 @@ using System.Threading;
 using BasicChat.Shared;
 using SocketNetworking;
 using SocketNetworking.Client;
-using SocketNetworking.Misc;
+using SocketNetworking.Misc.Console;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
 
@@ -114,11 +114,17 @@ namespace BasicChat.Client
 
         static void HandleInput()
         {
+            string cursor = "> ";
             while (NetworkClient.LocalClient.IsConnected)
             {
-                string input = FancyConsole.ReadLine();
+                string input = FancyConsole.ReadLine(cursor);
                 ChatClient client = NetworkClient.LocalClient as ChatClient;
                 client.ClientSendMessage(input);
+                if (NetworkClient.LocalClient.Avatar != null)
+                {
+                    ChatAvatar avatar = NetworkClient.LocalClient.Avatar as ChatAvatar;
+                    cursor = $"{avatar.Name}@{NetworkClient.LocalClient.ConnectedHostname}> ";
+                }
             }
         }
     }

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
-using SocketNetworking.PacketSystem.TypeWrappers;
+using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.PacketSystem.Packets
+namespace SocketNetworking.Shared.PacketSystem.Packets
 {
     public sealed class SyncVarUpdatePacket : Packet
     {

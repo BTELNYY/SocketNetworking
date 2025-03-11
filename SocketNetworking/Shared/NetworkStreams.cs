@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.Streams;
 

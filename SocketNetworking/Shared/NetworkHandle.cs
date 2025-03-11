@@ -1,7 +1,7 @@
 ﻿using System;
 using SocketNetworking.Client;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.Packets;
 
 namespace SocketNetworking.Shared
 {

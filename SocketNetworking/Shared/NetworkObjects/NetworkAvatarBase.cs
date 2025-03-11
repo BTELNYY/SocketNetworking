@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 using SocketNetworking.Client;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared.NetworkObjects
@@ -11,9 +11,14 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         private NetworkSyncVar<string> _pubKey;
 
+        public long OwnerLatency => _ping.Value;
+
+        private NetworkSyncVar<long> _ping;
+
         public NetworkAvatarBase()
         {
             _pubKey = new NetworkSyncVar<string>(this, OwnershipMode.Client);
+            _ping = new NetworkSyncVar<long>(this, OwnershipMode.Server, 0);
             _pubKey.Changed += (x) =>
             {
                 if(x != null)
@@ -31,6 +36,15 @@ namespace SocketNetworking.Shared.NetworkObjects
         {
             base.OnOwnerDisconnected(client);
             this.NetworkDestroy();
+        }
+
+        public override void OnOwnerNetworkSpawned(NetworkClient spawner)
+        {
+            base.OnOwnerNetworkSpawned(spawner);
+            spawner.LatencyChanged += (x) =>
+            {
+                _ping.Value = x;
+            };
         }
 
         public override void OnLocalSpawned(ObjectManagePacket packet)
