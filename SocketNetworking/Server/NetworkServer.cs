@@ -273,7 +273,7 @@ namespace SocketNetworking.Server
         static ClientHandler NextHandler()
         {
             ClientHandler bestHandler = null;
-            foreach (var handler in handlers)
+            foreach (ClientHandler handler in handlers)
             {
                 if (handler.CurrentClientCount >= Config.ClientsPerThread)
                 {

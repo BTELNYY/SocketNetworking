@@ -35,8 +35,8 @@ namespace SocketNetworking.Misc.Console
             lock (locker)
             {
                 oldOut.Write(new string('\b', buffer.Count));
-                var msg = $"{message}";
-                var excess = buffer.Count - msg.Length;
+                string msg = $"{message}";
+                int excess = buffer.Count - msg.Length;
                 if (excess > 0) msg += new string(' ', excess);
                 oldOut.WriteLine(msg);
                 oldOut.Write(new string(buffer.ToArray()));
@@ -48,8 +48,8 @@ namespace SocketNetworking.Misc.Console
             lock (locker)
             {
                 oldOut.Write(new string('\b', buffer.Count));
-                var msg = $"{message}";
-                var excess = buffer.Count - msg.Length;
+                string msg = $"{message}";
+                int excess = buffer.Count - msg.Length;
                 if (excess > 0) msg += new string(' ', excess);
                 oldOut.Write(msg);
                 oldOut.Write("\n" + new string(buffer.ToArray()));
@@ -61,7 +61,7 @@ namespace SocketNetworking.Misc.Console
             char[] cursorArray = cursor.ToCharArray();
             while (true)
             {
-                var k = System.Console.ReadKey();
+                ConsoleKeyInfo k = System.Console.ReadKey();
                 if (k.Key == ConsoleKey.Enter && buffer.Count > 0)
                 {
                     lock (locker)

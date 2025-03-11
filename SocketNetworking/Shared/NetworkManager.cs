@@ -95,7 +95,7 @@ namespace SocketNetworking.Shared
                     if (NetworkClient.Clients.Any(x => x.CurrentClientLocation == ClientLocation.Remote))
                     {
                         Log.Error("There are active remote clients even though the server is closed, these clients will now be terminated.");
-                        foreach (var x in NetworkClient.Clients)
+                        foreach (NetworkClient x in NetworkClient.Clients)
                         {
                             if (x.CurrentClientLocation == ClientLocation.Local)
                             {
@@ -169,7 +169,7 @@ namespace SocketNetworking.Shared
             List<Type> applicableTypes = target.GetTypes().ToList();
             foreach (Type t in applicableTypes)
             {
-                var data = GetNetworkObjectData(t);
+                NetworkObjectData data = GetNetworkObjectData(t);
                 if (data == null)
                 {
                     continue;
@@ -702,7 +702,7 @@ namespace SocketNetworking.Shared
             }
             else
             {
-                NetworkObjects.TryRemove(networkObject, out var value);
+                NetworkObjects.TryRemove(networkObject, out NetworkObjectData value);
                 SendRemovedPulse(networkObject);
                 return true;
             }
@@ -1327,7 +1327,7 @@ namespace SocketNetworking.Shared
             packet.TargetTypeAssmebly = Assembly.GetAssembly(target.GetType()).GetName().FullName;
             packet.NetworkIDTarget = targetID;
             packet.MethodName = methodName;
-            foreach (var arg in args)
+            foreach (object arg in args)
             {
                 SerializedData data = ByteConvert.Serialize(arg);
                 packet.Arguments.Add(data);

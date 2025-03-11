@@ -36,7 +36,7 @@ namespace SocketNetworking.Server
             {
                 lock (clientLock)
                 {
-                    var client = _udpClients.FirstOrDefault(x => x.Value == dcClient).Key;
+                    IPEndPoint client = _udpClients.FirstOrDefault(x => x.Value == dcClient).Key;
                     if (client == default)
                     {
                         return;

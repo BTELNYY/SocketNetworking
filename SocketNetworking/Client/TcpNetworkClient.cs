@@ -85,7 +85,7 @@ namespace SocketNetworking.Client
         {
             try
             {
-                var stream = new SslStream(TcpTransport.Stream, true, ClientVerifyCert);
+                SslStream stream = new SslStream(TcpTransport.Stream, true, ClientVerifyCert);
                 stream.AuthenticateAsClient(hostname);
                 TcpTransport.SslStream = stream;
             }
@@ -108,7 +108,7 @@ namespace SocketNetworking.Client
         {
             try
             {
-                var stream = new SslStream(TcpTransport.Stream, true, ServerVerifyCert);
+                SslStream stream = new SslStream(TcpTransport.Stream, true, ServerVerifyCert);
                 stream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
                 TcpTransport.SslStream = stream;
             }
@@ -148,7 +148,7 @@ namespace SocketNetworking.Client
             if (sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateChainErrors))
             {
                 X509ChainStatusFlags flags = 0;
-                foreach (var chainEntry in chain.ChainStatus)
+                foreach (X509ChainStatus chainEntry in chain.ChainStatus)
                 {
                     flags |= chainEntry.Status;
                 }

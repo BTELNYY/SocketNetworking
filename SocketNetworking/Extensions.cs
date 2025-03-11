@@ -117,7 +117,7 @@ namespace SocketNetworking
 
         public static object LastEnum(this object obj)
         {
-            var lastEnum = Enum.GetValues(obj.GetType()).Cast<object>().Max();
+            object lastEnum = Enum.GetValues(obj.GetType()).Cast<object>().Max();
             return lastEnum;
         }
 
@@ -178,9 +178,9 @@ namespace SocketNetworking
 
         public static byte[] Compress(this byte[] bytes)
         {
-            using (var memoryStream = new MemoryStream())
+            using (MemoryStream memoryStream = new MemoryStream())
             {
-                using (var gzipStream = new GZipStream(memoryStream, CompressionLevel.Optimal))
+                using (GZipStream gzipStream = new GZipStream(memoryStream, CompressionLevel.Optimal))
                 {
                     gzipStream.Write(bytes, 0, bytes.Length);
                 }
@@ -194,11 +194,11 @@ namespace SocketNetworking
 
         public static byte[] Decompress(this byte[] bytes)
         {
-            using (var memoryStream = new MemoryStream(bytes))
+            using (MemoryStream memoryStream = new MemoryStream(bytes))
             {
-                using (var outputStream = new MemoryStream())
+                using (MemoryStream outputStream = new MemoryStream())
                 {
-                    using (var decompressStream = new GZipStream(memoryStream, CompressionMode.Decompress))
+                    using (GZipStream decompressStream = new GZipStream(memoryStream, CompressionMode.Decompress))
                     {
                         decompressStream.CopyTo(outputStream);
                     }
@@ -299,7 +299,7 @@ namespace SocketNetworking
         {
             while (toCheck != null && toCheck != typeof(object))
             {
-                var cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
+                Type cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
                 if (generic == cur)
                 {
                     return true;
@@ -314,7 +314,7 @@ namespace SocketNetworking
             int counter = -1;
             while (toCheck != null && toCheck != typeof(object))
             {
-                var cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
+                Type cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
                 if (generic == cur)
                 {
                     return counter + 1;

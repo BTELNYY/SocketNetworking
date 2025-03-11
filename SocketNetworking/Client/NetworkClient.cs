@@ -1536,7 +1536,7 @@ namespace SocketNetworking.Client
                     }
                     else
                     {
-                        var result = AuthenticationProvider.Authenticate(handle, authPacket);
+                        (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authPacket);
                         AuthenticationPacket newPacket = new AuthenticationPacket();
                         newPacket.IsResult = true;
                         newPacket.Result = result.Item1;
@@ -1765,7 +1765,7 @@ namespace SocketNetworking.Client
                             Send(updateEncryptionStateFinal);
                             if (AuthenticationProvider != null && !AuthenticationProvider.ClientInitiate)
                             {
-                                var authpack = AuthenticationProvider.BeginAuthentication();
+                                AuthenticationPacket authpack = AuthenticationProvider.BeginAuthentication();
                                 Send(authpack);
                             }
                             Log.Success("Encryption Successful.");
@@ -1808,7 +1808,7 @@ namespace SocketNetworking.Client
                     }
                     else
                     {
-                        var result = AuthenticationProvider.Authenticate(handle, authPacket);
+                        (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authPacket);
                         AuthenticationPacket newPacket = new AuthenticationPacket();
                         newPacket.IsResult = true;
                         newPacket.Result = result.Item1;
@@ -2053,7 +2053,7 @@ namespace SocketNetworking.Client
                             }
                             if (AuthenticationProvider != null && AuthenticationProvider.ClientInitiate)
                             {
-                                var authpack = AuthenticationProvider.BeginAuthentication();
+                                AuthenticationPacket authpack = AuthenticationProvider.BeginAuthentication();
                                 Send(authpack);
                             }
                             break;
@@ -2230,7 +2230,7 @@ namespace SocketNetworking.Client
         private void GetClientAvatar(NetworkHandle handle, int id)
         {
             Log.Info("New Client avatar has been specified. ID: " + id);
-            var result = NetworkManager.GetNetworkObjectByID(id);
+            (INetworkObject, NetworkObjectData) result = NetworkManager.GetNetworkObjectByID(id);
             if (result.Item1 == null)
             {
                 Log.Warning("Got a client avatar, can't find the ID? ID: " + id);

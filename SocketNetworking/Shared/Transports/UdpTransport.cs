@@ -218,7 +218,7 @@ namespace SocketNetworking.Shared.Transports
                 {
                     //do nothing.
                 }
-                _receivedBytes.TryDequeue(out var result);
+                _receivedBytes.TryDequeue(out (byte[], IPEndPoint) result);
                 //Log.GlobalDebug(result.Item1.Length.ToString() + " ServerMode");
                 return (result.Item1, null, _emulatedPeer);
             }
@@ -354,7 +354,7 @@ namespace SocketNetworking.Shared.Transports
                 {
                     //do nothing.
                 }
-                _receivedBytes.TryDequeue(out var result);
+                _receivedBytes.TryDequeue(out (byte[], IPEndPoint) result);
                 //Log.GlobalDebug(result.Item1.Length.ToString() + " ServerMode");
                 return (result.Item1, null, _emulatedPeer);
             }

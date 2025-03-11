@@ -138,11 +138,7 @@ namespace SocketNetworking
                 case ObjectVisibilityMode.ServerOnly:
                     break;
                 case ObjectVisibilityMode.OwnerAndServer:
-                    NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
-                    if (client == null)
-                    {
-                        throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
-                    }
+                    NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
                     client.Send(packet);
                     break;
                 case ObjectVisibilityMode.Everyone:
@@ -162,7 +158,7 @@ namespace SocketNetworking
         public static void SyncVars(this INetworkObject obj)
         {
             NetworkObjectData datas = NetworkManager.GetNetworkObjectData(obj);
-            foreach (var data in datas.SyncVars)
+            foreach (FieldInfo data in datas.SyncVars)
             {
                 try
                 {
@@ -193,8 +189,8 @@ namespace SocketNetworking
         /// <param name="obj"></param>
         public static void SyncVars(this INetworkObject obj, NetworkClient spawner)
         {
-            NetworkObjectData datas = NetworkManager.GetNetworkObjectData(obj);
-            foreach (var data in datas.SyncVars)
+            NetworkObjectData dataArray = NetworkManager.GetNetworkObjectData(obj);
+            foreach (FieldInfo data in dataArray.SyncVars)
             {
                 try
                 {
@@ -234,7 +230,7 @@ namespace SocketNetworking
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");
             }
-            var result = NetworkManager.GetNetworkObjectByID(obj.NetworkID);
+            (INetworkObject, NetworkObjectData) result = NetworkManager.GetNetworkObjectByID(obj.NetworkID);
             if (result.Item1 == null)
             {
                 NetworkManager.AddNetworkObject(obj);
@@ -268,11 +264,7 @@ namespace SocketNetworking
                 case ObjectVisibilityMode.ServerOnly:
                     break;
                 case ObjectVisibilityMode.OwnerAndServer:
-                    NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
-                    if (client == null)
-                    {
-                        throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
-                    }
+                    NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
                     client.Send(packet);
                     break;
                 case ObjectVisibilityMode.Everyone:
@@ -331,7 +323,7 @@ namespace SocketNetworking
                     }
                     if (client.ClientID != target.ClientID)
                     {
-                        throw new InvalidOperationException($"Can't spawn an object with a targetted client while the object is hidden to non-owner client and the targetted client is not the owner client.");
+                        throw new InvalidOperationException($"Can't spawn an object with a targeted client while the object is hidden to non-owner client and the targeted client is not the owner client.");
                     }
                     client.Send(packet);
                     break;
@@ -370,11 +362,7 @@ namespace SocketNetworking
                     case ObjectVisibilityMode.ServerOnly:
                         break;
                     case ObjectVisibilityMode.OwnerAndServer:
-                        NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
-                        if (client == null)
-                        {
-                            throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
-                        }
+                        NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
                         client.Send(packet);
                         break;
                     case ObjectVisibilityMode.Everyone:

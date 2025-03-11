@@ -29,7 +29,7 @@ namespace SocketNetworking.Server
                 }
                 else
                 {
-                    var cert = X509Certificate.CreateFromCertFile(Config.CertificatePath);
+                    X509Certificate cert = X509Certificate.CreateFromCertFile(Config.CertificatePath);
                     if (cert == null)
                     {
                         Log.Warning("Certificate couldn't be loaded.");

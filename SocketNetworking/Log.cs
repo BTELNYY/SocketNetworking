@@ -215,14 +215,14 @@ namespace SocketNetworking
         private static Type GetCallerType()
         {
             StackFrame frame = new StackFrame(2);
-            var method = frame.GetMethod();
-            var type = method.DeclaringType;
+            System.Reflection.MethodBase method = frame.GetMethod();
+            Type type = method.DeclaringType;
             return type;
         }
 
         private static StackTrace GetStackTrace()
         {
-            var stackTrace = new StackTrace();
+            StackTrace stackTrace = new StackTrace();
             return stackTrace;
         }
     }
