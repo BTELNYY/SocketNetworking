@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasicChat.Shared", "SocketN
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasicChat.Server", "SocketNetworking.Examples\Chat\BasicChat.Server\BasicChat.Server.csproj", "{694B3279-24D3-4C4A-BE10-D8880DE3A1F5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{F9767957-1A41-4D74-BE6E-5626FB910D44}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +113,14 @@ Global
 		{694B3279-24D3-4C4A-BE10-D8880DE3A1F5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{694B3279-24D3-4C4A-BE10-D8880DE3A1F5}.Release|x64.ActiveCfg = Release|Any CPU
 		{694B3279-24D3-4C4A-BE10-D8880DE3A1F5}.Release|x64.Build.0 = Release|Any CPU
+		{F9767957-1A41-4D74-BE6E-5626FB910D44}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9767957-1A41-4D74-BE6E-5626FB910D44}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9767957-1A41-4D74-BE6E-5626FB910D44}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F9767957-1A41-4D74-BE6E-5626FB910D44}.Debug|x64.Build.0 = Debug|Any CPU
+		{F9767957-1A41-4D74-BE6E-5626FB910D44}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9767957-1A41-4D74-BE6E-5626FB910D44}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9767957-1A41-4D74-BE6E-5626FB910D44}.Release|x64.ActiveCfg = Release|Any CPU
+		{F9767957-1A41-4D74-BE6E-5626FB910D44}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

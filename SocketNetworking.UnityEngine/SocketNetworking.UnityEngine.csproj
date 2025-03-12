@@ -71,6 +71,8 @@
     <Compile Include="Components\UnityMainThreadDispatcher.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameObjectExtensions.cs" />
+    <Compile Include="Modding\Patching\FieldChangeEventArgs.cs" />
+    <Compile Include="Modding\Patching\FieldWatcher.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorBoolValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorFloatValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorIntValueUpdatePacket.cs" />
@@ -91,6 +93,9 @@
     <Compile Include="Utility\Utility.cs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Lib.Harmony">
+      <Version>2.3.5</Version>
+    </PackageReference>
     <PackageReference Include="Unity3D.SDK">
       <Version>2021.1.14.1</Version>
     </PackageReference>
