@@ -5,7 +5,7 @@ using SocketNetworking.Shared;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.Tests
+namespace SocketNetworking.Tests.Unit
 {
     [TestClass]
     public class SerializerTests

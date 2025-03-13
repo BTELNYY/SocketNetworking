@@ -2,7 +2,7 @@
 using SocketNetworking.Client;
 using SocketNetworking.Shared.Streams;
 
-namespace SocketNetworking.Tests
+namespace SocketNetworking.Tests.Unit
 {
     [TestClass]
     public class StreamTest

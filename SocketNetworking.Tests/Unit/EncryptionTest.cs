@@ -3,7 +3,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SocketNetworking.Shared;
 
-namespace SocketNetworking.Tests
+namespace SocketNetworking.Tests.Unit
 {
     [TestClass]
     public class EncryptionTest

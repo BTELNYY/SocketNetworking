@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SocketNetworking.Tests
+namespace SocketNetworking.Tests.Unit
 {
     [TestClass]
     public class UtilsTest

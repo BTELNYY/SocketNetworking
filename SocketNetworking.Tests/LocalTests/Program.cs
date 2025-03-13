@@ -4,34 +4,63 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 
-namespace SocketNetworking.UnityEngine.Modding.Patching
+namespace SocketNetworking.Tests.LocalTests
 {
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            FieldWatcher.InjectILDeep<Test>();
+            Test test = new Test();
+            test.TestField();
+        }
+    }
+
+    public class Test
+    {
+        static int wow = 0;
+
+        int field1 = 0;
+
+        float field2 = 0f;
+
+        public void TestField()
+        {
+            wow += 1;
+            Random random = new Random();
+            for (int i = 0; i < 10; i++)
+            {
+                field1 = random.Next();
+                field2 = random.Next();
+            }
+        }
+    }
+
     public static class FieldWatcher
     {
-        public static event EventHandler<FieldChangeEventArgs> FieldChanged;
-
         static FieldWatcher()
         {
+            Harmony.DEBUG = true;
             Harmony = new Harmony("com.btelnyy.socketnetowking.patching");
         }
 
         public static Harmony Harmony { get; }
 
-        public static void RemoveInjectedIL<T>(BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+        public static void RemoveDeepInjectedIL<T>(BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
         {
             Type type = typeof(T);
-            foreach (MethodInfo method in type.GetMethods(flags))
+            foreach (MethodInfo method in type.GetMethodsDeep(flags))
             {
                 Harmony.Unpatch(method, HarmonyPatchType.Transpiler, "com.btelnyy.socketnetowking.patching");
             }
         }
 
-        public static void InjectIL<T>(BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+        public static void InjectILDeep<T>(BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
         {
             Type type = typeof(T);
 
             //Use deep method to patch parents as well.
-            foreach (MethodInfo method in type.GetMethods(flags))
+            foreach (MethodInfo method in type.GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
                 try
                 {
@@ -63,8 +92,7 @@ namespace SocketNetworking.UnityEngine.Modding.Patching
         {
             FieldInfo fieldInfo = FieldInfo.GetFieldFromHandle(fieldHandle);
             Console.WriteLine($"Target: {target.GetType().FullName}, Field: {fieldInfo.Name}, Value: {fieldInfo.GetValue(target)}");
-            FieldChangeEventArgs args = new FieldChangeEventArgs(target, fieldInfo, fieldInfo.GetValue(target));
-            FieldChanged?.Invoke(target, args);
+
         }
     }
 }
