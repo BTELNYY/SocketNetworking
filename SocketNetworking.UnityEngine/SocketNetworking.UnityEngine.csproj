@@ -71,6 +71,7 @@
     <Compile Include="Components\UnityMainThreadDispatcher.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameObjectExtensions.cs" />
+    <Compile Include="Modding\FieldChangeSync.cs" />
     <Compile Include="Modding\Patching\FieldChangeEventArgs.cs" />
     <Compile Include="Modding\Patching\FieldWatcher.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorBoolValueUpdatePacket.cs" />

@@ -148,11 +148,8 @@ namespace SocketNetworking.Shared.SyncVars
 
         public virtual void RawSet(object value, NetworkClient who)
         {
-            if (value is T t)
-            {
-                this.value = t;
-                Changed?.Invoke(t);
-            }
+            this.value = value is T t ? t : default;
+            Changed?.Invoke(this.value);
         }
 
         public virtual void RawSet(OwnershipMode mode, NetworkClient who)
