@@ -44,10 +44,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
-    <Compile Include="FieldChangeSync.cs" />
-    <Compile Include="Patching\FieldChangeEventArgs.cs" />
-    <Compile Include="Patching\FieldWatcher.cs" />
+    <Compile Include="HarmonyHolder.cs" />
+    <Compile Include="InstanceFieldChangeSync.cs" />
+    <Compile Include="Patching\Fields\FieldChangeEventArgs.cs" />
+    <Compile Include="Patching\Fields\FieldWatcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

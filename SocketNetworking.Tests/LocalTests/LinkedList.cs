@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace SocketNetworking.Tests.LocalTests
 {
@@ -23,6 +24,11 @@ namespace SocketNetworking.Tests.LocalTests
         }
 
         public LinkedNode<T> Head;
+
+        public void ResetHead(T value)
+        {
+            Head = new LinkedNode<T>(value, Head);
+        }
 
         public virtual T Find(T value)
         {
@@ -126,6 +132,25 @@ namespace SocketNetworking.Tests.LocalTests
                 return;
             }
             RemoveRecursive(ptr.Next, ref value);
+        }
+        
+        public long Size
+        {
+            get
+            {
+                int count = 0;
+                var ptr = Head;
+                if(Head == null)
+                {
+                    return count;
+                }
+                while(ptr != null)
+                {
+                    count++;
+                    ptr = ptr.Next;
+                }
+                return count;
+            }
         }
 
         public override string ToString()

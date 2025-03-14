@@ -13,6 +13,8 @@ namespace SocketNetworking.Tests.LocalTests
             FieldWatcher.InjectILDeep<Test>();
             Test test = new Test();
             test.TestField();
+            OrderedLinkedList<int> list = new OrderedLinkedList<int>(new int[] { 3, -1, 93, 9999, -38384, 34, 88 });
+            Console.WriteLine(list.ToString());
         }
     }
 
