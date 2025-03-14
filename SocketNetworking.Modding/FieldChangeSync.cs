@@ -6,34 +6,34 @@ using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.SyncVars;
-using SocketNetworking.UnityEngine.Modding.Patching;
+using SocketNetworking.Modding.Patching;
 
 namespace SocketNetworking.UnityEngine.Modding
 {
     public class FieldChangeSync<T> : NetworkSyncVar<FieldChanged>
     {
-        public FieldChangeSync(FieldChanged value, object target) : base(value)
+        public FieldChangeSync(FieldChanged value, T target) : base(value)
         {
             Type = typeof(T);
             Target = target;
             FieldWatcher.FieldChanged += OnFieldChanged;
         }
 
-        public FieldChangeSync(INetworkObject ownerObject, FieldChanged value, object target) : base(ownerObject, value)
+        public FieldChangeSync(INetworkObject ownerObject, FieldChanged value, T target) : base(ownerObject, value)
         {
             Type = typeof(T);
             Target = target;
             FieldWatcher.FieldChanged += OnFieldChanged;
         }
 
-        public FieldChangeSync(INetworkObject ownerObject, OwnershipMode syncOwner, object target) : base(ownerObject, syncOwner)
+        public FieldChangeSync(INetworkObject ownerObject, OwnershipMode syncOwner, T target) : base(ownerObject, syncOwner)
         {
             Type = typeof(T);
             Target = target;
             FieldWatcher.FieldChanged += OnFieldChanged;
         }
 
-        public FieldChangeSync(INetworkObject ownerObject, OwnershipMode syncOwner, object target, FieldChanged value) : base(ownerObject, syncOwner, value)
+        public FieldChangeSync(INetworkObject ownerObject, OwnershipMode syncOwner, T target, FieldChanged value) : base(ownerObject, syncOwner, value)
         {
             Type = typeof(T);
             Target = target;

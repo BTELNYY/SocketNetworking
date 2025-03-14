@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 
-namespace SocketNetworking.UnityEngine.Modding.Patching
+namespace SocketNetworking.Modding.Patching
 {
     public static class FieldWatcher
     {

@@ -71,9 +71,6 @@
     <Compile Include="Components\UnityMainThreadDispatcher.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameObjectExtensions.cs" />
-    <Compile Include="Modding\FieldChangeSync.cs" />
-    <Compile Include="Modding\Patching\FieldChangeEventArgs.cs" />
-    <Compile Include="Modding\Patching\FieldWatcher.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorBoolValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorFloatValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorIntValueUpdatePacket.cs" />
@@ -102,6 +99,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SocketNetworking.Modding\SocketNetworking.Modding.csproj">
+      <Project>{f220d225-f930-460c-bd1e-88b57fc43a87}</Project>
+      <Name>SocketNetworking.Modding</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SocketNetworking\SocketNetworking.csproj">
       <Project>{ab97887e-ef11-4ce3-83b6-7e91456cf035}</Project>
       <Name>SocketNetworking</Name>

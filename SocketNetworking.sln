@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalTests", "SocketNetwork
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unit", "SocketNetworking.Tests\Unit\Unit.csproj", "{6E701053-8B43-4D05-8F34-AE9824AB89CE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Modding", "SocketNetworking.Modding\SocketNetworking.Modding.csproj", "{F220D225-F930-460C-BD1E-88B57FC43A87}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,6 +123,14 @@ Global
 		{6E701053-8B43-4D05-8F34-AE9824AB89CE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6E701053-8B43-4D05-8F34-AE9824AB89CE}.Release|x64.ActiveCfg = Release|Any CPU
 		{6E701053-8B43-4D05-8F34-AE9824AB89CE}.Release|x64.Build.0 = Release|Any CPU
+		{F220D225-F930-460C-BD1E-88B57FC43A87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F220D225-F930-460C-BD1E-88B57FC43A87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F220D225-F930-460C-BD1E-88B57FC43A87}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F220D225-F930-460C-BD1E-88B57FC43A87}.Debug|x64.Build.0 = Debug|Any CPU
+		{F220D225-F930-460C-BD1E-88B57FC43A87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F220D225-F930-460C-BD1E-88B57FC43A87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F220D225-F930-460C-BD1E-88B57FC43A87}.Release|x64.ActiveCfg = Release|Any CPU
+		{F220D225-F930-460C-BD1E-88B57FC43A87}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -137,6 +147,7 @@ Global
 		{694B3279-24D3-4C4A-BE10-D8880DE3A1F5} = {B330B9B3-000F-454E-8DAC-CEBFB32BA968}
 		{F9767957-1A41-4D74-BE6E-5626FB910D44} = {722A1631-41DA-4FD7-A600-2CDF8081045F}
 		{6E701053-8B43-4D05-8F34-AE9824AB89CE} = {722A1631-41DA-4FD7-A600-2CDF8081045F}
+		{F220D225-F930-460C-BD1E-88B57FC43A87} = {7A370070-17B2-4AAE-B821-B1056741913A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FBF7F5CF-0FE9-44E5-A4AB-BFE26D43DA8A}

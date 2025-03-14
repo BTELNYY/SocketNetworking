@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace SocketNetworking.UnityEngine.Modding.Patching
+namespace SocketNetworking.Modding.Patching
 {
     public class FieldChangeEventArgs : EventArgs
     {
