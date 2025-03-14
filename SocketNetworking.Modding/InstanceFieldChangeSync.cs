@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Reflection;
 using SocketNetworking.Client;
+using SocketNetworking.Modding.Patching.Fields;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.SyncVars;
-using SocketNetworking.Modding.Patching.Fields;
 
 namespace SocketNetworking.Modding
 {

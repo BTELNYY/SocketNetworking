@@ -11,10 +11,10 @@ namespace SocketNetworking.Tests.LocalTests
 
         public override T Find(T value)
         {
-            var ptr = Head;
+            LinkedNode<T> ptr = Head;
             while (ptr != null)
             {
-                if(ptr.Value.CompareTo(value) >= 0)
+                if (ptr.Value.CompareTo(value) >= 0)
                 {
                     return default;
                 }
@@ -33,9 +33,9 @@ namespace SocketNetworking.Tests.LocalTests
 
         protected override void AddRecursive(LinkedNode<T> ptr, ref T value)
         {
-            if(ptr.Next == null)
+            if (ptr.Next == null)
             {
-                if(ptr.Value.CompareTo(value) > 0)
+                if (ptr.Value.CompareTo(value) > 0)
                 {
                     ResetHead(value);
                     return;

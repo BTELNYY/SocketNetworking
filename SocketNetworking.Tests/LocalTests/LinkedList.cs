@@ -16,7 +16,7 @@ namespace SocketNetworking.Tests.LocalTests
 
         public LinkedList(IEnumerable<T> values)
         {
-            foreach (var item in values)
+            foreach (T item in values)
             {
                 Add(item);
             }
@@ -31,7 +31,7 @@ namespace SocketNetworking.Tests.LocalTests
 
         public virtual T Find(T value)
         {
-            var ptr = Head;
+            LinkedNode<T> ptr = Head;
             while (ptr != null)
             {
                 if (ptr.Value.Equals(value))
@@ -88,7 +88,7 @@ namespace SocketNetworking.Tests.LocalTests
 
         protected virtual void InsertRecursive(LinkedNode<T> ptr, T value, T nextVal)
         {
-            if(ptr.Value.Equals(value))
+            if (ptr.Value.Equals(value))
             {
                 ptr.Next = new LinkedNode<T>(nextVal, ptr.Next);
                 return;
@@ -127,38 +127,38 @@ namespace SocketNetworking.Tests.LocalTests
             {
                 return;
             }
-            if(ptr.Next == null)
+            if (ptr.Next == null)
             {
                 return;
             }
-            if(ptr == Head)
+            if (ptr == Head)
             {
-                if(ptr.Value.Equals(value))
+                if (ptr.Value.Equals(value))
                 {
                     Head = Head.Next;
                     return;
                 }
             }
-            if(ptr.Next.Value.Equals(value))
+            if (ptr.Next.Value.Equals(value))
             {
-                var reference = ptr.Next.Next;
+                LinkedNode<T> reference = ptr.Next.Next;
                 ptr.Next = reference;
                 return;
             }
             RemoveRecursive(ptr.Next, ref value);
         }
-        
+
         public long Size
         {
             get
             {
                 int count = 0;
-                var ptr = Head;
-                if(Head == null)
+                LinkedNode<T> ptr = Head;
+                if (Head == null)
                 {
                     return count;
                 }
-                while(ptr != null)
+                while (ptr != null)
                 {
                     count++;
                     ptr = ptr.Next;
@@ -169,12 +169,12 @@ namespace SocketNetworking.Tests.LocalTests
 
         public override string ToString()
         {
-            var ptr = Head;
+            LinkedNode<T> ptr = Head;
             string result = string.Empty;
-            while(ptr != null)
+            while (ptr != null)
             {
                 result += ptr.Value.ToString();
-                if(ptr.Next != null)
+                if (ptr.Next != null)
                 {
                     result += "->";
                 }
