@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace SocketNetworking.Tests.LocalTests
 {
@@ -80,6 +79,21 @@ namespace SocketNetworking.Tests.LocalTests
             }
             int current = 0;
             InsertRecursive(ref current, offset, Head, ref value);
+        }
+
+        public virtual void Insert(T value, ref T next)
+        {
+            InsertRecursive(Head, value, next);
+        }
+
+        protected virtual void InsertRecursive(LinkedNode<T> ptr, T value, T nextVal)
+        {
+            if(ptr.Value.Equals(value))
+            {
+                ptr.Next = new LinkedNode<T>(nextVal, ptr.Next);
+                return;
+            }
+            InsertRecursive(ptr, value, nextVal);
         }
 
         protected virtual void InsertRecursive(ref int current, int offset, LinkedNode<T> ptr, ref T value)

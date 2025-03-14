@@ -34,7 +34,22 @@ namespace SocketNetworking.Tests.LocalTests
 
         protected override void AddRecursive(LinkedNode<T> ptr, ref T value)
         {
-            
+            if(ptr.Next == null)
+            {
+                if(ptr.Value.CompareTo(value) > 0)
+                {
+                    ResetHead(value);
+                    return;
+                }
+                ptr.Next = new LinkedNode<T>(value);
+                return;
+            }
+            if (ptr.Next.Value.CompareTo(value) >= 0 && ptr.Value.CompareTo(value) <= 0)
+            {
+                ptr.Next = new LinkedNode<T>(value, ptr.Next);
+                return;
+            }
+            AddRecursive(ptr.Next, ref value);
         }
     }
 }
