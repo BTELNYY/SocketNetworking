@@ -29,7 +29,6 @@ namespace SocketNetworking.Tests.LocalTests
         public override void Add(T value)
         {
             base.Add(value);
-            Console.WriteLine(ToString());
         }
 
         protected override void AddRecursive(LinkedNode<T> ptr, ref T value)
