@@ -6,52 +6,52 @@ using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.SyncVars;
-using SocketNetworking.Modding.Patching;
+using SocketNetworking.Modding.Patching.Fields;
 
-namespace SocketNetworking.UnityEngine.Modding
+namespace SocketNetworking.Modding
 {
-    public class FieldChangeSync<T> : NetworkSyncVar<FieldChanged>
+    public class InstanceFieldChangeSync<T> : NetworkSyncVar<FieldChanged>
     {
-        public FieldChangeSync(FieldChanged value, T target) : base(value)
+        public InstanceFieldChangeSync(FieldChanged value, T target) : base(value)
         {
             Type = typeof(T);
             Target = target;
             FieldWatcher.FieldChanged += OnFieldChanged;
         }
 
-        public FieldChangeSync(INetworkObject ownerObject, FieldChanged value, T target) : base(ownerObject, value)
+        public InstanceFieldChangeSync(INetworkObject ownerObject, FieldChanged value, T target) : base(ownerObject, value)
         {
             Type = typeof(T);
             Target = target;
             FieldWatcher.FieldChanged += OnFieldChanged;
         }
 
-        public FieldChangeSync(INetworkObject ownerObject, OwnershipMode syncOwner, T target) : base(ownerObject, syncOwner)
+        public InstanceFieldChangeSync(INetworkObject ownerObject, OwnershipMode syncOwner, T target) : base(ownerObject, syncOwner)
         {
             Type = typeof(T);
             Target = target;
             FieldWatcher.FieldChanged += OnFieldChanged;
         }
 
-        public FieldChangeSync(INetworkObject ownerObject, OwnershipMode syncOwner, T target, FieldChanged value) : base(ownerObject, syncOwner, value)
+        public InstanceFieldChangeSync(INetworkObject ownerObject, OwnershipMode syncOwner, T target, FieldChanged value) : base(ownerObject, syncOwner, value)
         {
             Type = typeof(T);
             Target = target;
             FieldWatcher.FieldChanged += OnFieldChanged;
         }
 
-        ~FieldChangeSync()
+        ~InstanceFieldChangeSync()
         {
             FieldWatcher.FieldChanged -= OnFieldChanged;
         }
 
         private void OnFieldChanged(object sender, FieldChangeEventArgs args)
         {
-            if(sender == null)
+            if (sender == null)
             {
                 return;
             }
-            if(sender.GetType() != typeof(T) || sender != Target)
+            if (sender.GetType() != typeof(T) || sender != Target)
             {
                 return;
             }
@@ -67,7 +67,7 @@ namespace SocketNetworking.UnityEngine.Modding
 
         public override void RawSet(object value, NetworkClient who)
         {
-            if(value is FieldChanged changed)
+            if (value is FieldChanged changed)
             {
                 Target.GetType().GetField(changed.FieldName, BindingFlags)?.SetValue(Target, changed.Data);
             }

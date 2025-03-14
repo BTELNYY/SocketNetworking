@@ -4,18 +4,13 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 
-namespace SocketNetworking.Modding.Patching
+namespace SocketNetworking.Modding.Patching.Fields
 {
     public static class FieldWatcher
     {
         public static event EventHandler<FieldChangeEventArgs> FieldChanged;
 
-        static FieldWatcher()
-        {
-            Harmony = new Harmony("com.btelnyy.socketnetowking.patching");
-        }
-
-        public static Harmony Harmony { get; }
+        public static Harmony Harmony => HarmonyHolder.Harmony;
 
         public static void RemoveInjectedIL<T>(BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         {
