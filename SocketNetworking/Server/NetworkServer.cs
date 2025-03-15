@@ -146,6 +146,9 @@ namespace SocketNetworking.Server
             }
         }
 
+        /// <summary>
+        /// Internal Server Configuration.
+        /// </summary>
         public static NetworkServerConfig Config { get; set; } = new NetworkServerConfig();
 
         /// <summary>

@@ -2,6 +2,7 @@
 using System.Security.Cryptography.X509Certificates;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Server
 {
@@ -41,8 +42,6 @@ namespace SocketNetworking.Server
         /// If not an empty string, will be used to prove server identity for <see cref="TcpNetworkClient"/> and <see cref="MixedNetworkClient"/> clients. This should be a path to the certificate.
         /// </summary>
         public string CertificatePath { get; set; } = "";
-
-
 
         /// <summary>
         /// The loaded certificate.

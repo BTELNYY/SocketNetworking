@@ -16,6 +16,7 @@ using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
+using SocketNetworking.Shared.Streams;
 using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
@@ -25,7 +26,7 @@ namespace SocketNetworking.Client
         static NetworkClient instance;
 
         /// <summary>
-        /// Gets the local singleton for the <see cref="NetworkClient"/>. Can only be called on the client, multiple <see cref="NetworkClient"/>s on the local context are not allowed.
+        /// Gets the local singleton for the <see cref="NetworkClient"/>. Can only be called on the client, multiple <see cref="NetworkClient"/>s on the local context are not recommended. Technically, you can have as many as you'd like. But you would be restricted only having <see cref="NetworkInvoke(string, object[], bool)"/>, as <see cref="INetworkObject"/>s would collide.
         /// </summary>
         public static NetworkClient LocalClient
         {
@@ -208,12 +209,12 @@ namespace SocketNetworking.Client
         #region Properties
 
         /// <summary>
-        /// Maximum amount of milliseconds before a <see cref="KeepAlivePacket"/> is sent.
+        /// Maximum amount of milliseconds before a <see cref="KeepAlivePacket"/> is sent. By default, a <see cref="KeepAlivePacket"/> is sent every 1000ms, this is the standard for ping measurements.
         /// </summary>
         public double MaxMSBeforeKeepAlive { get; set; } = 1000;
 
         /// <summary>
-        /// The calculated latency. Use <see cref="CheckLatency"/> to forcibly update this. You should also see <see cref="MaxPacketsBeforeKeepAlive"/> and <see cref="MaxMSBeforeKeepAlive"/>.
+        /// The calculated latency. Use <see cref="CheckLatency"/> to forcibly update this. You should see <see cref="MaxMSBeforeKeepAlive"/>.
         /// </summary>
         public long Latency => _latency;
 
@@ -280,6 +281,9 @@ namespace SocketNetworking.Client
 
         protected NetworkEncryption _networkEncryptionManager;
 
+        /// <summary>
+        /// The <see cref="NetworkEncryption"/> class handles public and private keygen, as well as decrypting and encrypting packets.
+        /// </summary>
         public NetworkEncryption EncryptionManager
         {
             get
@@ -290,6 +294,9 @@ namespace SocketNetworking.Client
 
         protected NetworkStreams _streams;
 
+        /// <summary>
+        /// The <see cref="NetworkStreams"/> class handles <see cref="NetworkSyncedStream"/>s and their subclasses.
+        /// </summary>
         public NetworkStreams Streams
         {
             get
@@ -300,6 +307,9 @@ namespace SocketNetworking.Client
 
         protected AuthenticationProvider _provider;
 
+        /// <summary>
+        /// The <see cref="SocketNetworking.Shared.Authentication.AuthenticationProvider"/> Handles authentication between the server and client. It is useful for passwords, characters, tokens, etc. See <see cref="Authenticated"/>.
+        /// </summary>
         public AuthenticationProvider AuthenticationProvider
         {
             get
@@ -350,6 +360,9 @@ namespace SocketNetworking.Client
 
         private bool _authenticated = false;
 
+        /// <summary>
+        /// Determines if the <see cref="NetworkClient"/> has proved itself based on the <see cref="AuthenticationProvider"/>. This property can be set to any value at any time, and is synced accordingly. (Server -> Client)
+        /// </summary>
         public bool Authenticated
         {
             get
@@ -358,6 +371,10 @@ namespace SocketNetworking.Client
             }
             set
             {
+                if(CurrentClientLocation == ClientLocation.Local)
+                {
+                    throw new InvalidOperationException("Can't change authentication state on the client!");
+                }
                 NetworkInvoke(nameof(ClientGetAuthenticatedState), new object[] { value });
                 _authenticated = value;
                 AuthenticationStateChanged?.Invoke();
@@ -2129,6 +2146,9 @@ namespace SocketNetworking.Client
             InvokeLatencyChanged(_latency);
         }
 
+        /// <summary>
+        /// Forces the current <see cref="NetworkClient"/> to send a <see cref="KeepAlivePacket"/> and measure latency.
+        /// </summary>
         public virtual void CheckLatency()
         {
             KeepAlivePacket packet = new KeepAlivePacket();
@@ -2182,9 +2202,12 @@ namespace SocketNetworking.Client
             }
         }
 
-        public void ServerBeginSync()
+        /// <summary>
+        /// Forces the server to begin syncing <see cref="INetworkObject"/>s. This is done async, so your changed may or may not be accepted if you decide to change anything after this method is called. At least not by this <see cref="Task"/>.
+        /// </summary>
+        public Task ServerBeginSync()
         {
-            _ = Task.Run(() =>
+            return Task.Run(() =>
             {
                 List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
                 NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
@@ -2202,12 +2225,19 @@ namespace SocketNetworking.Client
             Log.Info("Total of Network Objects that will be spawned automatically: " + objCount);
         }
 
+        /// <summary>
+        /// Overrides an existing <see cref="INetworkAvatar"/> on the local and remote client. if the <see cref="INetworkAvatar"/> is not spawned, it will be. If <see cref="INetworkObject.ObjectVisibilityMode"/> (<see cref="INetworkObject"/> is the parent interface for <see cref="INetworkAvatar"/>) is <see cref="ObjectVisibilityMode.ServerOnly"/>, it will be reset to <see cref="ObjectVisibilityMode.Everyone"/>. The <see cref="INetworkObject.OwnershipMode"/> will be set to <see cref="OwnershipMode.Client"/> as well as the <see cref="INetworkObject.OwnerClientID"/>. All of these changes will not generate additional packets.
+        /// </summary>
+        /// <param name="avatar"></param>
         public void ServerSpecifyAvatar(INetworkAvatar avatar)
         {
             NetworkManager.AddNetworkObject(avatar);
             avatar.OwnerClientID = ClientID;
             avatar.OwnershipMode = OwnershipMode.Client;
-            avatar.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
+            if(avatar.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
+            {
+                avatar.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
+            }
             avatar.NetworkSpawn();
             NetworkInvoke(nameof(GetClientAvatar), new object[] { avatar.NetworkID });
             Log.Info($"Avatar Specify: {avatar.NetworkID}");
