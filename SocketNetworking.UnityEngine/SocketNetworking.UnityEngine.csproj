@@ -83,6 +83,7 @@
     <Compile Include="Modding\Patches\UnityAnimator\Trigger\ResetStringTrigger.cs" />
     <Compile Include="Modding\Patches\UnityAnimator\Trigger\SetStringTriggerPatch.cs" />
     <Compile Include="Modding\Patches\UnityAnimator\Trigger\SetTriggerIntPatch.cs" />
+    <Compile Include="Modding\Patches\UnityTransform\PositionSetterPatch.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorBoolValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorFloatValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorIntValueUpdatePacket.cs" />
@@ -123,7 +124,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Modding\Patches\UnityAnimator\Property\" />
-    <Folder Include="Modding\Patches\UnityTransform\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
