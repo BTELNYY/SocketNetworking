@@ -1,21 +1,14 @@
-﻿using System;
+﻿using SocketNetworking.Server;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem.Packets;
+using SocketNetworking.Shared.Serialization;
+using SocketNetworking.UnityEngine.Components;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEditor;
 using UnityEngine;
-using SocketNetworking.UnityEngine.Components;
-using SocketNetworking.Server;
-using SocketNetworking.Client;
-using SocketNetworking.Shared;
-using JetBrains.Annotations;
-using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.UnityEngine.Utility;
-using SocketNetworking.Shared.NetworkObjects;
-using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.UnityEngine
 {
@@ -68,7 +61,7 @@ namespace SocketNetworking.UnityEngine
             trueTree.RemoveAt(0);
             trueTree.Reverse();
             GameObject parent = Utility.Utility.FindByTree(trueTree);
-            if(parent == null)
+            if (parent == null)
             {
                 Log.GlobalError("Can't find parent by tree! Tree: " + string.Join("/", trueTree));
             }
@@ -76,7 +69,7 @@ namespace SocketNetworking.UnityEngine
             {
                 result.transform.parent = parent.transform;
             }
-            return (INetworkSpawnable)result.GetComponent<NetworkIdentity>();
+            return result.GetComponent<NetworkIdentity>();
         }
 
         private static Dictionary<GameObject, NetworkTransform> _transforms = new Dictionary<GameObject, NetworkTransform>();
@@ -88,11 +81,29 @@ namespace SocketNetworking.UnityEngine
         public static List<NetworkBehavior> GetNetworkBehaviors()
         {
             List<NetworkBehavior> behaviors = new List<NetworkBehavior>();
-            foreach(INetworkObject obj in GetNetworkBehaviors().Where(x => x is NetworkBehavior))
+            foreach (INetworkObject obj in GetNetworkBehaviors().Where(x => x is NetworkBehavior))
             {
                 behaviors.Add(obj as NetworkBehavior);
             }
             return behaviors;
+        }
+
+        public static NetworkAnimator GetNetworkAnimator(GameObject obj)
+        {
+            if (_animators.ContainsKey(obj))
+            {
+                return _animators[obj];
+            }
+            return null;
+        }
+
+        public static NetworkTransform GetNetworkTransform(GameObject obj)
+        {
+            if (_transforms.ContainsKey(obj))
+            {
+                return _transforms[obj];
+            }
+            return null;
         }
 
         public static int NextAvailablePrefabID
@@ -140,14 +151,14 @@ namespace SocketNetworking.UnityEngine
         /// <exception cref="NullReferenceException"></exception>
         public static bool RegisterPrefab(int id, GameObject prefab)
         {
-            if(_prefabSpawnIds.ContainsKey(id))
+            if (_prefabSpawnIds.ContainsKey(id))
             {
                 Log.GlobalWarning($"Tried to register prefab (ID: {id}, ObjectName: {prefab.name}) with an ID that is already taken. ");
                 return false;
             }
             _prefabSpawnIds.Add(id, prefab);
             NetworkIdentity netPrefab = prefab.GetComponent<NetworkIdentity>();
-            if(netPrefab == null)
+            if (netPrefab == null)
             {
                 throw new NullReferenceException("All prefabs must have a valid NetworkIdentity.");
             }
@@ -205,24 +216,6 @@ namespace SocketNetworking.UnityEngine
                 _animators.Remove(obj.gameObject);
                 return;
             }
-        }
-
-        public static NetworkTransform GetNetworkTransform(GameObject gameObject)
-        {
-            if (_transforms.ContainsKey(gameObject))
-            {
-                return _transforms[gameObject];
-            }
-            return null;
-        }
-
-        public static NetworkAnimator GetNetworkAnimator(GameObject gameObject)
-        {
-            if (_animators.ContainsKey(gameObject))
-            {
-                return _animators[gameObject];
-            }
-            return null;
         }
     }
 }

@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Streams;
+using System;
 
 namespace SocketNetworking.Example.Basics.SharedData
 {
@@ -42,7 +37,7 @@ namespace SocketNetworking.Example.Basics.SharedData
 
         private void TestClient_ReadyStateChanged(bool arg1, bool arg2)
         {
-            if(Ready && CurrentClientLocation == ClientLocation.Remote)
+            if (Ready && CurrentClientLocation == ClientLocation.Remote)
             {
                 NetworkSyncedStream stream = new NetworkSyncedStream(this, 1, 16);
                 stream.StreamOpened += () =>

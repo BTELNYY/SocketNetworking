@@ -1,11 +1,7 @@
 ﻿using SocketNetworking.Client;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocketNetworking.Shared
 {
@@ -18,11 +14,11 @@ namespace SocketNetworking.Shared
         {
             Client = client ?? throw new ArgumentNullException(nameof(client));
             InvocationPacket = invocationPacket ?? throw new ArgumentNullException(nameof(invocationPacket));
-            if(invocationPacket is NetworkInvokationPacket packet)
+            if (invocationPacket is NetworkInvokationPacket packet)
             {
                 InvocationMode = InvocationMode.RemoteProcedureCall;
             }
-            else if(invocationPacket is CustomPacket customPacket)
+            else if (invocationPacket is CustomPacket customPacket)
             {
                 InvocationMode = InvocationMode.Listener;
             }
@@ -37,7 +33,7 @@ namespace SocketNetworking.Shared
             Client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
-        public NetworkClient Client { get; } 
+        public NetworkClient Client { get; }
 
         public Packet InvocationPacket { get; }
 

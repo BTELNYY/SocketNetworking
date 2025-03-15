@@ -1,17 +1,10 @@
 ﻿using SocketNetworking.Client;
-using SocketNetworking.Exceptions;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.Packets;
 using SocketNetworking.Server;
+using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem.Packets;
+using SocketNetworking.Shared.Serialization;
 using System;
 using System.Collections.Generic;
-using SocketNetworking.Shared.NetworkObjects;
-using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net.Http.Headers;
-using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.SyncVars
 {
@@ -37,7 +30,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         OwnershipMode _mode;
 
-        T value = default(T);
+        T value = default;
 
         public virtual T Value
         {
@@ -49,12 +42,13 @@ namespace SocketNetworking.Shared.SyncVars
             {
                 this.value = value;
                 ValueRaw = value;
+                Changed?.Invoke(value);
             }
         }
 
-        public object ValueRaw 
+        public object ValueRaw
         {
-            get => (object)Value;
+            get => Value;
             set
             {
                 this.value = (T)value;
@@ -62,12 +56,14 @@ namespace SocketNetworking.Shared.SyncVars
             }
         }
 
+        public event Action<T> Changed;
+
         public void Sync()
         {
             SyncVarUpdatePacket packet = GetPacket();
-            if(NetworkManager.WhereAmI == ClientLocation.Local)
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
-                if(NetworkClient.LocalClient == null)
+                if (NetworkClient.LocalClient == null)
                 {
                     throw new InvalidOperationException("Tried to modify a SyncVar while the local client was null!");
                 }
@@ -77,20 +73,20 @@ namespace SocketNetworking.Shared.SyncVars
                 }
                 NetworkClient.LocalClient.Send(packet);
             }
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                if(SyncOwner == OwnershipMode.Client)
+                if (SyncOwner == OwnershipMode.Client)
                 {
-                    if(OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.OwnerAndServer)
+                    if (OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.OwnerAndServer)
                     {
                         NetworkClient owner = NetworkServer.GetClient(OwnerObject.OwnerClientID);
-                        if(owner == null)
+                        if (owner == null)
                         {
                             throw new InvalidOperationException("Can't find the owner of this object!");
                         }
                         owner.Send(packet);
                     }
-                    else if(OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
+                    else if (OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
                     {
                         NetworkServer.SendToAll(packet);
                     }
@@ -152,10 +148,8 @@ namespace SocketNetworking.Shared.SyncVars
 
         public virtual void RawSet(object value, NetworkClient who)
         {
-            if(value is T t)
-            {
-                this.value = t;
-            }
+            this.value = value is T t ? t : default;
+            Changed?.Invoke(this.value);
         }
 
         public virtual void RawSet(OwnershipMode mode, NetworkClient who)

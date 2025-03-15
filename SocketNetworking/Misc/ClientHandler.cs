@@ -1,11 +1,6 @@
-﻿using System;
+﻿using SocketNetworking.Client;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using SocketNetworking.Client;
-using SocketNetworking.Server;
 
 namespace SocketNetworking.Misc
 {
@@ -68,7 +63,7 @@ namespace SocketNetworking.Misc
 
         public bool HasClient(NetworkClient client)
         {
-            lock(_lock)
+            lock (_lock)
             {
                 return Clients.Contains(client);
             }
@@ -100,12 +95,12 @@ namespace SocketNetworking.Misc
                 {
                     for (int i = 0; i < _clients.Count; i++)
                     {
-                        if(i >= _clients.Count)
+                        if (i >= _clients.Count)
                         {
                             break;
                         }
                         NetworkClient client = _clients[i];
-                        if(client.CurrentConnectionState == Shared.ConnectionState.Disconnected || client.ShuttingDown)
+                        if (client.CurrentConnectionState == Shared.ConnectionState.Disconnected || client.ShuttingDown)
                         {
                             _clients.RemoveAt(i);
                         }

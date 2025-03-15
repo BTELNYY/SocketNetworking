@@ -41,8 +41,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChatAuthProvider.cs" />
     <Compile Include="ChatAvatar.cs" />
     <Compile Include="ChatClient.cs" />
+    <Compile Include="ChatServer.cs" />
+    <Compile Include="Config.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utility.cs" />

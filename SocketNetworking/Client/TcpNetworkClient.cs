@@ -1,18 +1,9 @@
-﻿using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.Server;
-using SocketNetworking.Shared;
-using SocketNetworking.Transports;
+﻿using SocketNetworking.Server;
+using SocketNetworking.Shared.Transports;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocketNetworking.Client
 {
@@ -33,7 +24,7 @@ namespace SocketNetworking.Client
             }
             set
             {
-                if(value is TcpTransport tcp)
+                if (value is TcpTransport tcp)
                 {
                     base.Transport = tcp;
                 }
@@ -74,7 +65,7 @@ namespace SocketNetworking.Client
         public bool AllowUntrustedRootCertificates { get; set; } = false;
 
         /// <summary>
-        /// Called when SSL has finished its handshake and is now the standard tranmission route.
+        /// Called when SSL has finished its handshake and is now the standard transmission route.
         /// </summary>
         public event Action SSLConnected;
 
@@ -94,13 +85,13 @@ namespace SocketNetworking.Client
         {
             try
             {
-                var stream = new SslStream(TcpTransport.Stream, true, ClientVerifyCert);
+                SslStream stream = new SslStream(TcpTransport.Stream, true, ClientVerifyCert);
                 stream.AuthenticateAsClient(hostname);
                 TcpTransport.SslStream = stream;
             }
             catch (AuthenticationException ex)
             {
-                Log.Error("SSL Auth failure! Error: " + ex.Message);
+                Log.Error("SSL Authentication failure! Error: " + ex.Message);
                 SSLFailure?.Invoke();
                 return false;
             }
@@ -117,13 +108,13 @@ namespace SocketNetworking.Client
         {
             try
             {
-                var stream = new SslStream(TcpTransport.Stream, true, ServerVerifyCert);
+                SslStream stream = new SslStream(TcpTransport.Stream, true, ServerVerifyCert);
                 stream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
                 TcpTransport.SslStream = stream;
             }
             catch (AuthenticationException ex)
             {
-                Log.Error("SSL Auth failure! Error: " + ex.Message);
+                Log.Error("SSL Authentication failure! Error: " + ex.Message);
                 SSLFailure?.Invoke();
                 return false;
             }
@@ -157,13 +148,13 @@ namespace SocketNetworking.Client
             if (sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateChainErrors))
             {
                 X509ChainStatusFlags flags = 0;
-                foreach (var chainEntry in chain.ChainStatus)
+                foreach (X509ChainStatus chainEntry in chain.ChainStatus)
                 {
                     flags |= chainEntry.Status;
                 }
                 if (flags.HasFlag(X509ChainStatusFlags.UntrustedRoot))
                 {
-                    if(AllowUntrustedRootCertificates)
+                    if (AllowUntrustedRootCertificates)
                     {
                         Log.Warning("Untrusted root certificate detected. However, this client accepts this. Continue at your own risk!");
                         return true;

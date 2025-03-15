@@ -1,6 +1,6 @@
-﻿using System;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared.NetworkObjects;
+using System;
 
 namespace SocketNetworking.Shared
 {
@@ -31,6 +31,7 @@ namespace SocketNetworking.Shared
         SSLUpgrade,
         Stream,
         ClientToClient,
+        Authentication,
         Custom,
     }
 

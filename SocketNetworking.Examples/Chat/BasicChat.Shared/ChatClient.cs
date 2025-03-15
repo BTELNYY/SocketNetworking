@@ -1,52 +1,81 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SocketNetworking;
 using SocketNetworking.Client;
-using SocketNetworking.Shared;
-using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Server;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.NetworkObjects;
-using SocketNetworking;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.Serialization;
+using System;
 
 namespace BasicChat.Shared
 {
     public class ChatClient : TcpNetworkClient
     {
+        public string RequestedName;
+
+        public ChatClient()
+        {
+            AuthenticationProvider = new ChatAuthProvider(this);
+            AuthenticationStateChanged += () =>
+            {
+                if (NetworkManager.WhereAmI == ClientLocation.Remote)
+                {
+                    ServerSendMessage(new Message()
+                    {
+                        Target = 0,
+                        Sender = 0,
+                        Color = ConsoleColor.Magenta,
+                        Content = Config.MOTD,
+                    });
+                }
+            };
+        }
+
+        public event Action<NetworkHandle, Message> MessageReceived;
+
         public void ClientSendMessage(string message)
         {
             Message msg = new Message();
             msg.Content = message;
-            msg.Sender = ClientID;
+            msg.Sender = Avatar.NetworkID;
             msg.Target = 0;
             NetworkInvoke(nameof(ServerGetMessage), new object[] { msg });
+        }
+
+        public void ServerSendMessage(Message message)
+        {
+            NetworkInvoke(nameof(ClientGetMessage), new object[] { message });
         }
 
         [NetworkInvokable(NetworkDirection.Client)]
         private void ServerGetMessage(NetworkHandle handle, Message message)
         {
-            if(message.Sender != Avatar.NetworkID)
+            if (message.Sender != Avatar.NetworkID)
             {
-                Log.Warning("Tried to send message as not myself!");
+                Log.Warning($"Tried to send message as not myself! Avatar: {Avatar.NetworkID}, Sender: {message.Sender}");
                 return;
             }
-            Log.Info($"Message: \"{message.Content}\", Target: {message.Target}");
-            if(message.Target == 0)
+            if (string.IsNullOrWhiteSpace(message.Content))
+            {
+                return;
+            }
+            Log.Info($"Message: \"{message.Content}\", Target: {message.Target}, Source Name: {((ChatAvatar)Avatar).Name}");
+            message.Color = ConsoleColor.White;
+            MessageReceived?.Invoke(handle, message);
+            if (message.Target == 0)
             {
                 NetworkServer.NetworkInvokeOnAll(this, nameof(ClientGetMessage), new object[] { message });
             }
             else
             {
                 INetworkObject targetAvatar = NetworkManager.GetNetworkObjectByID(message.Target).Item1;
-                if(targetAvatar == null)
+                if (targetAvatar == null)
                 {
                     return;
                 }
                 NetworkClient owner = targetAvatar.GetOwner();
-                if(owner == null)
+                if (owner == null)
                 {
                     return;
                 }
@@ -57,16 +86,21 @@ namespace BasicChat.Shared
         [NetworkInvokable(NetworkDirection.Server)]
         private void ClientGetMessage(NetworkHandle handle, Message message)
         {
+            if (message.Sender == 0)
+            {
+                MessageReceived?.Invoke(handle, message);
+                return;
+            }
             INetworkObject obj = NetworkManager.GetNetworkObjectByID(message.Sender).Item1;
-            if(obj == null)
+            if (obj == null)
             {
                 return;
             }
-            if(!(obj is ChatAvatar avatar))
+            if (!(obj is ChatAvatar avatar))
             {
                 return;
             }
-            Console.WriteLine($"{avatar.Name}: {message.Content}");
+            MessageReceived?.Invoke(handle, message);
         }
     }
 
@@ -78,18 +112,21 @@ namespace BasicChat.Shared
 
         public int Sender;
 
+        public ConsoleColor Color;
+
         public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             Content = reader.ReadString();
             Target = reader.ReadInt();
             Sender = reader.ReadInt();
+            Color = (ConsoleColor)reader.ReadByte();
             return reader;
         }
 
         public int GetLength()
         {
-            return Serialize().DataLength;
+            return Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -98,6 +135,7 @@ namespace BasicChat.Shared
             writer.WriteString(Content);
             writer.WriteInt(Target);
             writer.WriteInt(Sender);
+            writer.WriteByte((byte)Color);
             return writer;
         }
     }

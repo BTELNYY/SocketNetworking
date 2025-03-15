@@ -1,22 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using BasicChat.Shared;
+﻿using BasicChat.Shared;
 using SocketNetworking;
 using SocketNetworking.Client;
+using SocketNetworking.Misc.Console;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.NetworkObjects;
+using System;
+using System.Threading;
 
 namespace BasicChat.Client
 {
     public class Program
     {
+        static string Title = "ClientID: {id}, Latency: {ms}ms";
+
         static string IP = "127.0.0.1";
 
-        static ushort Port = 7777; 
+        static ushort Port = 7777;
 
         public static string Name = "???";
 
@@ -26,27 +25,35 @@ namespace BasicChat.Client
         {
             Log.OnLog += Logger.HandleNetworkLog;
             Log.Levels = Log.FULL_LOG;
+
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
             reader = new Thread(HandleInput);
+
             Console.WriteLine("Enter your name");
             Name = Console.ReadLine();
+
             Console.WriteLine("Enter destination IP address (127.0.0.1):");
             IP = Console.ReadLine();
-            if(IP == "")
+            if (IP == "")
             {
                 IP = "127.0.0.1";
             }
+
             Console.WriteLine("Enter destination port (7777):");
             string portStr = Console.ReadLine();
-            if(portStr == "")
+            if (portStr == "")
             {
                 portStr = "7777";
             }
             Port = ushort.Parse(portStr);
+
             ChatClient client = new ChatClient();
-            client.ClientConnected += () =>
+            client.AuthenticationStateChanged += () =>
             {
-                Console.Clear();
+                if (client.Authenticated)
+                {
+                    Console.Clear();
+                }
             };
             client.ClientDisconnected += () =>
             {
@@ -54,9 +61,9 @@ namespace BasicChat.Client
                 Console.ReadKey();
                 Environment.Exit(0);
             };
-            client.ReadyStateChanged += (old, @new) => 
+            client.ReadyStateChanged += (old, @new) =>
             {
-                if(@new)
+                if (@new)
                 {
                     Program.reader.Start();
                 }
@@ -65,21 +72,58 @@ namespace BasicChat.Client
             {
                 if (avatar is ChatAvatar chatAvatar)
                 {
-                    chatAvatar.ClientSetName(Name);
+                    //chatAvatar.ClientSetName(Name);
                 }
             };
+            client.MessageReceived += (handle, message) =>
+            {
+                if (message.Sender == 0)
+                {
+                    FancyConsole.WriteLine(message.Content, message.Color);
+                    return;
+                }
+                INetworkObject obj = NetworkManager.GetNetworkObjectByID(message.Sender).Item1;
+                if (obj == null)
+                {
+                    return;
+                }
+                if (!(obj is ChatAvatar avatar))
+                {
+                    return;
+                }
+                FancyConsole.WriteLine($"{avatar.Name}: {message.Content}", message.Color);
+            };
+            client.ClientIdUpdated += () =>
+            {
+                Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
+            };
+            client.LatencyChanged += (latency) =>
+            {
+                Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
+            };
+
+            Console.CancelKeyPress += (sender, @event) =>
+            {
+                NetworkClient.LocalClient.Disconnect();
+            };
+
             client.InitLocalClient();
+            client.RequestedName = Name;
             client.Connect(IP, Port);
         }
 
         static void HandleInput()
         {
-            while(NetworkClient.LocalClient.IsConnected)
+            string cursor = "> ";
+            while (NetworkClient.LocalClient.IsConnected)
             {
-                string input = Console.ReadLine();
-                if (NetworkClient.LocalClient is ChatClient chatClient)
+                string input = FancyConsole.ReadLine(cursor);
+                ChatClient client = NetworkClient.LocalClient as ChatClient;
+                client.ClientSendMessage(input);
+                if (NetworkClient.LocalClient.Avatar != null)
                 {
-                    chatClient.ClientSendMessage(input);
+                    ChatAvatar avatar = NetworkClient.LocalClient.Avatar as ChatAvatar;
+                    cursor = $"{avatar.Name}@{NetworkClient.LocalClient.ConnectedHostname}> ";
                 }
             }
         }

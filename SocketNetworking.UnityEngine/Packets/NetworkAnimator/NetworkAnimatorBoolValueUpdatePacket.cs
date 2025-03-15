@@ -1,13 +1,8 @@
-﻿using System;
-using SocketNetworking.Attributes;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.PacketSystem.Packets;
-using UnityEngine;
-using System.Security.Policy;
+﻿using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
+using System;
+using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
 {
@@ -22,7 +17,7 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
             Value = value;
         }
 
-        public NetworkAnimatorBoolValueUpdatePacket(string name, bool value) 
+        public NetworkAnimatorBoolValueUpdatePacket(string name, bool value)
         {
             ValueHash = Animator.StringToHash(name);
             Value = value;

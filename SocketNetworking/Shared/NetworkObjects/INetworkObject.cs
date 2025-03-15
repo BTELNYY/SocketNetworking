@@ -1,12 +1,6 @@
-﻿using SocketNetworking.PacketSystem.Packets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Client;
-using SocketNetworking.Shared.NetworkObjects;
-using SocketNetworking.Attributes;
+﻿using SocketNetworking.Client;
+using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared.NetworkObjects
@@ -56,6 +50,10 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// Called on the object spanwer when the peer has finished spawning it.
         /// </summary>
         void OnNetworkSpawned(NetworkClient spawner);
+
+        void OnOwnerNetworkSpawned(NetworkClient spawner);
+
+        void OnOwnerLocalSpawned(NetworkClient spawner);
 
         /// <summary>
         /// Called when the object is being destroyed by the peer.
@@ -132,6 +130,8 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// </summary>
         /// <param name="client"></param>
         void OnDisconnected(NetworkClient client);
+
+        void OnOwnerDisconnected(NetworkClient client);
 
         /// <summary>
         /// Called on the server when a client has begun the sync state of the connection, if its enabled.

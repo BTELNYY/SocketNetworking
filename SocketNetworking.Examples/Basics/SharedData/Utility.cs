@@ -1,11 +1,9 @@
-﻿using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem.Packets;
+﻿using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocketNetworking.Example.Basics.SharedData
 {

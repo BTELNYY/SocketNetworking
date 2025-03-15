@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using BasicChat.Shared;
+using SocketNetworking;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
-using SocketNetworking;
-using BasicChat.Shared;
+using System;
 
 namespace BasicChat.Server
 {
@@ -28,7 +23,7 @@ namespace BasicChat.Server
                 NetworkServer.ServerInstance.StopServer();
             };
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
-            TcpNetworkServer server = new TcpNetworkServer();
+            ChatServer server = new ChatServer();
             NetworkServer.ClientType = typeof(ChatClient);
             NetworkServer.ClientAvatar = typeof(ChatAvatar);
             NetworkServer.Config.HandshakeTime = 5f;

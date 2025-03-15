@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocketNetworking
 {
@@ -30,7 +25,7 @@ namespace SocketNetworking
 
         public static Log GetInstance()
         {
-            if(_instance != null)
+            if (_instance != null)
             {
                 return _instance;
             }
@@ -209,7 +204,7 @@ namespace SocketNetworking
             }
             else
             {
-                if(ShowStackTrace)
+                if (ShowStackTrace)
                 {
                     data.Message += $"\nStack Trace:\n{GetStackTrace().ToString()}";
                 }
@@ -220,14 +215,14 @@ namespace SocketNetworking
         private static Type GetCallerType()
         {
             StackFrame frame = new StackFrame(2);
-            var method = frame.GetMethod();
-            var type = method.DeclaringType;
+            System.Reflection.MethodBase method = frame.GetMethod();
+            Type type = method.DeclaringType;
             return type;
         }
 
         private static StackTrace GetStackTrace()
         {
-            var stackTrace = new StackTrace();
+            StackTrace stackTrace = new StackTrace();
             return stackTrace;
         }
     }

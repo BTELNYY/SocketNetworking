@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocketNetworking.Misc
 {
@@ -69,7 +65,7 @@ namespace SocketNetworking.Misc
             }
             set
             {
-                if(!_final)
+                if (!_final)
                 {
                     _innerState = value;
                 }

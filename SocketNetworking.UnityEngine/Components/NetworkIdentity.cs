@@ -1,14 +1,9 @@
-﻿using System;
+﻿using SocketNetworking.Client;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.TypeWrappers;
+using SocketNetworking.Shared.Serialization;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Client;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.PacketSystem.TypeWrappers;
-using SocketNetworking.Shared.Serialization;
-using UnityEditor.SearchService;
-using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {
@@ -43,11 +38,11 @@ namespace SocketNetworking.UnityEngine.Components
             }
             private set
             {
-                
+
             }
         }
 
-        public int PrefabID; 
+        public int PrefabID;
 
         public override ByteReader ReceiveExtraData(byte[] extraData)
         {
@@ -83,7 +78,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public int GetLength()
         {
-            return Serialize().DataLength;
+            return Serialize().Length;
         }
 
         public ByteWriter Serialize()

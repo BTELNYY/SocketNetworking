@@ -1,16 +1,16 @@
-﻿using System;
+﻿using SocketNetworking.Client;
+using SocketNetworking.Misc;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.Events;
+using SocketNetworking.Shared.Serialization;
+using SocketNetworking.Shared.Transports;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using SocketNetworking.Client;
-using SocketNetworking.Misc;
-using SocketNetworking.Shared;
-using SocketNetworking.Shared.Events;
-using SocketNetworking.Shared.Serialization;
-using SocketNetworking.Transports;
 
 namespace SocketNetworking.Server
 {
@@ -34,10 +34,10 @@ namespace SocketNetworking.Server
         {
             ClientDisconnected += (dcClient) =>
             {
-                lock(clientLock)
+                lock (clientLock)
                 {
-                    var client = _udpClients.FirstOrDefault(x => x.Value == dcClient).Key;
-                    if(client == default)
+                    IPEndPoint client = _udpClients.FirstOrDefault(x => x.Value == dcClient).Key;
+                    if (client == default)
                     {
                         return;
                     }
@@ -72,14 +72,13 @@ namespace SocketNetworking.Server
                 if (Clients.Count >= Config.MaximumClients)
                 {
                     //Do not accept.
-                    Log.Info("Rejected a client becuase the server is full.");
+                    Log.Info("Rejected a client because the server is full.");
                     socket.Close();
                     continue;
                 }
-                _ = Task.Run(() => 
+                _ = Task.Run(() =>
                 {
                     TcpTransport tcpTransport = new TcpTransport(socket);
-                    socket.NoDelay = true;
                     IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                     Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on TCP.");
                     MixedNetworkClient client = (MixedNetworkClient)Activator.CreateInstance(ClientType);
@@ -108,13 +107,13 @@ namespace SocketNetworking.Server
                         {
                             x.Disconnect("Failed to handshake in time.");
                         }
-                    }, client, Config.HandshakeTime, x => true, (x) => 
+                    }, client, Config.HandshakeTime, x => true, (x) =>
                     {
                         if (x == null)
                         {
                             return false;
                         }
-                        if(!_awaitingUDPConnection.Contains(x))
+                        if (!_awaitingUDPConnection.Contains(x))
                         {
                             return false;
                         }
@@ -148,7 +147,7 @@ namespace SocketNetworking.Server
                 try
                 {
                     byte[] Receive = udpClient.Receive(ref listener);
-                    IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
+                    IPEndPoint remoteIpEndPoint = listener;
                     if (!_udpClients.ContainsKey(remoteIpEndPoint))
                     {
                         ByteReader reader = new ByteReader(Receive);
@@ -164,12 +163,12 @@ namespace SocketNetworking.Server
                         client.UdpTransport = new UdpTransport();
                         client.UdpTransport.Client = udpClient;
                         client.UdpTransport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
-                        lock(clientLock)
+                        lock (clientLock)
                         {
                             _udpClients.Add(remoteIpEndPoint, client);
                         }
                         //Dont read the first message since its not actually a packet, and just the client ID and the passkey.
-                        _awaitingUDPConnection.Remove((MixedNetworkClient)client);
+                        _awaitingUDPConnection.Remove(client);
                     }
                     else
                     {
@@ -178,17 +177,17 @@ namespace SocketNetworking.Server
                         client.UdpTransport.ServerReceive(Receive, remoteIpEndPoint);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Log.Error("UDP Client Listener Error: \n" + ex.ToString());
-                    if(_udpClients.ContainsKey(listener))
+                    if (_udpClients.ContainsKey(listener))
                     {
                         MixedNetworkClient client = _udpClients[listener];
-                        if(client.UDPFailures > 5)
+                        if (client.UDPFailures > 5)
                         {
-                            if(!client.IsConnected || !client.UdpTransport.IsConnected)
+                            if (!client.IsConnected || !client.UdpTransport.IsConnected)
                             {
-                                lock(clientLock)
+                                lock (clientLock)
                                 {
                                     _udpClients.Remove(listener);
                                 }

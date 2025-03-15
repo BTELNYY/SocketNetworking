@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Attributes;
-using SocketNetworking.PacketSystem.Packets;
+﻿using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using UnityEngine;
 
@@ -15,13 +10,13 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
     {
         public NetworkAnimatorIntValueUpdatePacket() { }
 
-        public NetworkAnimatorIntValueUpdatePacket(int id, int value) 
+        public NetworkAnimatorIntValueUpdatePacket(int id, int value)
         {
-            ValueHash = id; 
+            ValueHash = id;
             Value = value;
         }
 
-        public NetworkAnimatorIntValueUpdatePacket(string name, int value) 
+        public NetworkAnimatorIntValueUpdatePacket(string name, int value)
         {
             ValueHash = Animator.StringToHash(name);
             Value = value;

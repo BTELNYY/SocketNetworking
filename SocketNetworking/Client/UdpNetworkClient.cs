@@ -1,13 +1,9 @@
-﻿using SocketNetworking.PacketSystem;
-using SocketNetworking.Shared;
-using SocketNetworking.Transports;
+﻿using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.Transports;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocketNetworking.Client
 {
@@ -97,7 +93,7 @@ namespace SocketNetworking.Client
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
-            if(packet.Item1 == null)
+            if (packet.Item1 == null)
             {
                 Log.Warning("Transport Received a null byte array.");
                 return;

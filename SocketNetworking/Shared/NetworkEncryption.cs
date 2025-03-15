@@ -1,11 +1,9 @@
-﻿using System;
+﻿using SocketNetworking.Client;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
-using System.Threading;
-using SocketNetworking.Client;
-using SocketNetworking.PacketSystem.Packets;
 
 namespace SocketNetworking.Shared
 {
@@ -28,7 +26,7 @@ namespace SocketNetworking.Shared
 
         public void RegisterRSA(IPEndPoint endPoint, string publicKey)
         {
-            if(OthersRSAKeys.ContainsKey(endPoint))
+            if (OthersRSAKeys.ContainsKey(endPoint))
             {
                 OthersRSAKeys[endPoint] = publicKey;
             }

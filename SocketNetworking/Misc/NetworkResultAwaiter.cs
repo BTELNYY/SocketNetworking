@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.Shared;
+﻿using SocketNetworking.Shared;
+using SocketNetworking.Shared.PacketSystem.Packets;
 
 namespace SocketNetworking.Misc
 {
@@ -22,24 +17,24 @@ namespace SocketNetworking.Misc
             }
         }
 
-        public NetworkResultAwaiter(int callBackID) 
+        public NetworkResultAwaiter(int callBackID)
         {
             CallbackID = callBackID;
-            NetworkManager.OnNetworkInvokationResult += NetworkInvocationResultArrived;
+            NetworkManager.OnNetworkInvocationResult += NetworkInvocationResultArrived;
         }
 
         private void NetworkInvocationResultArrived(NetworkInvokationResultPacket obj)
         {
-            if(obj.CallbackID != CallbackID)
+            if (obj.CallbackID != CallbackID)
             {
                 return;
             }
             ResultPacket = obj;
         }
-        
+
         void Consume()
         {
-            if(ResultPacket != null)
+            if (ResultPacket != null)
             {
                 NetworkManager.ConsumeNetworkInvokationResult(ResultPacket.CallbackID);
             }
@@ -47,7 +42,7 @@ namespace SocketNetworking.Misc
 
         ~NetworkResultAwaiter()
         {
-            NetworkManager.OnNetworkInvokationResult -= NetworkInvocationResultArrived;
+            NetworkManager.OnNetworkInvocationResult -= NetworkInvocationResultArrived;
             CallbackID = 0;
             ResultPacket = null;
             Consume();

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Misc;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.Streams;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SocketNetworking.Shared
 {
@@ -92,7 +92,7 @@ namespace SocketNetworking.Shared
                         ByteReader reader = new ByteReader(packet.Data);
                         StreamMetaData meta = reader.ReadPacketSerialized<StreamMetaData>();
                         Client.Log.Info($"Stream open request accepted. ID: {packet.StreamID}, Buffer Size: {meta.MaxBufferSize}");
-                        NetworkSyncedStream streamBase = (NetworkSyncedStream)Activator.CreateInstance(streamType, (NetworkClient)Client, packet.StreamID, (int)meta.MaxBufferSize);
+                        NetworkSyncedStream streamBase = (NetworkSyncedStream)Activator.CreateInstance(streamType, Client, packet.StreamID, (int)meta.MaxBufferSize);
                         streamBase.ID = packet.StreamID;
                         OpenInternal(streamBase);
                         streamBase.SetOpenData(reader);
@@ -145,7 +145,7 @@ namespace SocketNetworking.Shared
             StreamType = packet.StreamType;
         }
 
-        public Type StreamType { get;  }
+        public Type StreamType { get; }
 
         public StreamPacket Packet { get; }
 

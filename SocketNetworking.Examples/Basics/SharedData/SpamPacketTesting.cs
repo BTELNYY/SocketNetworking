@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SocketNetworking.Attributes;
-using System.Threading.Tasks;
-using SocketNetworking.PacketSystem.Packets;
+﻿using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Example.Basics.SharedData

@@ -1,11 +1,6 @@
-﻿using SocketNetworking.PacketSystem;
+﻿using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocketNetworking.Example.Basics.SharedData
 {

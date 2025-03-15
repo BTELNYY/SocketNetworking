@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Utility
@@ -13,9 +10,9 @@ namespace SocketNetworking.UnityEngine.Utility
         {
             GameObject obj = GameObject.Find(path.ElementAt(0));
             int counter = 0;
-            while(obj != null)
+            while (obj != null)
             {
-                if(path.Count() == counter + 1)
+                if (path.Count() == counter + 1)
                 {
                     return obj;
                 }

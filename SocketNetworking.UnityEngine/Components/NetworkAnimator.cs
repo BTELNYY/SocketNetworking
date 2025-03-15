@@ -1,20 +1,13 @@
-﻿using SocketNetworking.UnityEngine.Packets.NetworkAnimator;
-using SocketNetworking;
-using SocketNetworking.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization.Formatters;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-using SocketNetworking.Server;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Attributes;
+using SocketNetworking.UnityEngine.Packets.NetworkAnimator;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {
-    public class NetworkAnimator : NetworkBehavior
+    public class NetworkAnimator : NetworkComponent
     {
         private Animator _animator;
 
@@ -29,7 +22,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public string GetNameFromHash(int hash)
         {
-            if(HashToName.ContainsKey(hash)) return HashToName[hash];
+            if (HashToName.ContainsKey(hash)) return HashToName[hash];
             return "NO SUCH HASH";
         }
 
@@ -37,14 +30,14 @@ namespace SocketNetworking.UnityEngine.Components
         {
             UnityNetworkManager.Register(this);
             _animator = GetComponent<Animator>();
-            if(_animator == null)
+            if (_animator == null)
             {
                 Logger.Error("NetworkAnimator is attached to an object with no Animator! Object Name: " + gameObject.name);
                 return;
             }
-            foreach(AnimatorControllerParameter param in _animator.parameters)
+            foreach (AnimatorControllerParameter param in _animator.parameters)
             {
-                if(HashToName.ContainsKey(param.nameHash))
+                if (HashToName.ContainsKey(param.nameHash))
                 {
                     return;
                 }
@@ -70,7 +63,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
             if (!packet.DoNotPlayAnything)
             {
-                if(packet.IsStateHash)
+                if (packet.IsStateHash)
                 {
                     _animator.Play(int.Parse(packet.StateName), packet.Layer, packet.NormalizedTime);
                 }
@@ -100,10 +93,10 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
-                if(IsOwner)
+                if (IsOwner)
                 {
                     //optimization to avoid sending extra data.
-                    if(_animator.speed == value)
+                    if (_animator.speed == value)
                     {
                         return;
                     }
@@ -141,7 +134,7 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 return;
             }
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkPlay(hash, layer, normalizedTime);
             }
@@ -175,7 +168,7 @@ namespace SocketNetworking.UnityEngine.Components
         [PacketListener(typeof(NetworkAnimatorFloatValueUpdatePacket), NetworkDirection.Any)]
         public virtual void OnAnimatorFloatUpdatePacket(NetworkAnimatorFloatValueUpdatePacket packet, NetworkClient client)
         {
-            if(!ShouldBeReceivingPacketsFrom(client))
+            if (!ShouldBeReceivingPacketsFrom(client))
             {
                 Logger.Warning("Incorrect packet direction!");
                 return;
@@ -470,7 +463,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         void SetInteger(int id, int value)
         {
-            _animator.SetInteger(id, value);   
+            _animator.SetInteger(id, value);
         }
 
         public void NetworkSetInteger(int id, int value)

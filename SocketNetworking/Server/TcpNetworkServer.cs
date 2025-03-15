@@ -1,17 +1,14 @@
 ﻿using SocketNetworking.Client;
 using SocketNetworking.Misc;
-using SocketNetworking.Transports;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using SocketNetworking.Shared;
-using System.Security.Cryptography.X509Certificates;
-using System.IO;
 using SocketNetworking.Shared.Events;
+using SocketNetworking.Shared.Transports;
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 
 namespace SocketNetworking.Server
 {
@@ -26,13 +23,13 @@ namespace SocketNetworking.Server
             else
             {
                 Log.Info($"Found an SSL Certificate: {Config.CertificatePath}, Checking.");
-                if(!File.Exists(Config.CertificatePath))
+                if (!File.Exists(Config.CertificatePath))
                 {
                     Log.Warning($"Certificate couldn't be loaded: '{Config.CertificatePath}' is not found.");
                 }
                 else
                 {
-                    var cert = X509Certificate.CreateFromCertFile(Config.CertificatePath);
+                    X509Certificate cert = X509Certificate.CreateFromCertFile(Config.CertificatePath);
                     if (cert == null)
                     {
                         Log.Warning("Certificate couldn't be loaded.");
@@ -71,14 +68,13 @@ namespace SocketNetworking.Server
                     continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();
-                _ = Task.Run(() => 
+                _ = Task.Run(() =>
                 {
                     TcpTransport tcpTransport = new TcpTransport(socket);
                     IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                     Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
                     TcpNetworkClient client = (TcpNetworkClient)Activator.CreateInstance(ClientType);
                     client.InitRemoteClient(counter, tcpTransport);
-                    client.TcpNoDelay = true;
                     AddClient(client, counter);
                     ClientConnectRequest disconnect = AcceptClient(client);
                     if (!disconnect.Accepted)

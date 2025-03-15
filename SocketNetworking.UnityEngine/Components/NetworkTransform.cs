@@ -1,19 +1,9 @@
-﻿using SocketNetworking.Attributes;
-using SocketNetworking;
-using UnityEngine;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.UnityEngine.Packets.NetworkTransform;
-using SocketNetworking.UnityEngine.Packets;
-using SocketNetworking.UnityEngine.TypeWrappers;
-using SocketNetworking.Server;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Serialization;
+using SocketNetworking.UnityEngine.TypeWrappers;
+using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {
@@ -85,6 +75,34 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public Vector3 NetworkLocalPosition
+        {
+            get
+            {
+                return transform.position;
+            }
+            set
+            {
+                if (!IsOwner)
+                {
+                    return;
+                }
+                transform.position = value;
+                SerializableVector3 vec = new SerializableVector3(value);
+                NetworkInvoke(nameof(GetNewNetworkLocalPosition), new object[] { vec });
+            }
+        }
+
+        [NetworkInvokable]
+        private void GetNewNetworkLocalPosition(SerializableVector3 position)
+        {
+            transform.localPosition = position.Vector;
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkLocalPosition = position.Vector;
+            }
+        }
+
         public Quaternion NetworkRotation
         {
             get
@@ -107,7 +125,35 @@ namespace SocketNetworking.UnityEngine.Components
         private void GetNewNetworkRotation(SerializableQuaternion rotation)
         {
             transform.rotation = rotation.Quaternion;
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkRotation = rotation.Quaternion;
+            }
+        }
+
+        public Quaternion NetworkLocalRotation
+        {
+            get
+            {
+                return transform.localRotation;
+            }
+            set
+            {
+                if (!IsOwner)
+                {
+                    return;
+                }
+                transform.localRotation = value;
+                SerializableQuaternion quat = new SerializableQuaternion(value);
+                NetworkInvoke(nameof(GetNewNetworkLocalRotation), new object[] { quat });
+            }
+        }
+
+        [NetworkInvokable]
+        private void GetNewNetworkLocalRotation(SerializableQuaternion rotation)
+        {
+            transform.rotation = rotation.Quaternion;
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkRotation = rotation.Quaternion;
             }
@@ -168,7 +214,7 @@ namespace SocketNetworking.UnityEngine.Components
         private void GetNetworkRotation(SerializableVector3 point, SerializableVector3 axis, float angle)
         {
             transform.RotateAround(point.Vector, axis.Vector, angle);
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkRotateAround(point.Vector, point.Vector, angle);
             }
@@ -187,7 +233,7 @@ namespace SocketNetworking.UnityEngine.Components
         private void GetNetworkTranslate(SerializableVector3 vector3, Space space)
         {
             transform.Translate(vector3.Vector, space);
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkTranslate(vector3.Vector, space);
             }
@@ -206,7 +252,7 @@ namespace SocketNetworking.UnityEngine.Components
         private void GetNetworkLookAt(SerializableVector3 vector3)
         {
             transform.LookAt(vector3.Vector);
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkLookAt(vector3.Vector);
             }

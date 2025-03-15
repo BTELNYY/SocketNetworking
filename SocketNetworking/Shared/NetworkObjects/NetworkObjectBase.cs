@@ -1,18 +1,15 @@
 ﻿using SocketNetworking.Client;
-using SocketNetworking.PacketSystem.Packets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.Shared.SyncVars;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
+using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared.NetworkObjects
 {
     public class NetworkObjectBase : INetworkObject
     {
         public virtual int OwnerClientID { get; set; }
+
+        public NetworkClient OwnerClient => this.GetOwner();
 
         public virtual OwnershipMode OwnershipMode { get; set; }
 
@@ -85,7 +82,22 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual void OnNetworkSpawned(NetworkClient spawner)
         {
-            
+
+        }
+
+        public virtual void OnOwnerDisconnected(NetworkClient client)
+        {
+
+        }
+
+        public virtual void OnOwnerLocalSpawned(NetworkClient spawner)
+        {
+
+        }
+
+        public virtual void OnOwnerNetworkSpawned(NetworkClient spawner)
+        {
+
         }
 
         public virtual void OnReady(NetworkClient client, bool isReady)
@@ -110,12 +122,12 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
         {
-            
+
         }
 
         public virtual void OnSyncVarsChanged()
         {
-            
+
         }
 
         public virtual ByteReader ReceiveExtraData(byte[] extraData)

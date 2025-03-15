@@ -1,31 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using SocketNetworking.Misc;
-using SocketNetworking.Server;
-using SocketNetworking.Client;
-using SocketNetworking.Shared;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Example.Basics.SharedData;
+using SocketNetworking.Server;
+using SocketNetworking.Shared;
+using System;
+using System.Diagnostics;
+using System.Threading;
 
 namespace SocketNetworking.Example.Basics.Server
 {
     public class Program
     {
 
-        static string Title = "Clients: {count}";
+        static readonly string Title = "Clients: {count}";
 
         public static void Main(string[] args)
         {
             Log.OnLog += ExampleLogger.HandleNetworkLog;
-            AppDomain.CurrentDomain.ProcessExit += (sender, evtArgs) => 
+            AppDomain.CurrentDomain.ProcessExit += (sender, evtArgs) =>
             {
                 NetworkServer.ServerInstance.StopServer();
             };
-            Console.CancelKeyPress += (sender, e) => 
+            Console.CancelKeyPress += (sender, e) =>
             {
                 NetworkServer.ServerInstance.StopServer();
             };
@@ -37,7 +32,7 @@ namespace SocketNetworking.Example.Basics.Server
             NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
             //speeeling
             NetworkServer.Config.CertificatePath = "./example.cert";
-            NetworkServer.ClientConnected += (x) => 
+            NetworkServer.ClientConnected += (x) =>
             {
                 Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());
             };
@@ -64,8 +59,10 @@ namespace SocketNetworking.Example.Basics.Server
                     if (c is TestClient client && c.Ready)
                     {
                         //client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
-                        ExampleCustomPacket packet = new ExampleCustomPacket();
-                        packet.Data = "test";
+                        ExampleCustomPacket packet = new ExampleCustomPacket
+                        {
+                            Data = "test"
+                        };
                         packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, true);
                         client.Send(packet);
                     }

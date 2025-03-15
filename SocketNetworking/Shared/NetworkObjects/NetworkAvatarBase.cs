@@ -1,13 +1,7 @@
 ﻿using SocketNetworking.Client;
-using SocketNetworking.PacketSystem.Packets;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SocketNetworking.Shared.NetworkObjects
 {
@@ -17,18 +11,40 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         private NetworkSyncVar<string> _pubKey;
 
+        public long OwnerLatency => _ping.Value;
+
+        private NetworkSyncVar<long> _ping;
+
         public NetworkAvatarBase()
         {
             _pubKey = new NetworkSyncVar<string>(this, OwnershipMode.Client);
+            _ping = new NetworkSyncVar<long>(this, OwnershipMode.Server, 0);
+            _pubKey.Changed += (x) =>
+            {
+                if (x != null)
+                {
+                    _provider.FromXmlString(x);
+                }
+                else
+                {
+                    Log.GlobalDebug(x);
+                }
+            };
         }
 
-        public override void OnDisconnected(NetworkClient client)
+        public override void OnOwnerDisconnected(NetworkClient client)
         {
-            base.OnDisconnected(client);
-            if(client.ClientID == OwnerClientID)
+            base.OnOwnerDisconnected(client);
+            this.NetworkDestroy();
+        }
+
+        public override void OnOwnerNetworkSpawned(NetworkClient spawner)
+        {
+            base.OnOwnerNetworkSpawned(spawner);
+            spawner.LatencyChanged += (x) =>
             {
-                this.NetworkDestroy();
-            }
+                _ping.Value = x;
+            };
         }
 
         public override void OnLocalSpawned(ObjectManagePacket packet)
@@ -40,15 +56,14 @@ namespace SocketNetworking.Shared.NetworkObjects
             }
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                _provider.FromXmlString(this.GetOwner()?.EncryptionManager.OthersRSA.ToXmlString(false));
+                if (OwnerClient == null)
+                {
+                    this.NetworkDestroy();
+                    return;
+                }
+                _provider.FromXmlString(OwnerClient.EncryptionManager.OthersPublicKey);
                 _pubKey.ValueRaw = _provider.ToXmlString(false);
             }
-        }
-
-        public override void OnSyncVarsChanged()
-        {
-            base.OnSyncVarsChanged();
-            _provider.FromXmlString(PublicKey);
         }
 
         public override void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)

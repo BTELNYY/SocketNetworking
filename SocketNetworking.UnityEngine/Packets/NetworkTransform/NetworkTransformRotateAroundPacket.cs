@@ -1,13 +1,6 @@
-﻿using SocketNetworking.PacketSystem.Packets;
-using SocketNetworking.UnityEngine;
-using SocketNetworking.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Serialization;
+using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
 {
@@ -20,9 +13,9 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
 
         public float Angle { get; set; }
 
-        public byte AroundType {  get; set; }
+        public byte AroundType { get; set; }
 
-        public NetworkTransformRotateAroundPacket(Vector3 point, Vector3 axis, float angle) 
+        public NetworkTransformRotateAroundPacket(Vector3 point, Vector3 axis, float angle)
         {
             Point = point;
             Axis = axis;
@@ -33,7 +26,7 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
 
         public override ByteWriter Serialize()
         {
-            ByteWriter writer =  base.Serialize();
+            ByteWriter writer = base.Serialize();
             writer.WriteVector3(Point);
             writer.WriteVector3(Axis);
             writer.WriteFloat(Angle);

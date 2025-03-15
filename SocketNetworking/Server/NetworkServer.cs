@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Threading;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Misc;
-using SocketNetworking.PacketSystem;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
+using SocketNetworking.Shared.PacketSystem;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace SocketNetworking.Server
 {
@@ -34,7 +33,7 @@ namespace SocketNetworking.Server
         protected static void InvokeClientDisconnected(NetworkClient client)
         {
             ClientDisconnected?.Invoke(client);
-        } 
+        }
 
         public static event Action ServerStarted;
 
@@ -64,7 +63,7 @@ namespace SocketNetworking.Server
 
         protected static ServerState _serverState = ServerState.NotStarted;
 
-        public static ServerState CurrentServerState 
+        public static ServerState CurrentServerState
         {
             get
             {
@@ -147,6 +146,9 @@ namespace SocketNetworking.Server
             }
         }
 
+        /// <summary>
+        /// Internal Server Configuration.
+        /// </summary>
         public static NetworkServerConfig Config { get; set; } = new NetworkServerConfig();
 
         /// <summary>
@@ -165,7 +167,7 @@ namespace SocketNetworking.Server
         public bool ShouldAcceptConnections = true;
 
         /// <summary>
-        /// Should clients be able to set themselves as ready using <see cref="SocketNetworking.PacketSystem.Packets.ReadyStateUpdatePacket"/>?
+        /// Should clients be able to set themselves as ready using <see cref="SocketNetworking.Shared.PacketSystem.Packets.ReadyStateUpdatePacket"/>?
         /// </summary>
         public static bool AllowClientSelfReady = true;
 
@@ -177,7 +179,7 @@ namespace SocketNetworking.Server
         {
             get
             {
-                if(_serverInstance == null)
+                if (_serverInstance == null)
                 {
                     Log.Error("Tried to get stopped server.");
                     throw new InvalidOperationException("Attempted to access server instance when it isn't running.");
@@ -209,14 +211,14 @@ namespace SocketNetworking.Server
             }
             _serverInstance = this;
             handlers.Capacity = Config.DefaultThreads;
-            for(int i = 0; i < Config.DefaultThreads; i++)
+            for (int i = 0; i < Config.DefaultThreads; i++)
             {
                 ClientHandler handler = new ClientHandler();
                 handlers.Add(handler);
                 handler.Start();
             }
             ServerThread = new Thread(ServerStartThread);
-            ClientConnecting += (sender, req) => 
+            ClientConnecting += (sender, req) =>
             {
                 if (Clients.Count >= Config.MaximumClients)
                 {
@@ -237,11 +239,11 @@ namespace SocketNetworking.Server
                 Log.Error("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
                 return false;
             }
-            if(Config.MaximumClients % Config.DefaultThreads != 0)
+            if (Config.MaximumClients % Config.DefaultThreads != 0)
             {
                 Log.Warning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
             }
-            if(!ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)) && ClientAvatar != null)
+            if (!ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)) && ClientAvatar != null)
             {
                 Log.Error("Server start error. Your client avatar must implement INetworkAvatar through either NetworkAvatarBase or a custom implementation.");
                 return false;
@@ -251,7 +253,7 @@ namespace SocketNetworking.Server
 
         protected static void AddClient(NetworkClient client, int clientId)
         {
-            lock(clientLock)
+            lock (clientLock)
             {
                 if (_clients.ContainsKey(clientId))
                 {
@@ -274,18 +276,18 @@ namespace SocketNetworking.Server
         static ClientHandler NextHandler()
         {
             ClientHandler bestHandler = null;
-            foreach (var handler in handlers)
+            foreach (ClientHandler handler in handlers)
             {
-                if(handler.CurrentClientCount >= Config.ClientsPerThread)
+                if (handler.CurrentClientCount >= Config.ClientsPerThread)
                 {
                     continue;
                 }
-                if(bestHandler == null)
+                if (bestHandler == null)
                 {
                     bestHandler = handler;
                     continue;
                 }
-                if(handler.CurrentClientCount < bestHandler.CurrentClientCount)
+                if (handler.CurrentClientCount < bestHandler.CurrentClientCount)
                 {
                     bestHandler = handler;
                 }
@@ -297,7 +299,7 @@ namespace SocketNetworking.Server
 
         public static void RemoveClient(NetworkClient myClient)
         {
-            lock(clientLock)
+            lock (clientLock)
             {
                 if (_clients.ContainsKey(myClient.ClientID))
                 {
@@ -310,7 +312,6 @@ namespace SocketNetworking.Server
                     {
                         handler.RemoveClient(_clients[myClient.ClientID]);
                     }
-                    Log.Debug($"Removed client {myClient.ClientID} from handler {handler?.ToString()}");
                     _clients.Remove(myClient.ClientID);
                     InvokeClientDisconnected(myClient);
                     NetworkManager.SendDisconnectedPulse(myClient);
@@ -358,7 +359,9 @@ namespace SocketNetworking.Server
             {
                 Log.Error("Server already stopped.");
             }
-            foreach(NetworkClient client in _clients.Values)
+            ShouldAcceptConnections = false;
+            List<NetworkClient> _clients = Clients;
+            foreach (NetworkClient client in _clients)
             {
                 client.Disconnect("Server shutting down");
             }
@@ -427,7 +430,7 @@ namespace SocketNetworking.Server
 
         public static void SentToAll(TargetedPacket packet, INetworkObject target, bool priority, bool toReadyOnly = false)
         {
-            if(priority)
+            if (priority)
             {
                 packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
             }
@@ -453,7 +456,7 @@ namespace SocketNetworking.Server
             }
             lock (clientLock)
             {
-                foreach(NetworkClient client in _clients.Values)
+                foreach (NetworkClient client in _clients.Values)
                 {
                     client.Disconnect();
                 }
@@ -515,7 +518,7 @@ namespace SocketNetworking.Server
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
             List<NetworkClient> clients = _clients.Values.ToList();
-            if(readyOnly)
+            if (readyOnly)
             {
                 clients = clients.Where(x => x.Ready).ToList();
             }
@@ -526,7 +529,7 @@ namespace SocketNetworking.Server
         }
     }
 
-    public enum ServerState 
+    public enum ServerState
     {
         NotStarted,
         Started,

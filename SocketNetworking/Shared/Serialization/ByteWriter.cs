@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using SocketNetworking.Shared.PacketSystem;
+using System;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
-using SocketNetworking.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
 {
@@ -19,7 +17,7 @@ namespace SocketNetworking.Shared.Serialization
         /// <summary>
         /// The current length of the buffer.
         /// </summary>
-        public int DataLength
+        public int Length
         {
             get
             {

@@ -1,9 +1,5 @@
 ﻿using SocketNetworking.Shared;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
@@ -35,7 +31,7 @@ namespace SocketNetworking.UnityEngine.Components
         void Awake()
         {
             _identity = GetComponent<NetworkIdentity>();
-            if(Identity == null)
+            if (Identity == null)
             {
                 throw new InvalidOperationException("All Network Objects must have a NetowrkIdentity.");
             }

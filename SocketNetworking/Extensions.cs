@@ -1,21 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO.Compression;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
-using System.Reflection.Emit;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Security.Policy;
 using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.Serialization.Formatters.Binary;
-using SocketNetworking.PacketSystem;
-using System.Reflection;
-using SocketNetworking.Client;
-using SocketNetworking.Shared;
-using SocketNetworking.Server;
-using System.Collections;
 
 namespace SocketNetworking
 {
@@ -46,22 +37,22 @@ namespace SocketNetworking
             {
                 throw new ArgumentOutOfRangeException("amount", "Amount is out of range for specified array.");
             }
-            List<T> newArray = array.ToList();
-            newArray.RemoveRange(0, amount);
-            return newArray.ToArray();
+            T[] result = new T[array.Length - amount];
+            Array.Copy(array, amount, result, 0, array.Length - amount);
+            return result;
         }
 
 
         public static T[] Push<T>(this T[] array, T[] newData)
         {
-            if(array.Length <= newData.Length)
+            if (array.Length <= newData.Length)
             {
                 array = newData.Take(array.Length).ToArray();
                 return array;
             }
             else
             {
-                foreach(T t in newData.Reverse())
+                foreach (T t in newData.Reverse())
                 {
                     array = array.Prepend(t).ToArray();
                 }
@@ -83,7 +74,7 @@ namespace SocketNetworking
         /// </returns>
         public static T[] AppendAll<T>(this T[] target, T[] value)
         {
-            foreach(T item in value)
+            foreach (T item in value)
             {
                 target = target.Append(item).ToArray();
             }
@@ -126,7 +117,7 @@ namespace SocketNetworking
 
         public static object LastEnum(this object obj)
         {
-            var lastEnum = Enum.GetValues(obj.GetType()).Cast<object>().Max();
+            object lastEnum = Enum.GetValues(obj.GetType()).Cast<object>().Max();
             return lastEnum;
         }
 
@@ -177,7 +168,7 @@ namespace SocketNetworking
         public static FieldInfo[] GetAllFields(this Type type, BindingFlags bindingAttr)
         {
             List<FieldInfo> fields = new List<FieldInfo>();
-            while(type != typeof(object))
+            while (type != typeof(object))
             {
                 fields.AddRange(type.GetFields(bindingAttr));
                 type = type.BaseType;
@@ -187,13 +178,13 @@ namespace SocketNetworking
 
         public static byte[] Compress(this byte[] bytes)
         {
-            using (var memoryStream = new MemoryStream())
+            using (MemoryStream memoryStream = new MemoryStream())
             {
-                using (var gzipStream = new GZipStream(memoryStream, CompressionLevel.Optimal))
+                using (GZipStream gzipStream = new GZipStream(memoryStream, CompressionLevel.Optimal))
                 {
                     gzipStream.Write(bytes, 0, bytes.Length);
                 }
-                byte[] finalArray  = memoryStream.ToArray();
+                byte[] finalArray = memoryStream.ToArray();
 #if DEBUG
                 Log.GlobalDebug($"Compression Data. Input Length: {bytes.Length}, Compressed Length: {finalArray.Length}");
 #endif
@@ -203,11 +194,11 @@ namespace SocketNetworking
 
         public static byte[] Decompress(this byte[] bytes)
         {
-            using (var memoryStream = new MemoryStream(bytes))
+            using (MemoryStream memoryStream = new MemoryStream(bytes))
             {
-                using (var outputStream = new MemoryStream())
+                using (MemoryStream outputStream = new MemoryStream())
                 {
-                    using (var decompressStream = new GZipStream(memoryStream, CompressionMode.Decompress))
+                    using (GZipStream decompressStream = new GZipStream(memoryStream, CompressionMode.Decompress))
                     {
                         decompressStream.CopyTo(outputStream);
                     }
@@ -262,10 +253,10 @@ namespace SocketNetworking
         {
             while (count > int.MaxValue)
             {
-                source = source.Skip((int)int.MaxValue).ToList();
+                source = source.Skip(int.MaxValue).ToList();
                 count -= int.MaxValue;
             }
-            source = source.Skip((int)int.MaxValue).ToList();
+            source = source.Skip(int.MaxValue).ToList();
             return source;
         }
 
@@ -308,7 +299,7 @@ namespace SocketNetworking
         {
             while (toCheck != null && toCheck != typeof(object))
             {
-                var cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
+                Type cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
                 if (generic == cur)
                 {
                     return true;
@@ -323,7 +314,7 @@ namespace SocketNetworking
             int counter = -1;
             while (toCheck != null && toCheck != typeof(object))
             {
-                var cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
+                Type cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
                 if (generic == cur)
                 {
                     return counter + 1;
@@ -353,11 +344,11 @@ namespace SocketNetworking
             return (T)valueAsInt;
         }
 
-        public static List<T> GetActiveFlags<T>(this T value) where  T : Enum
+        public static List<T> GetActiveFlags<T>(this T value) where T : Enum
         {
             List<T> allValues = Enum.GetValues(typeof(T)).Cast<T>().ToList();
             List<T> activeFlags = new List<T>();
-            foreach(T t in allValues)
+            foreach (T t in allValues)
             {
                 if (value.HasFlag(t))
                 {
@@ -375,14 +366,14 @@ namespace SocketNetworking
         public static IEnumerable<MethodInfo> GetMethodsDeep(this Type type, BindingFlags flags = BindingFlags.Default)
         {
             List<MethodInfo> list = new List<MethodInfo>();
-            if(type == null)
+            if (type == null)
             {
                 return list;
             }
-            while(type != typeof(object))
+            while (type != typeof(object))
             {
                 MethodInfo[] methods = type.GetMethods(flags);
-                foreach(MethodInfo m in methods)
+                foreach (MethodInfo m in methods)
                 {
                     if (list.Contains(m))
                     {
@@ -410,17 +401,17 @@ namespace SocketNetworking
         /// </returns>
         public static IEnumerable<object> MatchParameters(this MethodInfo method, List<object> parameters)
         {
-            if(method == null)
+            if (method == null)
             {
                 return null;
             }
             //Fuck... optional params...
-            if(!method.GetParameters().Any(x => x.IsOptional) && method.GetParameters().Length > parameters.Count)
+            if (!method.GetParameters().Any(x => x.IsOptional) && method.GetParameters().Length > parameters.Count)
             {
                 return null;
             }
             object[] result = new object[method.GetParameters().Length];
-            for(int i = 0; i < method.GetParameters().Length; i++)
+            for (int i = 0; i < method.GetParameters().Length; i++)
             {
                 ParameterInfo parameter = method.GetParameters()[i];
                 int index = -1;
@@ -432,7 +423,7 @@ namespace SocketNetworking
                     }
                 }
                 //didnt find one
-                if(index == -1)
+                if (index == -1)
                 {
                     if (parameter.IsOptional)
                     {

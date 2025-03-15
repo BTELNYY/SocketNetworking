@@ -1,23 +1,19 @@
 ﻿using SocketNetworking.Client;
 using SocketNetworking.Misc;
-using SocketNetworking.Transports;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Events;
+using SocketNetworking.Shared.Transports;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
-using SocketNetworking.PacketSystem;
-using SocketNetworking.Shared.Events;
+using System.Net.Sockets;
 
 namespace SocketNetworking.Server
 {
     public class UdpNetworkServer : NetworkServer
     {
-        protected Dictionary<IPEndPoint, UdpNetworkClient> _udpClients = new Dictionary<IPEndPoint, UdpNetworkClient> ();
+        protected Dictionary<IPEndPoint, UdpNetworkClient> _udpClients = new Dictionary<IPEndPoint, UdpNetworkClient>();
 
         public static IPEndPoint MyEndPoint
         {
@@ -46,12 +42,12 @@ namespace SocketNetworking.Server
                 {
                     continue;
                 }
-                if(Clients.Count >= Config.MaximumClients)
+                if (Clients.Count >= Config.MaximumClients)
                 {
                     continue;
                 }
                 byte[] Receive = udpClient.Receive(ref listener);
-                IPEndPoint remoteIpEndPoint = listener as IPEndPoint;
+                IPEndPoint remoteIpEndPoint = listener;
                 if (!_udpClients.ContainsKey(remoteIpEndPoint))
                 {
                     Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
