@@ -1,9 +1,9 @@
-﻿using System;
+﻿using SocketNetworking.Server;
+using SocketNetworking.Shared.Transports;
+using System;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using SocketNetworking.Server;
-using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
 {

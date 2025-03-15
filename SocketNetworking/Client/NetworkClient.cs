@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using SocketNetworking.Misc;
+﻿using SocketNetworking.Misc;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
@@ -18,6 +11,13 @@ using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.Streams;
 using SocketNetworking.Shared.Transports;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SocketNetworking.Client
 {
@@ -371,7 +371,7 @@ namespace SocketNetworking.Client
             }
             set
             {
-                if(CurrentClientLocation == ClientLocation.Local)
+                if (CurrentClientLocation == ClientLocation.Local)
                 {
                     throw new InvalidOperationException("Can't change authentication state on the client!");
                 }
@@ -393,7 +393,7 @@ namespace SocketNetworking.Client
         private bool _ready = false;
 
         /// <summary>
-        /// Determines the ready state of the <see cref="NetworkClient"/>, this has no effect on library logic but can be useful for applications using the library.
+        /// Determines the ready state of the <see cref="NetworkClient"/>, this has no effect on library logic but can be useful for applications using the library. Wrong. it has an effect. <see cref="NetworkServerConfig.AutoSync"/> is checked when the <see cref="Ready"/> state is updated to true. This value can be updated without extra networking logic as it is updated for you.
         /// </summary>
         public bool Ready
         {
@@ -2234,7 +2234,7 @@ namespace SocketNetworking.Client
             NetworkManager.AddNetworkObject(avatar);
             avatar.OwnerClientID = ClientID;
             avatar.OwnershipMode = OwnershipMode.Client;
-            if(avatar.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
+            if (avatar.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
             {
                 avatar.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
             }

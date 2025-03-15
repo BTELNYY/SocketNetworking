@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Security;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.Attributes;
@@ -15,6 +8,13 @@ using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.SyncVars;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Security;
 
 namespace SocketNetworking.Shared
 {

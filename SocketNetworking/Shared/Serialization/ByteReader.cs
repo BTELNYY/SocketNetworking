@@ -1,9 +1,9 @@
-﻿using System;
+﻿using SocketNetworking.Shared.PacketSystem;
+using System;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
 {

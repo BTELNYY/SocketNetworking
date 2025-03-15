@@ -1,8 +1,8 @@
-﻿using System;
+﻿using SocketNetworking.Shared.Serialization;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 {

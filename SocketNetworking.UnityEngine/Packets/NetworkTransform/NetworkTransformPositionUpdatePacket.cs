@@ -11,11 +11,14 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
 
         public Quaternion Rotation { get; set; } = new Quaternion(0, 0, 0, 0);
 
+        public bool Local { get; set; } = false;
+
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
             writer.WriteVector3(Position);
             writer.WriteQuaternion(Rotation);
+            writer.WriteBool(Local);
             return writer;
         }
 
@@ -24,6 +27,7 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
             ByteReader reader = base.Deserialize(data);
             Position = reader.ReadVector3();
             Rotation = reader.ReadQuaternion();
+            Local = reader.ReadBool();
             return reader;
         }
     }

@@ -1,7 +1,7 @@
-﻿using System.Security.Cryptography;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
+using System.Security.Cryptography;
 
 namespace SocketNetworking.Shared.NetworkObjects
 {

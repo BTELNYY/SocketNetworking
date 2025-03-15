@@ -1,7 +1,7 @@
-﻿using System;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Example.Basics.SharedData;
 using SocketNetworking.Shared;
+using System;
 
 namespace SocketNetworking.Example.Basics.Client
 {

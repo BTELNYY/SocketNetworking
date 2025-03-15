@@ -52,7 +52,7 @@ namespace SocketNetworking.Misc
         {
             _task = null;
             _callback = null;
-            _data = default(T);
+            _data = default;
         }
 
         public void Start()

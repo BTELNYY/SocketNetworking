@@ -1,14 +1,14 @@
-﻿using System;
+﻿using SocketNetworking.Client;
+using SocketNetworking.Misc;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.Events;
+using SocketNetworking.Shared.Transports;
+using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using SocketNetworking.Client;
-using SocketNetworking.Misc;
-using SocketNetworking.Shared;
-using SocketNetworking.Shared.Events;
-using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Server
 {

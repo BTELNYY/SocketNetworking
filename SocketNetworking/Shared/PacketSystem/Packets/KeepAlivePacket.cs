@@ -1,5 +1,5 @@
-﻿using System;
-using SocketNetworking.Shared.Serialization;
+﻿using SocketNetworking.Shared.Serialization;
+using System;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
 {

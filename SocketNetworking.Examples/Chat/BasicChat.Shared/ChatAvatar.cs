@@ -1,10 +1,10 @@
-﻿using System;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
+using System;
 
 namespace BasicChat.Shared
 {

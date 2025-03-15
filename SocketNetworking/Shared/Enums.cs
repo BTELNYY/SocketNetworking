@@ -1,6 +1,6 @@
-﻿using System;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared.NetworkObjects;
+using System;
 
 namespace SocketNetworking.Shared
 {

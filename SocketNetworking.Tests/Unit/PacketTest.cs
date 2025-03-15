@@ -1,7 +1,7 @@
-﻿using System;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SocketNetworking.Shared.PacketSystem.Packets;
+using System;
+using System.Linq;
 
 namespace SocketNetworking.Tests.Unit
 {

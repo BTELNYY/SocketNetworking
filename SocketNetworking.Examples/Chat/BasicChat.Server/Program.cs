@@ -1,8 +1,8 @@
-﻿using System;
-using BasicChat.Shared;
+﻿using BasicChat.Shared;
 using SocketNetworking;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
+using System;
 
 namespace BasicChat.Server
 {

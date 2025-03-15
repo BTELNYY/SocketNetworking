@@ -1,5 +1,5 @@
-﻿using System;
-using SocketNetworking.Shared;
+﻿using SocketNetworking.Shared;
+using System;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components

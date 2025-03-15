@@ -75,6 +75,34 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public Vector3 NetworkLocalPosition
+        {
+            get
+            {
+                return transform.position;
+            }
+            set
+            {
+                if (!IsOwner)
+                {
+                    return;
+                }
+                transform.position = value;
+                SerializableVector3 vec = new SerializableVector3(value);
+                NetworkInvoke(nameof(GetNewNetworkLocalPosition), new object[] { vec });
+            }
+        }
+
+        [NetworkInvokable]
+        private void GetNewNetworkLocalPosition(SerializableVector3 position)
+        {
+            transform.localPosition = position.Vector;
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkLocalPosition = position.Vector;
+            }
+        }
+
         public Quaternion NetworkRotation
         {
             get
@@ -95,6 +123,34 @@ namespace SocketNetworking.UnityEngine.Components
 
         [NetworkInvokable]
         private void GetNewNetworkRotation(SerializableQuaternion rotation)
+        {
+            transform.rotation = rotation.Quaternion;
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkRotation = rotation.Quaternion;
+            }
+        }
+
+        public Quaternion NetworkLocalRotation
+        {
+            get
+            {
+                return transform.localRotation;
+            }
+            set
+            {
+                if (!IsOwner)
+                {
+                    return;
+                }
+                transform.localRotation = value;
+                SerializableQuaternion quat = new SerializableQuaternion(value);
+                NetworkInvoke(nameof(GetNewNetworkLocalRotation), new object[] { quat });
+            }
+        }
+
+        [NetworkInvokable]
+        private void GetNewNetworkLocalRotation(SerializableQuaternion rotation)
         {
             transform.rotation = rotation.Quaternion;
             if (NetworkManager.WhereAmI == ClientLocation.Remote)

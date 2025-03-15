@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.UnityEngine.Packets.NetworkAnimator;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components

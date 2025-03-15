@@ -1,6 +1,6 @@
-﻿using System;
-using SocketNetworking.Shared.PacketSystem;
+﻿using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
+using System;
 
 namespace SocketNetworking.Example.Basics.SharedData
 {

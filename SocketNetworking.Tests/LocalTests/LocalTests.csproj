@@ -33,11 +33,44 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="0Harmony, Version=2.3.5.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Lib.Harmony.2.3.5\lib\net48\0Harmony.dll</HintPath>
+    <Reference Include="0Harmony, Version=2.14.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\HarmonyX.2.14.0\lib\net452\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil, Version=0.11.5.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Mono.Cecil.0.11.5\lib\net40\Mono.Cecil.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Mdb, Version=0.11.5.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Mono.Cecil.0.11.5\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Pdb, Version=0.11.5.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Mono.Cecil.0.11.5\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Rocks, Version=0.11.5.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Mono.Cecil.0.11.5\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.Backports, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\MonoMod.Backports.1.1.2\lib\net452\MonoMod.Backports.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.Core, Version=1.2.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\MonoMod.Core.1.2.2\lib\net452\MonoMod.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.Iced, Version=1.21.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\MonoMod.Core.1.2.2\lib\net452\MonoMod.Iced.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.ILHelpers, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\MonoMod.ILHelpers.1.1.0\lib\net452\MonoMod.ILHelpers.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour, Version=25.2.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\MonoMod.RuntimeDetour.25.2.2\lib\net452\MonoMod.RuntimeDetour.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.Utils, Version=25.0.8.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\MonoMod.Utils.25.0.8\lib\net452\MonoMod.Utils.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />

@@ -1,5 +1,5 @@
-﻿using System;
-using SocketNetworking.Shared.NetworkObjects;
+﻿using SocketNetworking.Shared.NetworkObjects;
+using System;
 
 namespace SocketNetworking.Shared.SyncVars
 {

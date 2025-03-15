@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using SocketNetworking.Server;
+﻿using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.UnityEngine.Components;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine
@@ -86,6 +86,24 @@ namespace SocketNetworking.UnityEngine
                 behaviors.Add(obj as NetworkBehavior);
             }
             return behaviors;
+        }
+
+        public static NetworkAnimator GetNetworkAnimator(GameObject obj)
+        {
+            if (_animators.ContainsKey(obj))
+            {
+                return _animators[obj];
+            }
+            return null;
+        }
+
+        public static NetworkTransform GetNetworkTransform(GameObject obj)
+        {
+            if (_transforms.ContainsKey(obj))
+            {
+                return _transforms[obj];
+            }
+            return null;
         }
 
         public static int NextAvailablePrefabID
@@ -198,24 +216,6 @@ namespace SocketNetworking.UnityEngine
                 _animators.Remove(obj.gameObject);
                 return;
             }
-        }
-
-        public static NetworkTransform GetNetworkTransform(GameObject gameObject)
-        {
-            if (_transforms.ContainsKey(gameObject))
-            {
-                return _transforms[gameObject];
-            }
-            return null;
-        }
-
-        public static NetworkAnimator GetNetworkAnimator(GameObject gameObject)
-        {
-            if (_animators.ContainsKey(gameObject))
-            {
-                return _animators[gameObject];
-            }
-            return null;
         }
     }
 }

@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
+using System;
+using System.Collections.Generic;
 
 namespace SocketNetworking.Shared.SyncVars
 {
@@ -30,7 +30,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         OwnershipMode _mode;
 
-        T value = default(T);
+        T value = default;
 
         public virtual T Value
         {

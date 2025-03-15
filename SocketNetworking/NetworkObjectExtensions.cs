@@ -1,14 +1,14 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
-using System.Security;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Security;
 
 namespace SocketNetworking
 {
@@ -23,6 +23,25 @@ namespace SocketNetworking
             return NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
         }
 
+
+        /// <summary>
+        /// Checks if the given <see cref="NetworkClient"/> cam modify the <see cref="INetworkObject"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="client"></param>
+        /// <returns></returns>
+        public static bool HasPermission(this INetworkObject obj, NetworkClient client)
+        {
+            if (obj.OwnershipMode == OwnershipMode.Public)
+            {
+                return true;
+            }
+            if (obj.OwnershipMode == OwnershipMode.Server)
+            {
+                return false;
+            }
+            return obj.OwnerClientID == client.ClientID;
+        }
 
         /// <summary>
         /// Invokes a network method on the current <see cref="INetworkObject"></see>, provide a <see cref="NetworkClient"/> which will get the network invoke.
