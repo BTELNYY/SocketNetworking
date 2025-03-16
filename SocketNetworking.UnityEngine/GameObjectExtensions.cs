@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using SocketNetworking.UnityEngine.Components;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -21,6 +22,16 @@ namespace SocketNetworking.UnityEngine
                 RecursiveTree(current.transform.parent.gameObject, ref tree);
             }
             return;
+        }
+
+        public static NetworkTransform ToNetworkTransform(this Transform transform)
+        {
+            return UnityNetworkManager.GetNetworkTransform(transform.gameObject);
+        }
+
+        public static NetworkAnimator ToNetworkAnimator(this Animator animator)
+        {
+            return UnityNetworkManager.GetNetworkAnimator(animator.gameObject);
         }
     }
 }
