@@ -1,40 +1,24 @@
-﻿using SocketNetworking.Shared.PacketSystem;
+﻿using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.TypeWrappers
 {
-    public class SerializableVector3 : IPacketSerializable
+    [TypeWrapper(typeof(Vector3))]
+    public class SerializableVector3 : TypeWrapper<Vector3>
     {
-        public Vector3 Vector;
-
-        public SerializableVector3()
-        {
-            Vector = new Vector3();
-        }
-
-        public SerializableVector3(Vector3 vector)
-        {
-            Vector = vector;
-        }
-
-        public ByteReader Deserialize(byte[] data)
+        public override (Vector3, int) Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
-            Vector = reader.ReadVector3();
-            return reader;
+            return (reader.ReadVector3(), reader.ReadBytes);
         }
 
-        public int GetLength()
-        {
-            return sizeof(float) * 3;
-        }
-
-        public ByteWriter Serialize()
+        public override byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            writer.WriteVector3(Vector);
-            return writer;
+            writer.WriteVector3(Value);
+            return writer.Data;
         }
     }
 }

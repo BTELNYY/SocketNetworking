@@ -1,40 +1,24 @@
-﻿using SocketNetworking.Shared.PacketSystem;
+﻿using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.TypeWrappers
 {
-    public class SerializableQuaternion : IPacketSerializable
+    [TypeWrapper(typeof(Quaternion))]
+    public class SerializableQuaternion : TypeWrapper<Quaternion>
     {
-        public Quaternion Quaternion;
-
-        public SerializableQuaternion()
-        {
-            Quaternion = new Quaternion();
-        }
-
-        public SerializableQuaternion(Quaternion quaternion)
-        {
-            Quaternion = quaternion;
-        }
-
-        public ByteReader Deserialize(byte[] data)
+        public override (Quaternion, int) Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
-            Quaternion = reader.ReadQuaternion();
-            return reader;
+            return (reader.ReadQuaternion(), reader.ReadBytes);
         }
 
-        public int GetLength()
-        {
-            return sizeof(float) * 4;
-        }
-
-        public ByteWriter Serialize()
+        public override byte[] Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            writer.WriteQuaternion(Quaternion);
-            return writer;
+            writer.WriteQuaternion(Value);
+            return writer.Data;
         }
     }
 }

@@ -83,7 +83,10 @@
     <Compile Include="Modding\Patches\UnityAnimator\Trigger\ResetStringTrigger.cs" />
     <Compile Include="Modding\Patches\UnityAnimator\Trigger\SetStringTriggerPatch.cs" />
     <Compile Include="Modding\Patches\UnityAnimator\Trigger\SetTriggerIntPatch.cs" />
+    <Compile Include="Modding\Patches\UnityTransform\LocalPositionSetterPatch.cs" />
+    <Compile Include="Modding\Patches\UnityTransform\LocalRotationSetterPatch.cs" />
     <Compile Include="Modding\Patches\UnityTransform\PositionSetterPatch.cs" />
+    <Compile Include="Modding\Patches\UnityTransform\RotationSetterPatch.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorBoolValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorFloatValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorIntValueUpdatePacket.cs" />
@@ -95,6 +98,8 @@
     <Compile Include="Packets\NetworkTransform\NetworkTransformPositionUpdatePacket.cs" />
     <Compile Include="Packets\NetworkTransformBasePacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TypeWrappers\SerializableVector2Int.cs" />
+    <Compile Include="TypeWrappers\SerializableVector3Int.cs" />
     <Compile Include="TypeWrappers\SerializableQuaternion.cs" />
     <Compile Include="TypeWrappers\SerializableVector2.cs" />
     <Compile Include="TypeWrappers\SerializableVector3.cs" />

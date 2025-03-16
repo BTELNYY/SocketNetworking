@@ -2,7 +2,6 @@
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Serialization;
-using SocketNetworking.UnityEngine.TypeWrappers;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
@@ -60,18 +59,17 @@ namespace SocketNetworking.UnityEngine.Components
                     return;
                 }
                 transform.position = value;
-                SerializableVector3 vec = new SerializableVector3(value);
-                NetworkInvoke(nameof(GetNewNetworkPosition), new object[] { vec });
+                NetworkInvoke(nameof(GetNewNetworkPosition), new object[] { value });
             }
         }
 
         [NetworkInvokable]
-        private void GetNewNetworkPosition(SerializableVector3 position)
+        private void GetNewNetworkPosition(Vector3 position)
         {
-            transform.position = position.Vector;
+            transform.position = position;
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkPosition = position.Vector;
+                NetworkPosition = position;
             }
         }
 
@@ -88,18 +86,17 @@ namespace SocketNetworking.UnityEngine.Components
                     return;
                 }
                 transform.position = value;
-                SerializableVector3 vec = new SerializableVector3(value);
-                NetworkInvoke(nameof(GetNewNetworkLocalPosition), new object[] { vec });
+                NetworkInvoke(nameof(GetNewNetworkLocalPosition), new object[] { value });
             }
         }
 
         [NetworkInvokable]
-        private void GetNewNetworkLocalPosition(SerializableVector3 position)
+        private void GetNewNetworkLocalPosition(Vector3 position)
         {
-            transform.localPosition = position.Vector;
+            transform.localPosition = position;
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkLocalPosition = position.Vector;
+                NetworkLocalPosition = position;
             }
         }
 
@@ -116,18 +113,17 @@ namespace SocketNetworking.UnityEngine.Components
                     return;
                 }
                 transform.rotation = value;
-                SerializableQuaternion quat = new SerializableQuaternion(value);
-                NetworkInvoke(nameof(GetNewNetworkRotation), new object[] { quat });
+                NetworkInvoke(nameof(GetNewNetworkRotation), new object[] { value });
             }
         }
 
         [NetworkInvokable]
-        private void GetNewNetworkRotation(SerializableQuaternion rotation)
+        private void GetNewNetworkRotation(Quaternion rotation)
         {
-            transform.rotation = rotation.Quaternion;
+            transform.rotation = rotation;
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkRotation = rotation.Quaternion;
+                NetworkRotation = rotation;
             }
         }
 
@@ -144,18 +140,17 @@ namespace SocketNetworking.UnityEngine.Components
                     return;
                 }
                 transform.localRotation = value;
-                SerializableQuaternion quat = new SerializableQuaternion(value);
-                NetworkInvoke(nameof(GetNewNetworkLocalRotation), new object[] { quat });
+                NetworkInvoke(nameof(GetNewNetworkLocalRotation), new object[] { value });
             }
         }
 
         [NetworkInvokable]
-        private void GetNewNetworkLocalRotation(SerializableQuaternion rotation)
+        private void GetNewNetworkLocalRotation(Quaternion rotation)
         {
-            transform.rotation = rotation.Quaternion;
+            transform.rotation = rotation;
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkRotation = rotation.Quaternion;
+                NetworkRotation = rotation;
             }
         }
 
@@ -165,17 +160,16 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 return;
             }
-            SerializableVector3 vector3 = new SerializableVector3(euler);
-            NetworkInvoke(nameof(GetNetworkRotation), new object[] { vector3, relativeTo });
+            NetworkInvoke(nameof(GetNetworkRotation), new object[] { euler, relativeTo });
         }
 
         [NetworkInvokable]
-        private void GetNetworkRotation(SerializableVector3 euler, Space relativeTo)
+        private void GetNetworkRotation(Vector3 euler, Space relativeTo)
         {
-            transform.Rotate(euler.Vector, relativeTo);
+            transform.Rotate(euler, relativeTo);
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkRotate(euler.Vector, relativeTo);
+                NetworkRotate(euler, relativeTo);
             }
         }
 
@@ -185,17 +179,16 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 return;
             }
-            SerializableVector3 vector3 = new SerializableVector3(euler);
-            NetworkInvoke(nameof(GetNetworkRotation), new object[] { vector3, angle, relativeTo });
+            NetworkInvoke(nameof(GetNetworkRotation), new object[] { euler, angle, relativeTo });
         }
 
         [NetworkInvokable]
-        private void GetNetworkRotation(SerializableVector3 euler, float angle, Space relativeTo)
+        private void GetNetworkRotation(Vector3 euler, float angle, Space relativeTo)
         {
-            transform.Rotate(euler.Vector, angle, relativeTo);
+            transform.Rotate(euler, angle, relativeTo);
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkRotate(euler.Vector, angle, relativeTo);
+                NetworkRotate(euler, angle, relativeTo);
             }
         }
 
@@ -205,18 +198,16 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 return;
             }
-            SerializableVector3 vecPoint = new SerializableVector3(point);
-            SerializableVector3 vecAxis = new SerializableVector3(axis);
-            NetworkInvoke(nameof(GetNetworkRotation), new object[] { vecPoint, vecAxis, angle });
+            NetworkInvoke(nameof(GetNetworkRotation), new object[] { point, axis, angle });
         }
 
         [NetworkInvokable]
-        private void GetNetworkRotation(SerializableVector3 point, SerializableVector3 axis, float angle)
+        private void GetNetworkRotation(Vector3 point, Vector3 axis, float angle)
         {
-            transform.RotateAround(point.Vector, axis.Vector, angle);
+            transform.RotateAround(point, axis, angle);
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkRotateAround(point.Vector, point.Vector, angle);
+                NetworkRotateAround(point, point, angle);
             }
         }
 
@@ -226,16 +217,16 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 return;
             }
-            NetworkInvoke(nameof(GetNetworkTranslate), new object[] { new SerializableVector3(position), relativeTo });
+            NetworkInvoke(nameof(GetNetworkTranslate), new object[] { position, relativeTo });
         }
 
         [NetworkInvokable]
-        private void GetNetworkTranslate(SerializableVector3 vector3, Space space)
+        private void GetNetworkTranslate(Vector3 vector3, Space space)
         {
-            transform.Translate(vector3.Vector, space);
+            transform.Translate(vector3, space);
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkTranslate(vector3.Vector, space);
+                NetworkTranslate(vector3, space);
             }
         }
 
@@ -245,16 +236,16 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 return;
             }
-            NetworkInvoke(nameof(GetNetworkLookAt), new object[] { new SerializableVector3(position) });
+            NetworkInvoke(nameof(GetNetworkLookAt), new object[] { position });
         }
 
         [NetworkInvokable]
-        private void GetNetworkLookAt(SerializableVector3 vector3)
+        private void GetNetworkLookAt(Vector3 vector3)
         {
-            transform.LookAt(vector3.Vector);
+            transform.LookAt(vector3);
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkLookAt(vector3.Vector);
+                NetworkLookAt(vector3);
             }
         }
     }
