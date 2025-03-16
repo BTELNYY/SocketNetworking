@@ -35,6 +35,8 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual bool Spawnable => true;
 
+        public virtual bool AutoSpawn => true;
+
         public virtual ObjectVisibilityMode ObjectVisibilityMode { get; set; }
 
         public virtual bool AllowPublicModification => false;

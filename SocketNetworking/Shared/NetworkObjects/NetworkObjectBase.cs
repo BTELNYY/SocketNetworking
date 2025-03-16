@@ -25,6 +25,8 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual bool Spawnable => true;
 
+        public virtual bool AutoSpawn => true;
+
         public virtual void Destroy()
         {
 

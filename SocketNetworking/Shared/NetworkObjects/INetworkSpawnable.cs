@@ -17,6 +17,11 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// </summary>
         bool Spawnable { get; }
 
+        /// <summary>
+        /// Determines if <see cref="NetworkClient.ServerBeginSync"/> can spawn this object automatically. Note that this differs from <see cref="Spawnable"/> as this only controls automatic spawning, <see cref="Spawnable"/> is still responsible for if the <see cref="INetworkSpawnable"/> can be spawned at all.
+        /// </summary>
+        bool AutoSpawn { get; }
+
         ByteReader ReceiveExtraData(byte[] extraData);
 
         ByteWriter SendExtraData();

@@ -2209,7 +2209,7 @@ namespace SocketNetworking.Client
         {
             return Task.Run(() =>
             {
-                List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
+                List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable && x.AutoSpawn).ToList();
                 NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
                 foreach (INetworkObject @object in objects)
                 {
