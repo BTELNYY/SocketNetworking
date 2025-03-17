@@ -1,6 +1,6 @@
-﻿using SocketNetworking.Shared.Attributes;
+﻿using System.Net;
+using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Serialization;
-using System.Net;
 
 namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 {

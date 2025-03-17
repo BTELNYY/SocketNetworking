@@ -1,9 +1,9 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.Net;
+using System.Reflection;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
-using System.Net;
-using System.Reflection;
 
 namespace SocketNetworking.Tests.Unit
 {

@@ -1,13 +1,13 @@
-﻿using SocketNetworking.Server;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.UnityEngine.Components;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine

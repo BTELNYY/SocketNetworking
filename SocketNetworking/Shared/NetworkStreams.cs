@@ -1,11 +1,11 @@
-﻿using SocketNetworking.Client;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.Streams;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SocketNetworking.Shared
 {

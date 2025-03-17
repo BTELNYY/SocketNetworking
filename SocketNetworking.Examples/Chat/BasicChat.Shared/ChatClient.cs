@@ -1,4 +1,5 @@
-﻿using SocketNetworking;
+﻿using System;
+using SocketNetworking;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
@@ -6,7 +7,6 @@ using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
-using System;
 
 namespace BasicChat.Shared
 {

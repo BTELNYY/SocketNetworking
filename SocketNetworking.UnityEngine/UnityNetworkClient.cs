@@ -1,6 +1,6 @@
-﻿using SocketNetworking.Client;
+﻿using System.Collections;
+using SocketNetworking.Client;
 using SocketNetworking.UnityEngine.Components;
-using System.Collections;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine

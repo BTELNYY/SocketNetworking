@@ -1,4 +1,5 @@
-﻿using SocketNetworking.Client;
+﻿using System;
+using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
@@ -6,7 +7,6 @@ using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.SyncVars;
-using System;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components

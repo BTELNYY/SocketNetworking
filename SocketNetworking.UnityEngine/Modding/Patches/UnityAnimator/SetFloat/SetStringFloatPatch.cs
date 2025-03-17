@@ -1,6 +1,6 @@
-﻿using HarmonyLib;
+﻿using System;
+using HarmonyLib;
 using SocketNetworking.UnityEngine.Components;
-using System;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Modding.Patches.UnityAnimator.SetFloat
