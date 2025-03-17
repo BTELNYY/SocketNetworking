@@ -16,7 +16,7 @@ namespace BasicChat.Shared
         {
             ChatClient client = (ChatClient)Client;
             ChatAuthData data;
-            ByteReader reader = new ByteReader(packet.AuthData);
+            ByteReader reader = new ByteReader(packet.ExtraAuthenticationData);
             data = reader.ReadPacketSerialized<ChatAuthData>();
             if (string.IsNullOrWhiteSpace(data.Name))
             {
@@ -37,11 +37,11 @@ namespace BasicChat.Shared
             data.Name = ((ChatClient)Client).RequestedName;
             ByteWriter writer = new ByteWriter();
             writer.WritePacketSerialized<ChatAuthData>(data);
-            packet.AuthData = writer.Data;
+            packet.ExtraAuthenticationData = writer.Data;
             return packet;
         }
 
-        public override void HandleAuthResult(NetworkHandle handle, AuthenticationPacket packet)
+        public override void HandleAuthenticationResult(NetworkHandle handle, AuthenticationPacket packet)
         {
 
         }

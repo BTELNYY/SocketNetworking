@@ -5,6 +5,7 @@ using System.Threading;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Authentication;
 using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
@@ -154,7 +155,41 @@ namespace SocketNetworking.Server
         /// <summary>
         /// What type should network clients be created in? Note that the type must inherit from <see cref="NetworkClient"/>. This type should not have any class constructors.
         /// </summary>
-        public static Type ClientType = typeof(NetworkClient);
+        public static Type ClientType
+        {
+            get => _clientType;
+            set
+            {
+                if (value.IsSubclassDeep(typeof(NetworkClient)))
+                {
+                    _clientType = value;
+                    return;
+                }
+                throw new ArgumentException($"{value.GetType()} is not a subclass of {typeof(NetworkClient)}.");
+            }
+        }
+
+        private static Type _clientType = typeof(NetworkClient);
+
+
+        public static Type Authenticator
+        {
+            get
+            {
+                return _authenticator;
+            }
+            set
+            {
+                if (value.IsSubclassDeep(typeof(AuthenticationProvider)))
+                {
+                    _clientType = value;
+                    return;
+                }
+                throw new ArgumentException($"{value.GetType()} is not a subclass of {typeof(AuthenticationProvider)}.");
+            }
+        }
+
+        private static Type _authenticator = null;
 
         /// <summary>
         /// The <see cref="INetworkObject"/> which will be spawned for new <see cref="NetworkClient"/>s who connect. By default, this object will have <see cref="INetworkObject.ObjectVisibilityMode"/> set to <see cref="ObjectVisibilityMode.Everyone"/> and <see cref="INetworkObject.OwnershipMode"/> set to <see cref="OwnershipMode.Client"/>.

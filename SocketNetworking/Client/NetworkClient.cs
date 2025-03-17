@@ -797,6 +797,10 @@ namespace SocketNetworking.Client
             Log.Prefix = $"[Client {clientId}]";
             Transport = socket;
             _clientLocation = ClientLocation.Remote;
+            if (NetworkServer.Authenticator != null)
+            {
+                AuthenticationProvider = (AuthenticationProvider)Activator.CreateInstance(NetworkServer.Authenticator);
+            }
             ClientConnected += OnRemoteClientConnected;
             ClientConnected?.Invoke();
             ReadyStateChanged += OnReadyStateChanged;
@@ -1526,7 +1530,7 @@ namespace SocketNetworking.Client
                     NetworkHandle handle = new NetworkHandle(this);
                     if (authenticationPacket.IsResult)
                     {
-                        AuthenticationProvider.HandleAuthResult(handle, authenticationPacket);
+                        AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
                         Authenticated = authenticationPacket.Result.Approved;
                     }
                     else
@@ -1536,7 +1540,7 @@ namespace SocketNetworking.Client
                         {
                             IsResult = true,
                             Result = result.Item1,
-                            AuthData = result.Item2
+                            ExtraAuthenticationData = result.Item2
                         };
                         Send(newPacket);
                         Authenticated = newPacket.Result.Approved;
@@ -1805,7 +1809,7 @@ namespace SocketNetworking.Client
                     NetworkHandle handle = new NetworkHandle(this);
                     if (authenticationPacket.IsResult)
                     {
-                        AuthenticationProvider.HandleAuthResult(handle, authenticationPacket);
+                        AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
                     }
                     else
                     {
@@ -1814,7 +1818,7 @@ namespace SocketNetworking.Client
                         {
                             IsResult = true,
                             Result = result.Item1,
-                            AuthData = result.Item2
+                            ExtraAuthenticationData = result.Item2
                         };
                         Send(newPacket);
                     }
