@@ -33,10 +33,13 @@ namespace BasicChat.Shared
 
         public ChatClient()
         {
+            AutoAssignAvatar = false;
             CredentialsRequestAuthenticationProvider authenticationProvider = new CredentialsRequestAuthenticationProvider(this, true, true);
             authenticationProvider.Responded += (x) =>
             {
+                x.Accept();
                 RequestedName = x.Response.Username;
+                ServerAutoSpecifyAvatar();
             };
             AuthenticationProvider = authenticationProvider;
             AuthenticationStateChanged += () =>

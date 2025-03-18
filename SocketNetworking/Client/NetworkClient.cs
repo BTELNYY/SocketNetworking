@@ -209,6 +209,16 @@ namespace SocketNetworking.Client
         #region Properties
 
         /// <summary>
+        /// When true, the defined <see cref="INetworkAvatar"/> will be given to the user.
+        /// </summary>
+        public bool AutoAssignAvatar { get; set; } = true;
+
+        /// <summary>
+        /// When true, the library will call <see cref="ServerBeginSync"/> automatically.
+        /// </summary>
+        public bool AutoSync { get; set; } = true;
+
+        /// <summary>
         /// Maximum amount of milliseconds before a <see cref="KeepAlivePacket"/> is sent. By default, a <see cref="KeepAlivePacket"/> is sent every 1000ms, this is the standard for ping measurements.
         /// </summary>
         public double MaxMSBeforeKeepAlive { get; set; } = 1000;
@@ -2192,7 +2202,21 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            ServerBeginSync();
+            if(AutoSync)
+            {
+                ServerBeginSync();
+            }
+            if(AutoAssignAvatar)
+            {
+                ServerAutoSpecifyAvatar();
+            }
+        }
+
+        /// <summary>
+        /// Uses <see cref="NetworkServer.ClientAvatar"/> and a <see cref="NetworkObjectSpawner"/> to create and spawn a <see cref="INetworkAvatar"/>. This method differs from <see cref="ServerSpecifyAvatar(INetworkAvatar)"/> as it creates the avatar as well.
+        /// </summary>
+        public void ServerAutoSpecifyAvatar()
+        {
             if (NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
             {
                 INetworkObject result = null;
