@@ -98,7 +98,14 @@ namespace SocketNetworking.Client
                 Log.Warning("Transport Received a null byte array.");
                 return;
             }
-            Deserialize(packet.Item1, packet.Item3);
+            try
+            {
+                Deserialize(packet.Item1, packet.Item3);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"Malformed Packet. Header: {Packet.ReadPacketHeader(packet.Item1)}, Error: {ex}");
+            }
         }
     }
 }

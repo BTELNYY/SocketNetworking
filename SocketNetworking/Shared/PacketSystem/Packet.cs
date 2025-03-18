@@ -199,5 +199,10 @@ namespace SocketNetworking.Shared.PacketSystem
             PacketFlags flags = (PacketFlags)reader.ReadByte();
             return new PacketHeader(size, type, flags);
         }
+
+        public override string ToString()
+        {
+            return $"Size: {Size}, Type: {Type}, Flags: {Flags.GetActiveFlagsString()}";
+        }
     }
 }

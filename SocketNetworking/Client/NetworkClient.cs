@@ -1452,7 +1452,7 @@ namespace SocketNetworking.Client
             }
             catch (Exception ex)
             {
-                Log.Warning($"Malformed Packet. Size: {packet.Item1.Length}, Error: {ex}");
+                Log.Warning($"Malformed Packet. Header: {Packet.ReadPacketHeader(packet.Item1)}, Error: {ex}");
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
 
@@ -31,6 +32,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             SerializableList<SerializedData> list = new SerializableList<SerializedData>();
             list.OverwriteContained(Arguments);
             writer.WritePacketSerialized<SerializableList<SerializedData>>(list);
+            Log.GlobalDebug(ToString());
             return writer;
         }
 
@@ -44,6 +46,11 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             IgnoreResult = reader.ReadBool();
             Arguments = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;
             return reader;
+        }
+
+        public override string ToString()
+        {
+            return base.ToString() + $" TargetTypeAssembly: {TargetTypeAssmebly}, TargetType: {TargetType}, MethodName: {MethodName}, CallbackID: {CallbackID}, IgnoreResult: {IgnoreResult}, Arguments: {string.Join(",", Arguments.Select(x => x.Type))}";
         }
     }
 }

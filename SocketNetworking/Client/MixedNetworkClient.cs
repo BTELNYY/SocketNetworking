@@ -180,7 +180,7 @@ namespace SocketNetworking.Client
             }
             catch (Exception ex)
             {
-                Log.Warning($"Malformed Packet. Length: {packet.Item1.Length}, From: {packet.Item2}. Error: {ex.Message}");
+                Log.Warning($"Malformed Packet. Header: {Packet.ReadPacketHeader(packet.Item1)}, Error: {ex}");
             }
         }
 
