@@ -22,7 +22,7 @@ namespace BasicChat.Shared
             set
             {
                 _requestedName = value;
-                if (AuthenticationProvider is WindowsCredentialsRequestAuthenticationProvider provider)
+                if (AuthenticationProvider is CredentialsRequestAuthenticationProvider provider)
                 {
                     provider.DefaultUsername = value;
                 }
@@ -33,7 +33,7 @@ namespace BasicChat.Shared
 
         public ChatClient()
         {
-            WindowsCredentialsRequestAuthenticationProvider authenticationProvider = new WindowsCredentialsRequestAuthenticationProvider(this, true, true);
+            CredentialsRequestAuthenticationProvider authenticationProvider = new CredentialsRequestAuthenticationProvider(this, true, true);
             authenticationProvider.Responded += (x) =>
             {
                 RequestedName = x.Response.Username;

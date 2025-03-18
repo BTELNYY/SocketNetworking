@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using Meziantou.Framework.Win32;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
@@ -13,11 +15,11 @@ namespace SocketNetworking.Extras
     /// <summary>
     /// A basic <see cref="AuthenticationProvider"/> which allows a server to require a client to authenticate.
     /// </summary>
-    public class WindowsCredentialsRequestAuthenticationProvider : AuthenticationProvider
+    public class CredentialsRequestAuthenticationProvider : AuthenticationProvider
     {
         public event Action<AuthenticationReceivedEvent> Responded;
 
-        public Action<WindowsCredentialsRequestAuthenticationProvider> DisconnectClientAction;
+        public Action<CredentialsRequestAuthenticationProvider> DisconnectClientAction;
 
         public override bool ClientInitiate => false;
 
@@ -31,7 +33,7 @@ namespace SocketNetworking.Extras
 
         public string Caption { get; set; } = "Enter your credentials to access {hostname}";
 
-        public WindowsCredentialsRequestAuthenticationProvider(NetworkClient client, bool requireUsername, bool requirePassword) : base(client)
+        public CredentialsRequestAuthenticationProvider(NetworkClient client, bool requireUsername, bool requirePassword) : base(client)
         {
             RequireUsername = requireUsername;
             RequirePassword = requirePassword;
@@ -41,11 +43,29 @@ namespace SocketNetworking.Extras
         {
             ByteReader reader = new ByteReader(packet.ExtraAuthenticationData);
             AuthenticationRequest request = reader.ReadPacketSerialized<AuthenticationRequest>();
-            CredentialResult creds = CredentialManager.PromptForCredentials(messageText: Message, captionText: Caption.Replace("{hostname}", handle.Client.ConnectedHostname + ":" + handle.Client.ConnectedPort), userName: DefaultUsername);
+            string username = null;
+            string password = null;
+            string message = Message;
+            string caption = Caption.Replace("{hostname}", handle.Client.ConnectedHostname + ":" + handle.Client.ConnectedPort);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                CredentialResult creds = CredentialManager.PromptForCredentials(messageText: message, captionText: caption, userName: DefaultUsername);
+                username = creds.UserName;
+                password = creds.Password;
+            }
+            else
+            {
+                UniversalCredentialsWindow credentials = new UniversalCredentialsWindow();
+                credentials.lblCaption.Text = caption;
+                credentials.lblMessage.Text = message;
+                DialogResult res = credentials.ShowDialog();
+                username = credentials.txtUsername.Text;
+                password = credentials.txtPassword.Text;
+            }
             AuthenticationResponseStruct response = new AuthenticationResponseStruct()
             {
-                Password = creds.Password ?? "",
-                Username = creds.UserName ?? "",
+                Password = username ?? "",
+                Username = password ?? "",
             };
             ByteWriter writer = new ByteWriter();
             writer.WritePacketSerialized<AuthenticationResponseStruct>(response);

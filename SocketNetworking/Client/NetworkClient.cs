@@ -1396,7 +1396,7 @@ namespace SocketNetworking.Client
 
         #endregion
 
-        #region receiving
+        #region Receiving
 
         protected ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
 
