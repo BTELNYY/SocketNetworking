@@ -236,6 +236,12 @@ namespace SocketNetworking.Shared.Serialization
                 return null;
             }
 
+            if (data.Type == typeof(void))
+            {
+                read = reader.ReadBytes;
+                return null;
+            }
+
             if (data.Type == typeof(NetworkClient))
             {
                 int clientId = reader.ReadInt();
@@ -372,7 +378,7 @@ namespace SocketNetworking.Shared.Serialization
                 return Convert.ChangeType(value, data.Type);
             }
 
-            throw new NetworkSerializationException($"Type '{data.GetType().FullName}' cannot be deserialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
+            throw new NetworkSerializationException($"Type '{data.Type.FullName}' cannot be deserialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
         }
 
         public static T Deserialize<T>(SerializedData data, out int read)

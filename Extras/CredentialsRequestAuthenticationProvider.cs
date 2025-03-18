@@ -71,7 +71,7 @@ namespace SocketNetworking.Extras
             writer.WritePacketSerialized<AuthenticationResponseStruct>(response);
             return (new AuthenticationResult()
             {
-                Approved = true,
+                State = AuthenticationResultState.NoResult,
                 Message = ""
             }, writer.Data);
         }
@@ -88,7 +88,7 @@ namespace SocketNetworking.Extras
             AuthenticationPacket packet = new AuthenticationPacket()
             {
                 IsResult = false,
-                Result = new AuthenticationResult() { Approved = false, Message = "" },
+                Result = new AuthenticationResult() { State = AuthenticationResultState.NoResult, Message = "" },
                 ExtraAuthenticationData = writer.Data
             };
             return packet;
@@ -108,7 +108,9 @@ namespace SocketNetworking.Extras
                     return;
                 }
                 DisconnectClientAction?.Invoke(this);
+                return;
             }
+            handle.Client.Authenticated = true;
         }
     }
 

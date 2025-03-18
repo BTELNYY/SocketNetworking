@@ -43,14 +43,29 @@ namespace SocketNetworking.Shared.Authentication
 
     public class AuthenticationResult : IPacketSerializable
     {
-        public bool Approved = false;
+        public bool Approved
+        {
+            get
+            {
+                return State == AuthenticationResultState.Approved;
+            }
+            set
+            {
+                if(value)
+                {
+                    State = AuthenticationResultState.Approved;
+                }
+            }
+        }
+
+        public AuthenticationResultState State = AuthenticationResultState.NoResult;
 
         public string Message = "";
 
         public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
-            Approved = reader.ReadBool();
+            State = (AuthenticationResultState)reader.ReadByte();
             Message = reader.ReadString();
             return reader;
         }
@@ -63,9 +78,16 @@ namespace SocketNetworking.Shared.Authentication
         public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
-            writer.WriteBool(Approved);
+            writer.WriteByte((byte)State);
             writer.WriteString(Message);
             return writer;
         }
+    }
+
+    public enum AuthenticationResultState : byte
+    {
+        NoResult,
+        Approved,
+        Denied,
     }
 }

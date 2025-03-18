@@ -1522,29 +1522,32 @@ namespace SocketNetworking.Client
                 case PacketType.Authentication:
                     AuthenticationPacket authenticationPacket = new AuthenticationPacket();
                     authenticationPacket.Deserialize(data);
-                    if (AuthenticationProvider == null)
+                    _ = Task.Run(() => 
                     {
-                        Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
-                        return;
-                    }
-                    NetworkHandle handle = new NetworkHandle(this);
-                    if (authenticationPacket.IsResult)
-                    {
-                        AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
-                        Authenticated = authenticationPacket.Result.Approved;
-                    }
-                    else
-                    {
-                        (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authenticationPacket);
-                        AuthenticationPacket newPacket = new AuthenticationPacket
+                        if (AuthenticationProvider == null)
                         {
-                            IsResult = true,
-                            Result = result.Item1,
-                            ExtraAuthenticationData = result.Item2
-                        };
-                        Send(newPacket);
-                        Authenticated = newPacket.Result.Approved;
-                    }
+                            Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
+                            return;
+                        }
+                        NetworkHandle handle = new NetworkHandle(this);
+                        if (authenticationPacket.IsResult)
+                        {
+                            AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
+                            Authenticated = authenticationPacket.Result.Approved;
+                        }
+                        else
+                        {
+                            (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authenticationPacket);
+                            AuthenticationPacket newPacket = new AuthenticationPacket
+                            {
+                                IsResult = true,
+                                Result = result.Item1,
+                                ExtraAuthenticationData = result.Item2
+                            };
+                            Send(newPacket);
+                            Authenticated = newPacket.Result.Approved;
+                        }
+                    });
                     break;
                 case PacketType.ClientToClient:
                     ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
@@ -1801,27 +1804,30 @@ namespace SocketNetworking.Client
                 case PacketType.Authentication:
                     AuthenticationPacket authenticationPacket = new AuthenticationPacket();
                     authenticationPacket.Deserialize(data);
-                    if (AuthenticationProvider == null)
+                    _ = Task.Run(() => 
                     {
-                        Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
-                        return;
-                    }
-                    NetworkHandle handle = new NetworkHandle(this);
-                    if (authenticationPacket.IsResult)
-                    {
-                        AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
-                    }
-                    else
-                    {
-                        (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authenticationPacket);
-                        AuthenticationPacket newPacket = new AuthenticationPacket
+                        if (AuthenticationProvider == null)
                         {
-                            IsResult = true,
-                            Result = result.Item1,
-                            ExtraAuthenticationData = result.Item2
-                        };
-                        Send(newPacket);
-                    }
+                            Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
+                            return;
+                        }
+                        NetworkHandle handle = new NetworkHandle(this);
+                        if (authenticationPacket.IsResult)
+                        {
+                            AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
+                        }
+                        else
+                        {
+                            (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authenticationPacket);
+                            AuthenticationPacket newPacket = new AuthenticationPacket
+                            {
+                                IsResult = true,
+                                Result = result.Item1,
+                                ExtraAuthenticationData = result.Item2
+                            };
+                            Send(newPacket);
+                        }
+                    });
                     break;
                 case PacketType.ClientToClient:
                     ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
