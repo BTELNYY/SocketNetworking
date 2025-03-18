@@ -1,6 +1,6 @@
-﻿using SocketNetworking.Shared.PacketSystem.Packets;
-using System;
+﻿using System;
 using System.Reflection;
+using SocketNetworking.Shared.PacketSystem.Packets;
 
 namespace SocketNetworking.Shared.Attributes
 {

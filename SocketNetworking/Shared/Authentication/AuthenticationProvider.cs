@@ -19,10 +19,25 @@ namespace SocketNetworking.Shared.Authentication
 
         public NetworkClient Client { get; }
 
+        /// <summary>
+        /// Called on the receiver of the <see cref="BeginAuthentication"/> request. Must return an <see cref="AuthenticationResult"/> as well as extra data, if needed. This method can also be used to authenticate a client with a server side request.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <param name="packet"></param>
+        /// <returns></returns>
         public abstract (AuthenticationResult, byte[]) Authenticate(NetworkHandle handle, AuthenticationPacket packet);
 
-        public abstract void HandleAuthResult(NetworkHandle handle, AuthenticationPacket packet);
+        /// <summary>
+        /// Called to handle the <see cref="AuthenticationResult"/> of the <see cref="Authenticate(NetworkHandle, AuthenticationPacket)"/> method. Also contains extra data, if needed.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <param name="packet"></param>
+        public abstract void HandleAuthenticationResult(NetworkHandle handle, AuthenticationPacket packet);
 
+        /// <summary>
+        /// Called when the <see cref="NetworkClient"/> on the remote or local begins the authentication sequence.
+        /// </summary>
+        /// <returns></returns>
         public abstract AuthenticationPacket BeginAuthentication();
     }
 

@@ -70,6 +70,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Extras\SocketNetworking.Extras.csproj">
+      <Project>{1514e9d0-7f65-4140-97f7-d3b702df7963}</Project>
+      <Name>SocketNetworking.Extras</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SharedData\SocketNetworking.Example.Basics.SharedData.csproj">
       <Project>{8d731ee2-ae7e-48a8-9a26-8f370d9fa1a2}</Project>
       <Name>SocketNetworking.Example.Basics.SharedData</Name>

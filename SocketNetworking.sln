@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unit", "SocketNetworking.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Modding", "SocketNetworking.Modding\SocketNetworking.Modding.csproj", "{F220D225-F930-460C-BD1E-88B57FC43A87}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketNetworking.Extras", "Extras\SocketNetworking.Extras.csproj", "{1514E9D0-7F65-4140-97F7-D3B702DF7963}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -131,6 +133,14 @@ Global
 		{F220D225-F930-460C-BD1E-88B57FC43A87}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F220D225-F930-460C-BD1E-88B57FC43A87}.Release|x64.ActiveCfg = Release|Any CPU
 		{F220D225-F930-460C-BD1E-88B57FC43A87}.Release|x64.Build.0 = Release|Any CPU
+		{1514E9D0-7F65-4140-97F7-D3B702DF7963}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1514E9D0-7F65-4140-97F7-D3B702DF7963}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1514E9D0-7F65-4140-97F7-D3B702DF7963}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1514E9D0-7F65-4140-97F7-D3B702DF7963}.Debug|x64.Build.0 = Debug|Any CPU
+		{1514E9D0-7F65-4140-97F7-D3B702DF7963}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1514E9D0-7F65-4140-97F7-D3B702DF7963}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1514E9D0-7F65-4140-97F7-D3B702DF7963}.Release|x64.ActiveCfg = Release|Any CPU
+		{1514E9D0-7F65-4140-97F7-D3B702DF7963}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -148,6 +158,7 @@ Global
 		{F9767957-1A41-4D74-BE6E-5626FB910D44} = {722A1631-41DA-4FD7-A600-2CDF8081045F}
 		{6E701053-8B43-4D05-8F34-AE9824AB89CE} = {722A1631-41DA-4FD7-A600-2CDF8081045F}
 		{F220D225-F930-460C-BD1E-88B57FC43A87} = {7A370070-17B2-4AAE-B821-B1056741913A}
+		{1514E9D0-7F65-4140-97F7-D3B702DF7963} = {7A370070-17B2-4AAE-B821-B1056741913A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FBF7F5CF-0FE9-44E5-A4AB-BFE26D43DA8A}

@@ -1,10 +1,9 @@
-﻿using SocketNetworking.Client;
-using SocketNetworking.Shared.NetworkObjects;
+﻿using System.Collections.Generic;
+using System.Linq;
+using SocketNetworking.Client;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SocketNetworking.UnityEngine.Components
 {
@@ -13,16 +12,14 @@ namespace SocketNetworking.UnityEngine.Components
         public override bool Spawnable => true;
 
         /// <summary>
-        /// If true, <see cref="INetworkObject.OnSync(Client.NetworkClient)"/> will be used to call <see cref="NetworkObjectExtensions.NetworkSpawn(Shared.NetworkObjects.INetworkObject)"/> to spawn this object on this new client.
+        /// If true, <see cref="INetworkObject.OnSync(Client.NetworkClient)"/> will be used to call <see cref="NetworkObjectExtensions.NetworkSpawn(INetworkObject, Client.NetworkClient)"/> to spawn this object on this new client.
         /// </summary>
-        public bool ObjectAutoSpawn = false;
-
-        public override bool AutoSpawn => ObjectAutoSpawn;
+        public bool AutoSpawn = false;
 
         public override void OnSync(NetworkClient client)
         {
             base.OnSync(client);
-            if (ObjectAutoSpawn)
+            if (AutoSpawn)
             {
                 this.NetworkSpawn(client);
             }

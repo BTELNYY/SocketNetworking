@@ -1,6 +1,6 @@
-﻿using SocketNetworking.Client;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
+using SocketNetworking.Client;
 
 namespace SocketNetworking.Misc
 {

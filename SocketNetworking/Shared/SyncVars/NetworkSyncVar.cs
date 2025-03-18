@@ -1,10 +1,10 @@
-﻿using SocketNetworking.Client;
+﻿using System;
+using System.Collections.Generic;
+using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
-using System;
-using System.Collections.Generic;
 
 namespace SocketNetworking.Shared.SyncVars
 {

@@ -1,5 +1,5 @@
-﻿using SocketNetworking;
-using System;
+﻿using System;
+using SocketNetworking;
 
 namespace BasicChat.Shared
 {

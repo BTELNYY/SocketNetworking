@@ -1,6 +1,6 @@
-﻿using SocketNetworking.Shared.PacketSystem.TypeWrappers;
+﻿using System.Collections.Generic;
+using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
-using System.Collections.Generic;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
 {

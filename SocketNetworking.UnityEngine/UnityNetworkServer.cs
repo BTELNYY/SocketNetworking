@@ -1,6 +1,6 @@
-﻿using SocketNetworking.Server;
+﻿using System;
+using SocketNetworking.Server;
 using SocketNetworking.UnityEngine.Components;
-using System;
 
 namespace SocketNetworking.UnityEngine
 {

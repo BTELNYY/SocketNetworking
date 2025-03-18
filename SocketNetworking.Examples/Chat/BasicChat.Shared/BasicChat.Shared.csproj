@@ -51,6 +51,10 @@
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Extras\SocketNetworking.Extras.csproj">
+      <Project>{1514e9d0-7f65-4140-97f7-d3b702df7963}</Project>
+      <Name>SocketNetworking.Extras</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\SocketNetworking\SocketNetworking.csproj">
       <Project>{ab97887e-ef11-4ce3-83b6-7e91456cf035}</Project>
       <Name>SocketNetworking</Name>
