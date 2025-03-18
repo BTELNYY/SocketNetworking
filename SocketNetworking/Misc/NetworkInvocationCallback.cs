@@ -1,6 +1,6 @@
-﻿using SocketNetworking.Shared;
+﻿using System;
+using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
-using System;
 
 namespace SocketNetworking.Misc
 {

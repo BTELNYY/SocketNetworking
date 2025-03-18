@@ -1,4 +1,11 @@
-﻿using SocketNetworking.Misc;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
+using SocketNetworking.Misc;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
@@ -11,13 +18,6 @@ using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.Streams;
 using SocketNetworking.Shared.Transports;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SocketNetworking.Client
 {
@@ -797,6 +797,10 @@ namespace SocketNetworking.Client
             Log.Prefix = $"[Client {clientId}]";
             Transport = socket;
             _clientLocation = ClientLocation.Remote;
+            if (NetworkServer.Authenticator != null)
+            {
+                AuthenticationProvider = (AuthenticationProvider)Activator.CreateInstance(NetworkServer.Authenticator);
+            }
             ClientConnected += OnRemoteClientConnected;
             ClientConnected?.Invoke();
             ReadyStateChanged += OnReadyStateChanged;
@@ -1526,7 +1530,7 @@ namespace SocketNetworking.Client
                     NetworkHandle handle = new NetworkHandle(this);
                     if (authenticationPacket.IsResult)
                     {
-                        AuthenticationProvider.HandleAuthResult(handle, authenticationPacket);
+                        AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
                         Authenticated = authenticationPacket.Result.Approved;
                     }
                     else
@@ -1536,7 +1540,7 @@ namespace SocketNetworking.Client
                         {
                             IsResult = true,
                             Result = result.Item1,
-                            AuthData = result.Item2
+                            ExtraAuthenticationData = result.Item2
                         };
                         Send(newPacket);
                         Authenticated = newPacket.Result.Approved;
@@ -1805,7 +1809,7 @@ namespace SocketNetworking.Client
                     NetworkHandle handle = new NetworkHandle(this);
                     if (authenticationPacket.IsResult)
                     {
-                        AuthenticationProvider.HandleAuthResult(handle, authenticationPacket);
+                        AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
                     }
                     else
                     {
@@ -1814,7 +1818,7 @@ namespace SocketNetworking.Client
                         {
                             IsResult = true,
                             Result = result.Item1,
-                            AuthData = result.Item2
+                            ExtraAuthenticationData = result.Item2
                         };
                         Send(newPacket);
                     }

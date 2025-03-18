@@ -1,22 +1,44 @@
-﻿using SocketNetworking;
+﻿using System;
+using SocketNetworking;
 using SocketNetworking.Client;
+using SocketNetworking.Extras;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
-using System;
 
 namespace BasicChat.Shared
 {
     public class ChatClient : TcpNetworkClient
     {
-        public string RequestedName;
+        public string RequestedName
+        {
+            get
+            {
+                return _requestedName;
+            }
+            set
+            {
+                _requestedName = value;
+                if (AuthenticationProvider is WindowsCredentialsRequestAuthenticationProvider provider)
+                {
+                    provider.DefaultUsername = value;
+                }
+            }
+        }
+
+        string _requestedName;
 
         public ChatClient()
         {
-            AuthenticationProvider = new ChatAuthProvider(this);
+            WindowsCredentialsRequestAuthenticationProvider authenticationProvider = new WindowsCredentialsRequestAuthenticationProvider(this, true, true);
+            authenticationProvider.Responded += (x) =>
+            {
+                RequestedName = x.Response.Username;
+            };
+            AuthenticationProvider = authenticationProvider;
             AuthenticationStateChanged += () =>
             {
                 if (NetworkManager.WhereAmI == ClientLocation.Remote)

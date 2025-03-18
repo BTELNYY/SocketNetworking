@@ -1,9 +1,9 @@
-﻿using SocketNetworking.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
+using SocketNetworking.Client;
 
 namespace SocketNetworking.Shared
 {

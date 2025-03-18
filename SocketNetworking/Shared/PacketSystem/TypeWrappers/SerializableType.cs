@@ -1,7 +1,7 @@
-﻿using SocketNetworking.Shared.Attributes;
-using SocketNetworking.Shared.Serialization;
-using System;
+﻿using System;
 using System.Reflection;
+using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 {

@@ -1,11 +1,11 @@
-﻿using BasicChat.Shared;
+﻿using System;
+using System.Threading;
+using BasicChat.Shared;
 using SocketNetworking;
 using SocketNetworking.Client;
 using SocketNetworking.Misc.Console;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
-using System;
-using System.Threading;
 
 namespace BasicChat.Client
 {

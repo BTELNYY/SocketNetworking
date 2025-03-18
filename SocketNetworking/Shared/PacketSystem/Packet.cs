@@ -1,8 +1,8 @@
-﻿using SocketNetworking.Shared.Exceptions;
+﻿using System;
+using System.Net;
+using SocketNetworking.Shared.Exceptions;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
-using System;
-using System.Net;
 
 namespace SocketNetworking.Shared.PacketSystem
 {
