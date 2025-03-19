@@ -158,6 +158,7 @@ namespace SocketNetworking.Shared
                     CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write);
                     cryptoStream.Write(data, 0, data.Length);
                     cryptoStream.FlushFinalBlock();
+                    cryptoStream.Close();
                     return stream.ToArray();
                 }
                 else
@@ -217,6 +218,7 @@ namespace SocketNetworking.Shared
                     CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write);
                     cryptoStream.Write(data, 0, data.Length);
                     cryptoStream.FlushFinalBlock();
+                    cryptoStream.Close();
                     return stream.ToArray();
                 }
                 else

@@ -1324,6 +1324,7 @@ namespace SocketNetworking.Client
             byte[] packetBytes = packet.Serialize().Data;
             byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
             byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
+            Log.Debug($"(SEND) Header: {packetHeaderBytes.Length}, Body: {packetDataBytes.Length}");
             //StringBuilder hex = new StringBuilder(packetBytes.Length * 2);
             //Log.Debug("Raw Serialized Packet: \n" + hex.ToString());
             if (packet.Flags.HasFlag(PacketFlags.Compressed))
@@ -1500,6 +1501,7 @@ namespace SocketNetworking.Client
             {
                 Log.Warning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
             }
+            Log.Debug($"(RECEIVE) Header Bytes: {headerBytes.Length}, Body: {packetBytes.Length.ToString()}");
             fullPacket = headerBytes.Concat(packetBytes).ToArray();
             //StringBuilder hex1 = new StringBuilder(fullPacket.Length * 2);
             //Log.Debug("Raw Deserialized Packet: \n" + hex1.ToString());

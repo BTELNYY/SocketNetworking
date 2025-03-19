@@ -32,7 +32,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             SerializableList<SerializedData> list = new SerializableList<SerializedData>();
             list.OverwriteContained(Arguments);
             writer.WritePacketSerialized<SerializableList<SerializedData>>(list);
-            Log.GlobalDebug(ToString());
+            //Log.GlobalDebug(ToString());
             return writer;
         }
 
