@@ -1128,9 +1128,9 @@ namespace SocketNetworking.Shared
             OnNetworkInvocationResult?.Invoke(packet);
         }
 
-        internal static object NetworkInvoke(NetworkInvokationPacket packet, NetworkClient Receiver)
+        internal static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient Receiver)
         {
-            Assembly assembly = Assembly.Load(packet.TargetTypeAssmebly);
+            Assembly assembly = Assembly.Load(packet.TargetTypeAssembly);
             Type targetType = assembly.GetType(packet.TargetType);
             if (targetType == null)
             {
@@ -1263,7 +1263,7 @@ namespace SocketNetworking.Shared
         /// </param>
         /// <exception cref="NetworkInvocationException"></exception>
         /// <exception cref="SecurityException"></exception>
-        public static NetworkInvokationPacket NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args, bool priority = false, bool ignoreResult = true)
+        public static NetworkInvocationPacket NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args, bool priority = false, bool ignoreResult = true)
         {
             if (target == null)
             {
@@ -1323,8 +1323,8 @@ namespace SocketNetworking.Shared
                     }
                 }
             }
-            NetworkInvokationPacket packet = new NetworkInvokationPacket();
-            packet.TargetTypeAssmebly = Assembly.GetAssembly(target.GetType()).GetName().FullName;
+            NetworkInvocationPacket packet = new NetworkInvocationPacket();
+            packet.TargetTypeAssembly = Assembly.GetAssembly(target.GetType()).GetName().FullName;
             packet.NetworkIDTarget = targetID;
             packet.MethodName = methodName;
             foreach (object arg in args)
@@ -1343,13 +1343,13 @@ namespace SocketNetworking.Shared
 
         public static NetworkInvocationCallback<T> NetworkInvoke<T>(object target, NetworkClient sender, string methodName, object[] args, bool priority = false)
         {
-            NetworkInvokationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
+            NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
             return new NetworkInvocationCallback<T>(packet.CallbackID);
         }
 
         public static T NetworkInvokeBlocking<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000, bool priority = false)
         {
-            NetworkInvokationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
+            NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
             MethodInfo method = target.GetType().GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault(x => x.Name == methodName);
             if (method != null && method.ReturnType == typeof(void))
             {

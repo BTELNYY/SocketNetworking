@@ -51,7 +51,7 @@ namespace SocketNetworking.Shared.Authentication
             }
             set
             {
-                if(value)
+                if (value)
                 {
                     State = AuthenticationResultState.Approved;
                 }

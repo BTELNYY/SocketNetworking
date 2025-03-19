@@ -1532,7 +1532,7 @@ namespace SocketNetworking.Client
                 case PacketType.Authentication:
                     AuthenticationPacket authenticationPacket = new AuthenticationPacket();
                     authenticationPacket.Deserialize(data);
-                    _ = Task.Run(() => 
+                    _ = Task.Run(() =>
                     {
                         if (AuthenticationProvider == null)
                         {
@@ -1714,7 +1714,7 @@ namespace SocketNetworking.Client
                     ClientIdUpdated?.Invoke();
                     break;
                 case PacketType.NetworkInvocation:
-                    NetworkInvokationPacket networkInvocationPacket = new NetworkInvokationPacket();
+                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
                     networkInvocationPacket.Deserialize(data);
                     //Log.Debug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
@@ -1814,7 +1814,7 @@ namespace SocketNetworking.Client
                 case PacketType.Authentication:
                     AuthenticationPacket authenticationPacket = new AuthenticationPacket();
                     authenticationPacket.Deserialize(data);
-                    _ = Task.Run(() => 
+                    _ = Task.Run(() =>
                     {
                         if (AuthenticationProvider == null)
                         {
@@ -2003,7 +2003,7 @@ namespace SocketNetworking.Client
                     ConnectionStateUpdated?.Invoke(_connectionState);
                     break;
                 case PacketType.NetworkInvocation:
-                    NetworkInvokationPacket networkInvocationPacket = new NetworkInvokationPacket();
+                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
                     networkInvocationPacket.Deserialize(data);
                     //Log.Debug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
@@ -2202,11 +2202,11 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if(AutoSync)
+            if (AutoSync)
             {
                 ServerBeginSync();
             }
-            if(AutoAssignAvatar)
+            if (AutoAssignAvatar)
             {
                 ServerAutoSpecifyAvatar();
             }

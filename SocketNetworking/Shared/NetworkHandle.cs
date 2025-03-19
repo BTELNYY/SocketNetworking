@@ -14,7 +14,7 @@ namespace SocketNetworking.Shared
         {
             Client = client ?? throw new ArgumentNullException(nameof(client));
             InvocationPacket = invocationPacket ?? throw new ArgumentNullException(nameof(invocationPacket));
-            if (invocationPacket is NetworkInvokationPacket packet)
+            if (invocationPacket is NetworkInvocationPacket packet)
             {
                 InvocationMode = InvocationMode.RemoteProcedureCall;
             }

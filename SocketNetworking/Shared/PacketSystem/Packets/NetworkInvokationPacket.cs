@@ -5,11 +5,11 @@ using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
 {
-    public sealed class NetworkInvokationPacket : TargetedPacket
+    public sealed class NetworkInvocationPacket : TargetedPacket
     {
         public override PacketType Type => PacketType.NetworkInvocation;
 
-        public string TargetTypeAssmebly { get; set; } = string.Empty;
+        public string TargetTypeAssembly { get; set; } = string.Empty;
 
         public string TargetType { get; set; } = string.Empty;
 
@@ -24,7 +24,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
-            writer.WriteString(TargetTypeAssmebly);
+            writer.WriteString(TargetTypeAssembly);
             writer.WriteString(TargetType);
             writer.WriteString(MethodName);
             writer.WriteInt(CallbackID);
@@ -39,7 +39,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         public override ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = base.Deserialize(data);
-            TargetTypeAssmebly = reader.ReadString();
+            TargetTypeAssembly = reader.ReadString();
             TargetType = reader.ReadString();
             MethodName = reader.ReadString();
             CallbackID = reader.ReadInt();
@@ -50,7 +50,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public override string ToString()
         {
-            return base.ToString() + $" TargetTypeAssembly: {TargetTypeAssmebly}, TargetType: {TargetType}, MethodName: {MethodName}, CallbackID: {CallbackID}, IgnoreResult: {IgnoreResult}, Arguments: {string.Join(",", Arguments.Select(x => x.Type))}";
+            return base.ToString() + $" TargetTypeAssembly: {TargetTypeAssembly}, TargetType: {TargetType}, MethodName: {MethodName}, CallbackID: {CallbackID}, IgnoreResult: {IgnoreResult}, Arguments: {string.Join(",", Arguments.Select(x => x.Type))}";
         }
     }
 }
