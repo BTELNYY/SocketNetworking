@@ -9,8 +9,9 @@ namespace SocketNetworking.Shared
 {
     public class NetworkEncryption
     {
-        public NetworkClient Client { get; }
+        object _lock = new object();
 
+        public NetworkClient Client { get; }
 
         public const int KEY_SIZE = 2048;
 
@@ -26,21 +27,27 @@ namespace SocketNetworking.Shared
 
         public void RegisterRSA(IPEndPoint endPoint, string publicKey)
         {
-            if (OthersRSAKeys.ContainsKey(endPoint))
+            lock (_lock)
             {
-                OthersRSAKeys[endPoint] = publicKey;
-            }
-            else
-            {
-                OthersRSAKeys.Add(endPoint, publicKey);
+                if (OthersRSAKeys.ContainsKey(endPoint))
+                {
+                    OthersRSAKeys[endPoint] = publicKey;
+                }
+                else
+                {
+                    OthersRSAKeys.Add(endPoint, publicKey);
+                }
             }
         }
 
         public void RemoveRSA(IPEndPoint endPoint)
         {
-            if (OthersRSAKeys.ContainsKey(endPoint))
+            lock (_lock)
             {
-                OthersRSAKeys.Remove(endPoint);
+                if (OthersRSAKeys.ContainsKey(endPoint))
+                {
+                    OthersRSAKeys.Remove(endPoint);
+                }
             }
         }
 
@@ -49,21 +56,27 @@ namespace SocketNetworking.Shared
 
         public void RegisterAes(IPEndPoint endPoint, Tuple<byte[], byte[]> keyAndIV)
         {
-            if (OthersAesKeys.ContainsKey(endPoint))
+            lock (_lock)
             {
-                OthersAesKeys[endPoint] = keyAndIV;
-            }
-            else
-            {
-                OthersAesKeys.Add(endPoint, keyAndIV);
+                if (OthersAesKeys.ContainsKey(endPoint))
+                {
+                    OthersAesKeys[endPoint] = keyAndIV;
+                }
+                else
+                {
+                    OthersAesKeys.Add(endPoint, keyAndIV);
+                }
             }
         }
 
         public void RemoveAex(IPEndPoint endPoint)
         {
-            if (OthersAesKeys.ContainsKey(endPoint))
+            lock (_lock)
             {
-                OthersAesKeys.Remove(endPoint);
+                if (OthersAesKeys.ContainsKey(endPoint))
+                {
+                    OthersAesKeys.Remove(endPoint);
+                }
             }
         }
 
@@ -84,10 +97,13 @@ namespace SocketNetworking.Shared
             }
             set
             {
-                SharedAes = new AesCryptoServiceProvider();
-                SharedAes.Padding = PaddingMode.PKCS7;
-                SharedAes.Key = value.Item1;
-                SharedAes.IV = value.Item2;
+                lock (_lock)
+                {
+                    SharedAes = new AesCryptoServiceProvider();
+                    SharedAes.Padding = PaddingMode.PKCS7;
+                    SharedAes.Key = value.Item1;
+                    SharedAes.IV = value.Item2;
+                }
             }
         }
 
@@ -99,7 +115,10 @@ namespace SocketNetworking.Shared
             }
             set
             {
-                OthersRSA.FromXmlString(value);
+                lock (_lock)
+                {
+                    OthersRSA.FromXmlString(value);
+                }
             }
         }
 
@@ -127,51 +146,57 @@ namespace SocketNetworking.Shared
 
         public byte[] Encrypt(IPEndPoint to, byte[] data, bool useSymmetry = true, bool useMyKey = false)
         {
-            if (useSymmetry)
+            lock (_lock)
             {
-                Aes aes = new AesCryptoServiceProvider();
-                aes.Padding = PaddingMode.PKCS7;
-                aes.Key = OthersAesKeys[to].Item1;
-                aes.IV = OthersAesKeys[to].Item2;
-                MemoryStream stream = new MemoryStream(data);
-                CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write);
-                cryptoStream.Write(data, 0, data.Length);
-                cryptoStream.FlushFinalBlock();
-                return stream.ToArray();
-            }
-            else
-            {
-                if (useMyKey)
+                if (useSymmetry)
                 {
-                    return MyRSA.Encrypt(data, false);
+                    Aes aes = new AesCryptoServiceProvider();
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.Key = OthersAesKeys[to].Item1;
+                    aes.IV = OthersAesKeys[to].Item2;
+                    MemoryStream stream = new MemoryStream(data);
+                    CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write);
+                    cryptoStream.Write(data, 0, data.Length);
+                    cryptoStream.FlushFinalBlock();
+                    return stream.ToArray();
                 }
-                RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(KEY_SIZE);
-                rsa.FromXmlString(OthersRSAKeys[to]);
-                return rsa.Encrypt(data, false);
+                else
+                {
+                    if (useMyKey)
+                    {
+                        return MyRSA.Encrypt(data, false);
+                    }
+                    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(KEY_SIZE);
+                    rsa.FromXmlString(OthersRSAKeys[to]);
+                    return rsa.Encrypt(data, false);
+                }
             }
         }
 
         public byte[] Decrypt(IPEndPoint from, byte[] data, bool useSymmetry = true)
         {
-            if (useSymmetry)
+            lock (_lock)
             {
-                Aes aes = new AesCryptoServiceProvider();
-                aes.Padding = PaddingMode.PKCS7;
-                aes.Key = OthersAesKeys[from].Item1;
-                aes.IV = OthersAesKeys[from].Item2;
-                MemoryStream stream = new MemoryStream(data);
-                using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Write))
+                if (useSymmetry)
                 {
-                    cryptoStream.Write(data, 0, data.Length);
+                    Aes aes = new AesCryptoServiceProvider();
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.Key = OthersAesKeys[from].Item1;
+                    aes.IV = OthersAesKeys[from].Item2;
+                    MemoryStream stream = new MemoryStream(data);
+                    using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(data, 0, data.Length);
+                    }
+                    byte[] outputBytes = stream.ToArray();
+                    return outputBytes;
                 }
-                byte[] outputBytes = stream.ToArray();
-                return outputBytes;
-            }
-            else
-            {
-                RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(KEY_SIZE);
-                rsa.FromXmlString(OthersRSAKeys[from]);
-                return rsa.Decrypt(data, false);
+                else
+                {
+                    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(KEY_SIZE);
+                    rsa.FromXmlString(OthersRSAKeys[from]);
+                    return rsa.Decrypt(data, false);
+                }
             }
         }
 
@@ -183,41 +208,47 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public byte[] Encrypt(byte[] data, bool useSymmetry = true, bool useMyKey = false)
         {
-            if (useSymmetry)
+            lock (_lock)
             {
-                MemoryStream stream = new MemoryStream();
-                SharedAes.Padding = PaddingMode.PKCS7;
-                CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write);
-                cryptoStream.Write(data, 0, data.Length);
-                cryptoStream.FlushFinalBlock();
-                return stream.ToArray();
-            }
-            else
-            {
-                if (useMyKey)
+                if (useSymmetry)
                 {
-                    return MyRSA.Encrypt(data, false);
+                    MemoryStream stream = new MemoryStream();
+                    SharedAes.Padding = PaddingMode.PKCS7;
+                    CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write);
+                    cryptoStream.Write(data, 0, data.Length);
+                    cryptoStream.FlushFinalBlock();
+                    return stream.ToArray();
                 }
-                return OthersRSA.Encrypt(data, false);
+                else
+                {
+                    if (useMyKey)
+                    {
+                        return MyRSA.Encrypt(data, false);
+                    }
+                    return OthersRSA.Encrypt(data, false);
+                }
             }
         }
 
         public byte[] Decrypt(byte[] data, bool useSymmetry = true)
         {
-            if (useSymmetry)
+            lock (_lock)
             {
-                MemoryStream stream = new MemoryStream();
-                SharedAes.Padding = PaddingMode.PKCS7;
-                using (CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateDecryptor(), CryptoStreamMode.Write))
+                if (useSymmetry)
                 {
-                    cryptoStream.Write(data, 0, data.Length);
+                    MemoryStream stream = new MemoryStream();
+                    SharedAes.Padding = PaddingMode.PKCS7;
+                    using (CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateDecryptor(), CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(data, 0, data.Length);
+                    }
+                    byte[] outputBytes = stream.ToArray();
+                    return outputBytes;
                 }
-                byte[] outputBytes = stream.ToArray();
-                return outputBytes;
-            }
-            else
-            {
-                return MyRSA.Decrypt(data, false);
+                else
+                {
+                    return MyRSA.Decrypt(data, false);
+                }
             }
         }
     }

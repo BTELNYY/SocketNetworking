@@ -44,15 +44,18 @@ namespace BasicChat.Shared
             AuthenticationProvider = authenticationProvider;
             AuthenticationStateChanged += () =>
             {
-                if (NetworkManager.WhereAmI == ClientLocation.Remote)
+                if (Authenticated)
                 {
-                    ServerSendMessage(new Message()
+                    if (NetworkManager.WhereAmI == ClientLocation.Remote)
                     {
-                        Target = 0,
-                        Sender = 0,
-                        Color = ConsoleColor.Magenta,
-                        Content = Config.MOTD,
-                    });
+                        ServerSendMessage(new Message()
+                        {
+                            Target = 0,
+                            Sender = 0,
+                            Color = ConsoleColor.Magenta,
+                            Content = Config.MOTD,
+                        });
+                    }
                 }
             };
         }

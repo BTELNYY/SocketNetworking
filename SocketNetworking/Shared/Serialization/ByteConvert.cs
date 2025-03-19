@@ -207,7 +207,7 @@ namespace SocketNetworking.Shared.Serialization
                 return sData;
             }
 
-            throw new NetworkSerializationException($"Type '{data.GetType().FullName}' cannot be serialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
+            throw new NetworkConversionException($"Type '{data.GetType().FullName}' cannot be serialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
         }
 
         public static T DeserializeRaw<T>(byte[] data)
@@ -378,7 +378,7 @@ namespace SocketNetworking.Shared.Serialization
                 return Convert.ChangeType(value, data.Type);
             }
 
-            throw new NetworkSerializationException($"Type '{data.Type.FullName}' cannot be deserialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
+            throw new NetworkConversionException($"Type '{data.Type.FullName}' cannot be deserialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
         }
 
         public static T Deserialize<T>(SerializedData data, out int read)

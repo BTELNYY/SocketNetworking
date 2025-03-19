@@ -210,14 +210,9 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                byte[] bytes = Encoding.UTF8.GetBytes(data);
-                int curLength = _workingSetData.Length;
-                WriteInt(bytes.Length);
-                if (curLength + 4 > _workingSetData.Length)
-                {
-                    Log.GlobalWarning("WriteInt failed!");
-                }
-                _workingSetData = _workingSetData.Concat(bytes).ToArray();
+                data = data.Trim('\0');
+                byte[] bytes = Encoding.Unicode.GetBytes(data);
+                WriteByteArray(bytes);
             }
         }
 

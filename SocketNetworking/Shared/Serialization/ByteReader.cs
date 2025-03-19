@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -293,16 +294,9 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                int lenghtOfString = ReadInt();
-                int expectedBytes = _workingSetData.Length - lenghtOfString;
-                byte[] stringArray = _workingSetData.Take(lenghtOfString).ToArray();
-                Remove(stringArray.Length);
-                string result = Encoding.UTF8.GetString(stringArray, 0, stringArray.Length);
-                if (_workingSetData.Length != expectedBytes)
-                {
-                    throw new InvalidOperationException($"StringReader stole more bytes then it should have! Expected: {expectedBytes}, Actual: {_workingSetData.Length}, Read Length: {lenghtOfString}");
-                }
-                return result;
+                byte[] stringBuff = ReadByteArray();
+                List<char> cChars = Encoding.Unicode.GetChars(stringBuff).ToList();
+                return new string(cChars.ToArray());
             }
         }
 

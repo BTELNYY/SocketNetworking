@@ -73,7 +73,7 @@
     <Compile Include="Misc\CallbackTimer.cs" />
     <Compile Include="Shared\Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Shared\Exceptions\NetworkInvocationException.cs" />
-    <Compile Include="Shared\Exceptions\NetworkSerializationException.cs" />
+    <Compile Include="Shared\Exceptions\NetworkConversionException.cs" />
     <Compile Include="Misc\ChoiceEvent.cs" />
     <Compile Include="Misc\ClientHandler.cs" />
     <Compile Include="Misc\Console\FancyConsole.cs" />
