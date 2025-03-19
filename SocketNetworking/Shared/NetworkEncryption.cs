@@ -155,10 +155,10 @@ namespace SocketNetworking.Shared
                     aes.Key = OthersAesKeys[to].Item1;
                     aes.IV = OthersAesKeys[to].Item2;
                     MemoryStream stream = new MemoryStream(data);
-                    CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write);
-                    cryptoStream.Write(data, 0, data.Length);
-                    cryptoStream.FlushFinalBlock();
-                    cryptoStream.Close();
+                    using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(data, 0, data.Length);
+                    }
                     return stream.ToArray();
                 }
                 else
@@ -215,10 +215,10 @@ namespace SocketNetworking.Shared
                 {
                     MemoryStream stream = new MemoryStream();
                     SharedAes.Padding = PaddingMode.PKCS7;
-                    CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write);
-                    cryptoStream.Write(data, 0, data.Length);
-                    cryptoStream.FlushFinalBlock();
-                    cryptoStream.Close();
+                    using (CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(data, 0, data.Length);
+                    }
                     return stream.ToArray();
                 }
                 else
