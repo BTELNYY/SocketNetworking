@@ -392,19 +392,12 @@ namespace SocketNetworking.Client
                     throw new InvalidOperationException("Can't change authentication state on the client!");
                 }
                 _authenticated = value;
-                NetworkInvoke(nameof(ClientGetAuthenticatedState), new object[] { value });
+                AuthenticationStateUpdate authenticationStateUpdate = new AuthenticationStateUpdate();
+                authenticationStateUpdate.State = value;
+                Send(authenticationStateUpdate);
                 AuthenticationStateChanged?.Invoke();
             }
         }
-
-        [NetworkInvokable(NetworkDirection.Server)]
-        private void ClientGetAuthenticatedState(NetworkHandle handle, bool state)
-        {
-            Log.Info("Authentication has been successful.");
-            _authenticated = state;
-            AuthenticationStateChanged?.Invoke();
-        }
-
 
         private bool _ready = false;
 
@@ -1477,7 +1470,8 @@ namespace SocketNetworking.Client
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning($"Packet Error! Error Count: {i}, \nMessage: {ex}");
+                    PacketHeader header = Packet.ReadPacketHeader(fullPacket);
+                    Log.Warning($"Packet Error! Error Count: {i}\n Header: {header}\nMessage: {ex}");
                     continue;
                 }
             }
@@ -1843,6 +1837,11 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.AuthenticationStateUpdate:
+                    AuthenticationStateUpdate authenticationStateUpdate = new AuthenticationStateUpdate();
+                    authenticationStateUpdate.Deserialize(data);
+                    _authenticated = authenticationStateUpdate.State;
+                    break;
                 case PacketType.Authentication:
                     AuthenticationPacket authenticationPacket = new AuthenticationPacket();
                     authenticationPacket.Deserialize(data);

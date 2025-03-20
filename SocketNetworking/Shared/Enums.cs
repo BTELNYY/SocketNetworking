@@ -19,6 +19,7 @@ namespace SocketNetworking.Shared
     {
         None,
         ReadyStateUpdate,
+        AuthenticationStateUpdate,
         ConnectionStateUpdate,
         ClientData,
         ServerData,

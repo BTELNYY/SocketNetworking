@@ -81,6 +81,7 @@
     <Compile Include="Misc\ObjectPool.cs" />
     <Compile Include="NetworkObjectExtensions.cs" />
     <Compile Include="Shared\PacketSystem\Packets\AuthenticationPacket.cs" />
+    <Compile Include="Shared\PacketSystem\Packets\AuthenticationStateUpdate.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ClientToClientPacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\KeepAlivePacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ObjectManagePacket.cs" />
