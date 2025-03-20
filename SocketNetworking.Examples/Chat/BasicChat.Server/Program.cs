@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using BasicChat.Shared;
 using SocketNetworking;
 using SocketNetworking.Server;
@@ -14,6 +15,9 @@ namespace BasicChat.Server
         {
             Log.OnLog += Logger.HandleNetworkLog;
             Log.Levels = Log.FULL_LOG;
+
+            Thread.Sleep(500); 
+
             AppDomain.CurrentDomain.ProcessExit += (sender, evtArgs) =>
             {
                 NetworkServer.ServerInstance.StopServer();

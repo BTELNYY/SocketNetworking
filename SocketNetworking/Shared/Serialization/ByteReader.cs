@@ -295,7 +295,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] stringBuff = ReadByteArray();
-                List<char> cChars = Encoding.Unicode.GetChars(stringBuff).ToList();
+                List<char> cChars = Encoding.UTF32.GetChars(stringBuff).ToList();
                 return new string(cChars.ToArray());
             }
         }

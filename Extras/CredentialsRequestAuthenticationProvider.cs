@@ -43,8 +43,8 @@ namespace SocketNetworking.Extras
         {
             ByteReader reader = new ByteReader(packet.ExtraAuthenticationData);
             AuthenticationRequest request = reader.ReadPacketSerialized<AuthenticationRequest>();
-            string username = null;
-            string password = null;
+            string username = "";
+            string password = "";
             string message = Message;
             string caption = Caption.Replace("{hostname}", handle.Client.ConnectedHostname + ":" + handle.Client.ConnectedPort);
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

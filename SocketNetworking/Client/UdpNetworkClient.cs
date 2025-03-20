@@ -100,7 +100,7 @@ namespace SocketNetworking.Client
             }
             try
             {
-                Deserialize(packet.Item1, packet.Item3);
+                DeserializeRetry(packet.Item1, packet.Item3);
             }
             catch (Exception ex)
             {

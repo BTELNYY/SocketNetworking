@@ -26,6 +26,8 @@ namespace BasicChat.Client
             Log.OnLog += Logger.HandleNetworkLog;
             Log.Levels = Log.FULL_LOG;
 
+            Thread.Sleep(500);
+
             NetworkManager.ImportAssmebly(Utility.GetAssembly());
             reader = new Thread(HandleInput);
 

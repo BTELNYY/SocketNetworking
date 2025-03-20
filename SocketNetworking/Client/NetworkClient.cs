@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.Misc;
@@ -209,6 +210,11 @@ namespace SocketNetworking.Client
         #region Properties
 
         /// <summary>
+        /// Amount of times a packet will be attempted to be deserialized.
+        /// </summary>
+        public uint MaxPacketDeserializationRetries { get; set; } = 3;
+
+        /// <summary>
         /// When true, the defined <see cref="INetworkAvatar"/> will be given to the user.
         /// </summary>
         public bool AutoAssignAvatar { get; set; } = true;
@@ -385,8 +391,8 @@ namespace SocketNetworking.Client
                 {
                     throw new InvalidOperationException("Can't change authentication state on the client!");
                 }
-                NetworkInvoke(nameof(ClientGetAuthenticatedState), new object[] { value });
                 _authenticated = value;
+                NetworkInvoke(nameof(ClientGetAuthenticatedState), new object[] { value });
                 AuthenticationStateChanged?.Invoke();
             }
         }
@@ -1324,7 +1330,6 @@ namespace SocketNetworking.Client
             byte[] packetBytes = packet.Serialize().Data;
             byte[] packetHeaderBytes = packetBytes.Take(PacketHeader.HeaderLength - 4).ToArray();
             byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
-            Log.Debug($"(SEND) Header: {packetHeaderBytes.Length}, Body: {packetDataBytes.Length}");
             //StringBuilder hex = new StringBuilder(packetBytes.Length * 2);
             //Log.Debug("Raw Serialized Packet: \n" + hex.ToString());
             if (packet.Flags.HasFlag(PacketFlags.Compressed))
@@ -1367,6 +1372,10 @@ namespace SocketNetworking.Client
             ByteWriter writer = new ByteWriter();
             byte[] packetFull = packetHeaderBytes.Concat(packetDataBytes).ToArray();
             //Log.Debug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
+            if (packet.Type == PacketType.NetworkInvocation)
+            {
+                //Log.Debug(packetFull.GetHashSHA1());
+            }
             writer.WriteInt(packetFull.Length);
             writer.Write(packetFull);
             int written = writer.Length;
@@ -1449,11 +1458,28 @@ namespace SocketNetworking.Client
             }
             try
             {
-                Deserialize(packet.Item1, packet.Item3);
+                DeserializeRetry(packet.Item1, packet.Item3);
             }
             catch (Exception ex)
             {
                 Log.Warning($"Malformed Packet. Header: {Packet.ReadPacketHeader(packet.Item1)}, Error: {ex}");
+            }
+        }
+
+        protected virtual void DeserializeRetry(byte[] fullPacket, IPEndPoint endPoint)
+        {
+            for (int i = 0; i < MaxPacketDeserializationRetries; i++)
+            {
+                try
+                {
+                    Deserialize(fullPacket, endPoint);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning($"Packet Error! Error Count: {i}, \nMessage: {ex}");
+                    continue;
+                }
             }
         }
 
@@ -1472,6 +1498,10 @@ namespace SocketNetworking.Client
             byte[] rawPacket = fullPacket;
             byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
             byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
+            if(header.Type == PacketType.NetworkInvocation)
+            {
+                //Log.Debug(rawPacket.GetHashSHA1());
+            }
             int currentEncryptionState = (int)EncryptionState;
             if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
             {
@@ -1501,7 +1531,7 @@ namespace SocketNetworking.Client
             {
                 Log.Warning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
             }
-            Log.Debug($"(RECEIVE) Header Bytes: {headerBytes.Length}, Body: {packetBytes.Length.ToString()}");
+            //Log.Debug($"(RECEIVE) Header Bytes: {headerBytes.Length}, Body: {packetBytes.Length.ToString()}");
             fullPacket = headerBytes.Concat(packetBytes).ToArray();
             //StringBuilder hex1 = new StringBuilder(fullPacket.Length * 2);
             //Log.Debug("Raw Deserialized Packet: \n" + hex1.ToString());
