@@ -106,7 +106,7 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                _workingSetData = _workingSetData.Concat(data).ToArray();
+                _workingSetData = _workingSetData.FastConcat(data).ToArray();
             }
         }
 
@@ -115,7 +115,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 WriteInt(data.Length);
-                _workingSetData = _workingSetData.Concat(data).ToArray();
+                _workingSetData = _workingSetData.FastConcat(data).ToArray();
             }
         }
 
@@ -141,7 +141,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
-                _workingSetData = _workingSetData.Concat(result).ToArray();
+                _workingSetData = _workingSetData.FastConcat(result).ToArray();
             }
         }
 
@@ -151,7 +151,7 @@ namespace SocketNetworking.Shared.Serialization
             {
                 int network = IPAddress.HostToNetworkOrder(data);
                 byte[] result = BitConverter.GetBytes(network);
-                _workingSetData = _workingSetData.Concat(result).ToArray();
+                _workingSetData = _workingSetData.FastConcat(result).ToArray();
             }
         }
 
@@ -160,7 +160,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
-                _workingSetData = _workingSetData.Concat(result).ToArray();
+                _workingSetData = _workingSetData.FastConcat(result).ToArray();
             }
         }
 
@@ -169,7 +169,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((long)data));
-                _workingSetData = _workingSetData.Concat(result).ToArray();
+                _workingSetData = _workingSetData.FastConcat(result).ToArray();
             }
         }
 
@@ -178,7 +178,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((int)data));
-                _workingSetData = _workingSetData.Concat(result).ToArray();
+                _workingSetData = _workingSetData.FastConcat(result).ToArray();
             }
         }
 
@@ -187,7 +187,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)data));
-                _workingSetData = _workingSetData.Concat(result).ToArray();
+                _workingSetData = _workingSetData.FastConcat(result).ToArray();
             }
         }
 
@@ -196,7 +196,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(data);
-                _workingSetData = _workingSetData.Concat(result).ToArray();
+                _workingSetData = _workingSetData.FastConcat(result).ToArray();
             }
         }
 
@@ -205,7 +205,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(data);
-                _workingSetData = _workingSetData.Concat(result).ToArray();
+                _workingSetData = _workingSetData.FastConcat(result).ToArray();
             }
         }
 
@@ -223,7 +223,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(data);
-                _workingSetData = _workingSetData.Concat(result).ToArray();
+                _workingSetData = _workingSetData.FastConcat(result).ToArray();
             }
         }
     }

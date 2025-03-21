@@ -102,7 +102,6 @@ namespace SocketNetworking.Shared.Serialization
                 {
                     SerializedData data = ReadPacketSerialized<SerializedData>();
                     object obj = ByteConvert.Deserialize(data, out int read);
-                    Remove(read);
                     return (T)obj;
                 }
                 catch

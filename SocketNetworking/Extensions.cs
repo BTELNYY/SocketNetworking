@@ -60,6 +60,14 @@ namespace SocketNetworking
             }
         }
 
+        public static T[] FastConcat<T>(this T[] first, T[] second)
+        {
+            T[] result = new T[first.Length + second.Length];
+            Array.Copy(first, result, first.Length);
+            Array.Copy(second, 0, result, first.Length, second.Length);
+            return result;
+        }
+
         /// <summary>
         /// Appends all elements of the value array to the target.
         /// </summary>
