@@ -63,18 +63,11 @@ namespace BasicChat.Client
                 Console.ReadKey();
                 Environment.Exit(0);
             };
-            client.ReadyStateChanged += (old, @new) =>
-            {
-                if (@new)
-                {
-                    Program.reader.Start();
-                }
-            };
             client.AvatarChanged += (avatar) =>
             {
                 if (avatar is ChatAvatar chatAvatar)
                 {
-                    //chatAvatar.ClientSetName(Name);
+                    reader.Start();
                 }
             };
             client.MessageReceived += (handle, message) =>
@@ -117,16 +110,16 @@ namespace BasicChat.Client
         static void HandleInput()
         {
             string cursor = "> ";
-            while (NetworkClient.LocalClient.IsConnected)
+            while (NetworkClient.LocalClient.IsConnected && NetworkClient.LocalClient.Avatar != null)
             {
+                ChatAvatar avatar = NetworkClient.LocalClient.Avatar as ChatAvatar;
+                if (avatar.Name != default)
+                {
+                    cursor = $"{avatar.Name}@{NetworkClient.LocalClient.ConnectedHostname}> ";
+                }
                 string input = FancyConsole.ReadLine(cursor);
                 ChatClient client = NetworkClient.LocalClient as ChatClient;
                 client.ClientSendMessage(input);
-                if (NetworkClient.LocalClient.Avatar != null)
-                {
-                    ChatAvatar avatar = NetworkClient.LocalClient.Avatar as ChatAvatar;
-                    cursor = $"{avatar.Name}@{NetworkClient.LocalClient.ConnectedHostname}> ";
-                }
             }
         }
     }

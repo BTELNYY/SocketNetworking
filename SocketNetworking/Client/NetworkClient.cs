@@ -1835,6 +1835,7 @@ namespace SocketNetworking.Client
                     AuthenticationStateUpdate authenticationStateUpdate = new AuthenticationStateUpdate();
                     authenticationStateUpdate.Deserialize(data);
                     _authenticated = authenticationStateUpdate.State;
+                    AuthenticationStateChanged?.Invoke();
                     break;
                 case PacketType.Authentication:
                     AuthenticationPacket authenticationPacket = new AuthenticationPacket();
