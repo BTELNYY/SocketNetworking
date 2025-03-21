@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.Misc;
@@ -1297,22 +1296,22 @@ namespace SocketNetworking.Client
         protected virtual byte[] SerializePacket(Packet packet)
         {
             int currentEncryptionState = (int)EncryptionState;
-            if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
+            if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady && !packet.Flags.HasFlag(PacketFlags.NoAES))
             {
                 //Log.Debug("Encrypting using SYMMETRICAL");
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymmetricalEncrypted, true);
             }
-            else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
+            else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady && !packet.Flags.HasFlag(PacketFlags.NoRSA))
             {
                 //Log.Debug("Encrypting using ASYMMETRICAL");
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymetricalEncrypted, true);
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, true);
             }
             else
             {
                 //Ensure the packet isn't encrypted if we don't support it.
                 //Log.Debug("Encryption is not supported at this moment, ensuring it isn't flagged as being enabled on this packet.");
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymetricalEncrypted, false);
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, false);
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, false);
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymmetricalEncrypted, false);
             }
             if (!packet.ValidateFlags())
             {
@@ -1330,16 +1329,18 @@ namespace SocketNetworking.Client
                 //Log.Debug("Compressing the packet.");
                 packetDataBytes = packetDataBytes.Compress();
             }
-            if (packet.Flags.HasFlag(PacketFlags.AsymetricalEncrypted))
+            if (packet.Flags.HasFlag(PacketFlags.AsymmetricalEncrypted))
             {
                 if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
                 {
                     Log.Error("Encryption cannot be done at this point: Not ready.");
                     return null;
                 }
-                if (packetDataBytes.Length > NetworkEncryption.MaxBytesForAsym)
+                if (packetDataBytes.Length > NetworkEncryption.MaxBytesForAsymmetricalEncryption)
                 {
-                    Log.Warning($"Packet is too large for RSA! Packet Size: {packetDataBytes.Length}, Max Packet Size: {NetworkEncryption.MaxBytesForAsym}");
+                    Log.Warning($"Packet is too large for RSA! Packet Size: {packetDataBytes.Length}, Max Packet Size: {NetworkEncryption.MaxBytesForAsymmetricalEncryption}. Packet: {packet}");
+                    packet.Flags = packet.Flags.SetFlag(PacketFlags.NoRSA, true);
+                    return SerializePacket(packet);
                 }
                 else
                 {
@@ -1347,7 +1348,7 @@ namespace SocketNetworking.Client
                     packetDataBytes = EncryptionManager.Encrypt(packetDataBytes, false);
                 }
             }
-            if (packet.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            if (packet.Flags.HasFlag(PacketFlags.SymmetricalEncrypted))
             {
                 if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
                 {
@@ -1449,14 +1450,7 @@ namespace SocketNetworking.Client
                 Log.Warning("Transport received a null byte array.");
                 return;
             }
-            try
-            {
-                DeserializeRetry(packet.Item1, packet.Item3);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"Malformed Packet. Header: {Packet.ReadPacketHeader(packet.Item1)}, Error: {ex}");
-            }
+            DeserializeRetry(packet.Item1, packet.Item3);
         }
 
         protected virtual void DeserializeRetry(byte[] fullPacket, IPEndPoint endPoint)
@@ -1492,12 +1486,12 @@ namespace SocketNetworking.Client
             byte[] rawPacket = fullPacket;
             byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
             byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
-            if(header.Type == PacketType.NetworkInvocation)
+            if (header.Type == PacketType.NetworkInvocation)
             {
                 //Log.Debug(rawPacket.GetHashSHA1());
             }
             int currentEncryptionState = (int)EncryptionState;
-            if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            if (header.Flags.HasFlag(PacketFlags.SymmetricalEncrypted))
             {
                 //Log.Debug("Trying to decrypt a packet using SYMMETRICAL encryption!");
                 if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
@@ -1507,7 +1501,7 @@ namespace SocketNetworking.Client
                 }
                 packetBytes = EncryptionManager.Decrypt(packetBytes);
             }
-            if (header.Flags.HasFlag(PacketFlags.AsymetricalEncrypted))
+            if (header.Flags.HasFlag(PacketFlags.AsymmetricalEncrypted))
             {
                 //Log.Debug("Trying to decrypt a packet using ASYMMETRICAL encryption!");
                 if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)

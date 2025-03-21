@@ -174,14 +174,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            try
-            {
-                DeserializeRetry(packet.Item1, packet.Item3);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"Malformed Packet. Header: {Packet.ReadPacketHeader(packet.Item1)}, Error: {ex}");
-            }
+            DeserializeRetry(packet.Item1, packet.Item3);
         }
 
         bool _udpConnected = false;

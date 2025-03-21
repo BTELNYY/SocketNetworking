@@ -1130,8 +1130,7 @@ namespace SocketNetworking.Shared
 
         internal static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient Receiver)
         {
-            Assembly assembly = Assembly.Load(packet.TargetTypeAssembly);
-            Type targetType = assembly.GetType(packet.TargetType);
+            Type targetType = packet.TargetType;
             if (targetType == null)
             {
                 throw new NetworkInvocationException($"Cannot find type: '{packet.TargetType}'.", new NullReferenceException());
@@ -1324,7 +1323,6 @@ namespace SocketNetworking.Shared
                 }
             }
             NetworkInvocationPacket packet = new NetworkInvocationPacket();
-            packet.TargetTypeAssembly = Assembly.GetAssembly(target.GetType()).GetName().FullName;
             packet.NetworkIDTarget = targetID;
             packet.MethodName = methodName;
             foreach (object arg in args)
@@ -1332,7 +1330,7 @@ namespace SocketNetworking.Shared
                 SerializedData data = ByteConvert.Serialize(arg);
                 packet.Arguments.Add(data);
             }
-            packet.TargetType = target.GetType().FullName;
+            packet.TargetType = target.GetType();
             int callbackID = NetworkInvocations.GetFirstEmptySlot();
             NetworkInvocations.Add(callbackID);
             packet.CallbackID = callbackID;

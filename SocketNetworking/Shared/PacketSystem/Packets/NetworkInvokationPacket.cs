@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
 
@@ -9,9 +9,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
     {
         public override PacketType Type => PacketType.NetworkInvocation;
 
-        public string TargetTypeAssembly { get; set; } = string.Empty;
-
-        public string TargetType { get; set; } = string.Empty;
+        public Type TargetType { get; set; }
 
         public string MethodName { get; set; } = string.Empty;
 
@@ -24,8 +22,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
-            writer.WriteString(TargetTypeAssembly);
-            writer.WriteString(TargetType);
+            writer.WriteWrapper<SerializableType, Type>(new SerializableType(TargetType));
             writer.WriteString(MethodName);
             writer.WriteInt(CallbackID);
             writer.WriteBool(IgnoreResult);
@@ -39,8 +36,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         public override ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = base.Deserialize(data);
-            TargetTypeAssembly = reader.ReadString();
-            TargetType = reader.ReadString();
+            TargetType = reader.ReadWrapper<SerializableType, Type>();
             MethodName = reader.ReadString();
             CallbackID = reader.ReadInt();
             IgnoreResult = reader.ReadBool();
@@ -50,7 +46,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public override string ToString()
         {
-            return base.ToString() + $" TargetTypeAssembly: {TargetTypeAssembly}, TargetType: {TargetType}, MethodName: {MethodName}, CallbackID: {CallbackID}, IgnoreResult: {IgnoreResult}, Arguments: {string.Join(",", Arguments.Select(x => x.Type))}";
+            return base.ToString() + $"TargetType: {TargetType}, MethodName: {MethodName}, CallbackID: {CallbackID}, IgnoreResult: {IgnoreResult}, Arguments: ({string.Join(" / ", Arguments)}";
         }
     }
 }

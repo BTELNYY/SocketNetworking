@@ -16,7 +16,7 @@ namespace BasicChat.Server
             Log.OnLog += Logger.HandleNetworkLog;
             Log.Levels = Log.FULL_LOG;
 
-            Thread.Sleep(500); 
+            Thread.Sleep(500);
 
             AppDomain.CurrentDomain.ProcessExit += (sender, evtArgs) =>
             {

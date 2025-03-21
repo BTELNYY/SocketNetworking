@@ -44,7 +44,7 @@ namespace SocketNetworking.Shared.Serialization
 
         private byte[] _workingSetData = new byte[] { };
 
-        public ByteWriter() 
+        public ByteWriter()
         {
             _workingSetData = new byte[0];
         }
@@ -213,7 +213,6 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                data = data.Trim('\0');
                 byte[] bytes = Encoding.UTF32.GetBytes(data);
                 WriteByteArray(bytes);
             }

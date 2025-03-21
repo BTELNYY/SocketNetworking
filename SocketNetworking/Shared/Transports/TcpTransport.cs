@@ -180,7 +180,6 @@ namespace SocketNetworking.Shared.Transports
                                          // read the rest of the whole packet
                 if (bodySize > Packet.MaxPacketSize || bodySize < 0)
                 {
-
                     string s = string.Empty;
                     for (int i = 0; i < buffer.Length; i++)
                     {
@@ -217,6 +216,7 @@ namespace SocketNetworking.Shared.Transports
             try
             {
                 Stream.Write(data, 0, data.Length);
+                Stream.Flush();
                 Thread.Sleep(1);
                 return null;
             }

@@ -435,9 +435,15 @@ namespace SocketNetworking.Shared.Serialization
         public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
+            DataNull = reader.ReadBool();
+            if (DataNull)
+            {
+                Data = new byte[0];
+                Type = typeof(void);
+                return reader;
+            }
             Type type = reader.ReadWrapper<SerializableType, Type>();
             Type = type;
-            DataNull = reader.ReadBool();
             Data = reader.ReadByteArray();
             return reader;
         }
@@ -454,16 +460,16 @@ namespace SocketNetworking.Shared.Serialization
             {
                 Type = typeof(void);
             }
-            writer.WriteWrapper<SerializableType, Type>(new SerializableType(Type));
-            if (Data == null)
+            if (Data == null || Type == typeof(void))
             {
                 writer.WriteBool(true);
-                Data = new byte[] { };
+                return writer;
             }
             else
             {
                 writer.WriteBool(false);
             }
+            writer.WriteWrapper<SerializableType, Type>(new SerializableType(Type));
             writer.WriteByteArray(Data);
             return writer;
         }
@@ -481,6 +487,11 @@ namespace SocketNetworking.Shared.Serialization
                 };
                 return data;
             }
+        }
+
+        public override string ToString()
+        {
+            return $"Type: {Type}, DataNull: {DataNull}, Data: {Data.Length}";
         }
     }
 }

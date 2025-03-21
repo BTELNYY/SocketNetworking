@@ -23,12 +23,12 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         {
             if (EncryptionFunction == EncryptionFunction.SymmetricalKeySend)
             {
-                Flags = Flags.SetFlag(PacketFlags.AsymetricalEncrypted, true);
+                Flags = Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, true);
             }
             else
             {
-                Flags = Flags.SetFlag(PacketFlags.AsymetricalEncrypted, false);
-                Flags = Flags.SetFlag(PacketFlags.SymetricalEncrypted, false);
+                Flags = Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, false);
+                Flags = Flags.SetFlag(PacketFlags.SymmetricalEncrypted, false);
             }
             ByteWriter writer = base.Serialize();
             writer.WriteByte((byte)EncryptionFunction);

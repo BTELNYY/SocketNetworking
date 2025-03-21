@@ -14,7 +14,7 @@ namespace SocketNetworking
     {
         public static string GetHashSHA1(this byte[] data)
         {
-            using (var sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider())
+            using (SHA1CryptoServiceProvider sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider())
             {
                 return string.Concat(sha1.ComputeHash(data).Select(x => x.ToString("X2")));
             }
@@ -22,17 +22,8 @@ namespace SocketNetworking
 
 
         /// <summary>
-        /// Removes a specific amount of elements from the start of the array.
+        /// Removes a specific amount of elements from the start of the array. Note, this will create a copy of the given input array, therefore the return should NOT be ignored.
         /// </summary>
-        /// <typeparam name="T">
-        /// Any Array.
-        /// </typeparam>
-        /// <param name="array">
-        /// The array to modify
-        /// </param>
-        /// <param name="amount">
-        /// Items to remove
-        /// </param>
         /// <returns>
         /// The modified array.
         /// </returns>
@@ -43,11 +34,11 @@ namespace SocketNetworking
         {
             if (array.Length < amount)
             {
-                throw new ArgumentOutOfRangeException("amount", "Amount is out of range for specified array.");
+                throw new ArgumentOutOfRangeException("amount", $"Amount ({amount}) is out of range for specified array. ({array.Length})");
             }
-            T[] result = new T[array.Length - amount];
-            Array.Copy(array, amount, result, 0, array.Length - amount);
-            return result;
+            //T[] result = new T[array.Length - amount];
+            //Array.Copy(array, amount, result, 0, array.Length - amount);
+            return array.Skip(amount).ToArray();
         }
 
 

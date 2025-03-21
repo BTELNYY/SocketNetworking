@@ -250,8 +250,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int sizeToRemove = sizeof(int);
-                int result = BitConverter.ToInt32(_workingSetData, 0);
-                Remove(sizeToRemove);
+                int result = BitConverter.ToInt32(Read(sizeToRemove), 0);
                 int networkResult = IPAddress.NetworkToHostOrder(result);
                 return networkResult;
             }

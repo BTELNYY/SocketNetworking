@@ -64,7 +64,7 @@ namespace SocketNetworking.Shared.PacketSystem
         /// </returns>
         public bool ValidateFlags()
         {
-            if (Flags.HasFlag(PacketFlags.AsymetricalEncrypted) && Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            if (Flags.HasFlag(PacketFlags.AsymmetricalEncrypted) && Flags.HasFlag(PacketFlags.SymmetricalEncrypted))
             {
                 return false;
             }

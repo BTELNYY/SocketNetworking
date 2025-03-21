@@ -15,7 +15,7 @@ namespace SocketNetworking.Shared
 
         public const int KEY_SIZE = 2048;
 
-        public static int MaxBytesForAsym
+        public static int MaxBytesForAsymmetricalEncryption
         {
             get
             {
@@ -137,7 +137,6 @@ namespace SocketNetworking.Shared
             SharedAes.GenerateIV();
             SharedAes.GenerateKey();
             SharedAes.Padding = PaddingMode.PKCS7;
-            //Log.GlobalInfo($"Generating new Keys. Key: {string.Join("-", SharedAes.Key)}, IV: {string.Join("-", SharedAes.IV)}");
             RSA rsa = RSA.Create(KEY_SIZE);
             MyRSA = new RSACryptoServiceProvider(KEY_SIZE);
             MyRSA.ImportParameters(rsa.ExportParameters(true));
@@ -213,9 +212,14 @@ namespace SocketNetworking.Shared
             {
                 if (useSymmetry)
                 {
+                    AesCryptoServiceProvider aes = new AesCryptoServiceProvider
+                    {
+                        Padding = PaddingMode.PKCS7,
+                        Key = SharedAesKey.Item1,
+                        IV = SharedAesKey.Item2
+                    };
                     MemoryStream stream = new MemoryStream();
-                    SharedAes.Padding = PaddingMode.PKCS7;
-                    using (CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateEncryptor(), CryptoStreamMode.Write))
+                    using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(data, 0, data.Length);
                     }
@@ -238,9 +242,14 @@ namespace SocketNetworking.Shared
             {
                 if (useSymmetry)
                 {
+                    AesCryptoServiceProvider aes = new AesCryptoServiceProvider
+                    {
+                        Padding = PaddingMode.PKCS7,
+                        Key = SharedAesKey.Item1,
+                        IV = SharedAesKey.Item2
+                    };
                     MemoryStream stream = new MemoryStream();
-                    SharedAes.Padding = PaddingMode.PKCS7;
-                    using (CryptoStream cryptoStream = new CryptoStream(stream, SharedAes.CreateDecryptor(), CryptoStreamMode.Write))
+                    using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(data, 0, data.Length);
                     }
