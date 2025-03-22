@@ -217,7 +217,7 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                //Log.GlobalDebug(data);
+                Log.GlobalDebug(data);
                 byte[] bytes = Encoding.UTF32.GetBytes(data);
                 WriteByteArray(bytes);
             }

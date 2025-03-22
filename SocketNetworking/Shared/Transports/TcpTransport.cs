@@ -139,8 +139,7 @@ namespace SocketNetworking.Shared.Transports
         {
             lock (_readLock)
             {
-                Array.Clear(buffer, 0, Packet.MaxPacketSize);
-                while (true)
+                if (!IsConnected)
                 {
                     if (!IsConnected)
                     {

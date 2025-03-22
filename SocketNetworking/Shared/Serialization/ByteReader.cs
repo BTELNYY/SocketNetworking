@@ -308,7 +308,7 @@ namespace SocketNetworking.Shared.Serialization
                 }
                 List<char> cChars = Encoding.UTF32.GetChars(stringBuff).ToList();
                 string result = new string(cChars.ToArray());
-                //Log.GlobalDebug(result);
+                Log.GlobalDebug(result);
                 return result;
             }
         }
