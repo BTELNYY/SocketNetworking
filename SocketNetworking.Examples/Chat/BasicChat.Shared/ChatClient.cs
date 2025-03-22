@@ -37,6 +37,11 @@ namespace BasicChat.Shared
             CredentialsRequestAuthenticationProvider authenticationProvider = new CredentialsRequestAuthenticationProvider(this, true, true);
             authenticationProvider.Responded += (x) =>
             {
+                if (!x.Response.Accepted)
+                {
+                    x.Reject("Authentication failed.");
+                    return;
+                }
                 x.Accept();
                 RequestedName = x.Response.Username;
                 ServerAutoSpecifyAvatar();

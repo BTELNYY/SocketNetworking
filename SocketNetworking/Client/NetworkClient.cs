@@ -1368,7 +1368,7 @@ namespace SocketNetworking.Client
             //Log.Debug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
             if (packet.Type == PacketType.NetworkInvocation)
             {
-                //Log.Debug(packetFull.GetHashSHA1());
+                Log.Debug("SEND NetworkInvoke: " + packetFull.GetHashSHA1());
             }
             writer.WriteInt(packetFull.Length);
             writer.Write(packetFull);
@@ -1484,11 +1484,15 @@ namespace SocketNetworking.Client
             //Log.Debug("Active Flags: " + string.Join(", ", header.Flags.GetActiveFlags()));
             //Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
             byte[] rawPacket = fullPacket;
+            if (header.Size + 4 != fullPacket.Length)
+            {
+                throw new InvalidOperationException($"Packet Length in header ({header.Size}) and the actual read data ({fullPacket.Length}) don't match!");
+            }
             byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
             byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
             if (header.Type == PacketType.NetworkInvocation)
             {
-                //Log.Debug(rawPacket.GetHashSHA1());
+                Log.Debug("RECIEVE NetworkInvoke: " + rawPacket.GetHashSHA1());
             }
             int currentEncryptionState = (int)EncryptionState;
             if (header.Flags.HasFlag(PacketFlags.SymmetricalEncrypted))

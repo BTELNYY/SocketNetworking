@@ -47,11 +47,28 @@ namespace SocketNetworking.Extras
             string password = "";
             string message = Message;
             string caption = Caption.Replace("{hostname}", handle.Client.ConnectedHostname + ":" + handle.Client.ConnectedPort);
+            AuthenticationResponseStruct response = new AuthenticationResponseStruct()
+            {
+                Password = username ?? "",
+                Username = password ?? "",
+                Accepted = true,
+            };
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 CredentialResult creds = CredentialManager.PromptForCredentials(messageText: message, captionText: caption, userName: DefaultUsername);
-                username = creds.UserName;
-                password = creds.Password;
+                if (creds == null)
+                {
+                    response.Accepted = false;
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(creds.UserName) && string.IsNullOrEmpty(creds.UserName))
+                    {
+                        response.Accepted = false;
+                    }
+                    username = creds.UserName;
+                    password = creds.Password;
+                }
             }
             else
             {
@@ -59,14 +76,15 @@ namespace SocketNetworking.Extras
                 credentials.lblCaption.Text = caption;
                 credentials.lblMessage.Text = message;
                 DialogResult res = credentials.ShowDialog();
+                if (res == DialogResult.Cancel)
+                {
+                    response.Accepted = false;
+                }
                 username = credentials.txtUsername.Text;
                 password = credentials.txtPassword.Text;
             }
-            AuthenticationResponseStruct response = new AuthenticationResponseStruct()
-            {
-                Password = username ?? "",
-                Username = password ?? "",
-            };
+            response.Username = username ?? "";
+            response.Password = password ?? "";
             ByteWriter writer = new ByteWriter();
             writer.WritePacketSerialized<AuthenticationResponseStruct>(response);
             return (new AuthenticationResult()
@@ -131,11 +149,14 @@ namespace SocketNetworking.Extras
 
         public string Password;
 
+        public bool Accepted;
+
         public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             Username = reader.ReadString();
             Password = reader.ReadString();
+            Accepted = reader.ReadBool();
             return reader;
         }
 
@@ -149,6 +170,7 @@ namespace SocketNetworking.Extras
             ByteWriter writer = new ByteWriter();
             writer.WriteString(Username);
             writer.WriteString(Password);
+            writer.WriteBool(Accepted);
             return writer;
         }
     }
