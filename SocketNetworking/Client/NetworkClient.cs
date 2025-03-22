@@ -1366,10 +1366,10 @@ namespace SocketNetworking.Client
             ByteWriter writer = new ByteWriter();
             byte[] packetFull = packetHeaderBytes.Concat(packetDataBytes).ToArray();
             //Log.Debug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
-            if (packet.Type == PacketType.NetworkInvocation)
-            {
-                Log.Debug("SEND NetworkInvoke: " + packetFull.GetHashSHA1());
-            }
+            //if (packet.Type == PacketType.NetworkInvocation)
+            //{
+            //    Log.Debug("SEND NetworkInvoke: " + packetFull.GetHashSHA1());
+            //}
             writer.WriteInt(packetFull.Length);
             writer.Write(packetFull);
             int written = writer.Length;
@@ -1490,10 +1490,10 @@ namespace SocketNetworking.Client
             }
             byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
             byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
-            if (header.Type == PacketType.NetworkInvocation)
-            {
-                Log.Debug("RECIEVE NetworkInvoke: " + rawPacket.GetHashSHA1());
-            }
+            //if (header.Type == PacketType.NetworkInvocation)
+            //{
+            //    Log.Debug("RECIEVE NetworkInvoke: " + rawPacket.GetHashSHA1());
+            //}
             int currentEncryptionState = (int)EncryptionState;
             if (header.Flags.HasFlag(PacketFlags.SymmetricalEncrypted))
             {

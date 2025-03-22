@@ -141,74 +141,81 @@ namespace SocketNetworking.Shared.Transports
         /// <returns></returns>
         private byte[] ReceiveInternal()
         {
-            while (true)
+            lock (_lock)
             {
-                if (!IsConnected)
+                Array.Clear(buffer, 0, Packet.MaxPacketSize);
+                while (true)
                 {
-                    Log.GlobalWarning("Tcp Transport is not connecting but is trying to read.");
-                    break;
-                }
-                if (fillSize < sizeof(int))
-                {
-                    // we don't have enough data to read the length data
-                    int count;
-                    if (Client.NoDelay)
+                    if (!IsConnected)
                     {
-                        count = Stream.Read(buffer, 0, buffer.Length - fillSize);
-                    }
-                    else
-                    {
-                        count = Stream.Read(buffer, fillSize, buffer.Length - fillSize);
-                    }
-                    fillSize += count;
-                    continue;
-                }
-                int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesn't modify the buffer.
-                bodySize = IPAddress.NetworkToHostOrder(bodySize);
-                //Log.GlobalDebug($"{bodySize}");
-                if (bodySize == 0)
-                {
-                    fillSize = 0;
-                    continue;
-                }
-                //if(bodySize > DataAmountAvailable)
-                //{
-                //    Log.GlobalError("Packet is larger than the amount of bytes sent over the network in the current stream!");
-                //    break;
-                //}
-                fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
-                                         // read the rest of the whole packet
-                if (bodySize > Packet.MaxPacketSize || bodySize < 0)
-                {
-                    string s = string.Empty;
-                    for (int i = 0; i < buffer.Length; i++)
-                    {
-                        s += Convert.ToString(buffer[i], 2).PadLeft(8, '0') + " ";
-                    }
-                    //Log.GlobalError("Body Size is corrupted! Raw: " + s);
-                }
-                while (fillSize < bodySize)
-                {
-                    //Log.GlobalDebug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
-                    if (fillSize == buffer.Length)
-                    {
-                        // The buffer is too full, and we are fucked (oh shit)
-                        Log.GlobalError("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
+                        Log.GlobalWarning("Tcp Transport is not connecting but is trying to read.");
                         break;
                     }
-                    int count;
-                    count = Stream.Read(buffer, fillSize, buffer.Length - fillSize);
-                    fillSize += count;
+                    if (fillSize < sizeof(int))
+                    {
+                        // we don't have enough data to read the length data
+                        int count;
+                        if (Client.NoDelay)
+                        {
+                            count = Stream.Read(buffer, 0, buffer.Length - fillSize);
+                        }
+                        else
+                        {
+                            count = Stream.Read(buffer, fillSize, buffer.Length - fillSize);
+                        }
+                        fillSize += count;
+                        continue;
+                    }
+                    int bodySize = BitConverter.ToInt32(buffer, 0); // i sure do hope this doesn't modify the buffer.
+                    bodySize = IPAddress.NetworkToHostOrder(bodySize);
+                    //Log.GlobalDebug($"{bodySize}");
+                    if (bodySize == 0)
+                    {
+                        fillSize = 0;
+                        continue;
+                    }
+                    //if(bodySize > DataAmountAvailable)
+                    //{
+                    //    Log.GlobalError("Packet is larger than the amount of bytes sent over the network in the current stream!");
+                    //    break;
+                    //}
+                    fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
+                                             // read the rest of the whole packet
+                    if (bodySize > Packet.MaxPacketSize || bodySize < 0)
+                    {
+                        Log.GlobalError("TCP packet corrupt. Resetting stream.");
+                        fillSize = 0;
+                        buffer = new byte[Packet.MaxPacketSize];
+                        break;
+                    }
+                    while (fillSize < bodySize)
+                    {
+                        //Log.GlobalDebug($"Trying to read bytes to read the body (we need at least {bodySize} and we have {fillSize})!");
+                        if (fillSize == buffer.Length)
+                        {
+                            // The buffer is too full, and we are fucked (oh shit)
+                            Log.GlobalError("Buffer became full before being able to read an entire packet. This probably means a packet was sent that was bigger then the buffer (Which is the packet max size). This is not recoverable, Disconnecting!");
+                            Close();
+                            break;
+                        }
+                        int count;
+                        count = Stream.Read(buffer, fillSize, buffer.Length - fillSize);
+                        fillSize += count;
+                    }
+                    // we now know we have enough bytes to read at least one whole packet;
+                    byte[] fullPacket = Utils.ShiftOut(ref buffer, bodySize + sizeof(int));
+                    if ((fillSize -= bodySize) < 0)
+                    {
+                        fillSize = 0;
+                    }
+                    if(bodySize + sizeof(int) != fullPacket.Length)
+                    {
+                        Log.GlobalWarning($"Packet wasn't full consumed by the TCP/IP Transport. Expected size: {bodySize + sizeof(int)}, Got: {fullPacket.Length}");
+                    }
+                    return fullPacket;
                 }
-                // we now know we have enough bytes to read at least one whole packet;
-                byte[] fullPacket = Utils.ShiftOut(ref buffer, bodySize + sizeof(int));
-                if ((fillSize -= bodySize) < 0)
-                {
-                    fillSize = 0;
-                }
-                return fullPacket;
-            }
-            return null;
+                return null;
+            }   
         }
 
         public override Exception Send(byte[] data, IPEndPoint destination)

@@ -218,7 +218,7 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                Log.GlobalDebug(data);
+                //Log.GlobalDebug(data);
                 byte[] bytes = Encoding.UTF32.GetBytes(data);
                 int oldLength = _workingSetData.Length;
                 int expectedLength = bytes.Length + 4;
