@@ -121,7 +121,7 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
-        public byte[] Peek(int length)
+        public byte[] ReadNoRemove(int length)
         {
             lock (_lock)
             {
