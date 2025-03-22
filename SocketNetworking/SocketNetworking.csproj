@@ -126,7 +126,6 @@
     <Compile Include="Client\NetworkClient.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Server\NetworkServer.cs" />
-    <Compile Include="Shared\Exceptions\InvalidNetworkDataException.cs" />
     <Compile Include="Shared\NetworkObjects\INetworkObject.cs" />
     <Compile Include="Shared\PacketSystem\IPacketSerializable.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ConnectionUpdatePacket.cs" />

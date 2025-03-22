@@ -135,6 +135,15 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int length = ReadInt();
+                if (length == 0)
+                {
+                    return new byte[0];
+                }
+                if (length > _workingSetData.Length)
+                {
+                    Log.GlobalWarning($"Read a byte array with a broken size. Read: {length}, Actual: {_workingSetData.Length}");
+                    length = Math.Min(length, _workingSetData.Length);
+                }
                 return Read(length);
             }
         }
@@ -293,8 +302,14 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] stringBuff = ReadByteArray();
+                if (stringBuff.Length == 0)
+                {
+                    return "";
+                }
                 List<char> cChars = Encoding.UTF32.GetChars(stringBuff).ToList();
-                return new string(cChars.ToArray());
+                string result = new string(cChars.ToArray());
+                Log.GlobalDebug(result);
+                return result;
             }
         }
 

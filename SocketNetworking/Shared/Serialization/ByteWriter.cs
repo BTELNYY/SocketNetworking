@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using SocketNetworking.Shared.Exceptions;
 using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
@@ -115,6 +116,10 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 WriteInt(data.Length);
+                if (data.Length == 0)
+                {
+                    return;
+                }
                 _workingSetData = _workingSetData.FastConcat(data).ToArray();
             }
         }
@@ -213,8 +218,15 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
+                Log.GlobalDebug(data);
                 byte[] bytes = Encoding.UTF32.GetBytes(data);
+                int oldLength = _workingSetData.Length;
+                int expectedLength = bytes.Length + 4;
                 WriteByteArray(bytes);
+                if (oldLength + expectedLength != _workingSetData.Length)
+                {
+                    throw new NetworkConversionException("StringWriter error.");
+                }
             }
         }
 

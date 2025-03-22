@@ -131,7 +131,7 @@ namespace SocketNetworking.Shared.PacketSystem
             PacketType type = (PacketType)reader.ReadByte();
             if (type != Type)
             {
-                throw new InvalidNetworkDataException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
+                throw new NetworkConversionException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
             }
             Flags = (PacketFlags)reader.ReadByte();
             Destination = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
