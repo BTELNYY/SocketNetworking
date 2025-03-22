@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading;
 using System.Threading.Tasks;
 using SocketNetworking.Shared.PacketSystem;
 
@@ -40,7 +39,7 @@ namespace SocketNetworking.Shared.Transports
 
         public void SetSSLState(bool state)
         {
-            lock (_lock)
+            lock (_readLock)
             {
                 if (SslStream == null)
                 {
@@ -102,10 +101,7 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
-                lock (_lock)
-                {
-                    Buffer = ReceiveInternal();
-                }
+                Buffer = ReceiveInternal();
                 return (Buffer, null, Peer);
             }
             catch (Exception ex)
@@ -129,7 +125,7 @@ namespace SocketNetworking.Shared.Transports
             }
         }
 
-        readonly object _lock = new object();
+        readonly object _readLock = new object();
 
         int fillSize = 0;
 
@@ -141,7 +137,7 @@ namespace SocketNetworking.Shared.Transports
         /// <returns></returns>
         private byte[] ReceiveInternal()
         {
-            lock (_lock)
+            lock (_readLock)
             {
                 Array.Clear(buffer, 0, Packet.MaxPacketSize);
                 while (true)
@@ -208,23 +204,27 @@ namespace SocketNetworking.Shared.Transports
                     {
                         fillSize = 0;
                     }
-                    if(bodySize + sizeof(int) != fullPacket.Length)
+                    if (bodySize + sizeof(int) != fullPacket.Length)
                     {
                         Log.GlobalWarning($"Packet wasn't full consumed by the TCP/IP Transport. Expected size: {bodySize + sizeof(int)}, Got: {fullPacket.Length}");
                     }
                     return fullPacket;
                 }
                 return null;
-            }   
+            }
         }
+
+        readonly object _sendLock = new object();
 
         public override Exception Send(byte[] data, IPEndPoint destination)
         {
             try
             {
-                Stream.Write(data, 0, data.Length);
-                Stream.Flush();
-                Thread.Sleep(1);
+                lock (_sendLock)
+                {
+                    Stream.Write(data, 0, data.Length);
+                    Stream.Flush();
+                }
                 return null;
             }
             catch (Exception ex)
@@ -255,7 +255,6 @@ namespace SocketNetworking.Shared.Transports
             try
             {
                 await Stream.WriteAsync(data, 0, data.Length);
-                Thread.Sleep(1);
                 return null;
             }
             catch (Exception ex)
