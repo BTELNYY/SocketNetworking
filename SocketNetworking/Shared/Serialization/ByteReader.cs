@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using SocketNetworking.Shared.Exceptions;
 using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
@@ -67,7 +68,9 @@ namespace SocketNetworking.Shared.Serialization
 
         public ByteReader(byte[] data)
         {
-            RawData = data;
+            byte[] newBuff = new byte[data.Length];
+            Array.Copy(data, newBuff, data.Length);
+            RawData = newBuff;
             _workingSetData = RawData;
         }
 
@@ -90,7 +93,12 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
+                int oldLength = _workingSetData.Length;
                 _workingSetData = _workingSetData.RemoveFromStart(length);
+                if(oldLength - length != _workingSetData.Length)
+                {
+                    throw new NetworkConversionException($"Remove From Start failed. Expected: {oldLength - length}, Got: {_workingSetData.Length}.");
+                }
             }
         }
 

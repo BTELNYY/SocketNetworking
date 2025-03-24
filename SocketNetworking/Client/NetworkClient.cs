@@ -1304,7 +1304,7 @@ namespace SocketNetworking.Client
             else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady && !packet.Flags.HasFlag(PacketFlags.NoRSA))
             {
                 //Log.Debug("Encrypting using ASYMMETRICAL");
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, true);
+                //packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, true);
             }
             else
             {
@@ -1366,13 +1366,11 @@ namespace SocketNetworking.Client
             ByteWriter writer = new ByteWriter();
             byte[] packetFull = packetHeaderBytes.Concat(packetDataBytes).ToArray();
             //Log.Debug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
-            if (packet.Type == PacketType.NetworkInvocation)
-            {
-                Log.Debug("SEND NetworkInvoke: " + packetFull.GetHashSHA1());
-            }
             writer.WriteInt(packetFull.Length);
             writer.Write(packetFull);
             int written = writer.Length;
+            packet.Size = written;
+            Log.Debug($"Send Packet: {packet}");
             if (written != (packetFull.Length + 4))
             {
                 Log.Error($"Trying to send corrupted size! {packet}");
@@ -1481,6 +1479,7 @@ namespace SocketNetworking.Client
             //StringBuilder hex = new StringBuilder(fullPacket.Length * 2);
             //Log.Debug(hex.ToString());
             PacketHeader header = Packet.ReadPacketHeader(fullPacket);
+            Log.Debug($"Read packet: Full Size: {fullPacket.Length}, Header: {header}");
             //Log.Debug("Active Flags: " + string.Join(", ", header.Flags.GetActiveFlags()));
             //Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
             byte[] rawPacket = fullPacket;
@@ -1490,10 +1489,6 @@ namespace SocketNetworking.Client
             }
             byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
             byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
-            if (header.Type == PacketType.NetworkInvocation)
-            {
-                Log.Debug("RECIEVE NetworkInvoke: " + rawPacket.GetHashSHA1());
-            }
             int currentEncryptionState = (int)EncryptionState;
             if (header.Flags.HasFlag(PacketFlags.SymmetricalEncrypted))
             {
@@ -1740,7 +1735,6 @@ namespace SocketNetworking.Client
                 case PacketType.NetworkInvocation:
                     NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
                     networkInvocationPacket.Deserialize(data);
-                    //Log.Debug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
                     {
                         NetworkManager.NetworkInvoke(networkInvocationPacket, this);

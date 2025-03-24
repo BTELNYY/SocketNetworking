@@ -19,6 +19,11 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public EncryptionState State { get; set; }
 
+        public override bool ValidatePacket()
+        {
+            return base.ValidatePacket();
+        }
+
         public override ByteWriter Serialize()
         {
             if (EncryptionFunction == EncryptionFunction.SymmetricalKeySend)

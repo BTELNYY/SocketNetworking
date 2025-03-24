@@ -115,12 +115,18 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
+                int oldLength = _workingSetData.Length;
+                int expectedLength = 4 + data.Length + _workingSetData.Length;
                 WriteInt(data.Length);
                 if (data.Length == 0)
                 {
                     return;
                 }
                 _workingSetData = _workingSetData.FastConcat(data).ToArray();
+                if(_workingSetData.Length != expectedLength)
+                {
+                    throw new NetworkConversionException($"Wrote an invalid byte array! Expected: {expectedLength}, Actual: {_workingSetData.Length}");
+                }
             }
         }
 
@@ -218,7 +224,6 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                Log.GlobalDebug(data);
                 byte[] bytes = Encoding.UTF32.GetBytes(data);
                 int oldLength = _workingSetData.Length;
                 int expectedLength = bytes.Length + 4;

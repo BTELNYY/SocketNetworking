@@ -12,6 +12,11 @@ namespace SocketNetworking
 {
     public static class Extensions
     {
+        public static T[] DeepClone<T>(this T[] array) where T : ICloneable
+        {
+            return array.Select(a => (T)a.Clone()).ToArray();
+        }
+
         public static string GetHashSHA1(this byte[] data)
         {
             using (SHA1CryptoServiceProvider sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider())
