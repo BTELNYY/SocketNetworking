@@ -1376,13 +1376,14 @@ namespace SocketNetworking.Client
                 Log.Error($"Trying to send corrupted size! {packet}");
                 return null;
             }
-            byte[] fullBytes = writer.Data;
-            if (fullBytes.Length > Packet.MaxPacketSize)
+            byte[] fullPacket = writer.Data;
+            if (fullPacket.Length > Packet.MaxPacketSize)
             {
                 Log.Error("Packet too large!");
                 return null;
             }
-            return fullBytes;
+            //Log.Debug($"Send packet: Full Size: {fullPacket.Length}, Hash: {fullPacket.GetHashSHA1()}");
+            return fullPacket;
         }
 
         void PacketSenderThreadMethod()
@@ -1476,10 +1477,11 @@ namespace SocketNetworking.Client
         /// <param name="endpoint"></param>
         protected virtual void Deserialize(byte[] fullPacket, IPEndPoint endpoint)
         {
+            //Log.Debug($"Read packet: Full Size: {fullPacket.Length}, Hash: {fullPacket.GetHashSHA1()}");
             //StringBuilder hex = new StringBuilder(fullPacket.Length * 2);
             //Log.Debug(hex.ToString());
             PacketHeader header = Packet.ReadPacketHeader(fullPacket);
-            Log.Debug($"Read packet: Full Size: {fullPacket.Length}, Header: {header}");
+            //Log.Debug($"Read packet: Full Size: {fullPacket.Length}, Header: {header}");
             //Log.Debug("Active Flags: " + string.Join(", ", header.Flags.GetActiveFlags()));
             //Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
             byte[] rawPacket = fullPacket;
@@ -1790,7 +1792,7 @@ namespace SocketNetworking.Client
                         case EncryptionFunction.AsymmetricalKeyReceive:
                             //Log.Info($"Client Got Asymmetrical Encryption Key, ID: {ClientID}");
                             break;
-                        case EncryptionFunction.SymetricalKeyReceive:
+                        case EncryptionFunction.SymmetricalKeyReceive:
                             EncryptionState = EncryptionState.SymmetricalReady;
                             //Log.Info($"Client Got Symmetrical Encryption Key, ID: {ClientID}");
                             EncryptionPacket updateEncryptionStateFinal = new EncryptionPacket
@@ -2081,7 +2083,7 @@ namespace SocketNetworking.Client
                             EncryptionManager.SharedAesKey = new Tuple<byte[], byte[]>(encryptionPacket.SymKey, encryptionPacket.SymIV);
                             EncryptionPacket gotYourSymmetricalKey = new EncryptionPacket
                             {
-                                EncryptionFunction = EncryptionFunction.SymetricalKeyReceive
+                                EncryptionFunction = EncryptionFunction.SymmetricalKeyReceive
                             };
                             Send(gotYourSymmetricalKey);
                             EncryptionState = EncryptionState.SymmetricalReady;
@@ -2090,7 +2092,7 @@ namespace SocketNetworking.Client
                             EncryptionState = EncryptionState.AsymmetricalReady;
                             //Log.Info("Server got my Asymmetrical key.");
                             break;
-                        case EncryptionFunction.SymetricalKeyReceive:
+                        case EncryptionFunction.SymmetricalKeyReceive:
                             Log.Error("Server should not be receiving my symmetrical key!");
                             break;
                         case EncryptionFunction.UpdateEncryptionStatus:

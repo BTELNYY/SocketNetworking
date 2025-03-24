@@ -104,7 +104,9 @@ namespace SocketNetworking.Shared.Transports
             {
                 lock (_lock)
                 {
+                    Array.Clear(Buffer, 0, Buffer.Length);
                     Buffer = ReceiveInternal();
+                    Log.GlobalDebug($"READ PACKET: SIZE: {Buffer.Length}, HASH: {Buffer.GetHashSHA1()}");
                 }
                 return (Buffer, null, Peer);
             }
@@ -141,6 +143,10 @@ namespace SocketNetworking.Shared.Transports
         /// <returns></returns>
         private byte[] ReceiveInternal()
         {
+            if(Client.NoDelay)
+            {
+                Array.Clear(buffer, 0, Packet.MaxPacketSize);
+            }
             while (true)
             {
                 if (!IsConnected)
@@ -215,6 +221,7 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
+                Log.GlobalDebug($"SEND: SIZE: {data.Length}, HASH: {data.GetHashSHA1()}");
                 Stream.Write(data, 0, data.Length);
                 Stream.Flush();
                 Thread.Sleep(1);

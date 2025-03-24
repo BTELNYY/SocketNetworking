@@ -88,7 +88,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         AsymmetricalKeySend,
         AsymmetricalKeyReceive,
         SymmetricalKeySend,
-        SymetricalKeyReceive,
+        SymmetricalKeyReceive,
         UpdateEncryptionStatus,
     }
 }
