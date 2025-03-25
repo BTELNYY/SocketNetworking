@@ -11,9 +11,14 @@ namespace SocketNetworking.Shared.Transports
 {
     public class TcpTransport : NetworkTransport
     {
+        /// <summary>
+        /// This property is not supported on the <see cref="TcpTransport"/> as there is no buffer to set for the <see cref="NetworkTransport"/>. To modify actual buffer sizes, see <see cref="TcpClient.ReceiveBufferSize"/> and <see cref="TcpClient.SendBufferSize"/>. The <see cref="TcpClient"/> can be found at <see cref="Client"/>.
+        /// </summary>
+        public override int BufferSize { get => base.BufferSize; set => base.BufferSize = value; }
+
         public TcpTransport()
         {
-            buffer = new byte[BufferSize];
+            
         }
 
         public TcpTransport(TcpClient client) : this()
@@ -103,7 +108,6 @@ namespace SocketNetworking.Shared.Transports
             {
                 lock (_lock)
                 {
-                    Array.Clear(Buffer, 0, Buffer.Length);
                     Buffer = ReceiveInternal();
                     //Log.GlobalDebug($"READ PACKET: SIZE: {Buffer.Length}, HASH: {Buffer.GetHashSHA1()}");
                     //if (Buffer.Length > 500)
@@ -138,6 +142,8 @@ namespace SocketNetworking.Shared.Transports
 
         byte[] buffer = new byte[Packet.MaxPacketSize];
 
+        byte[] packetSizeBuffer = new byte[4];
+
         /// <summary>
         /// Attempts to read a full packet. (this blocks the TCP connection until it can be read)
         /// </summary>
@@ -155,9 +161,8 @@ namespace SocketNetworking.Shared.Transports
                 if (DataAmountAvailable >= 4)
                 {
                     //Read the size.
-                    byte[] bodySizeArray = new byte[4];
-                    Stream.Read(bodySizeArray, 0, bodySizeArray.Length);
-                    int bodySize = BitConverter.ToInt32(bodySizeArray, 0); // i sure do hope this doesn't modify the buffer.
+                    Stream.Read(packetSizeBuffer, 0, packetSizeBuffer.Length);
+                    int bodySize = BitConverter.ToInt32(packetSizeBuffer, 0); // i sure do hope this doesn't modify the buffer.
                     bodySize = IPAddress.NetworkToHostOrder(bodySize);
                     //Log.GlobalDebug("Read Size: " +  bodySize);
                     if (bodySize > Packet.MaxPacketSize)
@@ -172,12 +177,16 @@ namespace SocketNetworking.Shared.Transports
                     //Full packet + size
                     buffer = new byte[bodySize + 4];
                     //Place the size into the buffer
-                    for (int i = 0; i < bodySizeArray.Length; i++)
+                    for (int i = 0; i < packetSizeBuffer.Length; i++)
                     {
-                        buffer[i] = bodySizeArray[i];
+                        buffer[i] = packetSizeBuffer[i];
                     }
                     //Offset the bytes
                     int read = Stream.Read(buffer, 4, bodySize);
+                    if (read != bodySize)
+                    {
+                        throw new InvalidOperationException($"Didn't read all the bytes for the body size, or read to many! Read: {read}, BodySize: {bodySize}");
+                    }
                     //Log.GlobalDebug("Read: " + read);
                     return buffer;
                 }
