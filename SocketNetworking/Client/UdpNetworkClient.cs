@@ -98,7 +98,7 @@ namespace SocketNetworking.Client
                 Log.Warning("Transport Received a null byte array.");
                 return;
             }
-            Deserialize(packet.Item1, packet.Item3);
+            DeserializeRetry(packet.Item1, packet.Item3);
         }
     }
 }

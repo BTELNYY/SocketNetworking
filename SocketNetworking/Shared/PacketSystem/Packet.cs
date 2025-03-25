@@ -62,9 +62,9 @@ namespace SocketNetworking.Shared.PacketSystem
         /// <returns>
         /// Either <see cref="true"/> for a successful validation or <see cref="false"/> for a failed one.
         /// </returns>
-        public bool ValidateFlags()
+        public virtual bool ValidateFlags()
         {
-            if (Flags.HasFlag(PacketFlags.AsymetricalEncrypted) && Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            if (Flags.HasFlag(PacketFlags.AsymmetricalEncrypted) && Flags.HasFlag(PacketFlags.SymmetricalEncrypted))
             {
                 return false;
             }
@@ -125,13 +125,11 @@ namespace SocketNetworking.Shared.PacketSystem
         public virtual ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
-            //Very cursed, must read first in so that the desil doesn't fail next line.
-            int expectedLength = reader.DataLength - PacketHeader.HeaderLength;
             Size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadByte();
             if (type != Type)
             {
-                throw new InvalidNetworkDataException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
+                throw new NetworkConversionException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
             }
             Flags = (PacketFlags)reader.ReadByte();
             Destination = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
@@ -198,6 +196,11 @@ namespace SocketNetworking.Shared.PacketSystem
             PacketType type = (PacketType)reader.ReadByte();
             PacketFlags flags = (PacketFlags)reader.ReadByte();
             return new PacketHeader(size, type, flags);
+        }
+
+        public override string ToString()
+        {
+            return $"Size: {Size}, Type: {Type}, Flags: {Flags.GetActiveFlagsString()}";
         }
     }
 }

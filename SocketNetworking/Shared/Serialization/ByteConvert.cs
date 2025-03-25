@@ -207,7 +207,7 @@ namespace SocketNetworking.Shared.Serialization
                 return sData;
             }
 
-            throw new NetworkSerializationException($"Type '{data.GetType().FullName}' cannot be serialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
+            throw new NetworkConversionException($"Type '{data.GetType().FullName}' cannot be serialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
         }
 
         public static T DeserializeRaw<T>(byte[] data)
@@ -233,6 +233,12 @@ namespace SocketNetworking.Shared.Serialization
             if (data.Type == null)
             {
                 read = 0;
+                return null;
+            }
+
+            if (data.Type == typeof(void))
+            {
+                read = reader.ReadBytes;
                 return null;
             }
 
@@ -372,7 +378,7 @@ namespace SocketNetworking.Shared.Serialization
                 return Convert.ChangeType(value, data.Type);
             }
 
-            throw new NetworkSerializationException($"Type '{data.GetType().FullName}' cannot be deserialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
+            throw new NetworkConversionException($"Type '{data.Type.FullName}' cannot be deserialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
         }
 
         public static T Deserialize<T>(SerializedData data, out int read)
@@ -429,9 +435,15 @@ namespace SocketNetworking.Shared.Serialization
         public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
+            DataNull = reader.ReadBool();
+            if (DataNull)
+            {
+                Data = new byte[0];
+                Type = typeof(void);
+                return reader;
+            }
             Type type = reader.ReadWrapper<SerializableType, Type>();
             Type = type;
-            DataNull = reader.ReadBool();
             Data = reader.ReadByteArray();
             return reader;
         }
@@ -448,16 +460,16 @@ namespace SocketNetworking.Shared.Serialization
             {
                 Type = typeof(void);
             }
-            writer.WriteWrapper<SerializableType, Type>(new SerializableType(Type));
-            if (Data == null)
+            if (Data == null || Type == typeof(void))
             {
                 writer.WriteBool(true);
-                Data = new byte[] { };
+                return writer;
             }
             else
             {
                 writer.WriteBool(false);
             }
+            writer.WriteWrapper<SerializableType, Type>(new SerializableType(Type));
             writer.WriteByteArray(Data);
             return writer;
         }
@@ -475,6 +487,11 @@ namespace SocketNetworking.Shared.Serialization
                 };
                 return data;
             }
+        }
+
+        public override string ToString()
+        {
+            return $"Type: {Type}, DataNull: {DataNull}, Data: {Data.Length}";
         }
     }
 }

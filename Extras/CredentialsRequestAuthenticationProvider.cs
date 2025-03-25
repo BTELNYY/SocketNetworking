@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using Meziantou.Framework.Win32;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
@@ -13,11 +15,11 @@ namespace SocketNetworking.Extras
     /// <summary>
     /// A basic <see cref="AuthenticationProvider"/> which allows a server to require a client to authenticate.
     /// </summary>
-    public class WindowsCredentialsRequestAuthenticationProvider : AuthenticationProvider
+    public class CredentialsRequestAuthenticationProvider : AuthenticationProvider
     {
         public event Action<AuthenticationReceivedEvent> Responded;
 
-        public Action<WindowsCredentialsRequestAuthenticationProvider> DisconnectClientAction;
+        public Action<CredentialsRequestAuthenticationProvider> DisconnectClientAction;
 
         public override bool ClientInitiate => false;
 
@@ -31,7 +33,7 @@ namespace SocketNetworking.Extras
 
         public string Caption { get; set; } = "Enter your credentials to access {hostname}";
 
-        public WindowsCredentialsRequestAuthenticationProvider(NetworkClient client, bool requireUsername, bool requirePassword) : base(client)
+        public CredentialsRequestAuthenticationProvider(NetworkClient client, bool requireUsername, bool requirePassword) : base(client)
         {
             RequireUsername = requireUsername;
             RequirePassword = requirePassword;
@@ -41,17 +43,53 @@ namespace SocketNetworking.Extras
         {
             ByteReader reader = new ByteReader(packet.ExtraAuthenticationData);
             AuthenticationRequest request = reader.ReadPacketSerialized<AuthenticationRequest>();
-            CredentialResult creds = CredentialManager.PromptForCredentials(messageText: Message, captionText: Caption.Replace("{hostname}", handle.Client.ConnectedHostname + ":" + handle.Client.ConnectedPort), userName: DefaultUsername);
+            string username = "";
+            string password = "";
+            string message = Message;
+            string caption = Caption.Replace("{hostname}", handle.Client.ConnectedHostname + ":" + handle.Client.ConnectedPort);
             AuthenticationResponseStruct response = new AuthenticationResponseStruct()
             {
-                Password = creds.Password ?? "",
-                Username = creds.UserName ?? "",
+                Password = username ?? "",
+                Username = password ?? "",
+                Accepted = true,
             };
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                CredentialResult creds = CredentialManager.PromptForCredentials(messageText: message, captionText: caption, userName: DefaultUsername);
+                if (creds == null)
+                {
+                    response.Accepted = false;
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(creds.UserName) && string.IsNullOrEmpty(creds.UserName))
+                    {
+                        response.Accepted = false;
+                    }
+                    username = creds.UserName;
+                    password = creds.Password;
+                }
+            }
+            else
+            {
+                UniversalCredentialsWindow credentials = new UniversalCredentialsWindow();
+                credentials.lblCaption.Text = caption;
+                credentials.lblMessage.Text = message;
+                DialogResult res = credentials.ShowDialog();
+                if (res == DialogResult.Cancel)
+                {
+                    response.Accepted = false;
+                }
+                username = credentials.txtUsername.Text;
+                password = credentials.txtPassword.Text;
+            }
+            response.Username = username ?? "";
+            response.Password = password ?? "";
             ByteWriter writer = new ByteWriter();
             writer.WritePacketSerialized<AuthenticationResponseStruct>(response);
             return (new AuthenticationResult()
             {
-                Approved = true,
+                State = AuthenticationResultState.NoResult,
                 Message = ""
             }, writer.Data);
         }
@@ -68,7 +106,7 @@ namespace SocketNetworking.Extras
             AuthenticationPacket packet = new AuthenticationPacket()
             {
                 IsResult = false,
-                Result = new AuthenticationResult() { Approved = false, Message = "" },
+                Result = new AuthenticationResult() { State = AuthenticationResultState.NoResult, Message = "" },
                 ExtraAuthenticationData = writer.Data
             };
             return packet;
@@ -88,7 +126,9 @@ namespace SocketNetworking.Extras
                     return;
                 }
                 DisconnectClientAction?.Invoke(this);
+                return;
             }
+            handle.Client.Authenticated = true;
         }
     }
 
@@ -109,11 +149,14 @@ namespace SocketNetworking.Extras
 
         public string Password;
 
+        public bool Accepted;
+
         public ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
             Username = reader.ReadString();
             Password = reader.ReadString();
+            Accepted = reader.ReadBool();
             return reader;
         }
 
@@ -127,6 +170,7 @@ namespace SocketNetworking.Extras
             ByteWriter writer = new ByteWriter();
             writer.WriteString(Username);
             writer.WriteString(Password);
+            writer.WriteBool(Accepted);
             return writer;
         }
     }

@@ -73,7 +73,7 @@
     <Compile Include="Misc\CallbackTimer.cs" />
     <Compile Include="Shared\Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Shared\Exceptions\NetworkInvocationException.cs" />
-    <Compile Include="Shared\Exceptions\NetworkSerializationException.cs" />
+    <Compile Include="Shared\Exceptions\NetworkConversionException.cs" />
     <Compile Include="Misc\ChoiceEvent.cs" />
     <Compile Include="Misc\ClientHandler.cs" />
     <Compile Include="Misc\Console\FancyConsole.cs" />
@@ -81,6 +81,7 @@
     <Compile Include="Misc\ObjectPool.cs" />
     <Compile Include="NetworkObjectExtensions.cs" />
     <Compile Include="Shared\PacketSystem\Packets\AuthenticationPacket.cs" />
+    <Compile Include="Shared\PacketSystem\Packets\AuthenticationStateUpdate.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ClientToClientPacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\KeepAlivePacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ObjectManagePacket.cs" />
@@ -125,7 +126,6 @@
     <Compile Include="Client\NetworkClient.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Server\NetworkServer.cs" />
-    <Compile Include="Shared\Exceptions\InvalidNetworkDataException.cs" />
     <Compile Include="Shared\NetworkObjects\INetworkObject.cs" />
     <Compile Include="Shared\PacketSystem\IPacketSerializable.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ConnectionUpdatePacket.cs" />

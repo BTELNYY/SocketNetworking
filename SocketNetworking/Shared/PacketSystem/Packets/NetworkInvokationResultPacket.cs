@@ -37,5 +37,10 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             IgnoreResult = reader.ReadBool();
             return reader;
         }
+
+        public override string ToString()
+        {
+            return base.ToString() + $" CallbackID: {CallbackID}, Result: ({Result}), Success: {Success}, ErrorMessage: {ErrorMessage}, IgnoreResult: {IgnoreResult}";
+        }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using SocketNetworking.Shared.Exceptions;
 using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
@@ -66,7 +68,9 @@ namespace SocketNetworking.Shared.Serialization
 
         public ByteReader(byte[] data)
         {
-            RawData = data;
+            byte[] newBuff = new byte[data.Length];
+            Array.Copy(data, newBuff, data.Length);
+            RawData = newBuff;
             _workingSetData = RawData;
         }
 
@@ -89,7 +93,12 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
+                int oldLength = _workingSetData.Length;
                 _workingSetData = _workingSetData.RemoveFromStart(length);
+                if (oldLength - length != _workingSetData.Length)
+                {
+                    throw new NetworkConversionException($"Remove From Start failed. Expected: {oldLength - length}, Got: {_workingSetData.Length}.");
+                }
             }
         }
 
@@ -101,7 +110,6 @@ namespace SocketNetworking.Shared.Serialization
                 {
                     SerializedData data = ReadPacketSerialized<SerializedData>();
                     object obj = ByteConvert.Deserialize(data, out int read);
-                    Remove(read);
                     return (T)obj;
                 }
                 catch
@@ -135,6 +143,15 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int length = ReadInt();
+                if (length == 0)
+                {
+                    return new byte[0];
+                }
+                if (length > _workingSetData.Length)
+                {
+                    Log.GlobalWarning($"Read a byte array with a broken size. Read: {length}, Actual: {_workingSetData.Length}");
+                    length = Math.Min(length, _workingSetData.Length);
+                }
                 return Read(length);
             }
         }
@@ -249,8 +266,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int sizeToRemove = sizeof(int);
-                int result = BitConverter.ToInt32(_workingSetData, 0);
-                Remove(sizeToRemove);
+                int result = BitConverter.ToInt32(Read(sizeToRemove), 0);
                 int networkResult = IPAddress.NetworkToHostOrder(result);
                 return networkResult;
             }
@@ -293,15 +309,14 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                int lenghtOfString = ReadInt();
-                int expectedBytes = _workingSetData.Length - lenghtOfString;
-                byte[] stringArray = _workingSetData.Take(lenghtOfString).ToArray();
-                Remove(stringArray.Length);
-                string result = Encoding.UTF8.GetString(stringArray, 0, stringArray.Length);
-                if (_workingSetData.Length != expectedBytes)
+                byte[] stringBuff = ReadByteArray();
+                if (stringBuff.Length == 0)
                 {
-                    throw new InvalidOperationException($"StringReader stole more bytes then it should have! Expected: {expectedBytes}, Actual: {_workingSetData.Length}, Read Length: {lenghtOfString}");
+                    return "";
                 }
+                List<char> cChars = Encoding.UTF32.GetChars(stringBuff).ToList();
+                string result = new string(cChars.ToArray());
+                //Log.GlobalDebug(result);
                 return result;
             }
         }

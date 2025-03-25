@@ -19,6 +19,7 @@ namespace SocketNetworking.Shared
     {
         None,
         ReadyStateUpdate,
+        AuthenticationStateUpdate,
         ConnectionStateUpdate,
         ClientData,
         ServerData,
@@ -36,7 +37,7 @@ namespace SocketNetworking.Shared
     }
 
     /// <summary>
-    /// <see cref="PacketFlags"/> are used to give metadata to packets for the sending method to interpert. For exmaple, flagging the packet as <see cref="PacketFlags.SymetricalEncrypted"/> will use the symmetrical key sent in the Encryption Handshake during connection time. Some flags cannot be used if the framework for them has not yet been implemented. (Handshake isn't complete, RSA/AES keys are not exchanged, or they are incorrect.)
+    /// <see cref="PacketFlags"/> are used to give metadata to packets for the sending method to interpert. For exmaple, flagging the packet as <see cref="PacketFlags.SymmetricalEncrypted"/> will use the symmetrical key sent in the Encryption Handshake during connection time. Some flags cannot be used if the framework for them has not yet been implemented. (Handshake isn't complete, RSA/AES keys are not exchanged, or they are incorrect.)
     /// </summary>
     [Flags]
     public enum PacketFlags : byte
@@ -50,21 +51,29 @@ namespace SocketNetworking.Shared
         /// </summary>
         Compressed = 1,
         /// <summary>
-        /// Uses the RSA Algorithim at send to encrypt data. RSA has a limit to the size of the data it can encrypt. Not Compatible with <see cref="PacketFlags.SymetricalEncrypted"/>
+        /// Uses the RSA Algorithm at send to encrypt data. RSA has a limit to the size of the data it can encrypt. Not Compatible with <see cref="PacketFlags.SymmetricalEncrypted"/>
         /// </summary>
-        AsymetricalEncrypted = 2,
+        AsymmetricalEncrypted = 2,
         /// <summary>
-        /// Uses Symetrical Encryption to send data, note that this can only be used once the full encryptoin handshake has been completed. Not Compatible with <see cref="PacketFlags.AsymetricalEncrypted"/>
+        /// Uses Symmetrical Encryption to send data, note that this can only be used once the full encryptoin handshake has been completed. Not Compatible with <see cref="PacketFlags.AsymmetricalEncrypted"/>
         /// </summary>
-        SymetricalEncrypted = 4,
+        SymmetricalEncrypted = 4,
         /// <summary>
         /// Used to specify this packet is to be treated with priority, being sent first. This can cause out of order situations, so its best to use this only for systems which are not affected by this.
         /// </summary>
         Priority = 8,
         /// <summary>
-        /// Tells the library to not Encrypt this packet at all, if combined with <see cref="PacketFlags.AsymetricalEncrypted"/> or <see cref="PacketFlags.SymetricalEncrypted"/>, the encryption flags are ignored.
+        /// Tells the library to not Encrypt this packet at all, if combined with <see cref="PacketFlags.AsymmetricalEncrypted"/> or <see cref="PacketFlags.SymmetricalEncrypted"/>, the encryption flags are ignored.
         /// </summary>
         DoNotEncrypt = 16,
+        /// <summary>
+        /// Prevents this packet from being encrypted using <see cref="PacketFlags.AsymmetricalEncrypted"/>.
+        /// </summary>
+        NoRSA = 32,
+        /// <summary>
+        /// Prevents this packet from being encrypted using <see cref="PacketFlags.SymmetricalEncrypted"/>.
+        /// </summary>
+        NoAES = 64,
     }
 
     /// <summary>

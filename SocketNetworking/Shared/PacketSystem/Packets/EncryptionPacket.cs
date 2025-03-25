@@ -19,16 +19,21 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public EncryptionState State { get; set; }
 
+        public override bool ValidatePacket()
+        {
+            return base.ValidatePacket();
+        }
+
         public override ByteWriter Serialize()
         {
             if (EncryptionFunction == EncryptionFunction.SymmetricalKeySend)
             {
-                Flags = Flags.SetFlag(PacketFlags.AsymetricalEncrypted, true);
+                Flags = Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, true);
             }
             else
             {
-                Flags = Flags.SetFlag(PacketFlags.AsymetricalEncrypted, false);
-                Flags = Flags.SetFlag(PacketFlags.SymetricalEncrypted, false);
+                Flags = Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, false);
+                Flags = Flags.SetFlag(PacketFlags.SymmetricalEncrypted, false);
             }
             ByteWriter writer = base.Serialize();
             writer.WriteByte((byte)EncryptionFunction);
@@ -83,7 +88,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         AsymmetricalKeySend,
         AsymmetricalKeyReceive,
         SymmetricalKeySend,
-        SymetricalKeyReceive,
+        SymmetricalKeyReceive,
         UpdateEncryptionStatus,
     }
 }

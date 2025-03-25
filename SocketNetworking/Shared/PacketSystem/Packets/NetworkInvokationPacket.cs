@@ -1,16 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
 {
-    public sealed class NetworkInvokationPacket : TargetedPacket
+    public sealed class NetworkInvocationPacket : TargetedPacket
     {
         public override PacketType Type => PacketType.NetworkInvocation;
 
-        public string TargetTypeAssmebly { get; set; } = string.Empty;
-
-        public string TargetType { get; set; } = string.Empty;
+        public Type TargetType { get; set; }
 
         public string MethodName { get; set; } = string.Empty;
 
@@ -23,27 +22,31 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
-            writer.WriteString(TargetTypeAssmebly);
-            writer.WriteString(TargetType);
+            writer.WriteWrapper<SerializableType, Type>(new SerializableType(TargetType));
             writer.WriteString(MethodName);
             writer.WriteInt(CallbackID);
             writer.WriteBool(IgnoreResult);
             SerializableList<SerializedData> list = new SerializableList<SerializedData>();
             list.OverwriteContained(Arguments);
             writer.WritePacketSerialized<SerializableList<SerializedData>>(list);
+            //Log.GlobalDebug(ToString());
             return writer;
         }
 
         public override ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = base.Deserialize(data);
-            TargetTypeAssmebly = reader.ReadString();
-            TargetType = reader.ReadString();
+            TargetType = reader.ReadWrapper<SerializableType, Type>();
             MethodName = reader.ReadString();
             CallbackID = reader.ReadInt();
             IgnoreResult = reader.ReadBool();
             Arguments = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;
             return reader;
+        }
+
+        public override string ToString()
+        {
+            return base.ToString() + $"TargetType: {TargetType}, MethodName: {MethodName}, CallbackID: {CallbackID}, IgnoreResult: {IgnoreResult}, Arguments: ({string.Join(" / ", Arguments)}";
         }
     }
 }

@@ -209,6 +209,21 @@ namespace SocketNetworking.Client
         #region Properties
 
         /// <summary>
+        /// Amount of times a packet will be attempted to be deserialized.
+        /// </summary>
+        public uint MaxPacketDeserializationRetries { get; set; } = 3;
+
+        /// <summary>
+        /// When true, the defined <see cref="INetworkAvatar"/> will be given to the user.
+        /// </summary>
+        public bool AutoAssignAvatar { get; set; } = true;
+
+        /// <summary>
+        /// When true, the library will call <see cref="ServerBeginSync"/> automatically.
+        /// </summary>
+        public bool AutoSync { get; set; } = true;
+
+        /// <summary>
         /// Maximum amount of milliseconds before a <see cref="KeepAlivePacket"/> is sent. By default, a <see cref="KeepAlivePacket"/> is sent every 1000ms, this is the standard for ping measurements.
         /// </summary>
         public double MaxMSBeforeKeepAlive { get; set; } = 1000;
@@ -375,20 +390,13 @@ namespace SocketNetworking.Client
                 {
                     throw new InvalidOperationException("Can't change authentication state on the client!");
                 }
-                NetworkInvoke(nameof(ClientGetAuthenticatedState), new object[] { value });
                 _authenticated = value;
+                AuthenticationStateUpdate authenticationStateUpdate = new AuthenticationStateUpdate();
+                authenticationStateUpdate.State = value;
+                Send(authenticationStateUpdate);
                 AuthenticationStateChanged?.Invoke();
             }
         }
-
-        [NetworkInvokable(NetworkDirection.Server)]
-        private void ClientGetAuthenticatedState(NetworkHandle handle, bool state)
-        {
-            Log.Info("Authentication has been successful.");
-            _authenticated = state;
-            AuthenticationStateChanged?.Invoke();
-        }
-
 
         private bool _ready = false;
 
@@ -1288,22 +1296,22 @@ namespace SocketNetworking.Client
         protected virtual byte[] SerializePacket(Packet packet)
         {
             int currentEncryptionState = (int)EncryptionState;
-            if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady)
+            if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady && !packet.Flags.HasFlag(PacketFlags.NoAES))
             {
                 //Log.Debug("Encrypting using SYMMETRICAL");
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, true);
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymmetricalEncrypted, true);
             }
-            else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady)
+            else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady && !packet.Flags.HasFlag(PacketFlags.NoRSA))
             {
                 //Log.Debug("Encrypting using ASYMMETRICAL");
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymetricalEncrypted, true);
+                //packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, true);
             }
             else
             {
                 //Ensure the packet isn't encrypted if we don't support it.
                 //Log.Debug("Encryption is not supported at this moment, ensuring it isn't flagged as being enabled on this packet.");
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymetricalEncrypted, false);
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymetricalEncrypted, false);
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, false);
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymmetricalEncrypted, false);
             }
             if (!packet.ValidateFlags())
             {
@@ -1316,21 +1324,30 @@ namespace SocketNetworking.Client
             byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
             //StringBuilder hex = new StringBuilder(packetBytes.Length * 2);
             //Log.Debug("Raw Serialized Packet: \n" + hex.ToString());
+            if (packetDataBytes.Length > 1024 && !packet.Flags.HasFlag(PacketFlags.Compressed))
+            {
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.Compressed, true);
+                //Log.Warning($"Forcing compression, the packet is larger than one kb! ({packetDataBytes.Length})");
+                return SerializePacket(packet);
+            }
             if (packet.Flags.HasFlag(PacketFlags.Compressed))
             {
                 //Log.Debug("Compressing the packet.");
                 packetDataBytes = packetDataBytes.Compress();
+                //Log.Debug("New Packet size (after compression): " + packetDataBytes.Length);
             }
-            if (packet.Flags.HasFlag(PacketFlags.AsymetricalEncrypted))
+            if (packet.Flags.HasFlag(PacketFlags.AsymmetricalEncrypted))
             {
                 if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
                 {
                     Log.Error("Encryption cannot be done at this point: Not ready.");
                     return null;
                 }
-                if (packetDataBytes.Length > NetworkEncryption.MaxBytesForAsym)
+                if (packetDataBytes.Length > NetworkEncryption.MaxBytesForAsymmetricalEncryption)
                 {
-                    Log.Warning($"Packet is too large for RSA! Packet Size: {packetDataBytes.Length}, Max Packet Size: {NetworkEncryption.MaxBytesForAsym}");
+                    Log.Warning($"Packet is too large for RSA! Packet Size: {packetDataBytes.Length}, Max Packet Size: {NetworkEncryption.MaxBytesForAsymmetricalEncryption}. Packet: {packet}");
+                    packet.Flags = packet.Flags.SetFlag(PacketFlags.NoRSA, true);
+                    return SerializePacket(packet);
                 }
                 else
                 {
@@ -1338,7 +1355,7 @@ namespace SocketNetworking.Client
                     packetDataBytes = EncryptionManager.Encrypt(packetDataBytes, false);
                 }
             }
-            if (packet.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            if (packet.Flags.HasFlag(PacketFlags.SymmetricalEncrypted))
             {
                 if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
                 {
@@ -1359,18 +1376,21 @@ namespace SocketNetworking.Client
             writer.WriteInt(packetFull.Length);
             writer.Write(packetFull);
             int written = writer.Length;
+            packet.Size = written;
+            //Log.Debug($"Send Packet: {packet}");
             if (written != (packetFull.Length + 4))
             {
                 Log.Error($"Trying to send corrupted size! {packet}");
                 return null;
             }
-            byte[] fullBytes = writer.Data;
-            if (fullBytes.Length > Packet.MaxPacketSize)
+            byte[] fullPacket = writer.Data;
+            if (fullPacket.Length > Packet.MaxPacketSize)
             {
                 Log.Error("Packet too large!");
                 return null;
             }
-            return fullBytes;
+            //Log.Debug($"Send packet: Full Size: {fullPacket.Length}, Hash: {fullPacket.GetHashSHA1()}");
+            return fullPacket;
         }
 
         void PacketSenderThreadMethod()
@@ -1396,7 +1416,7 @@ namespace SocketNetworking.Client
 
         #endregion
 
-        #region receiving
+        #region Receiving
 
         protected ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
 
@@ -1436,13 +1456,24 @@ namespace SocketNetworking.Client
                 Log.Warning("Transport received a null byte array.");
                 return;
             }
-            try
+            DeserializeRetry(packet.Item1, packet.Item3);
+        }
+
+        protected virtual void DeserializeRetry(byte[] fullPacket, IPEndPoint endPoint)
+        {
+            for (int i = 0; i < MaxPacketDeserializationRetries; i++)
             {
-                Deserialize(packet.Item1, packet.Item3);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"Malformed Packet. Size: {packet.Item1.Length}, Error: {ex}");
+                try
+                {
+                    Deserialize(fullPacket, endPoint);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    PacketHeader header = Packet.ReadPacketHeader(fullPacket);
+                    Log.Warning($"Packet Error! Error Count: {i}\n Header: {header}\nMessage: {ex}");
+                    continue;
+                }
             }
         }
 
@@ -1453,16 +1484,22 @@ namespace SocketNetworking.Client
         /// <param name="endpoint"></param>
         protected virtual void Deserialize(byte[] fullPacket, IPEndPoint endpoint)
         {
+            //Log.Debug($"Read packet: Full Size: {fullPacket.Length}, Hash: {fullPacket.GetHashSHA1()}");
             //StringBuilder hex = new StringBuilder(fullPacket.Length * 2);
             //Log.Debug(hex.ToString());
             PacketHeader header = Packet.ReadPacketHeader(fullPacket);
+            //Log.Debug($"Read packet: Full Size: {fullPacket.Length}, Header: {header}");
             //Log.Debug("Active Flags: " + string.Join(", ", header.Flags.GetActiveFlags()));
             //Log.Debug($"Inbound Packet Info, Size Of Full Packet: {header.Size}, Type: {header.Type}, Target: {header.NetworkIDTarget}, CustomPacketID: {header.CustomPacketID}");
             byte[] rawPacket = fullPacket;
-            byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
-            byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
+            if (header.Size + 4 != fullPacket.Length)
+            {
+                throw new InvalidOperationException($"Packet Length in header ({header.Size}) and the actual read data ({fullPacket.Length}) don't match!");
+            }
+            byte[] packetHeaderBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
+            byte[] packetDataBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
             int currentEncryptionState = (int)EncryptionState;
-            if (header.Flags.HasFlag(PacketFlags.SymetricalEncrypted))
+            if (header.Flags.HasFlag(PacketFlags.SymmetricalEncrypted))
             {
                 //Log.Debug("Trying to decrypt a packet using SYMMETRICAL encryption!");
                 if (currentEncryptionState < (int)EncryptionState.SymmetricalReady)
@@ -1470,9 +1507,9 @@ namespace SocketNetworking.Client
                     Log.Error("Encryption cannot be done at this point: Not ready.");
                     return;
                 }
-                packetBytes = EncryptionManager.Decrypt(packetBytes);
+                packetDataBytes = EncryptionManager.Decrypt(packetDataBytes);
             }
-            if (header.Flags.HasFlag(PacketFlags.AsymetricalEncrypted))
+            if (header.Flags.HasFlag(PacketFlags.AsymmetricalEncrypted))
             {
                 //Log.Debug("Trying to decrypt a packet using ASYMMETRICAL encryption!");
                 if (currentEncryptionState < (int)EncryptionState.AsymmetricalReady)
@@ -1480,17 +1517,18 @@ namespace SocketNetworking.Client
                     Log.Error("Encryption cannot be done at this point: Not ready.");
                     return;
                 }
-                packetBytes = EncryptionManager.Decrypt(packetBytes, false);
+                packetDataBytes = EncryptionManager.Decrypt(packetDataBytes, false);
             }
             if (header.Flags.HasFlag(PacketFlags.Compressed))
             {
-                packetBytes = packetBytes.Decompress();
+                packetDataBytes = packetDataBytes.Decompress();
             }
             if (header.Size + 4 < fullPacket.Length)
             {
                 Log.Warning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
             }
-            fullPacket = headerBytes.Concat(packetBytes).ToArray();
+            //Log.Debug($"(RECEIVE) Header Bytes: {headerBytes.Length}, Body: {packetBytes.Length.ToString()}");
+            fullPacket = packetHeaderBytes.Concat(packetDataBytes).ToArray();
             //StringBuilder hex1 = new StringBuilder(fullPacket.Length * 2);
             //Log.Debug("Raw Deserialized Packet: \n" + hex1.ToString());
             PacketRead?.Invoke(header, fullPacket);
@@ -1522,29 +1560,32 @@ namespace SocketNetworking.Client
                 case PacketType.Authentication:
                     AuthenticationPacket authenticationPacket = new AuthenticationPacket();
                     authenticationPacket.Deserialize(data);
-                    if (AuthenticationProvider == null)
+                    _ = Task.Run(() =>
                     {
-                        Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
-                        return;
-                    }
-                    NetworkHandle handle = new NetworkHandle(this);
-                    if (authenticationPacket.IsResult)
-                    {
-                        AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
-                        Authenticated = authenticationPacket.Result.Approved;
-                    }
-                    else
-                    {
-                        (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authenticationPacket);
-                        AuthenticationPacket newPacket = new AuthenticationPacket
+                        if (AuthenticationProvider == null)
                         {
-                            IsResult = true,
-                            Result = result.Item1,
-                            ExtraAuthenticationData = result.Item2
-                        };
-                        Send(newPacket);
-                        Authenticated = newPacket.Result.Approved;
-                    }
+                            Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
+                            return;
+                        }
+                        NetworkHandle handle = new NetworkHandle(this);
+                        if (authenticationPacket.IsResult)
+                        {
+                            AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
+                            Authenticated = authenticationPacket.Result.Approved;
+                        }
+                        else
+                        {
+                            (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authenticationPacket);
+                            AuthenticationPacket newPacket = new AuthenticationPacket
+                            {
+                                IsResult = true,
+                                Result = result.Item1,
+                                ExtraAuthenticationData = result.Item2
+                            };
+                            Send(newPacket);
+                            Authenticated = newPacket.Result.Approved;
+                        }
+                    });
                     break;
                 case PacketType.ClientToClient:
                     ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
@@ -1701,9 +1742,8 @@ namespace SocketNetworking.Client
                     ClientIdUpdated?.Invoke();
                     break;
                 case PacketType.NetworkInvocation:
-                    NetworkInvokationPacket networkInvocationPacket = new NetworkInvokationPacket();
+                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
                     networkInvocationPacket.Deserialize(data);
-                    //Log.Debug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
                     {
                         NetworkManager.NetworkInvoke(networkInvocationPacket, this);
@@ -1759,7 +1799,7 @@ namespace SocketNetworking.Client
                         case EncryptionFunction.AsymmetricalKeyReceive:
                             //Log.Info($"Client Got Asymmetrical Encryption Key, ID: {ClientID}");
                             break;
-                        case EncryptionFunction.SymetricalKeyReceive:
+                        case EncryptionFunction.SymmetricalKeyReceive:
                             EncryptionState = EncryptionState.SymmetricalReady;
                             //Log.Info($"Client Got Symmetrical Encryption Key, ID: {ClientID}");
                             EncryptionPacket updateEncryptionStateFinal = new EncryptionPacket
@@ -1798,30 +1838,39 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.AuthenticationStateUpdate:
+                    AuthenticationStateUpdate authenticationStateUpdate = new AuthenticationStateUpdate();
+                    authenticationStateUpdate.Deserialize(data);
+                    _authenticated = authenticationStateUpdate.State;
+                    AuthenticationStateChanged?.Invoke();
+                    break;
                 case PacketType.Authentication:
                     AuthenticationPacket authenticationPacket = new AuthenticationPacket();
                     authenticationPacket.Deserialize(data);
-                    if (AuthenticationProvider == null)
+                    _ = Task.Run(() =>
                     {
-                        Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
-                        return;
-                    }
-                    NetworkHandle handle = new NetworkHandle(this);
-                    if (authenticationPacket.IsResult)
-                    {
-                        AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
-                    }
-                    else
-                    {
-                        (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authenticationPacket);
-                        AuthenticationPacket newPacket = new AuthenticationPacket
+                        if (AuthenticationProvider == null)
                         {
-                            IsResult = true,
-                            Result = result.Item1,
-                            ExtraAuthenticationData = result.Item2
-                        };
-                        Send(newPacket);
-                    }
+                            Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
+                            return;
+                        }
+                        NetworkHandle handle = new NetworkHandle(this);
+                        if (authenticationPacket.IsResult)
+                        {
+                            AuthenticationProvider.HandleAuthenticationResult(handle, authenticationPacket);
+                        }
+                        else
+                        {
+                            (AuthenticationResult, byte[]) result = AuthenticationProvider.Authenticate(handle, authenticationPacket);
+                            AuthenticationPacket newPacket = new AuthenticationPacket
+                            {
+                                IsResult = true,
+                                Result = result.Item1,
+                                ExtraAuthenticationData = result.Item2
+                            };
+                            Send(newPacket);
+                        }
+                    });
                     break;
                 case PacketType.ClientToClient:
                     ClientToClientPacket clientToClientPacket = new ClientToClientPacket();
@@ -1987,7 +2036,7 @@ namespace SocketNetworking.Client
                     ConnectionStateUpdated?.Invoke(_connectionState);
                     break;
                 case PacketType.NetworkInvocation:
-                    NetworkInvokationPacket networkInvocationPacket = new NetworkInvokationPacket();
+                    NetworkInvocationPacket networkInvocationPacket = new NetworkInvocationPacket();
                     networkInvocationPacket.Deserialize(data);
                     //Log.Debug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
@@ -2041,7 +2090,7 @@ namespace SocketNetworking.Client
                             EncryptionManager.SharedAesKey = new Tuple<byte[], byte[]>(encryptionPacket.SymKey, encryptionPacket.SymIV);
                             EncryptionPacket gotYourSymmetricalKey = new EncryptionPacket
                             {
-                                EncryptionFunction = EncryptionFunction.SymetricalKeyReceive
+                                EncryptionFunction = EncryptionFunction.SymmetricalKeyReceive
                             };
                             Send(gotYourSymmetricalKey);
                             EncryptionState = EncryptionState.SymmetricalReady;
@@ -2050,7 +2099,7 @@ namespace SocketNetworking.Client
                             EncryptionState = EncryptionState.AsymmetricalReady;
                             //Log.Info("Server got my Asymmetrical key.");
                             break;
-                        case EncryptionFunction.SymetricalKeyReceive:
+                        case EncryptionFunction.SymmetricalKeyReceive:
                             Log.Error("Server should not be receiving my symmetrical key!");
                             break;
                         case EncryptionFunction.UpdateEncryptionStatus:
@@ -2186,7 +2235,21 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            ServerBeginSync();
+            if (AutoSync)
+            {
+                ServerBeginSync();
+            }
+            if (AutoAssignAvatar)
+            {
+                ServerAutoSpecifyAvatar();
+            }
+        }
+
+        /// <summary>
+        /// Uses <see cref="NetworkServer.ClientAvatar"/> and a <see cref="NetworkObjectSpawner"/> to create and spawn a <see cref="INetworkAvatar"/>. This method differs from <see cref="ServerSpecifyAvatar(INetworkAvatar)"/> as it creates the avatar as well.
+        /// </summary>
+        public void ServerAutoSpecifyAvatar()
+        {
             if (NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
             {
                 INetworkObject result = null;

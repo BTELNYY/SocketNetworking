@@ -14,7 +14,7 @@ namespace SocketNetworking.Shared
         {
             Client = client ?? throw new ArgumentNullException(nameof(client));
             InvocationPacket = invocationPacket ?? throw new ArgumentNullException(nameof(invocationPacket));
-            if (invocationPacket is NetworkInvokationPacket packet)
+            if (invocationPacket is NetworkInvocationPacket packet)
             {
                 InvocationMode = InvocationMode.RemoteProcedureCall;
             }
@@ -43,7 +43,7 @@ namespace SocketNetworking.Shared
         {
             get
             {
-                return InvocationPacket.Flags.HasFlag(PacketFlags.AsymetricalEncrypted) || InvocationPacket.Flags.HasFlag(PacketFlags.SymetricalEncrypted);
+                return InvocationPacket.Flags.HasFlag(PacketFlags.AsymmetricalEncrypted) || InvocationPacket.Flags.HasFlag(PacketFlags.SymmetricalEncrypted);
             }
         }
     }

@@ -22,7 +22,7 @@ namespace BasicChat.Shared
             set
             {
                 _requestedName = value;
-                if (AuthenticationProvider is WindowsCredentialsRequestAuthenticationProvider provider)
+                if (AuthenticationProvider is CredentialsRequestAuthenticationProvider provider)
                 {
                     provider.DefaultUsername = value;
                 }
@@ -33,23 +33,34 @@ namespace BasicChat.Shared
 
         public ChatClient()
         {
-            WindowsCredentialsRequestAuthenticationProvider authenticationProvider = new WindowsCredentialsRequestAuthenticationProvider(this, true, true);
+            AutoAssignAvatar = false;
+            CredentialsRequestAuthenticationProvider authenticationProvider = new CredentialsRequestAuthenticationProvider(this, true, true);
             authenticationProvider.Responded += (x) =>
             {
+                if (!x.Response.Accepted)
+                {
+                    x.Reject("Authentication failed.");
+                    return;
+                }
+                x.Accept();
                 RequestedName = x.Response.Username;
+                ServerAutoSpecifyAvatar();
             };
             AuthenticationProvider = authenticationProvider;
             AuthenticationStateChanged += () =>
             {
-                if (NetworkManager.WhereAmI == ClientLocation.Remote)
+                if (Authenticated)
                 {
-                    ServerSendMessage(new Message()
+                    if (NetworkManager.WhereAmI == ClientLocation.Remote)
                     {
-                        Target = 0,
-                        Sender = 0,
-                        Color = ConsoleColor.Magenta,
-                        Content = Config.MOTD,
-                    });
+                        ServerSendMessage(new Message()
+                        {
+                            Target = 0,
+                            Sender = 0,
+                            Color = ConsoleColor.Magenta,
+                            Content = Config.MOTD,
+                        });
+                    }
                 }
             };
         }
