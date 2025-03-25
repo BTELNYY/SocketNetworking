@@ -19,12 +19,12 @@ namespace SocketNetworking.Shared.Transports
         /// <summary>
         /// Size of the buffer
         /// </summary>
-        public int BufferSize { get; set; } = Packet.MaxPacketSize;
+        public virtual int BufferSize { get; set; } = Packet.MaxPacketSize;
 
         /// <summary>
         /// Internal Buffer, will be modified
         /// </summary>
-        public byte[] Buffer { get; protected set; } = new byte[] { };
+        public virtual byte[] Buffer { get; protected set; } = new byte[] { };
 
         /// <summary>
         /// Is there anything to read from the Network interface?
