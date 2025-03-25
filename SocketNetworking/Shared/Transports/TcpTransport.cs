@@ -103,7 +103,6 @@ namespace SocketNetworking.Shared.Transports
             {
                 lock (_lock)
                 {
-                    Array.Clear(Buffer, 0, Buffer.Length);
                     Buffer = ReceiveInternal();
                     //Log.GlobalDebug($"READ PACKET: SIZE: {Buffer.Length}, HASH: {Buffer.GetHashSHA1()}");
                     //if (Buffer.Length > 500)
@@ -178,6 +177,10 @@ namespace SocketNetworking.Shared.Transports
                     }
                     //Offset the bytes
                     int read = Stream.Read(buffer, 4, bodySize);
+                    if (read != bodySize)
+                    {
+                        throw new InvalidOperationException($"Didn't read all the bytes for the body size, or read to many! Read: {read}, BodySize: {bodySize}");
+                    }
                     //Log.GlobalDebug("Read: " + read);
                     return buffer;
                 }
