@@ -101,7 +101,7 @@ namespace BasicChat.Client
             {
                 NetworkClient.LocalClient.Disconnect();
             };
-            client.TcpTransport.Socket.NoDelay = true;
+            //client.TcpTransport.Socket.NoDelay = true;
             client.InitLocalClient();
             client.RequestedName = Name;
             client.Connect(IP, Port);
