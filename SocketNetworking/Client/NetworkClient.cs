@@ -1324,10 +1324,17 @@ namespace SocketNetworking.Client
             byte[] packetDataBytes = packetBytes.Skip(PacketHeader.HeaderLength - 4).ToArray();
             //StringBuilder hex = new StringBuilder(packetBytes.Length * 2);
             //Log.Debug("Raw Serialized Packet: \n" + hex.ToString());
+            if (packetDataBytes.Length > 1024 && !packet.Flags.HasFlag(PacketFlags.Compressed))
+            {
+                packet.Flags = packet.Flags.SetFlag(PacketFlags.Compressed, true);
+                //Log.Warning($"Forcing compression, the packet is larger than one kb! ({packetDataBytes.Length})");
+                return SerializePacket(packet);
+            }
             if (packet.Flags.HasFlag(PacketFlags.Compressed))
             {
                 //Log.Debug("Compressing the packet.");
                 packetDataBytes = packetDataBytes.Compress();
+                //Log.Debug("New Packet size (after compression): " + packetDataBytes.Length);
             }
             if (packet.Flags.HasFlag(PacketFlags.AsymmetricalEncrypted))
             {
@@ -1370,7 +1377,7 @@ namespace SocketNetworking.Client
             writer.Write(packetFull);
             int written = writer.Length;
             packet.Size = written;
-            Log.Debug($"Send Packet: {packet}");
+            //Log.Debug($"Send Packet: {packet}");
             if (written != (packetFull.Length + 4))
             {
                 Log.Error($"Trying to send corrupted size! {packet}");
@@ -1489,8 +1496,8 @@ namespace SocketNetworking.Client
             {
                 throw new InvalidOperationException($"Packet Length in header ({header.Size}) and the actual read data ({fullPacket.Length}) don't match!");
             }
-            byte[] headerBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
-            byte[] packetBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
+            byte[] packetHeaderBytes = fullPacket.Take(PacketHeader.HeaderLength).ToArray();
+            byte[] packetDataBytes = fullPacket.Skip(PacketHeader.HeaderLength).ToArray();
             int currentEncryptionState = (int)EncryptionState;
             if (header.Flags.HasFlag(PacketFlags.SymmetricalEncrypted))
             {
@@ -1500,7 +1507,7 @@ namespace SocketNetworking.Client
                     Log.Error("Encryption cannot be done at this point: Not ready.");
                     return;
                 }
-                packetBytes = EncryptionManager.Decrypt(packetBytes);
+                packetDataBytes = EncryptionManager.Decrypt(packetDataBytes);
             }
             if (header.Flags.HasFlag(PacketFlags.AsymmetricalEncrypted))
             {
@@ -1510,18 +1517,18 @@ namespace SocketNetworking.Client
                     Log.Error("Encryption cannot be done at this point: Not ready.");
                     return;
                 }
-                packetBytes = EncryptionManager.Decrypt(packetBytes, false);
+                packetDataBytes = EncryptionManager.Decrypt(packetDataBytes, false);
             }
             if (header.Flags.HasFlag(PacketFlags.Compressed))
             {
-                packetBytes = packetBytes.Decompress();
+                packetDataBytes = packetDataBytes.Decompress();
             }
             if (header.Size + 4 < fullPacket.Length)
             {
                 Log.Warning($"Header provided size is less then the actual packet length! Header: {header.Size}, Actual Packet Size: {fullPacket.Length - 4}");
             }
             //Log.Debug($"(RECEIVE) Header Bytes: {headerBytes.Length}, Body: {packetBytes.Length.ToString()}");
-            fullPacket = headerBytes.Concat(packetBytes).ToArray();
+            fullPacket = packetHeaderBytes.Concat(packetDataBytes).ToArray();
             //StringBuilder hex1 = new StringBuilder(fullPacket.Length * 2);
             //Log.Debug("Raw Deserialized Packet: \n" + hex1.ToString());
             PacketRead?.Invoke(header, fullPacket);

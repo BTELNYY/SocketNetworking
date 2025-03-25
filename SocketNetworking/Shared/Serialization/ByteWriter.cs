@@ -123,7 +123,7 @@ namespace SocketNetworking.Shared.Serialization
                     return;
                 }
                 _workingSetData = _workingSetData.FastConcat(data).ToArray();
-                if(_workingSetData.Length != expectedLength)
+                if (_workingSetData.Length != expectedLength)
                 {
                     throw new NetworkConversionException($"Wrote an invalid byte array! Expected: {expectedLength}, Actual: {_workingSetData.Length}");
                 }

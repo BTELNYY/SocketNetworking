@@ -95,7 +95,7 @@ namespace SocketNetworking.Shared.Serialization
             {
                 int oldLength = _workingSetData.Length;
                 _workingSetData = _workingSetData.RemoveFromStart(length);
-                if(oldLength - length != _workingSetData.Length)
+                if (oldLength - length != _workingSetData.Length)
                 {
                     throw new NetworkConversionException($"Remove From Start failed. Expected: {oldLength - length}, Got: {_workingSetData.Length}.");
                 }
@@ -316,7 +316,7 @@ namespace SocketNetworking.Shared.Serialization
                 }
                 List<char> cChars = Encoding.UTF32.GetChars(stringBuff).ToList();
                 string result = new string(cChars.ToArray());
-                Log.GlobalDebug(result);
+                //Log.GlobalDebug(result);
                 return result;
             }
         }

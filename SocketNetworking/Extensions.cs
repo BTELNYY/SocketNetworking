@@ -12,6 +12,17 @@ namespace SocketNetworking
 {
     public static class Extensions
     {
+        public static string ByteArrayToString(this byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+            {
+                hex.AppendFormat("{0:x2}", b);
+                hex.Append(" ");
+            }
+            return hex.ToString();
+        }
+
         public static T[] DeepClone<T>(this T[] array) where T : ICloneable
         {
             return array.Select(a => (T)a.Clone()).ToArray();
@@ -197,9 +208,6 @@ namespace SocketNetworking
                     gzipStream.Write(bytes, 0, bytes.Length);
                 }
                 byte[] finalArray = memoryStream.ToArray();
-#if DEBUG
-                Log.GlobalDebug($"Compression Data. Input Length: {bytes.Length}, Compressed Length: {finalArray.Length}");
-#endif
                 return finalArray;
             }
         }

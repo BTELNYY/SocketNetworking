@@ -106,7 +106,6 @@ namespace SocketNetworking.Misc
                         }
                         else
                         {
-                            Thread.Sleep(1000);
                             client.ReadNext();
                             client.WriteNext();
                         }
