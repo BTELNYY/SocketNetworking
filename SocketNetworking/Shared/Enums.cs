@@ -22,6 +22,7 @@ namespace SocketNetworking.Shared
         AuthenticationStateUpdate,
         ConnectionStateUpdate,
         ClientData,
+        PacketMapping,
         ServerData,
         NetworkInvocation,
         NetworkInvocationResult,

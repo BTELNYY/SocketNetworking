@@ -1557,6 +1557,9 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.PacketMapping:
+                    Disconnect("Clients cannot sync Custom Packets.");
+                    break;
                 case PacketType.Authentication:
                     AuthenticationPacket authenticationPacket = new AuthenticationPacket();
                     authenticationPacket.Deserialize(data);
@@ -1838,6 +1841,48 @@ namespace SocketNetworking.Client
         {
             switch (header.Type)
             {
+                case PacketType.PacketMapping:
+                    PacketMappingPacket packetMapping = new PacketMappingPacket();
+                    packetMapping.Deserialize(data);
+                    Dictionary<int, string> newPacketPairs = packetMapping.Mapping;
+                    List<Type> homelessPackets = new List<Type>();
+                    foreach (int i in newPacketPairs.Keys)
+                    {
+                        Type t = NetworkManager.AdditionalPacketTypes.Values.FirstOrDefault(x => x.FullName == newPacketPairs[i]);
+                        if (t == null)
+                        {
+                            Log.Error($"Can't find packet with name {newPacketPairs[i]}, this will cause more errors later!");
+                            continue;
+                        }
+                        if (NetworkManager.AdditionalPacketTypes.ContainsKey(i))
+                        {
+                            if (!NetworkManager.IsDynamicAllocatedPacket(t))
+                            {
+                                Log.Error("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
+                                continue;
+                            }
+                            if (homelessPackets.Contains(t))
+                            {
+                                homelessPackets.Remove(t);
+                            }
+                            else
+                            {
+                                homelessPackets.Add(NetworkManager.AdditionalPacketTypes[i]);
+                            }
+                            NetworkManager.AdditionalPacketTypes[i] = t;
+                        }
+                        else
+                        {
+                            NetworkManager.AdditionalPacketTypes.Add(i, t);
+                        }
+                    }
+                    string built = "\n";
+                    foreach (int i in NetworkManager.AdditionalPacketTypes.Keys)
+                    {
+                        built += $"ID: {i}, Full Name: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
+                    }
+                    Log.Info("Finished re-writing dynamic packets: " + built);
+                    break;
                 case PacketType.AuthenticationStateUpdate:
                     AuthenticationStateUpdate authenticationStateUpdate = new AuthenticationStateUpdate();
                     authenticationStateUpdate.Deserialize(data);
@@ -1947,44 +1992,6 @@ namespace SocketNetworking.Client
                         break;
                     }
                     ClientIdUpdated?.Invoke();
-                    Dictionary<int, string> newPacketPairs = serverDataPacket.CustomPacketAutoPairs;
-                    List<Type> homelessPackets = new List<Type>();
-                    foreach (int i in newPacketPairs.Keys)
-                    {
-                        Type t = NetworkManager.AdditionalPacketTypes.Values.FirstOrDefault(x => x.FullName == newPacketPairs[i]);
-                        if (t == null)
-                        {
-                            Log.Error($"Can't find packet with name {newPacketPairs[i]}, this will cause more errors later!");
-                            continue;
-                        }
-                        if (NetworkManager.AdditionalPacketTypes.ContainsKey(i))
-                        {
-                            if (!NetworkManager.IsDynamicAllocatedPacket(t))
-                            {
-                                Log.Error("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
-                                continue;
-                            }
-                            if (homelessPackets.Contains(t))
-                            {
-                                homelessPackets.Remove(t);
-                            }
-                            else
-                            {
-                                homelessPackets.Add(NetworkManager.AdditionalPacketTypes[i]);
-                            }
-                            NetworkManager.AdditionalPacketTypes[i] = t;
-                        }
-                        else
-                        {
-                            NetworkManager.AdditionalPacketTypes.Add(i, t);
-                        }
-                    }
-                    string built = "\n";
-                    foreach (int i in NetworkManager.AdditionalPacketTypes.Keys)
-                    {
-                        built += $"ID: {i}, Full Name: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
-                    }
-                    Log.Info("Finished re-writing dynamic packets: " + built);
                     break;
                 case PacketType.SSLUpgrade:
                     SSLUpgradePacket ssLUpgradePacket = new SSLUpgradePacket();
@@ -2212,6 +2219,29 @@ namespace SocketNetworking.Client
         #endregion
 
         #region Misc
+
+        /// <summary>
+        /// Forces the server to sync <see cref="CustomPacket"/>s by sending <see cref="PacketMappingPacket"/>s.
+        /// </summary>
+        public void ServerSyncPackets()
+        {
+            Dictionary<int, string> packets = NetworkManager.PacketPairsSerialized;
+            while(packets.Count > 0)
+            {
+                var section = new Dictionary<int, string>();
+                for(int i = 0; i < Math.Min(10, packets.Count); i++)
+                {
+                    var keyPair = packets.First();
+                    section.Add(keyPair.Key, keyPair.Value);
+                    packets.Remove(keyPair.Key);
+                }
+                PacketMappingPacket packetMapping = new PacketMappingPacket()
+                {
+                    Mapping = section,
+                };
+                Send(packetMapping);
+            }
+        }
 
         /// <summary>
         /// Sends a log message to the other side of the <see cref="NetworkTransport"/>.
