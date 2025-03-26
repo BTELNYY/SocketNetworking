@@ -44,14 +44,18 @@ namespace SocketNetworking.Shared.Transports
 
         public void SetSSLState(bool state)
         {
-            lock (_lock)
+            //what the fuck is this
+            lock (_readLock)
             {
-                if (SslStream == null)
+                lock(_writeLock)
                 {
-                    Log.GlobalError("SSL Stream is null when trying to set SSL state!");
-                    return;
+                    if (SslStream == null)
+                    {
+                        Log.GlobalError("SSL Stream is null when trying to set SSL state!");
+                        return;
+                    }
+                    UsingSSL = state;
                 }
-                UsingSSL = state;
             }
         }
 
@@ -106,7 +110,7 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
-                lock (_lock)
+                lock (_readLock)
                 {
                     Buffer = ReceiveInternal();
                     //Log.GlobalDebug($"READ PACKET: SIZE: {Buffer.Length}, HASH: {Buffer.GetHashSHA1()}");
@@ -138,7 +142,9 @@ namespace SocketNetworking.Shared.Transports
             }
         }
 
-        readonly object _lock = new object();
+        readonly object _readLock = new object();
+
+        readonly object _writeLock = new object();
 
         byte[] buffer = new byte[Packet.MaxPacketSize];
 
@@ -169,11 +175,6 @@ namespace SocketNetworking.Shared.Transports
                     {
                         break;
                     }
-                    while (DataAmountAvailable < bodySize)
-                    {
-                        //Log.GlobalDebug($"Not enough data for the full packet, waiting. BodySize: {bodySize}, Amount ready: {DataAmountAvailable}");
-                        //wait for full packet.
-                    }
                     //Full packet + size
                     buffer = new byte[bodySize + 4];
                     //Place the size into the buffer
@@ -181,12 +182,32 @@ namespace SocketNetworking.Shared.Transports
                     {
                         buffer[i] = packetSizeBuffer[i];
                     }
-                    //Offset the bytes
-                    int read = Stream.Read(buffer, 4, bodySize);
-                    if (read != bodySize)
+                    int curSize = 4;
+                    while(curSize < buffer.Length)
                     {
-                        throw new InvalidOperationException($"Didn't read all the bytes for the body size, or read to many! Read: {read}, BodySize: {bodySize}");
+                        int result = Stream.ReadByte();
+                        if(result == -1)
+                        {
+                            Log.GlobalError("End of stream");
+                            break;
+                        }
+                        byte data = (byte)result;
+                        buffer[curSize] = data;
+                        curSize++;
                     }
+                    //while (DataAmountAvailable < bodySize)
+                    //{
+                    //    Log.GlobalDebug($"Not enough data for the full packet, waiting. BodySize: {bodySize}, Amount ready: {DataAmountAvailable}");
+                    //    //wait for full packet.
+                    //}
+                    //Full packet + size
+                    //Place the size into the buffer
+                    //Offset the bytes
+                    //int read = Stream.Read(buffer, 4, bodySize);
+                    //if (read != bodySize)
+                    //{
+                    //    throw new InvalidOperationException($"Didn't read all the bytes for the body size, or read to many! Read: {read}, BodySize: {bodySize}");
+                    //}
                     //Log.GlobalDebug("Read: " + read);
                     return buffer;
                 }
@@ -256,15 +277,18 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
-                //Log.GlobalDebug($"SEND: SIZE: {data.Length}, HASH: {data.GetHashSHA1()}");
-                //if (data.Length > 500)
-                //{
-                //    Log.GlobalDebug(data.ByteArrayToString());
-                //}
-                Stream.Write(data, 0, data.Length);
-                Stream.Flush();
-                //Thread.Sleep(1);
-                return null;
+                lock(_writeLock)
+                {
+                    //Log.GlobalDebug($"SEND: SIZE: {data.Length}, HASH: {data.GetHashSHA1()}");
+                    //if (data.Length > 500)
+                    //{
+                    //    Log.GlobalDebug(data.ByteArrayToString());
+                    //}
+                    Stream.Write(data, 0, data.Length);
+                    Stream.Flush();
+                    //Thread.Sleep(1);
+                    return null;
+                }
             }
             catch (Exception ex)
             {

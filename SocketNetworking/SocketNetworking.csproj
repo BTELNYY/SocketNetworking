@@ -85,6 +85,7 @@
     <Compile Include="Shared\PacketSystem\Packets\ClientToClientPacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\KeepAlivePacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ObjectManagePacket.cs" />
+    <Compile Include="Shared\PacketSystem\Packets\PacketMappingPacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\SSLUpgradePacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\StreamPacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\SyncVarUpdatePacket.cs" />

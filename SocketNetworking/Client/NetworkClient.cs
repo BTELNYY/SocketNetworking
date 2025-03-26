@@ -1719,10 +1719,10 @@ namespace SocketNetworking.Client
                     {
                         YourClientID = _clientId,
                         Configuration = NetworkServer.ServerConfiguration,
-                        CustomPacketAutoPairs = NetworkManager.PacketPairsSerialized,
                         UpgradeToSSL = NetworkServer.Config.Certificate != null && SupportsSSL,
                     };
                     SendImmediate(serverDataPacket);
+                    //ServerSyncPackets();
                     if (serverDataPacket.UpgradeToSSL && SupportsSSL)
                     {
                         NoPacketSending = true;
@@ -1991,6 +1991,7 @@ namespace SocketNetworking.Client
                         Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
                         break;
                     }
+                    Log.Info(serverDataPacket.Configuration.ToString());
                     ClientIdUpdated?.Invoke();
                     break;
                 case PacketType.SSLUpgrade:
@@ -2232,8 +2233,8 @@ namespace SocketNetworking.Client
                 for(int i = 0; i < Math.Min(10, packets.Count); i++)
                 {
                     var keyPair = packets.First();
-                    section.Add(keyPair.Key, keyPair.Value);
                     packets.Remove(keyPair.Key);
+                    section.Add(keyPair.Key, keyPair.Value);
                 }
                 PacketMappingPacket packetMapping = new PacketMappingPacket()
                 {

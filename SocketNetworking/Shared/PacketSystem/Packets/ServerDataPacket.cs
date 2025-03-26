@@ -13,8 +13,6 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public ProtocolConfiguration Configuration { get; set; } = new ProtocolConfiguration();
 
-        public Dictionary<int, string> CustomPacketAutoPairs { get; set; } = new Dictionary<int, string>();
-
         public bool UpgradeToSSL { get; set; } = false;
 
         public override ByteWriter Serialize()
@@ -23,8 +21,6 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             writer.WriteInt(YourClientID);
             writer.WritePacketSerialized<ProtocolConfiguration>(Configuration);
             writer.WriteBool(UpgradeToSSL);
-            SerializableDictionary<int, string> dict = new SerializableDictionary<int, string>(CustomPacketAutoPairs);
-            writer.WritePacketSerialized<SerializableDictionary<string, int>>(dict);
             return writer;
         }
 
@@ -34,7 +30,6 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             YourClientID = reader.ReadInt();
             Configuration = reader.ReadPacketSerialized<ProtocolConfiguration>();
             UpgradeToSSL = reader.ReadBool();
-            CustomPacketAutoPairs = reader.ReadPacketSerialized<SerializableDictionary<int, string>>().ContainedDict;
             return reader;
         }
     }

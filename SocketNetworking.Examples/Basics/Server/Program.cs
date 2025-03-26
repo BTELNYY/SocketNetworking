@@ -31,7 +31,7 @@ namespace SocketNetworking.Example.Basics.Server
             NetworkServer.Config.HandshakeTime = 10f;
             NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
             //speeeling
-            NetworkServer.Config.CertificatePath = "./example.cert";
+            NetworkServer.Config.CertificatePath = "./example.crt";
             NetworkServer.ClientConnected += (x) =>
             {
                 Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());
