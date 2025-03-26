@@ -2227,12 +2227,12 @@ namespace SocketNetworking.Client
         public void ServerSyncPackets()
         {
             Dictionary<int, string> packets = NetworkManager.PacketPairsSerialized;
-            while(packets.Count > 0)
+            while (packets.Count > 0)
             {
-                var section = new Dictionary<int, string>();
-                for(int i = 0; i < Math.Min(10, packets.Count); i++)
+                Dictionary<int, string> section = new Dictionary<int, string>();
+                for (int i = 0; i < Math.Min(10, packets.Count); i++)
                 {
-                    var keyPair = packets.First();
+                    KeyValuePair<int, string> keyPair = packets.First();
                     packets.Remove(keyPair.Key);
                     section.Add(keyPair.Key, keyPair.Value);
                 }

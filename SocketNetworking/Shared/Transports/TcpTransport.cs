@@ -18,7 +18,7 @@ namespace SocketNetworking.Shared.Transports
 
         public TcpTransport()
         {
-            
+
         }
 
         public TcpTransport(TcpClient client) : this()
@@ -47,7 +47,7 @@ namespace SocketNetworking.Shared.Transports
             //what the fuck is this
             lock (_readLock)
             {
-                lock(_writeLock)
+                lock (_writeLock)
                 {
                     if (SslStream == null)
                     {
@@ -183,10 +183,10 @@ namespace SocketNetworking.Shared.Transports
                         buffer[i] = packetSizeBuffer[i];
                     }
                     int curSize = 4;
-                    while(curSize < buffer.Length)
+                    while (curSize < buffer.Length)
                     {
                         int result = Stream.ReadByte();
-                        if(result == -1)
+                        if (result == -1)
                         {
                             Log.GlobalError("End of stream");
                             break;
@@ -277,7 +277,7 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
-                lock(_writeLock)
+                lock (_writeLock)
                 {
                     //Log.GlobalDebug($"SEND: SIZE: {data.Length}, HASH: {data.GetHashSHA1()}");
                     //if (data.Length > 500)
