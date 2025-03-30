@@ -219,7 +219,7 @@ namespace SocketNetworking.Client
         public bool AutoAssignAvatar { get; set; } = true;
 
         /// <summary>
-        /// When true, the library will call <see cref="ServerBeginSync"/> automatically.
+        /// When true, the library will call <see cref="ServerSyncNetworkObjects"/> automatically.
         /// </summary>
         public bool AutoSync { get; set; } = true;
 
@@ -2245,6 +2245,32 @@ namespace SocketNetworking.Client
         }
 
         /// <summary>
+        /// Forces the server to sync <see cref="CustomPacket"/>s by sending <see cref="PacketMappingPacket"/>s. This is done async.
+        /// </summary>
+        public async void ServerSyncPacketsAsync()
+        {
+            await Task.Run(() =>
+            {
+                Dictionary<int, string> packets = NetworkManager.PacketPairsSerialized;
+                while (packets.Count > 0)
+                {
+                    Dictionary<int, string> section = new Dictionary<int, string>();
+                    for (int i = 0; i < Math.Min(10, packets.Count); i++)
+                    {
+                        KeyValuePair<int, string> keyPair = packets.First();
+                        packets.Remove(keyPair.Key);
+                        section.Add(keyPair.Key, keyPair.Value);
+                    }
+                    PacketMappingPacket packetMapping = new PacketMappingPacket()
+                    {
+                        Mapping = section,
+                    };
+                    Send(packetMapping);
+                }
+            });
+        }
+
+        /// <summary>
         /// Sends a log message to the other side of the <see cref="NetworkTransport"/>.
         /// </summary>
         /// <param name="message"></param>
@@ -2268,7 +2294,7 @@ namespace SocketNetworking.Client
             }
             if (AutoSync)
             {
-                ServerBeginSync();
+                ServerSyncNetworkObjects();
             }
             if (AutoAssignAvatar)
             {
@@ -2303,9 +2329,9 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Forces the server to begin syncing <see cref="INetworkObject"/>s. This is done async, so your changed may or may not be accepted if you decide to change anything after this method is called. At least not by this <see cref="Task"/>.
         /// </summary>
-        public Task ServerBeginSync()
+        public async void ServerSyncNetworkObjectsAsync()
         {
-            return Task.Run(() =>
+            await Task.Run(() =>
             {
                 List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
                 NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
@@ -2315,6 +2341,20 @@ namespace SocketNetworking.Client
                     @object.OnSync(this);
                 }
             });
+        }
+
+        /// <summary>
+        /// Forces the server to begin syncing <see cref="INetworkObject"/>s.
+        /// </summary>
+        public void ServerSyncNetworkObjects()
+        {
+            List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
+            NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
+            foreach (INetworkObject @object in objects)
+            {
+                @object.NetworkSpawn(this);
+                @object.OnSync(this);
+            }
         }
 
         [NetworkInvokable(Direction = NetworkDirection.Server)]
