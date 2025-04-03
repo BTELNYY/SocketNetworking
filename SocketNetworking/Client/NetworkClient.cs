@@ -208,6 +208,17 @@ namespace SocketNetworking.Client
 
         #region Properties
 
+
+        /// <summary>
+        /// Represents the amount of <see cref="byte"/>s sent by the current <see cref="NetworkClient"/>.
+        /// </summary>
+        public virtual ulong BytesSent => Transport.SentBytes;
+
+        /// <summary>
+        /// Represents the amount of <see cref="byte"/>s received by the current <see cref="NetworkClient"/>.
+        /// </summary>
+        public virtual ulong BytesReceived => Transport.ReceivedBytes;
+
         /// <summary>
         /// Amount of times a packet will be attempted to be deserialized.
         /// </summary>
@@ -1251,6 +1262,7 @@ namespace SocketNetworking.Client
                 try
                 {
                     //Log.Debug($"Sending packet: {packet.ToString()}");
+                    //bytesSent += (ulong)fullBytes.Length;
                     Exception ex = Transport.Send(fullBytes, packet.Destination);
                     if (ex != null)
                     {
@@ -1451,6 +1463,7 @@ namespace SocketNetworking.Client
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
+            //bytesReceived += (ulong)packet.Item1.Length;
             if (packet.Item1 == null)
             {
                 Log.Warning("Transport received a null byte array.");

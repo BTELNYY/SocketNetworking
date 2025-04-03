@@ -74,6 +74,10 @@ namespace SocketNetworking.Shared.Transports
         /// </summary>
         public abstract Socket Socket { get; }
 
+        public ulong SentBytes { get; protected set; } = 0;
+
+        public ulong ReceivedBytes { get; protected set; } = 0;
+
         /// <summary>
         /// Connects to a remote host (No DNS lookup is done)
         /// </summary>

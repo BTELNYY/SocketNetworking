@@ -220,6 +220,7 @@ namespace SocketNetworking.Shared.Transports
                 }
                 _receivedBytes.TryDequeue(out (byte[], IPEndPoint) result);
                 //Log.GlobalDebug(result.Item1.Length.ToString() + " ServerMode");
+                ReceivedBytes += (ulong)result.Item1.Length;
                 return (result.Item1, null, _emulatedPeer);
             }
             else
@@ -241,6 +242,7 @@ namespace SocketNetworking.Shared.Transports
                         read = Client.Receive(ref peer);
                     }
                     //Log.GlobalDebug(read.Length.ToString() + " ClientMode");
+                    ReceivedBytes += (ulong)read.Length;
                     return (read, null, peer);
                 }
                 catch (Exception ex)
@@ -270,6 +272,7 @@ namespace SocketNetworking.Shared.Transports
                 {
                     sent = Client.Send(data, data.Length, _peer);
                 }
+                SentBytes += (ulong)sent;
                 //Log.GlobalDebug("Bytes Sent: " + sent);
                 return null;
             }
@@ -284,6 +287,7 @@ namespace SocketNetworking.Shared.Transports
             try
             {
                 Client.Send(data, data.Length);
+                SentBytes += (ulong)data.Length;
                 return null;
             }
             catch (Exception ex)
@@ -297,6 +301,7 @@ namespace SocketNetworking.Shared.Transports
             try
             {
                 Client.Send(data, data.Length, BroadcastEndpoint);
+                SentBytes += (ulong)data.Length;
                 return null;
             }
             catch (Exception ex)
@@ -324,6 +329,7 @@ namespace SocketNetworking.Shared.Transports
                 {
                     sent = await Client.SendAsync(data, data.Length, _peer);
                 }
+                SentBytes += (ulong)sent;
                 //Log.GlobalDebug("Bytes Sent: " + sent);
                 return null;
             }
@@ -337,7 +343,8 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
-                await Client.SendAsync(data, data.Length);
+                int sent = await Client.SendAsync(data, data.Length);
+                SentBytes += (ulong)sent;
                 return null;
             }
             catch (Exception e)
@@ -356,6 +363,7 @@ namespace SocketNetworking.Shared.Transports
                 }
                 _receivedBytes.TryDequeue(out (byte[], IPEndPoint) result);
                 //Log.GlobalDebug(result.Item1.Length.ToString() + " ServerMode");
+                ReceivedBytes += (ulong)result.Item1.Length;
                 return (result.Item1, null, _emulatedPeer);
             }
             else
@@ -381,6 +389,7 @@ namespace SocketNetworking.Shared.Transports
                         read = result.Buffer;
                         peer = result.RemoteEndPoint;
                     }
+                    ReceivedBytes += (ulong)read.Length;
                     //Log.GlobalDebug(read.Length.ToString() + " ClientMode");
                     return (read, null, peer);
                 }

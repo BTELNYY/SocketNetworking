@@ -118,6 +118,7 @@ namespace SocketNetworking.Shared.Transports
                     //{
                     //    Log.GlobalDebug(Buffer.ByteArrayToString());
                     //}
+                    ReceivedBytes += (ulong)Buffer.Length;
                 }
                 return (Buffer, null, Peer);
             }
@@ -132,7 +133,7 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
-                Stream.Read(Buffer, offset, size);
+                ReceivedBytes += (ulong)Stream.Read(Buffer, offset, size);
                 //Buffer = Receive();
                 return (Buffer, null, Peer);
             }
@@ -284,6 +285,7 @@ namespace SocketNetworking.Shared.Transports
                     //{
                     //    Log.GlobalDebug(data.ByteArrayToString());
                     //}
+                    SentBytes += (ulong)data.Length;
                     Stream.Write(data, 0, data.Length);
                     Stream.Flush();
                     //Thread.Sleep(1);
