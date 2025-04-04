@@ -9,7 +9,7 @@ namespace SocketNetworking.Example.Basics.Client
     {
         public static NetworkClient Client;
 
-        static string Title = "ClientID: {id}, Latency: {ms}";
+        static string Title = "ClientID: {id}, Latency: {ms}, Rx: {rxb}, Tx: {txb}";
 
         public static void Main(string[] args)
         {
@@ -28,11 +28,11 @@ namespace SocketNetworking.Example.Basics.Client
             };
             client.ClientIdUpdated += () =>
             {
-                Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
+                Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString()).Replace("{rxb}", client.BytesReceived.ToString()).Replace("{txb}", client.BytesSent.ToString());
             };
             client.LatencyChanged += (latency) =>
             {
-                Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString());
+                Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString()).Replace("{rxb}", client.BytesReceived.ToString()).Replace("{txb}", client.BytesSent.ToString());
             };
             client.Connect("127.0.0.1", 7777);
         }
