@@ -1,4 +1,5 @@
-﻿using SocketNetworking.Client;
+﻿using System;
+using SocketNetworking.Client;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.SyncVars;
@@ -25,9 +26,11 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual bool Spawnable => true;
 
+        public event Action Destroyed;
+
         public virtual void Destroy()
         {
-
+            Destroyed?.Invoke();
         }
 
         public virtual void OnAdded(INetworkObject addedObject)
@@ -65,9 +68,11 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         }
 
+        public event Action Modified;
+
         public virtual void OnModified(NetworkClient modifier)
         {
-
+            Modified?.Invoke();
         }
 
         public virtual void OnModified(INetworkObject modifiedObject, NetworkClient modifier)
@@ -80,9 +85,11 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         }
 
+        public event Action Spawned;
+
         public virtual void OnNetworkSpawned(NetworkClient spawner)
         {
-
+            Spawned?.Invoke();
         }
 
         public virtual void OnOwnerDisconnected(NetworkClient client)
@@ -120,14 +127,18 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         }
 
+        public event Action<NetworkClient, INetworkSyncVar> SyncVarChanged;
+
         public virtual void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
         {
-
+            SyncVarChanged?.Invoke(client, what);
         }
+
+        public event Action SyncVarsChanged;
 
         public virtual void OnSyncVarsChanged()
         {
-
+            SyncVarsChanged?.Invoke();
         }
 
         public virtual ByteReader ReceiveExtraData(byte[] extraData)
