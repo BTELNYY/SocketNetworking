@@ -58,8 +58,12 @@ namespace SocketNetworking.Shared.SyncVars
 
         public event Action<T> Changed;
 
-        public void Sync()
+        public virtual void Sync()
         {
+            if(!OwnerObject.Active)
+            {
+                return;
+            }
             SyncVarUpdatePacket packet = GetPacket();
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {

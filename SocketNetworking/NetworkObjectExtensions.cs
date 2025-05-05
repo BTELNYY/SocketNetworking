@@ -128,6 +128,10 @@ namespace SocketNetworking
 
         public static void NetworkDestroy(this INetworkObject obj)
         {
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 if (NetworkClient.LocalClient != null && !NetworkClient.LocalClient.IsConnected)
@@ -176,6 +180,10 @@ namespace SocketNetworking
         /// <param name="obj"></param>
         public static void SyncVars(this INetworkObject obj)
         {
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
             NetworkObjectData dataArray = NetworkManager.GetNetworkObjectData(obj);
             foreach (FieldInfo data in dataArray.SyncVars)
             {
@@ -249,6 +257,10 @@ namespace SocketNetworking
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");
             }
+            if(!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot spawn inactive objects.");
+            }
             (INetworkObject, NetworkObjectData) result = NetworkManager.GetNetworkObjectByID(obj.NetworkID);
             if (result.Item1 == null)
             {
@@ -312,6 +324,10 @@ namespace SocketNetworking
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");
+            }
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot spawn inactive objects.");
             }
             ObjectManagePacket packet = new ObjectManagePacket()
             {
@@ -407,6 +423,10 @@ namespace SocketNetworking
                 Active = obj.Active,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 NetworkClient.LocalClient.Send(packet);
@@ -448,6 +468,10 @@ namespace SocketNetworking
                 Active = obj.Active,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 NetworkClient.LocalClient.Send(packet);
@@ -490,6 +514,10 @@ namespace SocketNetworking
                 Active = obj.Active,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 NetworkClient.LocalClient.Send(packet);
@@ -525,6 +553,10 @@ namespace SocketNetworking
                 NewNetworkID = obj.NetworkID,
                 ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 NetworkClient.LocalClient.Send(packet);
@@ -566,6 +598,10 @@ namespace SocketNetworking
                 NewNetworkID = obj.NetworkID,
                 ObjectVisibilityMode = mode,
             };
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
             if (mode == obj.ObjectVisibilityMode)
             {
                 return;

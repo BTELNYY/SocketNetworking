@@ -21,6 +21,8 @@ namespace SocketNetworking.Shared.SyncVars
         {
         }
 
+       
+
         public void SyncToParent()
         {
             if (Value == null)
@@ -30,7 +32,6 @@ namespace SocketNetworking.Shared.SyncVars
             Value.NetworkSetOwner(OwnerObject.OwnerClientID);
             Value.NetworkSetOwnershipMode(OwnerObject.OwnershipMode);
             Value.NetworkSetVisibility(OwnerObject.ObjectVisibilityMode);
-
         }
 
         public void Spawn()
