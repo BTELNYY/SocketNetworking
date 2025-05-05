@@ -14,6 +14,11 @@ namespace SocketNetworking
 {
     public static class NetworkObjectExtensions
     {
+        /// <summary>
+        /// Tries to get the <see cref="INetworkObject.OwnerClientID"/> as a <see cref="NetworkClient"/>. Note that this method should only be called on the server.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public static NetworkClient GetOwner(this INetworkObject obj)
         {
             if (NetworkManager.WhereAmI != ClientLocation.Remote)
@@ -21,6 +26,32 @@ namespace SocketNetworking
                 return null;
             }
             return NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID);
+        }
+
+        /// <summary>
+        /// Will attempt to find the <see cref="INetworkAvatar"/> of the <see cref="INetworkObject.OwnerClientID"/> of the <see cref="INetworkObject"/>. Can be called on both the client and server, although the client may be slower depending on the amount of <see cref="INetworkObject"/>s. Returns <see langword="null"/> if it cannot find the owner or the owners <see cref="INetworkAvatar"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static INetworkAvatar GetOwnerAvatar(this INetworkObject obj)
+        {
+            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkClient client = GetOwner(obj);
+                if(client == null)
+                {
+                    return null;
+                }
+                return client.Avatar;
+            }
+            foreach(INetworkAvatar o in NetworkManager.GetNetworkObjects().Where(x => x is INetworkAvatar))
+            {
+                if(o.OwnerClientID == obj.OwnerClientID)
+                {
+                    return o;
+                }
+            }
+            return null;
         }
 
 
@@ -73,7 +104,7 @@ namespace SocketNetworking
         }
 
         /// <summary>
-        /// Invokes a method. Note that this can only be run on the server, as not NetworkClient is provided. Also note that this will work as all client RPC, meaning every client will get the invocation.
+        /// Invokes a method. Note that this can only be run on the server, as no <see cref="NetworkClient"/> is provided. Also note that this will work as all client RPC, meaning every client will get the invocation.
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="methodName"></param>
@@ -84,7 +115,7 @@ namespace SocketNetworking
         }
 
         /// <summary>
-        /// Spawns a <see cref="INetworkSpawnable"/> on all clients.
+        /// Spawns the <see cref="INetworkSpawnable"/> on all clients.
         /// </summary>
         /// <param name="obj"></param>
         /// <exception cref="InvalidOperationException"></exception>
@@ -104,6 +135,12 @@ namespace SocketNetworking
             obj.OnLocalSpawned(packet);
         }
 
+        /// <summary>
+        /// Spawns the <see cref="INetworkSpawnable"/> on a specific <see cref="NetworkClient"/>/
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="target"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSpawn(this INetworkSpawnable obj, NetworkClient target)
         {
             if (NetworkManager.WhereAmI == ClientLocation.Local)
@@ -120,12 +157,21 @@ namespace SocketNetworking
             obj.OnLocalSpawned(packet);
         }
 
+        /// <summary>
+        /// Locally destroys the <see cref="INetworkObject"/>, this isn't synced to the network, so desync can occur. Do not use this on the server or for <see cref="INetworkObject"/>s which are not registered. (See <see cref="NetworkManager.IsRegistered(INetworkObject)"/>).
+        /// </summary>
+        /// <param name="obj"></param>
         public static void LocalDestroy(this INetworkObject obj)
         {
             obj.Destroy();
             NetworkManager.RemoveNetworkObject(obj);
         }
 
+        /// <summary>
+        /// Destroys the <see cref="INetworkObject"/> on the network. This method will call the <see cref="INetworkObject.OnServerDestroy"/> method followed by <see cref="INetworkObject.Destroy"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkDestroy(this INetworkObject obj)
         {
             if (!obj.Active)
@@ -243,7 +289,29 @@ namespace SocketNetworking
         }
 
         /// <summary>
-        /// Spawns the <see cref="INetworkObject"/>.
+        /// Spawns the <see cref="INetworkObject"/>. Note that the <see cref="INetworkObject.ObjectVisibilityMode"/> will be changed from <see cref="ObjectVisibilityMode.ServerOnly"/> to <see cref="ObjectVisibilityMode.Everyone"/> if applicable. <see cref="INetworkObject.Active"/> is set to <paramref name="enabled"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static void NetworkSpawn(this INetworkObject obj, bool enabled)
+        {
+            obj.Active = enabled;
+            NetworkSpawn(obj);
+        }
+
+        /// <summary>
+        /// Spawns the <see cref="INetworkObject"/> for a specific <see cref="NetworkClient"/>. Note that the <see cref="INetworkObject.ObjectVisibilityMode"/> will be changed from <see cref="ObjectVisibilityMode.ServerOnly"/> to <see cref="ObjectVisibilityMode.Everyone"/> if applicable. <see cref="INetworkObject.Active"/> is set to <paramref name="enabled"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static void NetworkSpawn(this INetworkObject obj, NetworkClient client, bool enabled)
+        {
+            obj.Active = enabled;
+            NetworkSpawn(obj, client);
+        }
+
+        /// <summary>
+        /// Spawns the <see cref="INetworkObject"/>. Note that the <see cref="INetworkObject.ObjectVisibilityMode"/> will be changed from <see cref="ObjectVisibilityMode.ServerOnly"/> to <see cref="ObjectVisibilityMode.Everyone"/> if applicable.
         /// </summary>
         /// <param name="obj"></param>
         /// <exception cref="InvalidOperationException"></exception>
@@ -256,10 +324,6 @@ namespace SocketNetworking
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");
-            }
-            if(!obj.Active)
-            {
-                throw new InvalidOperationException("Cannot spawn inactive objects.");
             }
             (INetworkObject, NetworkObjectData) result = NetworkManager.GetNetworkObjectByID(obj.NetworkID);
             if (result.Item1 == null)
@@ -311,8 +375,7 @@ namespace SocketNetworking
         }
 
         /// <summary>
-        /// Spawns the <see cref="INetworkObject"/>.
-        /// </summary>
+        /// Spawns the <see cref="INetworkObject"/> for a specific <see cref="NetworkClient"/>. Note that the <see cref="INetworkObject.ObjectVisibilityMode"/> will be changed from <see cref="ObjectVisibilityMode.ServerOnly"/> to <see cref="ObjectVisibilityMode.Everyone"/> if applicable.
         /// <param name="obj"></param>
         /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSpawn(this INetworkObject obj, NetworkClient target)
@@ -324,10 +387,6 @@ namespace SocketNetworking
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");
-            }
-            if (!obj.Active)
-            {
-                throw new InvalidOperationException("Cannot spawn inactive objects.");
             }
             ObjectManagePacket packet = new ObjectManagePacket()
             {
@@ -369,6 +428,12 @@ namespace SocketNetworking
             }
         }
 
+        /// <summary>
+        /// Sets the <see cref="INetworkObject.Active"/> state to <paramref name="state"/> as well as synchronizing across the network.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="state"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSetActive(this INetworkObject obj, bool state)
         {
             ObjectManagePacket packet = new ObjectManagePacket()
@@ -540,6 +605,11 @@ namespace SocketNetworking
             obj.NetworkID = newId;
         }
 
+        /// <summary>
+        /// Resends all data about the <see cref="INetworkObject"/>. Use this if you manually modify any properties.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSync(this INetworkObject obj)
         {
             ObjectManagePacket packet = new ObjectManagePacket()
@@ -634,6 +704,12 @@ namespace SocketNetworking
         }
 
 
+        /// <summary>
+        /// Checks if a <see cref="NetworkClient"/> should be able to see (see <see cref="INetworkObject.ObjectVisibilityMode"/>) the <see cref="INetworkObject"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="viewer"></param>
+        /// <returns></returns>
         public static bool CheckVisibility(this INetworkObject obj, NetworkClient viewer)
         {
             if (obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
