@@ -22,7 +22,7 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual int NetworkID { get; set; }
 
-        public virtual bool Active { get; set; }
+        public virtual bool Active { get; set; } = true;
 
         public virtual bool Spawnable => true;
 
