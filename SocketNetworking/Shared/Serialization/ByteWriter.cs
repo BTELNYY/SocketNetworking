@@ -60,6 +60,11 @@ namespace SocketNetworking.Shared.Serialization
             _workingSetData = null;
         }
 
+        /// <summary>
+        /// Writes the <paramref name="value"/> by wrapping it in a <see cref="SerializedData"/> struct.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
         public void WriteObject<T>(T value)
         {
             lock (_lock)
@@ -69,6 +74,11 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="IPacketSerializable"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serializable"></param>
         public void WritePacketSerialized<T>(IPacketSerializable serializable)
         {
             lock (_lock)
@@ -78,6 +88,11 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes <paramref name="any"/> to the buffer by trying to find a <see cref="TypeWrapper{T}"/> for it. If none is found, a <see cref="NetworkConversionException"/> is thrown.
+        /// </summary>
+        /// <param name="any"></param>
+        /// <exception cref="NetworkConversionException"></exception>
         public void WriteWrapper(object any)
         {
             lock (_lock)
@@ -85,15 +100,22 @@ namespace SocketNetworking.Shared.Serialization
                 Type type = any.GetType();
                 if (!NetworkManager.TypeToTypeWrapper.ContainsKey(type))
                 {
-                    throw new InvalidOperationException("No type wrapper for type: " + type.FullName);
+                    throw new NetworkConversionException("No type wrapper for type: " + type.FullName);
                 }
                 object wrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
+                //Hacky fix.
                 MethodInfo serializer = wrapper.GetType().GetMethod("Serialize");
                 byte[] result = (byte[])serializer.Invoke(wrapper, new object[] { any });
                 WriteByteArray(result);
             }
         }
 
+        /// <summary>
+        /// Writes <paramref name="value"/> using the provided <see cref="TypeWrapper{T}"/> as <typeparamref name="T"/>. <typeparamref name="K"/> is the type of <paramref name="value"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="K"></typeparam>
+        /// <param name="value"></param>
         public void WriteWrapper<T, K>(T value) where T : TypeWrapper<K>
         {
             lock (_lock)
@@ -103,6 +125,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="byte"/> array to the buffer. No prefix is added.
+        /// </summary>
+        /// <param name="data"></param>
         public void Write(byte[] data)
         {
             lock (_lock)
@@ -111,6 +137,11 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="byte"/> array to the buffer. Unlike <see cref="Write(byte[])"/>, this method will prepend an <see cref="int"/> to represent the length of the <paramref name="data"/>. Throws an <see cref="NetworkConversionException"/> if a failsafe condition is triggered where the length of the <paramref name="data"/> + 4 + the old buffer length does not equal <see cref="Length"/>.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <exception cref="NetworkConversionException"></exception>
         public void WriteByteArray(byte[] data)
         {
             lock (_lock)
@@ -130,6 +161,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="byte"/> to the buffer.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteByte(byte data)
         {
             lock (_lock)
@@ -138,6 +173,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="sbyte"/> to the buffer.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteSByte(sbyte data)
         {
             lock (_lock)
@@ -147,6 +186,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="long"/> to the buffer.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteLong(long data)
         {
             lock (_lock)
@@ -156,6 +199,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="int"/> to the buffer.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteInt(int data)
         {
             lock (_lock)
@@ -166,6 +213,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="short"/> to the buffer.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteShort(short data)
         {
             lock (_lock)
@@ -175,6 +226,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="ulong"/> to the buffer.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteULong(ulong data)
         {
             lock (_lock)
@@ -184,6 +239,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="uint"/> to the buffer.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteUInt(uint data)
         {
             lock (_lock)
@@ -193,6 +252,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="ushort"/> to the buffer.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteUShort(ushort data)
         {
             lock (_lock)
@@ -202,6 +265,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="float"/> to the buffer.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteFloat(float data)
         {
             lock (_lock)
@@ -211,6 +278,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="double"/> to the buffer.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteDouble(double data)
         {
             lock (_lock)
@@ -220,6 +291,11 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="string"/> to the buffer. This method uses <see cref="WriteByteArray(byte[])"/> to write the <see cref="Encoding.UTF32"/> formatted string. Throws an <see cref="NetworkConversionException"/> if a failsafe condition is triggered where the new buffer length is not equal to the old buffer length + <see cref="string"/> byte array length.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <exception cref="NetworkConversionException"></exception>
         public void WriteString(string data)
         {
             lock (_lock)
@@ -235,6 +311,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Writes a <see cref="bool"/> to the buffer. If you are writing a large amount of <see cref="bool"/>s, you should check out the <see cref="FlagsAttribute"/> for the <see cref="Enum"/> type as 1 <see cref="bool"/> is 1 byte.
+        /// </summary>
+        /// <param name="data"></param>
         public void WriteBool(bool data)
         {
             lock (_lock)

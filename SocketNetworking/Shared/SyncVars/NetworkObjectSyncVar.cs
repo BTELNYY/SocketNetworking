@@ -3,6 +3,9 @@ using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Shared.SyncVars
 {
+    /// <summary>
+    /// The <see cref="NetworkObjectSyncVar"/> class is designed to sync <see cref="INetworkObject"/>s as SyncVars.
+    /// </summary>
     public class NetworkObjectSyncVar : NetworkSyncVar<INetworkObject>
     {
         public NetworkObjectSyncVar(INetworkObject value) : base(value)

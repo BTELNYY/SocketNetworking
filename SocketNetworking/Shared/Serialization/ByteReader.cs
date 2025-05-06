@@ -10,7 +10,7 @@ using SocketNetworking.Shared.PacketSystem;
 namespace SocketNetworking.Shared.Serialization
 {
     /// <summary>
-    /// Provides Packet reading capablities by reading elements of the byte array.
+    /// Provides Packet reading capabilities by reading values from the contained byte array.
     /// </summary>
     public class ByteReader
     {
@@ -89,6 +89,11 @@ namespace SocketNetworking.Shared.Serialization
             RawData = null;
         }
 
+        /// <summary>
+        /// Removes a specific amount of <see langword="byte"/>s from the buffer.
+        /// </summary>
+        /// <param name="length"></param>
+        /// <exception cref="NetworkConversionException"></exception>
         public void Remove(int length)
         {
             lock (_lock)
@@ -102,6 +107,11 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Tries to read a <see cref="SerializedData"/> object and then casts its contained value to <typeparamref name="T"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public T ReadObject<T>()
         {
             lock (_lock)
@@ -119,6 +129,11 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads <paramref name="length"/> <see cref="byte"/>s from the buffer, then calls the <see cref="Remove(int)"/> method to remove <paramref name="length"/> <see cref="byte"/>s.
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
         public byte[] Read(int length)
         {
             lock (_lock)
@@ -129,6 +144,11 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Does the same as <see cref="Read(int)"/>, but does not call <see cref="Remove(int)"/>.
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
         public byte[] ReadNoRemove(int length)
         {
             lock (_lock)
@@ -138,6 +158,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see langword="byte"/> array and removes it from the buffer. Byte arrays are stored as an <see cref="int"/> for the length followed by the bytes making up the byte array.
+        /// </summary>
+        /// <returns></returns>
         public byte[] ReadByteArray()
         {
             lock (_lock)
@@ -156,6 +180,11 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="IPacketSerializable"/> from the buffer.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public T ReadPacketSerialized<T>() where T : IPacketSerializable
         {
             lock (_lock)
@@ -167,6 +196,12 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="TypeWrapper{T}"/> from the buffer. <typeparamref name="K"/> is the final type that this method returns, and <typeparamref name="T"/> is the <see cref="TypeWrapper{T}"/> which has a generic argument of <typeparamref name="K"/>. The <see cref="TypeWrapper{T}"/> does not need to be registered in <see cref="NetworkManager.TypeToTypeWrapper"/>. if it is, you can use <see cref="ReadWrapper{T}()"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="K"></typeparam>
+        /// <returns></returns>
         public K ReadWrapper<T, K>() where T : TypeWrapper<K>
         {
             lock (_lock)
@@ -179,6 +214,12 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="TypeWrapper{T}"/> that has been registered in <see cref="NetworkManager.TypeToTypeWrapper"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public T ReadWrapper<T>()
         {
             lock (_lock)
@@ -197,7 +238,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
-
+        /// <summary>
+        /// Reads a <see cref="byte"/> from the buffer and removes it.
+        /// </summary>
+        /// <returns></returns>
         public byte ReadByte()
         {
             lock (_lock)
@@ -208,6 +252,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="sbyte"/> from the buffer and removes it.
+        /// </summary>
+        /// <returns></returns>
         public sbyte ReadSByte()
         {
             lock (_lock)
@@ -217,6 +265,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="ulong"/> from the buffer and removes it.
+        /// </summary>
+        /// <returns></returns>
         public ulong ReadULong()
         {
             lock (_lock)
@@ -228,6 +280,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="uint"/> from the buffer and removes it.
+        /// </summary>
+        /// <returns></returns>
         public uint ReadUInt()
         {
             lock (_lock)
@@ -239,6 +295,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="ushort"/> from the buffer and removes it.
+        /// </summary>
+        /// <returns></returns>
         public ushort ReadUShort()
         {
             lock (_lock)
@@ -250,6 +310,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="long"/> from the buffer and removes it.
+        /// </summary>
+        /// <returns></returns>
         public long ReadLong()
         {
             lock (_lock)
@@ -261,6 +325,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="int"/> from the buffer and removes it.
+        /// </summary>
+        /// <returns></returns>
         public int ReadInt()
         {
             lock (_lock)
@@ -272,6 +340,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="short"/> from the buffer and removes it.
+        /// </summary>
+        /// <returns></returns>
         public short ReadShort()
         {
             lock (_lock)
@@ -283,6 +355,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="float"/> from the buffer and removes it.
+        /// </summary>
+        /// <returns></returns>
         public float ReadFloat()
         {
             lock (_lock)
@@ -294,6 +370,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="double"/> from the buffer and removes it.
+        /// </summary>
+        /// <returns></returns>
         public double ReadDouble()
         {
             lock (_lock)
@@ -305,6 +385,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="string"/> from the buffer and removes it. This method uses <see cref="ReadByteArray"/> to retrieve the <see cref="Encoding.UTF32"/> encoded string.
+        /// </summary>
+        /// <returns></returns>
         public string ReadString()
         {
             lock (_lock)
@@ -321,6 +405,10 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Reads a <see cref="bool"/> from the buffer and removes it. You should use the <see cref="FlagsAttribute"/> on an <see cref="Enum"/> if you are trying to serialize a large amount of <see cref="bool"/>s as a single <see cref="bool"/> is 1 <see cref="byte"/> large.
+        /// </summary>
+        /// <returns></returns>
         public bool ReadBool()
         {
             lock (_lock)

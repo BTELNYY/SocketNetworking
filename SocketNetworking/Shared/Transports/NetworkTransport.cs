@@ -7,7 +7,7 @@ using SocketNetworking.Shared.PacketSystem;
 namespace SocketNetworking.Shared.Transports
 {
     /// <summary>
-    /// A generic class to represent a connection to a peer in a managed way.
+    /// An abstract class to represent a connection to a peer in a managed way.
     /// </summary>
     public abstract class NetworkTransport
     {

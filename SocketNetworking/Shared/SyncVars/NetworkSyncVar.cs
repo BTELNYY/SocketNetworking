@@ -8,7 +8,11 @@ using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.SyncVars
 {
-    public class NetworkSyncVar<T> : IEquatable<T>, ICloneable, INetworkSyncVar
+    /// <summary>
+    /// The concrete implementation of <see cref="INetworkSyncVar"/> with generics and comfort methods.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class NetworkSyncVar<T> : IEquatable<T>, IEquatable<NetworkSyncVar<T>>, ICloneable, INetworkSyncVar
     {
         public INetworkObject OwnerObject { get; set; }
 
@@ -32,6 +36,9 @@ namespace SocketNetworking.Shared.SyncVars
 
         T value = default;
 
+        /// <summary>
+        /// Identical to <see cref="ValueRaw"/>, but casted to <typeparamref name="T"/>. Calls <see cref="ValueRaw"/> internally to set the value.
+        /// </summary>
         public virtual T Value
         {
             get
@@ -56,6 +63,9 @@ namespace SocketNetworking.Shared.SyncVars
             }
         }
 
+        /// <summary>
+        /// The <see cref="Changed"/> event is fired when the <see cref="Value"/> has been changed either due to network updates or local updates.
+        /// </summary>
         public event Action<T> Changed;
 
         public virtual void Sync()
@@ -188,6 +198,11 @@ namespace SocketNetworking.Shared.SyncVars
         {
             SyncVarUpdatePacket packet = GetPacket();
             who.Send(packet);
+        }
+
+        public bool Equals(NetworkSyncVar<T> other)
+        {
+            return other.Value.Equals(Value);
         }
     }
 }

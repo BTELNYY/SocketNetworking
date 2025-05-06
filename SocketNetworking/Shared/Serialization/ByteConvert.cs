@@ -13,6 +13,9 @@ using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 
 namespace SocketNetworking.Shared.Serialization
 {
+    /// <summary>
+    /// <see cref="ByteConvert"/> is a utility class to allow converting of data to and from bytes without manually using <see cref="ByteReader"/> or <see cref="ByteWriter"/>. It is still recommended to use the formerly mentioned classes.
+    /// </summary>
     public class ByteConvert
     {
         static ByteConvert()
@@ -53,12 +56,24 @@ namespace SocketNetworking.Shared.Serialization
             typeof(IPacketSerializable),
         };
 
+        /// <summary>
+        /// Serializes given data.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public static SerializedData Serialize<T>(T data)
         {
             SerializedData sData = Serialize((object)data);
             return sData;
         }
 
+        /// <summary>
+        /// Serializes given data, if the data cannot be serialized, <see cref="NetworkConversionException"/> is thrown.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        /// <exception cref="NetworkConversionException"></exception>
         public static SerializedData Serialize(object data)
         {
             ByteWriter writer = new ByteWriter();
@@ -210,6 +225,12 @@ namespace SocketNetworking.Shared.Serialization
             throw new NetworkConversionException($"Type '{data.GetType().FullName}' cannot be serialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
         }
 
+        /// <summary>
+        /// Deserializes Data from a byte array with casting to <typeparamref name="T"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public static T DeserializeRaw<T>(byte[] data)
         {
             SerializedData sData = new SerializedData()
@@ -221,6 +242,14 @@ namespace SocketNetworking.Shared.Serialization
             return output;
         }
 
+        /// <summary>
+        /// Deserializes Data from a <see cref="SerializedData"/> parameter. <paramref name="read"/> is the amount of bytes read.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="read"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        /// <exception cref="NetworkConversionException"></exception>
         public static object Deserialize(SerializedData data, out int read)
         {
             ByteReader reader = new ByteReader(data.Data);
@@ -381,16 +410,31 @@ namespace SocketNetworking.Shared.Serialization
             throw new NetworkConversionException($"Type '{data.Type.FullName}' cannot be deserialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
         }
 
+        /// <summary>
+        /// Deserializes Data and casts it to <typeparamref name="T"/>. If <see cref="SerializedData.Type"/> and <typeparamref name="T"/> do not match, <see cref="NetworkConversionException"/> is thrown.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="data"></param>
+        /// <param name="read"></param>
+        /// <returns></returns>
+        /// <exception cref="NetworkConversionException"></exception>
         public static T Deserialize<T>(SerializedData data, out int read)
         {
             if (data.Type != typeof(T))
             {
-                throw new NetworkDeserializationException("Types provided do not match.");
+                throw new NetworkConversionException("Types provided do not match.");
             }
             T output = (T)Deserialize(data, out read);
             return output;
         }
 
+        /// <summary>
+        /// Tries to Deserialize a <see cref="SerializedData"/> from the byte array and then tries to cast the contained data to <typeparamref name="T"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        /// <exception cref="NetworkConversionException"></exception>
         public static T Deserialize<T>(byte[] data)
         {
             ByteReader br = new ByteReader(data);
@@ -402,20 +446,26 @@ namespace SocketNetworking.Shared.Serialization
             Type givenType = sData.Type;
             if (givenType == null)
             {
-                throw new NetworkDeserializationException($"Type {givenType.Name} cannot be found.");
+                throw new NetworkConversionException($"Type {givenType.Name} cannot be found.");
             }
             if (!typeof(T).IsAssignableFrom(givenType))
             {
-                throw new NetworkDeserializationException("Given Type is not Assignable from the deserialized type.");
+                throw new NetworkConversionException("Given Type is not Assignable from the deserialized type.");
             }
             return Deserialize<T>(sData, out _);
         }
     }
 
+    /// <summary>
+    /// The <see cref="SerializedData"/> struct contains the <see cref="System.Type"/> and the Data for the serialized data.
+    /// </summary>
     public struct SerializedData : IPacketSerializable
     {
         Type _type;
 
+        /// <summary>
+        /// The <see cref="System.Type"/> of the contained data.
+        /// </summary>
         public Type Type
         {
             get
@@ -428,8 +478,14 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        /// <summary>
+        /// Determines if the data is treated as being <see langword="null"/>.
+        /// </summary>
         public bool DataNull;
 
+        /// <summary>
+        /// The data buffer.
+        /// </summary>
         public byte[] Data;
 
         public ByteReader Deserialize(byte[] data)
@@ -474,7 +530,9 @@ namespace SocketNetworking.Shared.Serialization
             return writer;
         }
 
-        //Used internally to represent void returns in RPC and what not.
+        /// <summary>
+        /// Template <see cref="SerializedData"/> to represent a value that is <see langword="null"/>.
+        /// </summary>
         public static SerializedData NullData
         {
             get

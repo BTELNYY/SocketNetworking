@@ -4,6 +4,9 @@ using SocketNetworking.Shared.PacketSystem.Packets;
 
 namespace SocketNetworking.Shared.SyncVars
 {
+    /// <summary>
+    /// THe <see cref="INetworkSyncVar"/> interface is the base interface that is required to allow for SyncVars to work. Use <see cref="NetworkSyncVar{T}"/> for a generic implementation. 
+    /// </summary>
     public interface INetworkSyncVar
     {
         /// <summary>
