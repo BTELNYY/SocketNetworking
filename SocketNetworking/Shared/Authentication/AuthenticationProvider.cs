@@ -1,10 +1,14 @@
 ﻿using SocketNetworking.Client;
+using SocketNetworking.Server;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.Authentication
 {
+    /// <summary>
+    /// The <see cref="AuthenticationProvider"/> is an abstract class to allow for authentication of <see cref="NetworkClient"/>s. See <see cref="NetworkClient.Authenticated"/> and <see cref="NetworkClient.AuthenticationProvider"/> as well as <see cref="NetworkServer.Authenticator"/>.
+    /// </summary>
     public abstract class AuthenticationProvider
     {
         public AuthenticationProvider(NetworkClient client)

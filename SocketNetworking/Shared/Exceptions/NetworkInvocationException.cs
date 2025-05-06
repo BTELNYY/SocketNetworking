@@ -2,6 +2,9 @@
 
 namespace SocketNetworking.Shared.Exceptions
 {
+    /// <summary>
+    /// The <see cref="NetworkInvocationException"/> is thrown when a Network Invoke call has failed.
+    /// </summary>
     public class NetworkInvocationException : Exception
     {
         public NetworkInvocationException() { }

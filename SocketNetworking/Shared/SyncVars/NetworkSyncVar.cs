@@ -70,7 +70,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         public virtual void Sync()
         {
-            if(!OwnerObject.Active)
+            if (!OwnerObject.Active)
             {
                 return;
             }

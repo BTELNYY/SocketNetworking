@@ -6,7 +6,7 @@ using SocketNetworking.Shared.SyncVars;
 namespace SocketNetworking.Shared.NetworkObjects
 {
     /// <summary>
-    /// All NetworkObjects should implement this interface. Note that Client/Server authority isn't handled, all packets are sent to this object regardless of source.
+    /// The <see cref="INetworkObject"/> interface is the base for any network objects. If you want to make a client avatar, see <see cref="INetworkAvatar"/>.
     /// </summary>
     public interface INetworkObject : INetworkSpawnable
     {
@@ -51,8 +51,16 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// </summary>
         void OnNetworkSpawned(NetworkClient spawner);
 
+        /// <summary>
+        /// Called on the server when the <see cref="NetworkClient"/> who owns this object has spawned it successfully.
+        /// </summary>
+        /// <param name="spawner"></param>
         void OnOwnerNetworkSpawned(NetworkClient spawner);
 
+        /// <summary>
+        /// Called on the client when the <see cref="NetworkClient"/> who owns this object has spawned it.
+        /// </summary>
+        /// <param name="spawner"></param>
         void OnOwnerLocalSpawned(NetworkClient spawner);
 
         /// <summary>
@@ -131,6 +139,10 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// <param name="client"></param>
         void OnDisconnected(NetworkClient client);
 
+        /// <summary>
+        /// Called when the <see cref="NetworkClient"/> who owns this object disconnects.
+        /// </summary>
+        /// <param name="client"></param>
         void OnOwnerDisconnected(NetworkClient client);
 
         /// <summary>

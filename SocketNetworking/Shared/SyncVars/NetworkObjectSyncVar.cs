@@ -24,7 +24,7 @@ namespace SocketNetworking.Shared.SyncVars
         {
         }
 
-       
+
 
         public void SyncToParent()
         {

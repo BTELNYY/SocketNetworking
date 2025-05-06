@@ -6,11 +6,22 @@ using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared.NetworkObjects
 {
+    /// <summary>
+    /// The <see cref="NetworkObjectBase"/> class is the recommended class for <see cref="INetworkObject"/>s. it has additional methods which may be useful. 
+    /// </summary>
     public class NetworkObjectBase : INetworkObject
     {
         public virtual int OwnerClientID { get; set; }
 
+        /// <summary>
+        /// The <see cref="NetworkClient"/> who owns this object. This value is always <see langword="null"/> on clients.
+        /// </summary>
         public NetworkClient OwnerClient => this.GetOwner();
+
+        /// <summary>
+        /// The <see cref="INetworkAvatar"/> of the <see cref="NetworkClient"/> who owns this object. Available on the server and client.
+        /// </summary>
+        public INetworkAvatar OwnerAvatar => this.GetOwnerAvatar();
 
         public virtual OwnershipMode OwnershipMode { get; set; }
 
@@ -26,6 +37,9 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual bool Spawnable => true;
 
+        /// <summary>
+        /// This event is called when <see cref="Destroy"/> is called.
+        /// </summary>
         public event Action Destroyed;
 
         public virtual void Destroy()
@@ -68,11 +82,14 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         }
 
-        public event Action Modified;
+        /// <summary>
+        /// This event is called when <see cref="OnModified(NetworkClient)"/> is called.
+        /// </summary>
+        public event Action<NetworkClient> Modified;
 
         public virtual void OnModified(NetworkClient modifier)
         {
-            Modified?.Invoke();
+            Modified?.Invoke(modifier);
         }
 
         public virtual void OnModified(INetworkObject modifiedObject, NetworkClient modifier)
@@ -85,11 +102,14 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         }
 
-        public event Action Spawned;
+        /// <summary>
+        /// Called when the <see cref="NetworkObjectBase"/> is spawned by a client. 
+        /// </summary>
+        public event Action<NetworkClient> Spawned;
 
         public virtual void OnNetworkSpawned(NetworkClient spawner)
         {
-            Spawned?.Invoke();
+            Spawned?.Invoke(spawner);
         }
 
         public virtual void OnOwnerDisconnected(NetworkClient client)
@@ -127,6 +147,9 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         }
 
+        /// <summary>
+        /// Called when a <see cref="INetworkSyncVar"/> has changed on the <see cref="NetworkObjectBase"/>.
+        /// </summary>
         public event Action<NetworkClient, INetworkSyncVar> SyncVarChanged;
 
         public virtual void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
@@ -134,6 +157,9 @@ namespace SocketNetworking.Shared.NetworkObjects
             SyncVarChanged?.Invoke(client, what);
         }
 
+        /// <summary>
+        /// Called when <see cref="INetworkSyncVar"/>s are finished being modified.
+        /// </summary>
         public event Action SyncVarsChanged;
 
         public virtual void OnSyncVarsChanged()

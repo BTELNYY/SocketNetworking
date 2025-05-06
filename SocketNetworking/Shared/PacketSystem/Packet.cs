@@ -6,8 +6,14 @@ using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem
 {
+    /// <summary>
+    /// Base class for all <see cref="Packet"/>s.
+    /// </summary>
     public class Packet
     {
+        /// <summary>
+        /// The maximum size of a packet.
+        /// </summary>
         public static int MaxPacketSize
         {
             get

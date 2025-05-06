@@ -35,18 +35,18 @@ namespace SocketNetworking
         /// <returns></returns>
         public static INetworkAvatar GetOwnerAvatar(this INetworkObject obj)
         {
-            if(NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkClient client = GetOwner(obj);
-                if(client == null)
+                if (client == null)
                 {
                     return null;
                 }
                 return client.Avatar;
             }
-            foreach(INetworkAvatar o in NetworkManager.GetNetworkObjects().Where(x => x is INetworkAvatar))
+            foreach (INetworkAvatar o in NetworkManager.GetNetworkObjects().Where(x => x is INetworkAvatar))
             {
-                if(o.OwnerClientID == obj.OwnerClientID)
+                if (o.OwnerClientID == obj.OwnerClientID)
                 {
                     return o;
                 }

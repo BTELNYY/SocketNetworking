@@ -5,12 +5,18 @@ using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared.NetworkObjects
 {
+    /// <summary>
+    /// The <see cref="NetworkAvatarBase"/> is the recommended base class for <see cref="INetworkAvatar"/>s.
+    /// </summary>
     public class NetworkAvatarBase : NetworkObjectBase, INetworkAvatar
     {
         public string PublicKey => _pubKey.Value;
 
         private NetworkSyncVar<string> _pubKey;
 
+        /// <summary>
+        /// This represents the ping or latency of the <see cref="NetworkClient"/> which owns this object. It is akin to <see cref="NetworkClient.Latency"/>, but represents the ping of someone other than the local client.
+        /// </summary>
         public long OwnerLatency => _ping.Value;
 
         private NetworkSyncVar<long> _ping;
@@ -73,11 +79,21 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         RSACryptoServiceProvider _provider = new RSACryptoServiceProvider();
 
+        /// <summary>
+        /// This method is used by the owner of the object to decrypt data sent to it.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         protected virtual byte[] Encrypt(byte[] data)
         {
             return _provider.Encrypt(data, RSAEncryptionPadding.Pkcs1);
         }
 
+        /// <summary>
+        /// This method is used to encrypt data to send to the owner of this object.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         protected virtual byte[] Decrypt(byte[] data)
         {
             return _provider.Decrypt(data, RSAEncryptionPadding.Pkcs1);
@@ -89,6 +105,11 @@ namespace SocketNetworking.Shared.NetworkObjects
             HandlePrivate(data, decrypted);
         }
 
+        /// <summary>
+        /// This method handles data which was encrypted using <see cref="PublicKey"/>. Called on the local client.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="decrypted"></param>
         protected virtual void HandlePrivate(ClientToClientPacket packet, byte[] decrypted)
         {
 

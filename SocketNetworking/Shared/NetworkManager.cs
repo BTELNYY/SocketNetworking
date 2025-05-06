@@ -1272,7 +1272,7 @@ namespace SocketNetworking.Shared
             if (target is INetworkObject networkObject)
             {
                 targetID = networkObject.NetworkID;
-                if(!networkObject.Active)
+                if (!networkObject.Active)
                 {
                     throw new InvalidOperationException("Cannot NetworkInvoke on inactive objects.");
                 }

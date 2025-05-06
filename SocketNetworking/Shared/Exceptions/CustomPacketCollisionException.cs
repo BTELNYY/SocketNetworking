@@ -1,7 +1,11 @@
 ﻿using System;
+using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Exceptions
 {
+    /// <summary>
+    /// The <see cref="CustomPacketCollisionException"/> is usually thrown when more than one <see cref="Packet"/> are trying to use the same ID.
+    /// </summary>
     public class CustomPacketCollisionException : Exception
     {
         int packetId;

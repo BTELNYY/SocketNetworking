@@ -3,8 +3,14 @@ using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.Messages
 {
+    /// <summary>
+    /// The <see cref="ProtocolConfiguration"/> class is used to communicate the version and protocol of the current connection.
+    /// </summary>
     public class ProtocolConfiguration : IPacketSerializable
     {
+        /// <summary>
+        /// The "internal name" of the protocol. For example: 'my-app', 'minecraft'. By default, this value is "default"
+        /// </summary>
         public string Protocol
         {
             get
@@ -15,6 +21,9 @@ namespace SocketNetworking.Shared.Messages
 
         private string _protocol = "default";
 
+        /// <summary>
+        /// The version of this protocol. Any versioning style is accepted. By default, the version is 1.0.0
+        /// </summary>
         public string Version
         {
             get

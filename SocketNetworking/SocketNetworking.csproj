@@ -71,7 +71,6 @@
     <Compile Include="Client\TcpNetworkClient.cs" />
     <Compile Include="Client\UdpNetworkClient.cs" />
     <Compile Include="Misc\CallbackTimer.cs" />
-    <Compile Include="Shared\Exceptions\NetworkDeserializationException.cs" />
     <Compile Include="Shared\Exceptions\NetworkInvocationException.cs" />
     <Compile Include="Shared\Exceptions\NetworkConversionException.cs" />
     <Compile Include="Misc\ChoiceEvent.cs" />
