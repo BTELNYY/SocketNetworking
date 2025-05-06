@@ -3,12 +3,24 @@ using SocketNetworking.Shared.PacketSystem.Packets;
 
 namespace SocketNetworking.Misc
 {
+    /// <summary>
+    /// The <see cref="NetworkResultAwaiter"/> class is responsible for waiting for results from network calls.
+    /// </summary>
     public class NetworkResultAwaiter
     {
+        /// <summary>
+        /// Callback ID
+        /// </summary>
         public int CallbackID { get; private set; } = 0;
 
+        /// <summary>
+        /// The <see cref="NetworkInvokationResultPacket"/> which may or may not be set.
+        /// </summary>
         public NetworkInvokationResultPacket ResultPacket { get; private set; }
 
+        /// <summary>
+        /// Does the awaiter have a result?
+        /// </summary>
         public bool HasResult
         {
             get

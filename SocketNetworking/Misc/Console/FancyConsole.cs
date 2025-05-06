@@ -4,6 +4,9 @@ using System.IO;
 
 namespace SocketNetworking.Misc.Console
 {
+    /// <summary>
+    /// The <see cref="FancyConsole"/> class allows some comfort features like the command not being broken in half by new data being pushed to the console buffer. It is a utility class.
+    /// </summary>
     public static class FancyConsole
     {
         static object locker = new object();

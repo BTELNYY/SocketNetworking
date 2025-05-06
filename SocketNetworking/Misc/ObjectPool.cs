@@ -3,6 +3,10 @@ using System.Collections.Concurrent;
 
 namespace SocketNetworking.Misc
 {
+    /// <summary>
+    /// The <see cref="ObjectPool{T}"/> class is intended to limit the amount of borrowed objects of type <typeparamref name="T"/> to prevent memory leaks.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class ObjectPool<T>
     {
         private readonly ConcurrentBag<T> _objects;
@@ -10,6 +14,21 @@ namespace SocketNetworking.Misc
         private readonly Func<T> _objectGenerator;
 
         int _capacity;
+
+        /// <summary>
+        /// Capacity of the <see cref="ObjectPool{T}"/>. 0 if this pool can grow dynamically.
+        /// </summary>
+        public int Capacity
+        {
+            get
+            {
+                return _capacity;
+            }
+            set
+            {
+                _capacity = value;
+            }
+        }
 
         public ObjectPool(Func<T> objectGenerator)
         {
@@ -28,6 +47,10 @@ namespace SocketNetworking.Misc
             }
         }
 
+        /// <summary>
+        /// Tries to borrow an object <typeparamref name="T"/>. If it can't, it will wait until it can.
+        /// </summary>
+        /// <returns></returns>
         public T Get()
         {
             if (_objects.TryTake(out T item))
@@ -53,6 +76,10 @@ namespace SocketNetworking.Misc
             }
         }
 
+        /// <summary>
+        /// Returns an object to the <see cref="ObjectPool{T}"/>.
+        /// </summary>
+        /// <param name="item"></param>
         public void Return(T item)
         {
             _objects.Add(item);
