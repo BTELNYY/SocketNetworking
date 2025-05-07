@@ -7,6 +7,9 @@ using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
 {
+    /// <summary>
+    /// The <see cref="UdpNetworkClient"/> class is the client which uses the <see cref="Shared.Transports.UdpTransport"/> as the transport. It is not recommended to be used. Use <see cref="MixedNetworkClient"/> if you need UDP functionality.
+    /// </summary>
     public class UdpNetworkClient : NetworkClient
     {
         public UdpNetworkClient()
@@ -15,6 +18,9 @@ namespace SocketNetworking.Client
             _currentMode = DefaultMode;
         }
 
+        /// <summary>
+        /// Unused.
+        /// </summary>
         public virtual UdpClientMode DefaultMode
         {
             get
@@ -25,6 +31,9 @@ namespace SocketNetworking.Client
 
         protected UdpClientMode _currentMode;
 
+        /// <summary>
+        /// Unused.
+        /// </summary>
         public virtual UdpClientMode ClientMode
         {
             get
@@ -57,6 +66,9 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// <see cref="Transport"/> but casted to <see cref="Shared.Transports.UdpTransport"/>.
+        /// </summary>
         public UdpTransport UdpTransport
         {
             get
@@ -69,16 +81,27 @@ namespace SocketNetworking.Client
             }
         }
 
-        public void Send(Packet packet, IPEndPoint where)
+        /// <summary>
+        /// Sends the <paramref name="packet"/> to the <paramref name="destination"/> by setting the <see cref="Packet.Destination"/> property to the <paramref name="destination"/>.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="destination"></param>
+        public void Send(Packet packet, IPEndPoint destination)
         {
-            packet.Destination = where;
+            packet.Destination = destination;
             Send(packet);
         }
 
-        public void Send(TargetedPacket packet, INetworkObject sender, IPEndPoint peer)
+        /// <summary>
+        /// Sends the <paramref name="packet"/> to the <paramref name="destination"/> by setting the <see cref="Packet.Destination"/> property to the <paramref name="destination"/>. <paramref name="sender"/> is used to set the <see cref="TargetedPacket.NetworkIDTarget"/> property.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="sender"></param>
+        /// <param name="destination"></param>
+        public void Send(TargetedPacket packet, INetworkObject sender, IPEndPoint destination)
         {
             packet.NetworkIDTarget = sender.NetworkID;
-            Send(packet, peer);
+            Send(packet, destination);
         }
 
         protected override void RawReader()

@@ -5,15 +5,27 @@ using SocketNetworking.Shared.NetworkObjects;
 namespace SocketNetworking.Shared
 {
 
+    /// <summary>
+    /// Determines the <see cref="OwnershipMode"/> of <see cref="INetworkObject"/>s. See <see cref="INetworkObject.OwnershipMode"/>. This determines if certain actions can be made, such as running Network Invoke methods or changing <see cref="SyncVars.INetworkSyncVar"/>s.
+    /// </summary>
     public enum OwnershipMode : byte
     {
+        /// <summary>
+        /// The client owns the object.
+        /// </summary>
         Client,
+        /// <summary>
+        /// The server owns the object.
+        /// </summary>
         Server,
+        /// <summary>
+        /// Everyone owns the object.
+        /// </summary>
         Public
     }
 
     /// <summary>
-    /// Structure which represents what kind of packet is being sent, Note that the only type the user should use is CustomPacket.
+    /// Structure which represents what kind of packet is being sent. The only <see cref="PacketType"/> that is important to developers using this library is <see cref="Custom"/>.
     /// </summary>
     public enum PacketType : byte
     {

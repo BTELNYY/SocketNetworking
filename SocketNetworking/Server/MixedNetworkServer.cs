@@ -14,14 +14,29 @@ using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Server
 {
+    /// <summary>
+    /// The <see cref="MixedNetworkServer"/> class provides a server implementation to allow <see cref="MixedNetworkClient"/>s to use <see cref="TcpTransport"/>s and <see cref="UdpTransport"/>s to communicate with the server.
+    /// </summary>
     public class MixedNetworkServer : TcpNetworkServer
     {
+        /// <summary>
+        /// List of <see cref="MixedNetworkClient"/>s who have connected via TCP, but are still not connected via UDP.
+        /// </summary>
         protected List<MixedNetworkClient> _awaitingUDPConnection = new List<MixedNetworkClient>();
 
+        /// <summary>
+        /// List of <see cref="MixedNetworkClient"/>s matched to their <see cref="IPEndPoint"/>.
+        /// </summary>
         protected Dictionary<IPEndPoint, MixedNetworkClient> _udpClients = new Dictionary<IPEndPoint, MixedNetworkClient>();
 
+        /// <summary>
+        /// <see cref="Thread"/> responsible for reading UDP packets.
+        /// </summary>
         protected Thread UdpReader;
 
+        /// <summary>
+        /// The local machines <see cref="IPEndPoint"/> with the <see cref="NetworkServerConfig.Port"/> as the port.
+        /// </summary>
         public static IPEndPoint MyEndPoint
         {
             get

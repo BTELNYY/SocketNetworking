@@ -8,6 +8,9 @@ using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
 {
+    /// <summary>
+    /// The <see cref="MixedNetworkClient"/> class is responsible for handling communication with a <see cref="SocketNetworking.Shared.Transports.TcpTransport"/> and a <see cref="Shared.Transports.UdpTransport"/> as transports. Both transports are used to send data, but the <see cref="PacketFlags.Priority"/> flag must be flipped on <see cref="Packet"/>s in order for them to be sent via UDP.
+    /// </summary>
     public class MixedNetworkClient : TcpNetworkClient
     {
         public MixedNetworkClient()

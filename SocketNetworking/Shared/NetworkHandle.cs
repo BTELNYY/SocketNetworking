@@ -33,12 +33,24 @@ namespace SocketNetworking.Shared
             Client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
+        /// <summary>
+        /// The <see cref="NetworkClient"/> which owns this handle.
+        /// </summary>
         public NetworkClient Client { get; }
 
+        /// <summary>
+        /// The <see cref="Packet"/> which casued this handle to be generated.
+        /// </summary>
         public Packet InvocationPacket { get; }
 
+        /// <summary>
+        /// The <see cref="SocketNetworking.Shared.InvocationMode"/> of the handle.
+        /// </summary>
         public InvocationMode InvocationMode { get; }
 
+        /// <summary>
+        /// Determiens if the <see cref="InvocationPacket"/> was encrypted by checking its <see cref="Packet.Flags"/> for <see cref="PacketFlags.AsymmetricalEncrypted"/> or <see cref="PacketFlags.SymmetricalEncrypted"/>.
+        /// </summary>
         public bool WasEncrypted
         {
             get

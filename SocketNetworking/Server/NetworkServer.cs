@@ -13,10 +13,16 @@ using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Server
 {
+    /// <summary>
+    /// The <see cref="NetworkServer"/> class is the base class for all server implentations.
+    /// </summary>
     public class NetworkServer
     {
         public static event Action ServerReady;
 
+        /// <summary>
+        /// Invokes the <see cref="ServerReady"/> event.
+        /// </summary>
         protected static void InvokeServerReady()
         {
             ServerReady?.Invoke();
@@ -24,6 +30,10 @@ namespace SocketNetworking.Server
 
         public static event Action<NetworkClient> ClientConnected;
 
+        /// <summary>
+        /// Invokes the <see cref="ClientConnected"/> event.
+        /// </summary>
+        /// <param name="client"></param>
         protected static void InvokeClientConnected(NetworkClient client)
         {
             ClientConnected?.Invoke(client);
@@ -31,6 +41,10 @@ namespace SocketNetworking.Server
 
         public static event Action<NetworkClient> ClientDisconnected;
 
+        /// <summary>
+        /// Invokes the <see cref="ClientDisconnected"/> event.
+        /// </summary>
+        /// <param name="client"></param>
         protected static void InvokeClientDisconnected(NetworkClient client)
         {
             ClientDisconnected?.Invoke(client);
@@ -38,11 +52,17 @@ namespace SocketNetworking.Server
 
         public static event Action ServerStarted;
 
+        /// <summary>
+        /// Invokes the <see cref="ServerStarted"/> event.
+        /// </summary>
         protected static void InvokeServerStarted()
         {
             ServerStarted?.Invoke();
         }
 
+        /// <summary>
+        /// Invokes the <see cref="ServerStopped"/> event.
+        /// </summary>
         public static event Action ServerStopped;
 
         protected static void InvokeServerStopped()
@@ -55,6 +75,11 @@ namespace SocketNetworking.Server
         /// </summary>
         public static event EventHandler<ClientConnectRequest> ClientConnecting;
 
+        /// <summary>
+        /// Invokes the <see cref="ClientConnecting"/> event and returns the result of the event.
+        /// </summary>
+        /// <param name="client"></param>
+        /// <returns></returns>
         protected static ClientConnectRequest AcceptClient(NetworkClient client)
         {
             ClientConnectRequest req = new ClientConnectRequest(client, true);
@@ -64,6 +89,9 @@ namespace SocketNetworking.Server
 
         protected static ServerState _serverState = ServerState.NotStarted;
 
+        /// <summary>
+        /// The Current <see cref="ServerState"/>.
+        /// </summary>
         public static ServerState CurrentServerState
         {
             get
@@ -72,6 +100,9 @@ namespace SocketNetworking.Server
             }
         }
 
+        /// <summary>
+        /// Returns <see langword="true"/> if the <see cref="CurrentServerState"/> is <see cref="ServerState.Ready"/>, <see cref="ServerState.Started"/> or <see cref="ServerState.NotReady"/>.
+        /// </summary>
         public static bool HasServerStarted
         {
             get
@@ -81,6 +112,9 @@ namespace SocketNetworking.Server
             }
         }
 
+        /// <summary>
+        /// Returns <see langword="true"/> if the <see cref="Clients"/> count is above 0.
+        /// </summary>
         public static bool HasClients
         {
             get
@@ -89,6 +123,9 @@ namespace SocketNetworking.Server
             }
         }
 
+        /// <summary>
+        /// Returns the list of <see cref="NetworkClient"/>s which have <see cref="NetworkClient.IsTransportConnected"/> set to <see langword="true"/>.
+        /// </summary>
         public static List<NetworkClient> ConnectedClients
         {
             get
@@ -98,6 +135,9 @@ namespace SocketNetworking.Server
             }
         }
 
+        /// <summary>
+        /// Returns the list of <see cref="NetworkClient"/>s.
+        /// </summary>
         public static List<NetworkClient> Clients
         {
             get
@@ -106,6 +146,9 @@ namespace SocketNetworking.Server
             }
         }
 
+        /// <summary>
+        /// Returns <see langword="true"/> if the <see cref="CurrentServerState"/> is <see cref="ServerState.Ready"/>.
+        /// </summary>
         public static bool Active
         {
             get
@@ -114,8 +157,11 @@ namespace SocketNetworking.Server
             }
         }
 
-        private static ProtocolConfiguration _serverConfig = new ProtocolConfiguration();
+        protected static ProtocolConfiguration _serverConfig = new ProtocolConfiguration();
 
+        /// <summary>
+        /// The current server <see cref="ProtocolConfiguration"/>. This value cannot be changed if <see cref="HasServerStarted"/> is <see langword="true"/>.
+        /// </summary>
         public static ProtocolConfiguration ServerConfiguration
         {
             get
@@ -135,6 +181,9 @@ namespace SocketNetworking.Server
 
         static Log _log;
 
+        /// <summary>
+        /// The server <see cref="SocketNetworking.Log"/>. The Prefix by default is "[Server]".
+        /// </summary>
         public static Log Log
         {
             get
@@ -171,7 +220,9 @@ namespace SocketNetworking.Server
 
         private static Type _clientType = typeof(NetworkClient);
 
-
+        /// <summary>
+        /// The default <see cref="AuthenticationProvider"/> <see cref="Type"/>. See <see cref="NetworkClient.AuthenticationProvider"/>, <see cref="NetworkClient.Authenticated"/> and <see cref="AuthenticationProvider"/>.
+        /// </summary>
         public static Type Authenticator
         {
             get
@@ -210,6 +261,9 @@ namespace SocketNetworking.Server
 
         private static NetworkServer _serverInstance;
 
+        /// <summary>
+        /// Server singleton. Intended to prevent multiple servers running on the same process.
+        /// </summary>
         public static NetworkServer ServerInstance
         {
             get
@@ -232,6 +286,9 @@ namespace SocketNetworking.Server
 
         private static List<ClientHandler> handlers = new List<ClientHandler>();
 
+        /// <summary>
+        /// Starts the server. If it is already started (see <see cref="HasServerStarted"/>), does nothing. Runs <see cref="Validate"/>, if this fails, does nothing.
+        /// </summary>
         public virtual void StartServer()
         {
             if (HasServerStarted)
@@ -267,6 +324,10 @@ namespace SocketNetworking.Server
             _serverState = ServerState.NotReady;
         }
 
+        /// <summary>
+        /// Validates the current server configuration. By default, checks <see cref="ClientType"/> and <see cref="ClientAvatar"/>.
+        /// </summary>
+        /// <returns></returns>
         protected virtual bool Validate()
         {
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
@@ -286,6 +347,12 @@ namespace SocketNetworking.Server
             return true;
         }
 
+        /// <summary>
+        /// Adds a <see cref="NetworkClient"/> to be handled by thread pools.
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="clientId"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         protected static void AddClient(NetworkClient client, int clientId)
         {
             lock (clientLock)
@@ -332,6 +399,10 @@ namespace SocketNetworking.Server
 
         protected static object clientLock = new object();
 
+        /// <summary>
+        /// Removes a <see cref="NetworkClient"/> from the thread pools. If it is already removed, does nothing.
+        /// </summary>
+        /// <param name="myClient"></param>
         public static void RemoveClient(NetworkClient myClient)
         {
             lock (clientLock)
@@ -388,11 +459,15 @@ namespace SocketNetworking.Server
             }
         }
 
+        /// <summary>
+        /// Stops the server. If the server has already stopped (see <see cref="HasServerStarted"/>), does nothing.
+        /// </summary>
         public virtual void StopServer()
         {
             if (!HasServerStarted)
             {
                 Log.Error("Server already stopped.");
+                return;
             }
             ShouldAcceptConnections = false;
             List<NetworkClient> _clients = Clients;
@@ -421,12 +496,23 @@ namespace SocketNetworking.Server
             SendToAll(packet, (x => true));
         }
 
+        /// <summary>
+        /// Sends a <see cref="TargetedPacket"/> to all clients. <paramref name="object"/> is used to set <see cref="TargetedPacket.NetworkIDTarget"/>.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="object"></param>
         public static void SendToAll(TargetedPacket packet, INetworkObject @object)
         {
             packet.NetworkIDTarget = @object.NetworkID;
             SendToAll(packet);
         }
 
+        /// <summary>
+        /// Sends a <see cref="Packet"/> to all <see cref="NetworkClient"/> which match <paramref name="predicate"/>.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="predicate"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void SendToAll(Packet packet, Predicate<NetworkClient> predicate)
         {
             if (!Active)
@@ -447,7 +533,7 @@ namespace SocketNetworking.Server
 
 
         /// <summary>
-        /// Sends a <see cref="Packet"/> to all connected clients.
+        /// Sends a <see cref="Packet"/> to all connected clients. Which match <paramref name="predicate"/>.
         /// </summary>
         /// <param name="packet"></param>
         /// <param name="target"></param>
@@ -483,6 +569,11 @@ namespace SocketNetworking.Server
             Disconnect(x => !x.Ready, reason);
         }
 
+        /// <summary>
+        /// Disconnects all <see cref="NetworkClient"/> which match <paramref name="predicate"/>.
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void Disconnect(Predicate<NetworkClient> predicate)
         {
             if (!Active)
@@ -498,6 +589,12 @@ namespace SocketNetworking.Server
             }
         }
 
+        /// <summary>
+        /// Disconnects all <see cref="NetworkClient"/>s which match <paramref name="predicate"/> with a <paramref name="reason"/>.
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <param name="reason"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void Disconnect(Predicate<NetworkClient> predicate, string reason)
         {
             if (!Active)
@@ -546,6 +643,15 @@ namespace SocketNetworking.Server
             }
         }
 
+        /// <summary>
+        /// Runs <see cref="NetworkClient.NetworkInvoke(object, string, object[], bool)"/> on all clients. <paramref name="readyOnly"/> determines if the clients must be <see cref="NetworkClient.Ready"/> to be called on.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <param name="readyOnly"></param>
+        /// <param name="priority"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, bool readyOnly = false, bool priority = false)
         {
             if (!Active)
@@ -564,14 +670,32 @@ namespace SocketNetworking.Server
         }
     }
 
+    /// <summary>
+    /// Determines the server state.
+    /// </summary>
     public enum ServerState
     {
+        /// <summary>
+        /// The server is not running at all.
+        /// </summary>
         NotStarted,
+        /// <summary>
+        /// The server has started.
+        /// </summary>
         Started,
+        /// <summary>
+        /// The server is not ready to accept connections, but is running.
+        /// </summary>
         NotReady,
+        /// <summary>
+        /// The server is ready to accept connections.
+        /// </summary>
         Ready,
     }
 
+    /// <summary>
+    /// <see cref="ServerEncryptionMode"/> determines the behavior of the encryption standard of the server - client connection. It is recommended you use <see cref="ServerEncryptionMode.Required"/>.
+    /// </summary>
     public enum ServerEncryptionMode
     {
         /// <summary>

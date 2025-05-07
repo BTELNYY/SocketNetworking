@@ -21,6 +21,9 @@ using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
 {
+    /// <summary>
+    /// The <see cref="NetworkClient"/> class is the base class for all networking.
+    /// </summary>
     public class NetworkClient
     {
         static NetworkClient instance;

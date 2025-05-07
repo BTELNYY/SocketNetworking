@@ -7,6 +7,9 @@ using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
 {
+    /// <summary>
+    /// The <see cref="TcpNetworkClient"/> class uses the <see cref="Shared.Transports.TcpTransport"/> to send data.
+    /// </summary>
     public class TcpNetworkClient : NetworkClient
     {
         public TcpNetworkClient()
