@@ -79,6 +79,7 @@
     <Compile Include="Misc\NetworkInvocationCallback.cs" />
     <Compile Include="Misc\ObjectPool.cs" />
     <Compile Include="NetworkObjectExtensions.cs" />
+    <Compile Include="Shared\Serialization\ITypeWrapper.cs" />
     <Compile Include="Shared\PacketSystem\Packets\AuthenticationPacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\AuthenticationStateUpdate.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ClientToClientPacket.cs" />
@@ -117,7 +118,7 @@
     <Compile Include="Shared\PacketSystem\Packets\NetworkInvokationResultPacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ClientDataPacket.cs" />
-    <Compile Include="Shared\PacketSystem\TypeWrapper.cs" />
+    <Compile Include="Shared\Serialization\TypeWrapper.cs" />
     <Compile Include="Shared\PacketSystem\TypeWrappers\SerializableDictionary.cs" />
     <Compile Include="Shared\Messages\ProtocolConfiguration.cs" />
     <Compile Include="Shared\Enums.cs" />
@@ -127,7 +128,7 @@
     <Compile Include="Log.cs" />
     <Compile Include="Server\NetworkServer.cs" />
     <Compile Include="Shared\NetworkObjects\INetworkObject.cs" />
-    <Compile Include="Shared\PacketSystem\IPacketSerializable.cs" />
+    <Compile Include="Shared\Serialization\IByteSerializable.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ConnectionUpdatePacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\ServerDataPacket.cs" />
     <Compile Include="Shared\PacketSystem\Packets\CustomPacket.cs" />

@@ -1,8 +1,6 @@
-﻿using SocketNetworking.Shared.Serialization;
-
-namespace SocketNetworking.Shared.PacketSystem
+﻿namespace SocketNetworking.Shared.Serialization
 {
-    public interface IPacketSerializable
+    public interface IByteSerializable
     {
         /// <summary>
         /// Return the length of the current instance of this object in bytes.

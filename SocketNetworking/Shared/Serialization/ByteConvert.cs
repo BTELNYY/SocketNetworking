@@ -26,7 +26,7 @@ namespace SocketNetworking.Shared.Serialization
         public static Log Log;
 
         /// <summary>
-        /// List of allowed types for serialization. (Technically you can serialize anything but that's not a good idea, for complex structures just make use of <see cref="IPacketSerializable"/>)
+        /// List of allowed types for serialization. (Technically you can serialize anything but that's not a good idea, for complex structures just make use of <see cref="IByteSerializable"/>)
         /// </summary>
         public static readonly Type[] SupportedTypes =
         {
@@ -53,7 +53,7 @@ namespace SocketNetworking.Shared.Serialization
 
             typeof(NetworkClient),
             typeof(INetworkObject),
-            typeof(IPacketSerializable),
+            typeof(IByteSerializable),
         };
 
         /// <summary>
@@ -110,9 +110,9 @@ namespace SocketNetworking.Shared.Serialization
                 return sData;
             }
 
-            if (data is IPacketSerializable serializable)
+            if (data is IByteSerializable serializable)
             {
-                writer.WritePacketSerialized<IPacketSerializable>(serializable);
+                writer.WritePacketSerialized<IByteSerializable>(serializable);
                 sData.Data = writer.Data;
                 return sData;
             }
@@ -303,10 +303,10 @@ namespace SocketNetworking.Shared.Serialization
                 return obj.Item1;
             }
 
-            if (data.Type.GetInterfaces().Contains(typeof(IPacketSerializable)))
+            if (data.Type.GetInterfaces().Contains(typeof(IByteSerializable)))
             {
                 object obj = Activator.CreateInstance(data.Type);
-                IPacketSerializable serializable = (IPacketSerializable)obj;
+                IByteSerializable serializable = (IByteSerializable)obj;
                 read = serializable.Deserialize(data.Data).ReadBytes;
                 return serializable;
             }
@@ -459,7 +459,7 @@ namespace SocketNetworking.Shared.Serialization
     /// <summary>
     /// The <see cref="SerializedData"/> struct contains the <see cref="System.Type"/> and the Data for the serialized data.
     /// </summary>
-    public struct SerializedData : IPacketSerializable
+    public struct SerializedData : IByteSerializable
     {
         Type _type;
 

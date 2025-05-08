@@ -15,7 +15,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
     /// <typeparam name="TValue">
     /// Any value. Must be a member of <see cref="Packet.SupportedTypes"/>.
     /// </typeparam>
-    public class SerializableDictionary<TKey, TValue> : IPacketSerializable, IDictionary<TKey, TValue>
+    public class SerializableDictionary<TKey, TValue> : IByteSerializable, IDictionary<TKey, TValue>
     {
         private SerializableList<TKey> keys;
 

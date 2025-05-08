@@ -436,7 +436,7 @@ namespace SocketNetworking.Shared.Streams
     }
 
 
-    public struct StreamResponseData : IPacketSerializable
+    public struct StreamResponseData : IByteSerializable
     {
         public StreamError Error;
 
@@ -474,7 +474,7 @@ namespace SocketNetworking.Shared.Streams
         }
     }
 
-    public struct StreamMetaData : IPacketSerializable
+    public struct StreamMetaData : IByteSerializable
     {
         public long MaxBufferSize;
 
@@ -510,7 +510,7 @@ namespace SocketNetworking.Shared.Streams
         }
     }
 
-    public struct StreamRequestData : IPacketSerializable
+    public struct StreamRequestData : IByteSerializable
     {
         public ushort RequestID;
 
@@ -542,7 +542,7 @@ namespace SocketNetworking.Shared.Streams
         }
     }
 
-    public struct StreamData : IPacketSerializable
+    public struct StreamData : IByteSerializable
     {
         public ushort RequestID;
 

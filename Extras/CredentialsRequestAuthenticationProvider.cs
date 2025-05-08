@@ -143,7 +143,7 @@ namespace SocketNetworking.Extras
         public AuthenticationResponseStruct Response { get; }
     }
 
-    public struct AuthenticationResponseStruct : IPacketSerializable
+    public struct AuthenticationResponseStruct : IByteSerializable
     {
         public string Username;
 
@@ -175,7 +175,7 @@ namespace SocketNetworking.Extras
         }
     }
 
-    public struct AuthenticationRequest : IPacketSerializable
+    public struct AuthenticationRequest : IByteSerializable
     {
         public bool NeedsPassword;
 

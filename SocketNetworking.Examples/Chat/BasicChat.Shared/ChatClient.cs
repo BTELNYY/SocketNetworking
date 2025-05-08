@@ -137,7 +137,7 @@ namespace BasicChat.Shared
         }
     }
 
-    public struct Message : IPacketSerializable
+    public struct Message : IByteSerializable
     {
         public string Content;
 

@@ -75,11 +75,11 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
-        /// Writes a <see cref="IPacketSerializable"/>.
+        /// Writes a <see cref="IByteSerializable"/>.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="serializable"></param>
-        public void WritePacketSerialized<T>(IPacketSerializable serializable)
+        public void WritePacketSerialized<T>(IByteSerializable serializable)
         {
             lock (_lock)
             {

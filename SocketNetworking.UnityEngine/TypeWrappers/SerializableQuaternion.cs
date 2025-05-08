@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.TypeWrappers
 {
-    public class SerializableQuaternion : IPacketSerializable
+    public class SerializableQuaternion : IByteSerializable
     {
         public Quaternion Quaternion;
 

@@ -75,7 +75,7 @@ namespace SocketNetworking.Modding
         }
     }
 
-    public class FieldChanged : IPacketSerializable
+    public class FieldChanged : IByteSerializable
     {
         public FieldChanged()
         {

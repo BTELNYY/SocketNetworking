@@ -47,7 +47,7 @@ namespace BasicChat.Shared
         }
     }
 
-    public struct ChatAuthData : IPacketSerializable
+    public struct ChatAuthData : IByteSerializable
     {
         public string Name;
 

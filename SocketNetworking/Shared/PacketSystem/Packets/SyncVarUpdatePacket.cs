@@ -27,7 +27,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         }
     }
 
-    public struct SyncVarData : IPacketSerializable
+    public struct SyncVarData : IByteSerializable
     {
         public int NetworkIDTarget;
 

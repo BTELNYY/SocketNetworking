@@ -6,7 +6,7 @@ namespace SocketNetworking.Shared.Messages
     /// <summary>
     /// The <see cref="ProtocolConfiguration"/> class is used to communicate the version and protocol of the current connection.
     /// </summary>
-    public class ProtocolConfiguration : IPacketSerializable
+    public class ProtocolConfiguration : IByteSerializable
     {
         /// <summary>
         /// The "internal name" of the protocol. For example: 'my-app', 'minecraft'. By default, this value is "default"

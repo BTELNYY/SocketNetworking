@@ -45,7 +45,7 @@ namespace SocketNetworking.Shared.Authentication
         public abstract AuthenticationPacket BeginAuthentication();
     }
 
-    public class AuthenticationResult : IPacketSerializable
+    public class AuthenticationResult : IByteSerializable
     {
         public bool Approved
         {

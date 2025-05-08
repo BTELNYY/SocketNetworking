@@ -59,7 +59,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
     }
 
-    public struct UnityNetworkBehavior : IPacketSerializable
+    public struct UnityNetworkBehavior : IByteSerializable
     {
         public string Name;
 

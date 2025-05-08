@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.TypeWrappers
 {
-    public class SerializableVector2 : IPacketSerializable
+    public class SerializableVector2 : IByteSerializable
     {
         public Vector2 Vector;
 

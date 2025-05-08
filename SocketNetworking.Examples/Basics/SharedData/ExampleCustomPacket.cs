@@ -37,7 +37,7 @@ namespace SocketNetworking.Example.Basics.SharedData
         }
     }
 
-    public struct ExampleStruct : IPacketSerializable
+    public struct ExampleStruct : IByteSerializable
     {
         public int Value;
 

@@ -6,7 +6,7 @@ using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 {
-    public class SerializableList<T> : IPacketSerializable, IList<T>
+    public class SerializableList<T> : IByteSerializable, IList<T>
     {
         private List<T> _internalList;
 
@@ -29,7 +29,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
             {
                 TType = typeof(T);
             }
-            if (!ByteConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)) && !NetworkManager.TypeToTypeWrapper.ContainsKey(TType))
+            if (!ByteConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IByteSerializable)) && !NetworkManager.TypeToTypeWrapper.ContainsKey(TType))
             {
                 throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", "values");
             }
@@ -39,7 +39,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
         public SerializableList()
         {
             TType = typeof(T);
-            if (!ByteConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IPacketSerializable)) && !NetworkManager.TypeToTypeWrapper.ContainsKey(TType))
+            if (!ByteConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IByteSerializable)) && !NetworkManager.TypeToTypeWrapper.ContainsKey(TType))
             {
                 throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", "values");
             }

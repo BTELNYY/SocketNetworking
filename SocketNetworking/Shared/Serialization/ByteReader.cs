@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Text;
 using SocketNetworking.Shared.Exceptions;
 using SocketNetworking.Shared.PacketSystem;
@@ -181,15 +180,15 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
-        /// Reads a <see cref="IPacketSerializable"/> from the buffer.
+        /// Reads a <see cref="IByteSerializable"/> from the buffer.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public T ReadPacketSerialized<T>() where T : IPacketSerializable
+        public T ReadPacketSerialized<T>() where T : IByteSerializable
         {
             lock (_lock)
             {
-                IPacketSerializable serializable = (IPacketSerializable)Activator.CreateInstance(typeof(T));
+                IByteSerializable serializable = (IByteSerializable)Activator.CreateInstance(typeof(T));
                 int bytesUsed = serializable.Deserialize(_workingSetData).ReadBytes;
                 Remove(bytesUsed);
                 return (T)serializable;
@@ -231,8 +230,8 @@ namespace SocketNetworking.Shared.Serialization
                 }
                 byte[] bytes = ReadByteArray();
                 object typeWrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
-                MethodInfo deserializer = typeWrapper.GetType().GetMethod("Deserialize");
-                ValueTuple<T, int> result = (ValueTuple<T, int>)deserializer.Invoke(typeWrapper, new object[] { bytes });
+                ITypeWrapper wrapper = (ITypeWrapper)typeWrapper;
+                ValueTuple<T, int> result = ((T, int))wrapper.DeserializeRaw(bytes);
                 //Remove(result.Item2);
                 return result.Item1;
             }
