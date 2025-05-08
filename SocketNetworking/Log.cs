@@ -3,26 +3,50 @@ using System.Diagnostics;
 
 namespace SocketNetworking
 {
+    /// <summary>
+    /// The <see cref="Log"/> class provides a implementation to store messages.
+    /// </summary>
     public class Log
     {
+        /// <summary>
+        /// Called when a new <see cref="LogData"/> entry is created. Note that this is called by several threads, and therefore isn't thread safe.
+        /// </summary>
         public static event Action<LogData> OnLog;
 
         //what the fuck
         //private static readonly HashSet<LogSeverity> hiddenSeverities = new HashSet<LogSeverity>();
 
-        //By default, everything but debug is shown.
+        /// <summary>
+        /// Current log level.
+        /// </summary>
         public static LogSeverity Levels = DEFAULT_LOG;
 
+        /// <summary>
+        /// The default log configuration. Everything but <see cref="LogSeverity.Debug"/> is logged.
+        /// </summary>
         public const LogSeverity DEFAULT_LOG = (LogSeverity)30;
 
+        /// <summary>
+        /// The <see cref="FULL_LOG"/> const allows ALL logs to be shown.
+        /// </summary>
         public const LogSeverity FULL_LOG = (LogSeverity)31;
 
+        /// <summary>
+        /// The <see cref="NO_LOG"/> const hides ALL logs.
+        /// </summary>
         public const LogSeverity NO_LOG = 0;
 
+        /// <summary>
+        /// Enabling this will print stack traces after every log message.
+        /// </summary>
         public static bool ShowStackTrace = false;
 
         private static Log _instance;
 
+        /// <summary>
+        /// Singleton of the <see cref="Log"/> class.
+        /// </summary>
+        /// <returns></returns>
         public static Log GetInstance()
         {
             if (_instance != null)
@@ -121,6 +145,9 @@ namespace SocketNetworking
 
         public Log() { }
 
+        /// <summary>
+        /// What is displayed in the message before the message content.
+        /// </summary>
         public string Prefix { get; set; } = "[Network]";
 
         public void Warning(string message)
@@ -227,13 +254,28 @@ namespace SocketNetworking
         }
     }
 
+    /// <summary>
+    /// The <see cref="LogData"/> struct handles each log entry.
+    /// </summary>
     public struct LogData
     {
+        /// <summary>
+        /// The log message.
+        /// </summary>
         public string Message;
+        /// <summary>
+        /// The severity of the message.
+        /// </summary>
         public LogSeverity Severity;
+        /// <summary>
+        /// The <see cref="Type"/> which called the log function.
+        /// </summary>
         public Type CallerType;
     }
 
+    /// <summary>
+    /// The <see cref="LogSeverity"/> enum handles filtering the logs and assigning severities. It does allow flags to be set. Higher numbers represent more severity.
+    /// </summary>
     [Flags]
     public enum LogSeverity
     {

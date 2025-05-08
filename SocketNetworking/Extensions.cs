@@ -10,8 +10,16 @@ using System.Text;
 
 namespace SocketNetworking
 {
+    /// <summary>
+    /// Generic Extension class. Why are you calling this directly?
+    /// </summary>
     public static class Extensions
     {
+        /// <summary>
+        /// Turns <see cref="byte"/>s into a <see cref="string"/> in the format 00 00 00 00 00.
+        /// </summary>
+        /// <param name="ba"></param>
+        /// <returns></returns>
         public static string ByteArrayToString(this byte[] ba)
         {
             StringBuilder hex = new StringBuilder(ba.Length * 2);
@@ -23,11 +31,22 @@ namespace SocketNetworking
             return hex.ToString();
         }
 
+        /// <summary>
+        /// Clones the give <paramref name="array"/> by calling <see cref="ICloneable.Clone"/> on each element.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="array"></param>
+        /// <returns></returns>
         public static T[] DeepClone<T>(this T[] array) where T : ICloneable
         {
             return array.Select(a => (T)a.Clone()).ToArray();
         }
 
+        /// <summary>
+        /// Generates a SHA1 hash of the <paramref name="data"/>.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public static string GetHashSHA1(this byte[] data)
         {
             using (SHA1CryptoServiceProvider sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider())
@@ -58,6 +77,13 @@ namespace SocketNetworking
         }
 
 
+        /// <summary>
+        /// Basically prepends <paramref name="newData"/> to the <paramref name="array"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="array"></param>
+        /// <param name="newData"></param>
+        /// <returns></returns>
         public static T[] Push<T>(this T[] array, T[] newData)
         {
             if (array.Length <= newData.Length)
@@ -76,6 +102,13 @@ namespace SocketNetworking
             }
         }
 
+        /// <summary>
+        /// Uses <see cref="Array.Copy"/> to concatenate the <paramref name="first"/> and <paramref name="second"/> array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="first"></param>
+        /// <param name="second"></param>
+        /// <returns></returns>
         public static T[] FastConcat<T>(this T[] first, T[] second)
         {
             T[] result = new T[first.Length + second.Length];
@@ -138,17 +171,32 @@ namespace SocketNetworking
             return true;
         }
 
+        /// <summary>
+        /// Tries to find the largest <see cref="Enum"/> value given a type.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public static object LastEnum(this object obj)
         {
             object lastEnum = Enum.GetValues(obj.GetType()).Cast<object>().Max();
             return lastEnum;
         }
 
+        /// <summary>
+        /// Uses <see cref="Marshal.SizeOf(Type)"/> to return the size of the type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static int SizeOf(this Type type)
         {
             return Marshal.SizeOf(type);
         }
 
+        /// <summary>
+        /// Returns the length of bytes in the <see cref="Encoding.UTF8"/> encoding of a <see cref="string"/> <paramref name="str"/>.
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
         public static int SerializedSize(this string str)
         {
             return Encoding.UTF8.GetBytes(str).Length;
@@ -171,6 +219,11 @@ namespace SocketNetworking
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Generates a hash for a <see cref="string"/>.
+        /// </summary>
+        /// <param name="read"></param>
+        /// <returns></returns>
         public static ulong GetULongStringHash(this string read)
         {
             ulong hashedValue = 3074457345618258791ul;
@@ -182,12 +235,23 @@ namespace SocketNetworking
             return hashedValue;
         }
 
+        /// <summary>
+        /// Creates a <see cref="SHA256"/> hash of a <see cref="string"/>.
+        /// </summary>
+        /// <param name="inputString"></param>
+        /// <returns></returns>
         public static byte[] GetHash(string inputString)
         {
             using (HashAlgorithm algorithm = SHA256.Create())
                 return algorithm.ComputeHash(Encoding.UTF8.GetBytes(inputString));
         }
 
+        /// <summary>
+        /// Performs a deep search for fields in a <see cref="Type"/>. This method will return fields from every single level of the object, so including inherited fields.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="bindingAttr"></param>
+        /// <returns></returns>
         public static FieldInfo[] GetAllFields(this Type type, BindingFlags bindingAttr)
         {
             List<FieldInfo> fields = new List<FieldInfo>();
@@ -199,6 +263,11 @@ namespace SocketNetworking
             return fields.ToArray();
         }
 
+        /// <summary>
+        /// Uses <see cref="GZipStream"/> to compress data.
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
         public static byte[] Compress(this byte[] bytes)
         {
             using (MemoryStream memoryStream = new MemoryStream())
@@ -212,6 +281,11 @@ namespace SocketNetworking
             }
         }
 
+        /// <summary>
+        /// Uses <see cref="GZipStream"/> to decompress data.
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
         public static byte[] Decompress(this byte[] bytes)
         {
             using (MemoryStream memoryStream = new MemoryStream(bytes))
@@ -247,6 +321,11 @@ namespace SocketNetworking
             return s;
         }
 
+        /// <summary>
+        /// Finds the first empty spot in a list of <see cref="int"/>s.
+        /// </summary>
+        /// <param name="ints"></param>
+        /// <returns></returns>
         public static int GetFirstEmptySlot(this IEnumerable<int> ints)
         {
             HashSet<int> set = new HashSet<int>(ints);
@@ -258,6 +337,11 @@ namespace SocketNetworking
             return i;
         }
 
+        /// <summary>
+        /// Identical to <see cref="GetFirstEmptySlot(IEnumerable{int})"/> but for <see cref="ushort"/>s.
+        /// </summary>
+        /// <param name="ushorts"></param>
+        /// <returns></returns>
         public static ushort GetFirstEmptySlot(this IEnumerable<ushort> ushorts)
         {
             HashSet<ushort> set = new HashSet<ushort>(ushorts);
@@ -269,6 +353,13 @@ namespace SocketNetworking
             return i;
         }
 
+        /// <summary>
+        /// Identical to <see cref="Enumerable.Skip{TSource}(IEnumerable{TSource}, int)"/> but <see cref="long"/>s.
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
         public static IEnumerable<TSource> SkipLong<TSource>(this IEnumerable<TSource> source, long count)
         {
             while (count > int.MaxValue)
@@ -280,6 +371,14 @@ namespace SocketNetworking
             return source;
         }
 
+        /// <summary>
+        /// Identical to <see cref="Enumerable.Take{TSource}(IEnumerable{TSource}, int)"/> but for <see cref="long"/>s.
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public static IEnumerable<TSource> TakeLong<TSource>(this IEnumerable<TSource> source, long count)
         {
             if (source == null)
@@ -329,6 +428,12 @@ namespace SocketNetworking
             return false;
         }
 
+        /// <summary>
+        /// Checks how many <see cref="Type"/>s are between two types.
+        /// </summary>
+        /// <param name="toCheck"></param>
+        /// <param name="generic"></param>
+        /// <returns></returns>
         public static int HowManyClassesUp(this Type toCheck, Type generic)
         {
             int counter = -1;
@@ -345,6 +450,14 @@ namespace SocketNetworking
             return counter;
         }
 
+        /// <summary>
+        /// Lazy way of setting a bitflag on an enum.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="flag"></param>
+        /// <param name="set"></param>
+        /// <returns></returns>
         public static T SetFlag<T>(this T value, T flag, bool set) where T : Enum
         {
             Type underlyingType = Enum.GetUnderlyingType(value.GetType());
@@ -364,6 +477,12 @@ namespace SocketNetworking
             return (T)valueAsInt;
         }
 
+        /// <summary>
+        /// Returns a list of flags with a bit set.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public static List<T> GetActiveFlags<T>(this T value) where T : Enum
         {
             List<T> allValues = Enum.GetValues(typeof(T)).Cast<T>().ToList();
@@ -378,6 +497,12 @@ namespace SocketNetworking
             return activeFlags;
         }
 
+        /// <summary>
+        /// Concats the set flags returned from <see cref="GetActiveFlags{T}(T)"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enum"></param>
+        /// <returns></returns>
         public static string GetActiveFlagsString<T>(this T @enum) where T : Enum
         {
             return string.Join(", ", @enum.GetActiveFlags());
