@@ -26,7 +26,7 @@ namespace BasicChat.Server
             {
                 NetworkServer.ServerInstance.StopServer();
             };
-            NetworkManager.ImportAssmebly(Utility.GetAssembly());
+            NetworkManager.ImportAssembly(Utility.GetAssembly());
             ChatServer server = new ChatServer();
             NetworkServer.ClientType = typeof(ChatClient);
             NetworkServer.ClientAvatar = typeof(ChatAvatar);

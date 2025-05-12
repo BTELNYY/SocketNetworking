@@ -14,7 +14,7 @@ namespace SocketNetworking.Example.Basics.Client
         public static void Main(string[] args)
         {
             Log.OnLog += ExampleLogger.HandleNetworkLog;
-            NetworkManager.ImportAssmebly(Utility.GetAssembly());
+            NetworkManager.ImportAssembly(Utility.GetAssembly());
             TestClient client = new TestClient();
             Client = client;
             client.InitLocalClient();

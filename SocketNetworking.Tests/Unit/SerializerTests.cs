@@ -13,7 +13,7 @@ namespace SocketNetworking.Tests.Unit
         [TestMethod]
         public void IPEndPointTesting()
         {
-            NetworkManager.ImportAssmebly(Assembly.GetExecutingAssembly());
+            NetworkManager.ImportAssembly(Assembly.GetExecutingAssembly());
             IPAddress iPAddress = IPAddress.Loopback;
             IPEndPoint endPoint = new IPEndPoint(iPAddress, 3877);
             SerializableIPEndPoint serializedEndpoint = new SerializableIPEndPoint();
@@ -27,7 +27,7 @@ namespace SocketNetworking.Tests.Unit
         [TestMethod]
         public void IPEndPointTesting1()
         {
-            NetworkManager.ImportAssmebly(Assembly.GetExecutingAssembly());
+            NetworkManager.ImportAssembly(Assembly.GetExecutingAssembly());
             IPAddress iPAddress = IPAddress.Loopback;
             IPEndPoint endPoint = new IPEndPoint(iPAddress, 3877);
             ByteWriter writer = new ByteWriter();

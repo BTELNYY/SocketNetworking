@@ -18,11 +18,20 @@ using SocketNetworking.Shared.SyncVars;
 
 namespace SocketNetworking.Shared
 {
+    /// <summary>
+    /// The <see cref="NetworkManager"/> class handles everything related to persistent data within the server client relationship. It does not handle any client specific logic.
+    /// </summary>
     public class NetworkManager
     {
+        /// <summary>
+        /// <see cref="NetworkManager"/> <see cref="SocketNetworking.Log"/> instance.
+        /// </summary>
         public static Log Log { get; private set; } = new Log("[Network Manager]");
 
-        public static readonly Type[] AcceptedMethodArugments = new Type[]
+        /// <summary>
+        /// Types of arguments that packet listener methods are allowed to have.
+        /// </summary>
+        public static readonly Type[] AcceptedMethodArguments = new Type[]
         {
             typeof(CustomPacket),
             typeof(NetworkHandle),
@@ -34,6 +43,11 @@ namespace SocketNetworking.Shared
 
         private static List<Type> _dynamicAllocatedPackets = new List<Type>();
 
+        /// <summary>
+        /// Determines if the <see cref="Packet"/> is dynamically or statically allocated (for IDs)
+        /// </summary>
+        /// <param name="packetType"></param>
+        /// <returns></returns>
         public static bool IsDynamicAllocatedPacket(Type packetType)
         {
             return _packetCache.ContainsKey(packetType);
@@ -52,6 +66,12 @@ namespace SocketNetworking.Shared
             }
         }
 
+        /// <summary>
+        /// Finds the next empty <see cref="int"/> ID for <see cref="CustomPacket"/>s.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
+        /// <exception cref="CustomPacketCollisionException"></exception>
         public static int GetAutoPacketID(CustomPacket packet)
         {
             if (_packetCache.ContainsKey(packet.GetType()))
@@ -113,6 +133,9 @@ namespace SocketNetworking.Shared
             }
         }
 
+        /// <summary>
+        /// Returns the <see cref="NetworkDirection"/> based on <see cref="WhereAmI"/>.
+        /// </summary>
         public static NetworkDirection WhereAmIDirection
         {
             get
@@ -163,7 +186,7 @@ namespace SocketNetworking.Shared
         /// Imports the target assembly, caching: <see cref="ITypeWrapper{T}"/>s, any methods with <see cref="NetworkInvokable"/> (which are on a class with <see cref="INetworkObject"/> implemented) and any <see cref="CustomPacket"/>s  
         /// </summary>
         /// <param name="target"></param>
-        public static void ImportAssmebly(Assembly target)
+        public static void ImportAssembly(Assembly target)
         {
             ImportCustomPackets(target);
             List<Type> applicableTypes = target.GetTypes().ToList();
@@ -182,15 +205,15 @@ namespace SocketNetworking.Shared
         /// <summary>
         /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your netowrk objects.
         /// </summary>
-        /// <param name="assmebly">
+        /// <param name="assembly">
         /// The <see cref="Assembly"/> which to scan.
         /// </param>
         /// <exception cref="CustomPacketCollisionException">
         /// Thrown when 2 or more packets collide by attempting to register themselves on the same PacketID.
         /// </exception>
-        public static void ImportCustomPackets(Assembly assmebly)
+        public static void ImportCustomPackets(Assembly assembly)
         {
-            List<Type> types = assmebly.GetTypes().Where(x => x.IsSubclassOf(typeof(CustomPacket))).ToList();
+            List<Type> types = assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(CustomPacket))).ToList();
             types = types.Where(x => x.GetCustomAttribute(typeof(PacketDefinition)) != null).ToList();
             ImportCustomPackets(types);
         }
@@ -287,6 +310,11 @@ namespace SocketNetworking.Shared
 
         private static readonly List<NetworkObjectData> PreCache = new List<NetworkObjectData>();
 
+        /// <summary>
+        /// Attempts to find a <see cref="INetworkObject"/> by <see cref="INetworkObject.NetworkID"/>.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public static (INetworkObject, NetworkObjectData) GetNetworkObjectByID(int id)
         {
             INetworkObject obj = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == id);
@@ -307,6 +335,13 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public delegate INetworkSpawnable NetworkObjectSpawnerDelegate(ObjectManagePacket packet, NetworkHandle handle);
 
+        /// <summary>
+        /// Registers a <see cref="NetworkObjectSpawnerDelegate"/> to a specific <see cref="Type"/>. Duplicates are not allowed. Returns a <see cref="bool"/> representing success.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="spawner"></param>
+        /// <param name="allowSubclasses"></param>
+        /// <returns></returns>
         public static bool RegisterSpawner(Type type, NetworkObjectSpawnerDelegate spawner, bool allowSubclasses)
         {
             if (NetworkObjectSpawners.Any(x => x.TargetType == type))
@@ -324,6 +359,12 @@ namespace SocketNetworking.Shared
             return true;
         }
 
+        /// <summary>
+        /// Unregisters a <see cref="NetworkObjectSpawnerDelegate"/> from a <see cref="Type"/>.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="spawnerDelegate"></param>
+        /// <returns></returns>
         public static bool UnregisterSpawner(Type type, NetworkObjectSpawnerDelegate spawnerDelegate)
         {
             NetworkObjectSpawner spawner = NetworkObjectSpawners.FirstOrDefault(x => x.TargetType == type && x.Spawner == spawnerDelegate);
@@ -336,6 +377,11 @@ namespace SocketNetworking.Shared
             return true;
         }
 
+        /// <summary>
+        /// Attempts to find the best possible <see cref="NetworkObjectSpawnerDelegate"/> for a <see cref="Type"/>. This is done by trying to find the class that is the most closest to it within the inheritence hiearchy. If <see cref="NetworkObjectSpawner.AllowSubclasses"/> is <see langword="false"/>, this method will attempt to find the spawner that matches exactly. Returns <see langword="null"/> if no spawner is found.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static NetworkObjectSpawner GetBestSpawner(Type type)
         {
             NetworkObjectSpawner objSpawner = null;
@@ -625,6 +671,10 @@ namespace SocketNetworking.Shared
             return NetworkObjects.ContainsKey(networkObject);
         }
 
+        /// <summary>
+        /// Returns all registered <see cref="INetworkObject"/s.
+        /// </summary>
+        /// <returns></returns>
         public static List<INetworkObject> GetNetworkObjects()
         {
             return NetworkObjects.Keys.ToList();
@@ -659,6 +709,11 @@ namespace SocketNetworking.Shared
             }
         }
 
+        /// <summary>
+        /// Forces the library to re-check the type of the <paramref name="networkObject"/> before changing out its reference.
+        /// </summary>
+        /// <param name="networkObject"></param>
+        /// <returns></returns>
         public static bool ModifyNetworkID(INetworkObject networkObject)
         {
             if (networkObject.NetworkID == 0)
@@ -729,6 +784,11 @@ namespace SocketNetworking.Shared
             return removed;
         }
 
+        /// <summary>
+        /// Will parse a <see cref="Type"/> and convert a cache (<see cref="NetworkObjectData"/>) of all fields, methods, and other important attributes to speed up reflection.
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static NetworkObjectData GetNetworkObjectData(Type t)
         {
             if (PreCache.Any(x => x.TargetObject == t) || TypeToTypeWrapper.ContainsValue(t))
@@ -755,20 +815,20 @@ namespace SocketNetworking.Shared
             {
                 if (method.GetCustomAttribute<PacketListener>() != null)
                 {
-                    if (method.GetParameters().Length < AcceptedMethodArugments.Length)
+                    if (method.GetParameters().Length < AcceptedMethodArguments.Length)
                     {
                         Log.Warning("Method " + method.Name + " was ignored because it doesn't have the proper amount of arguments");
                     }
                     else
                     {
                         bool methodArgsFailed = false;
-                        for (int i = 0; i < AcceptedMethodArugments.Length; i++)
+                        for (int i = 0; i < AcceptedMethodArguments.Length; i++)
                         {
                             Type methodType = method.GetParameters()[i].ParameterType;
-                            Type acceptedType = AcceptedMethodArugments[i];
+                            Type acceptedType = AcceptedMethodArguments[i];
                             if (!methodType.IsSubclassDeep(acceptedType))
                             {
-                                Log.Warning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArugments.Select(x => x.Name))}");
+                                Log.Warning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArguments.Select(x => x.Name))}");
                                 methodArgsFailed = true;
                             }
                         }
@@ -1051,6 +1111,12 @@ namespace SocketNetworking.Shared
 
         public static event Action<NetworkInvokationResultPacket> OnNetworkInvocationResult;
 
+        /// <summary>
+        /// Determines if a certain callback is ready to be handled yet. 
+        /// </summary>
+        /// <param name="callBack"></param>
+        /// <param name="packet"></param>
+        /// <returns></returns>
         public static bool IsReady(int callBack, out NetworkInvokationResultPacket packet)
         {
             if (Results.Where(x => x.CallbackID == callBack).Count() == 0)
@@ -1065,11 +1131,16 @@ namespace SocketNetworking.Shared
             }
         }
 
-        public static NetworkInvokationResultPacket ConsumeNetworkInvokationResult(int callback)
+        /// <summary>
+        /// Consumes a callback.
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <returns></returns>
+        public static NetworkInvokationResultPacket ConsumeNetworkInvocationResult(int callback)
         {
             if (!IsReady(callback, out NetworkInvokationResultPacket packet))
             {
-                Log.Warning("Attempted to get not ready network invokation result with callback ID: " + callback);
+                Log.Warning("Attempted to get not ready network invocation result with callback ID: " + callback);
                 return null;
             }
             Results.Remove(packet);
@@ -1255,10 +1326,10 @@ namespace SocketNetworking.Shared
         /// The <see cref="NetworkClient"/> sender of the invocation.
         /// </param>
         /// <param name="methodName">
-        /// The method name of the object from target argument. Note that the method msut be a non-static method. The access modifier does not matter.
+        /// The method name of the object from target argument. Note that the method must be a non-static method. The access modifier does not matter.
         /// </param>
         /// <param name="args">
-        /// The arguments that should be provided to the method. Note that these arguments are serialized by <see cref="ByteConvert"/>. Note: if your method has <see cref="NetworkClient"/> as its first argument, you do not have to inlude it, but you can.
+        /// The arguments that should be provided to the method. Note that these arguments are serialized by <see cref="ByteConvert"/>. Note: if your method has <see cref="NetworkClient"/> as its first argument, you do not have to include it, but you can.
         /// </param>
         /// <exception cref="NetworkInvocationException"></exception>
         /// <exception cref="SecurityException"></exception>
@@ -1349,6 +1420,17 @@ namespace SocketNetworking.Shared
             return new NetworkInvocationCallback<T>(packet.CallbackID);
         }
 
+        /// <summary>
+        /// Tries to call a NetworkInvoke method and get its return. This method will block the calling thread until the remote method has returned. <b>Do not call this on the thread that reads packets, this will freeze the application as the thread will wait forever.</b>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="target"></param>
+        /// <param name="sender"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <param name="msTimeOut"></param>
+        /// <param name="priority"></param>
+        /// <returns></returns>
         public static T NetworkInvokeBlocking<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000, bool priority = false)
         {
             NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
@@ -1372,7 +1454,7 @@ namespace SocketNetworking.Shared
                     break;
                 }
             }
-            //Log.Debug($"NetowkInvoke on {methodName} successfully returned and took {stopwatch.ElapsedMilliseconds}ms");
+            //Log.Debug($"NetworkInvoke on {methodName} successfully returned and took {stopwatch.ElapsedMilliseconds}ms");
             NetworkInvokationResultPacket resultPacket = networkResultAwaiter.ResultPacket;
             if (resultPacket == null)
             {
@@ -1414,7 +1496,7 @@ namespace SocketNetworking.Shared
 
         public List<FieldInfo> SyncVars;
 
-        public List<ValueTuple<MethodInfo, NetworkInvokable>> Invokables;
+        public List<ValueTuple<MethodInfo, NetworkInvokable>> Invocables;
 
         public Type TargetObject;
     }

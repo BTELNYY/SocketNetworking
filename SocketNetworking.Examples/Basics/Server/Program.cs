@@ -24,7 +24,7 @@ namespace SocketNetworking.Example.Basics.Server
             {
                 NetworkServer.ServerInstance.StopServer();
             };
-            NetworkManager.ImportAssmebly(Utility.GetAssembly());
+            NetworkManager.ImportAssembly(Utility.GetAssembly());
             MixedNetworkServer server = new MixedNetworkServer();
             NetworkServer.ClientType = typeof(TestClient);
             NetworkServer.ClientAvatar = typeof(NetworkObjectTest);

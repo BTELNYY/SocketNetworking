@@ -28,7 +28,7 @@ namespace BasicChat.Client
 
             Thread.Sleep(500);
 
-            NetworkManager.ImportAssmebly(Utility.GetAssembly());
+            NetworkManager.ImportAssembly(Utility.GetAssembly());
             reader = new Thread(HandleInput);
 
             Console.WriteLine("Enter your name");
