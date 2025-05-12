@@ -48,7 +48,7 @@ namespace SocketNetworking.Misc
         {
             if (ResultPacket != null)
             {
-                NetworkManager.ConsumeNetworkInvokationResult(ResultPacket.CallbackID);
+                NetworkManager.ConsumeNetworkInvocationResult(ResultPacket.CallbackID);
             }
         }
 

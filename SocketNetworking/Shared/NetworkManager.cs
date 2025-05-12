@@ -808,7 +808,7 @@ namespace SocketNetworking.Shared
             }
             NetworkObjectData networkObjectCache = new NetworkObjectData();
             networkObjectCache.TargetObject = t;
-            networkObjectCache.Invokables = new List<(MethodInfo, NetworkInvokable)>();
+            networkObjectCache.Invocables = new List<(MethodInfo, NetworkInvokable)>();
             networkObjectCache.Listeners = new Dictionary<Type, List<PacketListenerData>>();
             networkObjectCache.SyncVars = new List<FieldInfo>();
             foreach (MethodInfo method in t.GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
@@ -857,12 +857,12 @@ namespace SocketNetworking.Shared
                 if (method.GetCustomAttribute<NetworkInvokable>() != null)
                 {
                     ValueTuple<MethodInfo, NetworkInvokable> tuple = (method, method.GetCustomAttribute<NetworkInvokable>());
-                    if (networkObjectCache.Invokables.Contains(tuple))
+                    if (networkObjectCache.Invocables.Contains(tuple))
                     {
                         Log.Warning($"Tried to cache duplicate! Type: {t.FullName}, Method: {method.Name}");
                         continue;
                     }
-                    networkObjectCache.Invokables.Add(tuple);
+                    networkObjectCache.Invocables.Add(tuple);
                 }
             }
             List<FieldInfo> syncVars = new List<FieldInfo>();
@@ -1233,7 +1233,7 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Unable to find the Object this packet is referencing.");
             }
             Type[] arguments = packet.Arguments.Select(x => x.Type).ToArray();
-            MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invokables.Select(x => x.Item1).ToArray();
+            MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invocables.Select(x => x.Item1).ToArray();
             MethodInfo method = GetNetworkInvokeMethod(methods, arguments, packet.MethodName);
             if (method == null)
             {
@@ -1353,7 +1353,7 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
             }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
-            MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invokables.Select(x => x.Item1).ToArray();
+            MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invocables.Select(x => x.Item1).ToArray();
             MethodInfo method = GetNetworkInvokeMethod(methods, arguments, methodName);
             if (method == null)
             {
