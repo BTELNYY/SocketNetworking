@@ -26,7 +26,7 @@ namespace SocketNetworking.Client
     /// </summary>
     public class NetworkClient
     {
-        static NetworkClient instance;
+        private static NetworkClient _instance;
 
         /// <summary>
         /// Gets the local singleton for the <see cref="NetworkClient"/>. Can only be called on the client, multiple <see cref="NetworkClient"/>s on the local context are not recommended. Technically, you can have as many as you'd like. But you would be restricted only having <see cref="NetworkInvoke(string, object[], bool)"/>, as <see cref="INetworkObject"/>s would collide.
@@ -39,11 +39,11 @@ namespace SocketNetworking.Client
                 {
                     throw new InvalidOperationException("Cannot get local client from the server.");
                 }
-                return instance;
+                return _instance;
             }
         }
 
-        public NetworkClient()
+        protected NetworkClient()
         {
             Log = new Log()
             {
@@ -66,7 +66,7 @@ namespace SocketNetworking.Client
             {
                 Clients.Remove(this);
             }
-            instance = null;
+            _instance = null;
         }
 
         #region Per Client (Non-Static) Events
@@ -837,11 +837,11 @@ namespace SocketNetworking.Client
         /// </summary>
         public virtual void InitLocalClient()
         {
-            if (instance != null && instance != this)
+            if (_instance != null && _instance != this)
             {
                 throw new InvalidOperationException("Having several active clients is not allowed.");
             }
-            instance = this;
+            _instance = this;
             _clientLocation = ClientLocation.Local;
             ClientConnected += OnLocalClientConnected;
         }
@@ -1150,6 +1150,7 @@ namespace SocketNetworking.Client
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
+        /// <param name="priority"></param>
         /// <returns></returns>
         public T NetworkInvoke<T>(object target, string methodName, object[] args, float maxTimeMs = 5000, bool priority = false)
         {
@@ -1184,6 +1185,7 @@ namespace SocketNetworking.Client
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
+        /// <param name="priority"></param>
         /// <returns></returns>
         public T NetworkInvokeBlocking<T>(string methodName, object[] args, float maxTimeMs = 5000, bool priority = false)
         {
@@ -1408,7 +1410,7 @@ namespace SocketNetworking.Client
             return fullPacket;
         }
 
-        void PacketSenderThreadMethod()
+        private void PacketSenderThreadMethod()
         {
             while (!_shuttingDown)
             {
@@ -1416,7 +1418,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected void RawWriter()
+        private void RawWriter()
         {
             if (NoPacketHandling)
             {
@@ -2267,21 +2269,28 @@ namespace SocketNetworking.Client
         {
             await Task.Run(() =>
             {
-                Dictionary<int, string> packets = NetworkManager.PacketPairsSerialized;
-                while (packets.Count > 0)
+                try
                 {
-                    Dictionary<int, string> section = new Dictionary<int, string>();
-                    for (int i = 0; i < Math.Min(10, packets.Count); i++)
+                    Dictionary<int, string> packets = NetworkManager.PacketPairsSerialized;
+                    while (packets.Count > 0)
                     {
-                        KeyValuePair<int, string> keyPair = packets.First();
-                        packets.Remove(keyPair.Key);
-                        section.Add(keyPair.Key, keyPair.Value);
+                        Dictionary<int, string> section = new Dictionary<int, string>();
+                        for (int i = 0; i < Math.Min(10, packets.Count); i++)
+                        {
+                            KeyValuePair<int, string> keyPair = packets.First();
+                            packets.Remove(keyPair.Key);
+                            section.Add(keyPair.Key, keyPair.Value);
+                        }
+                        PacketMappingPacket packetMapping = new PacketMappingPacket()
+                        {
+                            Mapping = section,
+                        };
+                        Send(packetMapping);
                     }
-                    PacketMappingPacket packetMapping = new PacketMappingPacket()
-                    {
-                        Mapping = section,
-                    };
-                    Send(packetMapping);
+                }
+                catch (Exception ex)
+                {
+                    this.Log.Error($"Unable to sync packet pairs!\n{ex}");
                 }
             });
         }
@@ -2323,22 +2332,23 @@ namespace SocketNetworking.Client
         /// </summary>
         public void ServerAutoSpecifyAvatar()
         {
-            if (NetworkServer.ClientAvatar != null && NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
+            if (NetworkServer.ClientAvatar == null || !NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
             {
-                INetworkObject result = null;
-                NetworkObjectSpawner spawner = NetworkManager.GetBestSpawner(NetworkServer.ClientAvatar);
-                if (spawner != null)
-                {
-                    result = (INetworkObject)spawner.Spawner.Invoke(null, new NetworkHandle(this));
-                }
-                else
-                {
-                    result = (INetworkObject)Activator.CreateInstance(NetworkServer.ClientAvatar);
-                }
-                if (result != null)
-                {
-                    ServerSpecifyAvatar((INetworkAvatar)result);
-                }
+                return;
+            }
+            INetworkObject result = null;
+            NetworkObjectSpawner spawner = NetworkManager.GetBestSpawner(NetworkServer.ClientAvatar);
+            if (spawner != null)
+            {
+                result = (INetworkObject)spawner.Spawner.Invoke(null, new NetworkHandle(this));
+            }
+            else
+            {
+                result = (INetworkObject)Activator.CreateInstance(NetworkServer.ClientAvatar);
+            }
+            if (result != null)
+            {
+                ServerSpecifyAvatar((INetworkAvatar)result);
             }
         }
 
@@ -2349,12 +2359,19 @@ namespace SocketNetworking.Client
         {
             await Task.Run(() =>
             {
-                List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
-                NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
-                foreach (INetworkObject @object in objects)
+                try
                 {
-                    @object.NetworkSpawn(this);
-                    @object.OnSync(this);
+                    List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
+                    NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
+                    foreach (INetworkObject @object in objects)
+                    {
+                        @object.NetworkSpawn(this);
+                        @object.OnSync(this);
+                    }
+                }
+                catch (Exception x)
+                {
+                    Log.Error("NetworkObject sync ASYNC failed. \n" + x);
                 }
             });
         }
