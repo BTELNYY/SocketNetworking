@@ -49,7 +49,7 @@ namespace SocketNetworking.Server
         {
             ClientDisconnected += (dcClient) =>
             {
-                lock (clientLock)
+                lock (ClientLock)
                 {
                     IPEndPoint client = _udpClients.FirstOrDefault(x => x.Value == dcClient).Key;
                     if (client == default)
@@ -178,7 +178,7 @@ namespace SocketNetworking.Server
                         client.UdpTransport = new UdpTransport();
                         client.UdpTransport.Client = udpClient;
                         client.UdpTransport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
-                        lock (clientLock)
+                        lock (ClientLock)
                         {
                             _udpClients.Add(remoteIpEndPoint, client);
                         }
@@ -202,7 +202,7 @@ namespace SocketNetworking.Server
                         {
                             if (!client.IsConnected || !client.UdpTransport.IsConnected)
                             {
-                                lock (clientLock)
+                                lock (ClientLock)
                                 {
                                     _udpClients.Remove(listener);
                                 }

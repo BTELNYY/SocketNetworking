@@ -24,7 +24,7 @@ namespace SocketNetworking.Shared.Transports
         /// <summary>
         /// Internal Buffer, will be modified
         /// </summary>
-        public virtual byte[] Buffer { get; protected set; } = new byte[] { };
+        public byte[] Buffer { get; protected set; } = new byte[] { };
 
         /// <summary>
         /// Is there anything to read from the Network interface?

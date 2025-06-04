@@ -10,6 +10,7 @@ using SocketNetworking.Shared.Events;
 using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Server
 {
@@ -209,34 +210,48 @@ namespace SocketNetworking.Server
             get => _clientType;
             set
             {
-                if (value.IsSubclassDeep(typeof(NetworkClient)))
+                if (!value.IsSubclassDeep(typeof(NetworkClient)))
                 {
-                    _clientType = value;
-                    return;
+                    throw new ArgumentException($"{value.GetType()} is not a subclass of {typeof(NetworkClient)}.");
                 }
-                throw new ArgumentException($"{value.GetType()} is not a subclass of {typeof(NetworkClient)}.");
+                _clientType = value;
+                return;
             }
         }
 
         private static Type _clientType = typeof(NetworkClient);
 
+        
+        private static Type _transportType = typeof(NetworkTransport);
+
+        public static Type TransportType
+        {
+            get => _transportType;
+            set
+            {
+                if (!value.IsSubclassDeep(typeof(NetworkTransport)))
+                {
+                    throw new ArgumentException($"{value.GetType()} is not a subclass of {typeof(NetworkTransport)}.");
+                }
+                _transportType = value;
+                return;
+            }
+        }
+        
         /// <summary>
         /// The default <see cref="AuthenticationProvider"/> <see cref="Type"/>. See <see cref="NetworkClient.AuthenticationProvider"/>, <see cref="NetworkClient.Authenticated"/> and <see cref="AuthenticationProvider"/>.
         /// </summary>
         public static Type Authenticator
         {
-            get
-            {
-                return _authenticator;
-            }
+            get => _authenticator;
             set
             {
-                if (value.IsSubclassDeep(typeof(AuthenticationProvider)))
+                if (!value.IsSubclassDeep(typeof(AuthenticationProvider)))
                 {
-                    _clientType = value;
-                    return;
+                    throw new ArgumentException($"{value.GetType()} is not a subclass of {typeof(AuthenticationProvider)}.");
                 }
-                throw new ArgumentException($"{value.GetType()} is not a subclass of {typeof(AuthenticationProvider)}.");
+                _authenticator = value;
+                return;
             }
         }
 
@@ -257,7 +272,7 @@ namespace SocketNetworking.Server
         /// </summary>
         public static bool AllowClientSelfReady = true;
 
-        public static Thread ServerThread;
+        private static Thread _serverThread;
 
         private static NetworkServer _serverInstance;
 
@@ -309,17 +324,18 @@ namespace SocketNetworking.Server
                 handlers.Add(handler);
                 handler.Start();
             }
-            ServerThread = new Thread(ServerStartThread);
+            _serverThread = new Thread(ServerStartThread);
             ClientConnecting += (sender, req) =>
             {
-                if (Clients.Count >= Config.MaximumClients)
+                if (Clients.Count < Config.MaximumClients)
                 {
-                    //Do not accept.
-                    Log.Info("Rejected a client because the server is full.");
-                    req.Reject();
+                    return;
                 }
+                //Do not accept.
+                Log.Info("Rejected a client because the server is full.");
+                req.Reject();
             };
-            ServerThread.Start();
+            _serverThread.Start();
             ServerStarted?.Invoke();
             _serverState = ServerState.NotReady;
         }
@@ -339,12 +355,12 @@ namespace SocketNetworking.Server
             {
                 Log.Warning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
             }
-            if (!ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)) && ClientAvatar != null)
+            if (ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)) || ClientAvatar == null)
             {
-                Log.Error("Server start error. Your client avatar must implement INetworkAvatar through either NetworkAvatarBase or a custom implementation.");
-                return false;
+                return true;
             }
-            return true;
+            Log.Error("Server start error. Your client avatar must implement INetworkAvatar through either NetworkAvatarBase or a custom implementation.");
+            return false;
         }
 
         /// <summary>
@@ -355,7 +371,7 @@ namespace SocketNetworking.Server
         /// <exception cref="InvalidOperationException"></exception>
         protected static void AddClient(NetworkClient client, int clientId)
         {
-            lock (clientLock)
+            lock (ClientLock)
             {
                 if (_clients.ContainsKey(clientId))
                 {
@@ -375,15 +391,11 @@ namespace SocketNetworking.Server
             }
         }
 
-        static ClientHandler NextHandler()
+        private static ClientHandler NextHandler()
         {
             ClientHandler bestHandler = null;
-            foreach (ClientHandler handler in handlers)
+            foreach (ClientHandler handler in handlers.Where(handler => handler.CurrentClientCount < Config.ClientsPerThread))
             {
-                if (handler.CurrentClientCount >= Config.ClientsPerThread)
-                {
-                    continue;
-                }
                 if (bestHandler == null)
                 {
                     bestHandler = handler;
@@ -397,7 +409,7 @@ namespace SocketNetworking.Server
             return bestHandler;
         }
 
-        protected static object clientLock = new object();
+        protected static readonly object ClientLock = new object();
 
         /// <summary>
         /// Removes a <see cref="NetworkClient"/> from the thread pools. If it is already removed, does nothing.
@@ -405,7 +417,7 @@ namespace SocketNetworking.Server
         /// <param name="myClient"></param>
         public static void RemoveClient(NetworkClient myClient)
         {
-            lock (clientLock)
+            lock (ClientLock)
             {
                 if (_clients.ContainsKey(myClient.ClientID))
                 {
@@ -449,14 +461,7 @@ namespace SocketNetworking.Server
         /// </returns>
         public static NetworkClient GetClient(int id)
         {
-            if (_clients.ContainsKey(id))
-            {
-                return _clients[id];
-            }
-            else
-            {
-                return null;
-            }
+            return _clients.TryGetValue(id, out NetworkClient client) ? client : null;
         }
 
         /// <summary>
@@ -476,7 +481,7 @@ namespace SocketNetworking.Server
                 client.Disconnect("Server shutting down");
             }
             _clients.Clear();
-            ServerThread.Abort();
+            _serverThread.Abort();
             ServerStopped?.Invoke();
         }
 
@@ -519,14 +524,11 @@ namespace SocketNetworking.Server
             {
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
-            lock (clientLock)
+            lock (ClientLock)
             {
-                foreach (NetworkClient client in _clients.Values)
+                foreach (NetworkClient client in _clients.Values.Where(client => predicate(client)))
                 {
-                    if (predicate(client))
-                    {
-                        client.Send(packet);
-                    }
+                    client.Send(packet);
                 }
             }
         }
@@ -537,7 +539,7 @@ namespace SocketNetworking.Server
         /// </summary>
         /// <param name="packet"></param>
         /// <param name="target"></param>
-        /// <param name="toReadyOnly"></param>
+        /// <param name="predicate"></param>
         /// <exception cref="InvalidOperationException"></exception>
         public static void SendToAll(TargetedPacket packet, INetworkObject target, Predicate<NetworkClient> predicate)
         {
@@ -555,7 +557,7 @@ namespace SocketNetworking.Server
             {
                 packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
             }
-            SendToAll(packet, target, (x) => toReadyOnly ? x.Ready : true);
+            SendToAll(packet, target, (x) => !toReadyOnly || x.Ready);
         }
 
         /// <summary>
@@ -580,7 +582,7 @@ namespace SocketNetworking.Server
             {
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
-            lock (clientLock)
+            lock (ClientLock)
             {
                 foreach (NetworkClient client in _clients.Values)
                 {
@@ -601,7 +603,7 @@ namespace SocketNetworking.Server
             {
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
-            lock (clientLock)
+            lock (ClientLock)
             {
                 foreach (NetworkClient client in _clients.Values)
                 {
@@ -709,6 +711,6 @@ namespace SocketNetworking.Server
         /// <summary>
         /// Encryption is required.
         /// </summary>
-        Required
+        Required,
     }
 }
