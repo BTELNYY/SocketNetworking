@@ -1,6 +1,5 @@
 ﻿using SocketNetworking.Client;
 using SocketNetworking.Server;
-using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 

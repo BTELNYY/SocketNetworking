@@ -1,5 +1,4 @@
 ﻿using System;
-using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Example.Basics.SharedData

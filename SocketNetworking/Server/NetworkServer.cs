@@ -221,7 +221,7 @@ namespace SocketNetworking.Server
 
         private static Type _clientType = typeof(NetworkClient);
 
-        
+
         private static Type _transportType = typeof(NetworkTransport);
 
         public static Type TransportType
@@ -237,7 +237,7 @@ namespace SocketNetworking.Server
                 return;
             }
         }
-        
+
         /// <summary>
         /// The default <see cref="AuthenticationProvider"/> <see cref="Type"/>. See <see cref="NetworkClient.AuthenticationProvider"/>, <see cref="NetworkClient.Authenticated"/> and <see cref="AuthenticationProvider"/>.
         /// </summary>
