@@ -98,7 +98,14 @@ namespace SocketNetworking.Shared
                         streamBase.SetOpenData(reader);
                         result.Function = StreamFunction.Accept;
                         result.StreamID = packet.StreamID;
-                        result.Data = streamBase.GetMetaData().Serialize().Data;
+                        ByteWriter writer2 = new ByteWriter();
+                        writer2.WritePacketSerialized<StreamMetaData>(streamBase.GetMetaData());
+                        result.Data = writer2.Data;
+                        if(result.Data.Length == 0)
+                        {
+                            Log.GlobalError($"MetaData Serializer Error!");
+                            return;
+                        }
                         Client.Send(result);
                         StreamOpened?.Invoke(streamBase);
                     }

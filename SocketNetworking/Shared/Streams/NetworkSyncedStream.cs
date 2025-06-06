@@ -125,8 +125,10 @@ namespace SocketNetworking.Shared.Streams
                 {
                     StreamID = id,
                     Function = StreamFunction.DataSend,
-                    Data = data.Serialize().Data,
                 };
+                ByteWriter writer = new ByteWriter();
+                writer.WritePacketSerialized<StreamData>(data);
+                packet.Data = writer.Data;
                 Send(packet, false);
             }
             else
@@ -148,8 +150,10 @@ namespace SocketNetworking.Shared.Streams
                     {
                         StreamID = id,
                         Function = StreamFunction.DataSend,
-                        Data = data.Serialize().Data,
                     };
+                    ByteWriter writer = new ByteWriter();
+                    writer.WritePacketSerialized<StreamData>(data);
+                    packet.Data = writer.Data;
                     Send(packet, false);
                     bufferPart = bufferPart.RemoveFromStart(slice.Length);
                 }
@@ -245,6 +249,12 @@ namespace SocketNetworking.Shared.Streams
             if (packet.Error)
             {
                 Log.Error($"Remote error: {packet.ErrorMessage}");
+                return;
+            }
+            if(packet.Data.Length == 0)
+            {
+                Log.Error($"StreamPacket data is empty!");
+                return;
             }
             switch (packet.Function)
             {
@@ -297,7 +307,7 @@ namespace SocketNetworking.Shared.Streams
                     else
                     {
                         dataReqResponse.Error = true;
-                        dataReqResponse.ErrorMessage = "Seeking is not supported on this _stream.";
+                        dataReqResponse.ErrorMessage = "Seeking is not supported on this Stream.";
                     }
                     dataReqResponse.Data = streamResponseData.Serialize().Data;
                     Send(dataReqResponse, false);
@@ -486,7 +496,7 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return (int)(int)Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

@@ -196,14 +196,14 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 IByteSerializable serializable = (IByteSerializable)Activator.CreateInstance(typeof(T));
-                //int length = ReadInt();
-                //byte[] read = Read(length);
-                int bytesUsed = serializable.Deserialize(_workingSetData).ReadBytes;
+                int length = ReadInt();
+                byte[] read = Read(length);
+                int bytesUsed = serializable.Deserialize(read).ReadBytes;
                 //if (bytesUsed != length)
                 //{
                 //    Log.GlobalWarning($"Deserializing {typeof(T).Name} has resulted in less bytes used then the structure specified.");
                 //}
-                Remove(bytesUsed);
+                //Remove(bytesUsed);
                 return (T)serializable;
             }
         }

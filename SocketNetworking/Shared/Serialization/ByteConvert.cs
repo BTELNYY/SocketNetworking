@@ -306,7 +306,8 @@ namespace SocketNetworking.Shared.Serialization
             {
                 object obj = Activator.CreateInstance(data.Type);
                 IByteSerializable serializable = (IByteSerializable)obj;
-                read = serializable.Deserialize(data.Data).ReadBytes;
+                //skip 4 bytes to ignore the length of the data.
+                read = serializable.Deserialize(data.Data.Skip(4).ToArray()).ReadBytes;
                 return serializable;
             }
 

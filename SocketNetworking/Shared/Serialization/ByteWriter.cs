@@ -114,7 +114,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] data = serializable.Serialize().Data;
-                //WriteInt(data.Length);
+                WriteInt(data.Length);
                 Write(data);
             }
         }
