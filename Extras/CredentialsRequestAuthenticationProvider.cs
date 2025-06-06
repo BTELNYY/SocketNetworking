@@ -161,7 +161,7 @@ namespace SocketNetworking.Extras
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -190,7 +190,7 @@ namespace SocketNetworking.Extras
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

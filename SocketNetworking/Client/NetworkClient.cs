@@ -1392,7 +1392,7 @@ namespace SocketNetworking.Client
             //Log.Debug($"Packet Size: Full (Raw): {packetBytes.Length}, Full (Processed): {packetFull.Length}. With Header Size: {packetFull.Length + 4}");
             writer.WriteInt(packetFull.Length);
             writer.Write(packetFull);
-            int written = writer.Length;
+            int written = (int)writer.Length;
             packet.Size = written;
             //Log.Debug($"Send Packet: {packet}");
             if (written != (packetFull.Length + 4))

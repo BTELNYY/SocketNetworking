@@ -78,7 +78,7 @@ namespace SocketNetworking.Shared
                 Type streamType = packet.StreamType;
                 if (streamType == null)
                 {
-                    Client.Log.Error("Cannot find the type of stream.");
+                    Client.Log.Error("Cannot find the type of _stream.");
                     return;
                 }
                 StreamOpenRequestEvent @event = new StreamOpenRequestEvent(packet, false);

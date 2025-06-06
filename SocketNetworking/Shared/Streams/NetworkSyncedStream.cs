@@ -297,7 +297,7 @@ namespace SocketNetworking.Shared.Streams
                     else
                     {
                         dataReqResponse.Error = true;
-                        dataReqResponse.ErrorMessage = "Seeking is not supported on this stream.";
+                        dataReqResponse.ErrorMessage = "Seeking is not supported on this _stream.";
                     }
                     dataReqResponse.Data = streamResponseData.Serialize().Data;
                     Send(dataReqResponse, false);
@@ -356,7 +356,7 @@ namespace SocketNetworking.Shared.Streams
         public bool CompressStream { get; set; } = false;
 
         /// <summary>
-        /// The position in a stream does nothing within the <see cref="NetworkSyncedStream"/> class as you cannot rewind or fast forward the internet.
+        /// The position in a _stream does nothing within the <see cref="NetworkSyncedStream"/> class as you cannot rewind or fast forward the internet.
         /// </summary>
         public override long Position { get; set; }
 
@@ -455,7 +455,7 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -486,7 +486,7 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)(int)Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -529,7 +529,7 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

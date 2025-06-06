@@ -62,7 +62,7 @@ namespace SocketNetworking.Shared.Serialization
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         ByteWriter IByteSerializable.Serialize()

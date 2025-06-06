@@ -57,7 +57,7 @@ namespace SocketNetworking.Example.Basics.SharedData
         {
             return sizeof(int) + sizeof(ulong) + sizeof(float);
             //or
-            //return Serialize().Length;
+            //return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -17,7 +18,7 @@ namespace SocketNetworking.Shared.Serialization
         /// <summary>
         /// The current length of the buffer.
         /// </summary>
-        public int Length
+        public long Length
         {
             get
             {
@@ -54,9 +55,39 @@ namespace SocketNetworking.Shared.Serialization
             _workingSetData = existingData;
         }
 
+
+        private Stream _stream;
+        
+        public ByteWriter(Stream stream)
+        {
+            this._stream = stream;
+        }
+
+        private long written;
+
         ~ByteWriter()
         {
             _workingSetData = null;
+        }
+
+        /// <summary>
+        /// Writes a <see cref="byte"/> array to the buffer. No prefix is added.
+        /// </summary>
+        /// <param name="data"></param>
+        public void Write(byte[] data)
+        {
+            lock (_lock)
+            {
+                written += data.LongLength;
+                if (_stream == null)
+                {
+                    _workingSetData = _workingSetData.FastConcat(data).ToArray();
+                }
+                else
+                {
+                    _stream.Write(data, 0, data.Length);
+                }
+            }
         }
 
         /// <summary>
@@ -83,6 +114,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] data = serializable.Serialize().Data;
+                //WriteInt(data.Length);
                 Write(data);
             }
         }
@@ -121,18 +153,6 @@ namespace SocketNetworking.Shared.Serialization
             {
                 byte[] data = value.Serialize();
                 WriteByteArray(data);
-            }
-        }
-
-        /// <summary>
-        /// Writes a <see cref="byte"/> array to the buffer. No prefix is added.
-        /// </summary>
-        /// <param name="data"></param>
-        public void Write(byte[] data)
-        {
-            lock (_lock)
-            {
-                _workingSetData = _workingSetData.FastConcat(data).ToArray();
             }
         }
 
