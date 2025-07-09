@@ -259,7 +259,7 @@ namespace SocketNetworking.Server
 
         public static Thread ServerThread;
 
-        private static NetworkServer _serverInstance;
+        protected static NetworkServer _serverInstance;
 
         /// <summary>
         /// Server singleton. Intended to prevent multiple servers running on the same process.
@@ -277,6 +277,10 @@ namespace SocketNetworking.Server
                 {
                     return _serverInstance;
                 }
+            }
+            set
+            {
+                _serverInstance = value;
             }
         }
 
