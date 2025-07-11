@@ -235,6 +235,11 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public virtual bool ShouldBeReceivingPacketsFrom(NetworkHandle handle)
+        {
+            return ShouldBeReceivingPacketsFrom(handle.Client);
+        }
+
         public virtual bool ShouldBeReceivingPacketsFrom(NetworkClient client)
         {
             if (OwnershipMode == OwnershipMode.Server && client.CurrentClientLocation == ClientLocation.Local)

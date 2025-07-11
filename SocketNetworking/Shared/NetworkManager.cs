@@ -682,7 +682,7 @@ namespace SocketNetworking.Shared
         }
 
         /// <summary>
-        /// Adds a <see cref="INetworkObject"/> to the list of objects which we check the methods of for the <see cref="PacketListener"/> attribute. This will add it to the list of all objects. 
+        /// Adds a <see cref="INetworkObject"/> to the list of objects. This will ensure a <see cref="INetworkObject.NetworkID"/> is given, as well as call <see cref="INetworkObject.OnAdded(INetworkObject)"/>, as well as try to find all <see cref="NetworkSyncVar{T}"/> on the object and cache them (if they are not cached already). This will also check and scan for methods with the <see cref="NetworkInvokable"/> and <see cref="PacketListener"/> attribute.
         /// </summary>
         /// <param name="networkObject">
         /// An instance of the a class which implements the <see cref="INetworkObject"/> interface

@@ -2,6 +2,7 @@
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Serialization;
+using SocketNetworking.Shared.SyncVars;
 using SocketNetworking.UnityEngine.TypeWrappers;
 using UnityEngine;
 
@@ -9,32 +10,19 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkTransform : NetworkComponent
     {
-        public void ServerSyncPositionAndRotation()
+        public void ServerSync()
         {
             NetworkPosition = NetworkPosition;
             NetworkRotation = NetworkRotation;
+            NetworkLocalPosition = NetworkLocalPosition;
+            NetworkLocalRotation = NetworkLocalRotation;
+            NetworkScale = NetworkScale;
         }
 
         public override void OnNetworkSpawned(NetworkClient spawner)
         {
             base.OnNetworkSpawned(spawner);
-            ServerSyncPositionAndRotation();
-        }
-
-        public override ByteWriter SendExtraData()
-        {
-            ByteWriter writer = base.SendExtraData();
-            writer.WriteVector3(NetworkPosition);
-            writer.WriteQuaternion(NetworkRotation);
-            return writer;
-        }
-
-        public override ByteReader ReceiveExtraData(byte[] extraData)
-        {
-            ByteReader reader = base.ReceiveExtraData(extraData);
-            transform.position = reader.ReadVector3();
-            transform.rotation = reader.ReadQuaternion();
-            return reader;
+            ServerSync();
         }
 
         void Awake()
@@ -45,6 +33,56 @@ namespace SocketNetworking.UnityEngine.Components
         void OnDestroy()
         {
             UnityNetworkManager.Unregister(this);
+        }
+
+        public NetworkTransform()
+        {
+            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (scale) =>
+            {
+                transform.localScale = scale;
+            });
+            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (rotation) => 
+            {
+                transform.rotation = rotation;
+            });
+            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (pos) => 
+            {
+                transform.position = pos;
+            });
+            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (localRotation) =>
+            {
+                transform.localRotation = localRotation;
+            });
+            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (localPosition) =>
+            {
+                transform.localPosition = localPosition;
+            });
+        }
+
+        private NetworkSyncVar<Vector3> scale;
+
+        private NetworkSyncVar<Quaternion> rotation;
+
+        private NetworkSyncVar<Vector3> position;
+
+        private NetworkSyncVar<Vector3> localPosition;
+
+        private NetworkSyncVar<Quaternion> localRotation;
+
+        public Vector3 NetworkScale
+        {
+            get
+            {
+                return transform.localScale;
+            }
+            set
+            {
+                if (!IsOwner)
+                {
+                    return;
+                }
+                scale.Value = value;
+            }
         }
 
         public Vector3 NetworkPosition
@@ -59,19 +97,7 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return;
                 }
-                transform.position = value;
-                SerializableVector3 vec = new SerializableVector3(value);
-                NetworkInvoke(nameof(GetNewNetworkPosition), new object[] { vec });
-            }
-        }
-
-        [NetworkInvokable]
-        private void GetNewNetworkPosition(SerializableVector3 position)
-        {
-            transform.position = position.Vector;
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                NetworkPosition = position.Vector;
+                position.Value = value;
             }
         }
 
@@ -79,7 +105,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                return transform.position;
+                return transform.localPosition;
             }
             set
             {
@@ -87,21 +113,10 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return;
                 }
-                transform.position = value;
-                SerializableVector3 vec = new SerializableVector3(value);
-                NetworkInvoke(nameof(GetNewNetworkLocalPosition), new object[] { vec });
+                localPosition.Value = value;
             }
         }
 
-        [NetworkInvokable]
-        private void GetNewNetworkLocalPosition(SerializableVector3 position)
-        {
-            transform.localPosition = position.Vector;
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                NetworkLocalPosition = position.Vector;
-            }
-        }
 
         public Quaternion NetworkRotation
         {
@@ -115,19 +130,7 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return;
                 }
-                transform.rotation = value;
-                SerializableQuaternion quat = new SerializableQuaternion(value);
-                NetworkInvoke(nameof(GetNewNetworkRotation), new object[] { quat });
-            }
-        }
-
-        [NetworkInvokable]
-        private void GetNewNetworkRotation(SerializableQuaternion rotation)
-        {
-            transform.rotation = rotation.Quaternion;
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                NetworkRotation = rotation.Quaternion;
+                rotation.Value = value;
             }
         }
 
@@ -143,19 +146,7 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return;
                 }
-                transform.localRotation = value;
-                SerializableQuaternion quat = new SerializableQuaternion(value);
-                NetworkInvoke(nameof(GetNewNetworkLocalRotation), new object[] { quat });
-            }
-        }
-
-        [NetworkInvokable]
-        private void GetNewNetworkLocalRotation(SerializableQuaternion rotation)
-        {
-            transform.rotation = rotation.Quaternion;
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                NetworkRotation = rotation.Quaternion;
+                localRotation.Value = value;
             }
         }
 

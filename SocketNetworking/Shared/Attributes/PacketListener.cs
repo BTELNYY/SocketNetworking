@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using SocketNetworking.Shared.PacketSystem.Packets;
+using SocketNetworking.Shared.NetworkObjects;
 
 namespace SocketNetworking.Shared.Attributes
 {

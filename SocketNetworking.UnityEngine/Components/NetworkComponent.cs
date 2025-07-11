@@ -1,5 +1,6 @@
 ﻿using System;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.Serialization;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
@@ -43,14 +44,15 @@ namespace SocketNetworking.UnityEngine.Components
 
         public byte[] ComponentData = new byte[0];
 
-        public virtual byte[] SendComponentData()
+        public virtual ByteWriter SendComponentData()
         {
-            return ComponentData;
+            return new ByteWriter(ComponentData);
         }
 
-        public virtual void ReceiveComponentData(byte[] data)
+        public virtual ByteReader ReceiveComponentData(byte[] data)
         {
             ComponentData = data;
+            return new ByteReader(data);
         }
 
         void Awake()

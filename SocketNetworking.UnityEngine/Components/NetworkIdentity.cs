@@ -88,7 +88,7 @@ namespace SocketNetworking.UnityEngine.Components
             writer.WriteInt(_components.Count);
             for (int i = 0; i < _components.Count; i++)
             {
-                ComponentData data = new ComponentData(i, _components[i].SendComponentData());
+                ComponentData data = new ComponentData(i, _components[i].SendComponentData().Data);
                 writer.WritePacketSerialized<ComponentData>(data);
             }
             return writer;
