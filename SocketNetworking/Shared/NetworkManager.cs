@@ -470,6 +470,7 @@ namespace SocketNetworking.Shared
                 };
                 handle.Client.Send(creationConfirmation);
                 AddNetworkObject(netObj);
+                netObj.ReceiveExtraData(packet.ExtraData);
                 netObj.OnLocalSpawned(packet);
                 if (netObj.OwnerClientID == handle.Client.ClientID)
                 {

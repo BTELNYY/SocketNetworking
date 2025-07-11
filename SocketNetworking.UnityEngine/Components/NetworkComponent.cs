@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.Components
 {
+    /// <summary>
+    /// Essentially an additional script you can place on an object. Note: You must <b>Always</b> create and register these on init or you will have, interesting issues. See <see cref="NetworkIdentity.ReceiveExtraData(byte[])"/> for more on why you should adhere to my warnings.
+    /// </summary>
     public class NetworkComponent : NetworkBehavior
     {
         /// <summary>
@@ -18,6 +21,16 @@ namespace SocketNetworking.UnityEngine.Components
 
         private NetworkIdentity _identity = null;
 
+        public void OverrideIdentity(NetworkIdentity identity)
+        {
+            if(_identity != null)
+            {
+                _identity.UnregisterComponent(this);
+            }
+            _identity = identity;
+            identity.RegisterComponent(this);
+        }
+
         public override int NetworkID { get => _identity.NetworkID; set => _identity.NetworkID = value; }
 
         public override int OwnerClientID { get => _identity.OwnerClientID; set => _identity.OwnerClientID = value; }
@@ -28,13 +41,26 @@ namespace SocketNetworking.UnityEngine.Components
 
         public override OwnershipMode OwnershipMode { get => _identity.OwnershipMode; set => _identity.OwnershipMode = value; }
 
+        public byte[] ComponentData = new byte[0];
+
+        public virtual byte[] SendComponentData()
+        {
+            return ComponentData;
+        }
+
+        public virtual void ReceiveComponentData(byte[] data)
+        {
+            ComponentData = data;
+        }
+
         void Awake()
         {
             _identity = GetComponent<NetworkIdentity>();
             if (Identity == null)
             {
-                throw new InvalidOperationException("All Network Objects must have a NetowrkIdentity.");
+                throw new InvalidOperationException("All Network Objects must have a NetworkIdentity.");
             }
+            OverrideIdentity(_identity);
         }
     }
 }
