@@ -129,6 +129,11 @@ namespace SocketNetworking.Shared.SyncVars
 
         string _name = string.Empty;
 
+        protected NetworkSyncVar()
+        {
+
+        }
+
         public NetworkSyncVar(T value)
         {
             this.value = value;

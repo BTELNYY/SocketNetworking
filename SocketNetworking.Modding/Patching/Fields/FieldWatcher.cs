@@ -12,20 +12,39 @@ namespace SocketNetworking.Modding.Patching.Fields
 
         public static Harmony Harmony => HarmonyHolder.Harmony;
 
+        private static List<Type> _watched = new List<Type>();
+
         public static void RemoveInjectedIL<T>(BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         {
-            Type type = typeof(T);
+            RemoveInjectedIL(typeof(T), flags);
+        }
+
+        public static void RemoveInjectedIL(Type type, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+        {
+            if (_watched.Contains(type))
+            {
+                return;
+            }
+            else
+            {
+                _watched.Add(type);
+            }
             foreach (MethodInfo method in type.GetMethods(flags))
             {
                 Harmony.Unpatch(method, HarmonyPatchType.Transpiler, "com.btelnyy.socketnetowking.patching");
             }
         }
 
-        public static void InjectIL<T>(BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+        public static void InjectIL(Type type, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         {
-            Type type = typeof(T);
-
-            //Use deep method to patch parents as well.
+            if (!_watched.Contains(type))
+            {
+                return;
+            }
+            else
+            {
+                _watched.Add(type);
+            }
             foreach (MethodInfo method in type.GetMethods(flags))
             {
                 try
@@ -34,6 +53,12 @@ namespace SocketNetworking.Modding.Patching.Fields
                 }
                 catch { }
             }
+        }
+
+        public static void InjectIL<T>(BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+        {
+            Type type = typeof(T);
+            InjectIL(type, flags);
         }
 
         private static IEnumerable<CodeInstruction> InterceptFieldWrites(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
