@@ -20,11 +20,9 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
         public override (IPEndPoint, int) Deserialize(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
-            SerializableIPAddress serializableIP = new SerializableIPAddress();
-            ValueTuple<IPAddress, int> desil = serializableIP.Deserialize(data);
-            reader.Remove(desil.Item2);
+            IPAddress desil = reader.ReadWrapper<SerializableIPAddress, IPAddress>();
             int port = reader.ReadUShort();
-            IPEndPoint endPoint = new IPEndPoint(desil.Item1, port);
+            IPEndPoint endPoint = new IPEndPoint(desil, port);
             return (endPoint, reader.ReadBytes);
         }
 
@@ -40,8 +38,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
             int targetPort = Value.Port;
             SerializableIPAddress serializableIP = new SerializableIPAddress();
             serializableIP.Value = target;
-            byte[] seralizedIp = serializableIP.Serialize();
-            writer.Write(seralizedIp);
+            writer.WriteWrapper<SerializableIPAddress, IPAddress>(serializableIP);
             writer.WriteUShort((ushort)targetPort);
             return writer.Data;
         }

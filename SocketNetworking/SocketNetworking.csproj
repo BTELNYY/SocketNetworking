@@ -143,6 +143,5 @@
     <Compile Include="Shared\Transports\UdpTransport.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,6 +1,5 @@
 ﻿using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
-using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
@@ -58,7 +57,7 @@ namespace SocketNetworking.Example.Basics.SharedData
         {
             return sizeof(int) + sizeof(ulong) + sizeof(float);
             //or
-            //return Serialize().Length;
+            //return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

@@ -122,7 +122,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -156,7 +156,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public virtual ByteWriter Serialize()

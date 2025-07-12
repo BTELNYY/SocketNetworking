@@ -8,7 +8,6 @@ using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.Exceptions;
 using SocketNetworking.Shared.NetworkObjects;
-using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 
 namespace SocketNetworking.Shared.Serialization
@@ -307,7 +306,8 @@ namespace SocketNetworking.Shared.Serialization
             {
                 object obj = Activator.CreateInstance(data.Type);
                 IByteSerializable serializable = (IByteSerializable)obj;
-                read = serializable.Deserialize(data.Data).ReadBytes;
+                //skip 4 bytes to ignore the length of the data.
+                read = serializable.Deserialize(data.Data.Skip(4).ToArray()).ReadBytes;
                 return serializable;
             }
 
@@ -506,7 +506,7 @@ namespace SocketNetworking.Shared.Serialization
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)(int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

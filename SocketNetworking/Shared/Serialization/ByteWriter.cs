@@ -1,10 +1,10 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
 using SocketNetworking.Shared.Exceptions;
-using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
 {
@@ -18,7 +18,7 @@ namespace SocketNetworking.Shared.Serialization
         /// <summary>
         /// The current length of the buffer.
         /// </summary>
-        public int Length
+        public long Length
         {
             get
             {
@@ -55,9 +55,39 @@ namespace SocketNetworking.Shared.Serialization
             _workingSetData = existingData;
         }
 
+
+        private Stream _stream;
+        
+        public ByteWriter(Stream stream)
+        {
+            this._stream = stream;
+        }
+
+        private long written;
+
         ~ByteWriter()
         {
             _workingSetData = null;
+        }
+
+        /// <summary>
+        /// Writes a <see cref="byte"/> array to the buffer. No prefix is added.
+        /// </summary>
+        /// <param name="data"></param>
+        public void Write(byte[] data)
+        {
+            lock (_lock)
+            {
+                written += data.LongLength;
+                if (_stream == null)
+                {
+                    _workingSetData = _workingSetData.FastConcat(data).ToArray();
+                }
+                else
+                {
+                    _stream.Write(data, 0, data.Length);
+                }
+            }
         }
 
         /// <summary>
@@ -84,6 +114,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] data = serializable.Serialize().Data;
+                WriteInt(data.Length);
                 Write(data);
             }
         }
@@ -126,18 +157,6 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
-        /// Writes a <see cref="byte"/> array to the buffer. No prefix is added.
-        /// </summary>
-        /// <param name="data"></param>
-        public void Write(byte[] data)
-        {
-            lock (_lock)
-            {
-                _workingSetData = _workingSetData.FastConcat(data).ToArray();
-            }
-        }
-
-        /// <summary>
         /// Writes a <see cref="byte"/> array to the buffer. Unlike <see cref="Write(byte[])"/>, this method will prepend an <see cref="int"/> to represent the length of the <paramref name="data"/>. Throws an <see cref="NetworkConversionException"/> if a failsafe condition is triggered where the length of the <paramref name="data"/> + 4 + the old buffer length does not equal <see cref="Length"/>.
         /// </summary>
         /// <param name="data"></param>
@@ -153,7 +172,7 @@ namespace SocketNetworking.Shared.Serialization
                 {
                     return;
                 }
-                _workingSetData = _workingSetData.FastConcat(data).ToArray();
+                Write(data);
                 if (_workingSetData.Length != expectedLength)
                 {
                     throw new NetworkConversionException($"Wrote an invalid byte array! Expected: {expectedLength}, Actual: {_workingSetData.Length}");
@@ -169,7 +188,8 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                _workingSetData = _workingSetData.Append(data).ToArray();
+                Write(new byte[] { data });
+                //_workingSetData = _workingSetData.Append(data).ToArray();
             }
         }
 
@@ -195,7 +215,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
-                _workingSetData = _workingSetData.FastConcat(result).ToArray();
+                Write(result);
             }
         }
 
@@ -209,7 +229,7 @@ namespace SocketNetworking.Shared.Serialization
             {
                 int network = IPAddress.HostToNetworkOrder(data);
                 byte[] result = BitConverter.GetBytes(network);
-                _workingSetData = _workingSetData.FastConcat(result).ToArray();
+                Write(result);
             }
         }
 
@@ -222,7 +242,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data));
-                _workingSetData = _workingSetData.FastConcat(result).ToArray();
+                Write(result);
             }
         }
 
@@ -235,7 +255,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((long)data));
-                _workingSetData = _workingSetData.FastConcat(result).ToArray();
+                Write(result);
             }
         }
 
@@ -248,7 +268,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((int)data));
-                _workingSetData = _workingSetData.FastConcat(result).ToArray();
+                Write(result);
             }
         }
 
@@ -261,7 +281,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)data));
-                _workingSetData = _workingSetData.FastConcat(result).ToArray();
+                Write(result);
             }
         }
 
@@ -274,7 +294,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(data);
-                _workingSetData = _workingSetData.FastConcat(result).ToArray();
+                Write(result);
             }
         }
 
@@ -287,7 +307,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(data);
-                _workingSetData = _workingSetData.FastConcat(result).ToArray();
+                Write(result);
             }
         }
 
@@ -320,7 +340,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] result = BitConverter.GetBytes(data);
-                _workingSetData = _workingSetData.FastConcat(result).ToArray();
+                Write(result);
             }
         }
     }

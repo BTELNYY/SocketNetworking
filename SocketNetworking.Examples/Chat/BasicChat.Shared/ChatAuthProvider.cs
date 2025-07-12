@@ -1,6 +1,5 @@
 ﻿using SocketNetworking.Shared;
 using SocketNetworking.Shared.Authentication;
-using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
@@ -60,7 +59,7 @@ namespace BasicChat.Shared
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

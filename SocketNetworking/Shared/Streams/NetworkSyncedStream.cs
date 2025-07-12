@@ -125,8 +125,10 @@ namespace SocketNetworking.Shared.Streams
                 {
                     StreamID = id,
                     Function = StreamFunction.DataSend,
-                    Data = data.Serialize().Data,
                 };
+                ByteWriter writer = new ByteWriter();
+                writer.WritePacketSerialized<StreamData>(data);
+                packet.Data = writer.Data;
                 Send(packet, false);
             }
             else
@@ -148,8 +150,10 @@ namespace SocketNetworking.Shared.Streams
                     {
                         StreamID = id,
                         Function = StreamFunction.DataSend,
-                        Data = data.Serialize().Data,
                     };
+                    ByteWriter writer = new ByteWriter();
+                    writer.WritePacketSerialized<StreamData>(data);
+                    packet.Data = writer.Data;
                     Send(packet, false);
                     bufferPart = bufferPart.RemoveFromStart(slice.Length);
                 }
@@ -245,6 +249,12 @@ namespace SocketNetworking.Shared.Streams
             if (packet.Error)
             {
                 Log.Error($"Remote error: {packet.ErrorMessage}");
+                return;
+            }
+            if(packet.Data.Length == 0)
+            {
+                Log.Error($"StreamPacket data is empty!");
+                return;
             }
             switch (packet.Function)
             {
@@ -297,7 +307,7 @@ namespace SocketNetworking.Shared.Streams
                     else
                     {
                         dataReqResponse.Error = true;
-                        dataReqResponse.ErrorMessage = "Seeking is not supported on this stream.";
+                        dataReqResponse.ErrorMessage = "Seeking is not supported on this Stream.";
                     }
                     dataReqResponse.Data = streamResponseData.Serialize().Data;
                     Send(dataReqResponse, false);
@@ -356,7 +366,7 @@ namespace SocketNetworking.Shared.Streams
         public bool CompressStream { get; set; } = false;
 
         /// <summary>
-        /// The position in a stream does nothing within the <see cref="NetworkSyncedStream"/> class as you cannot rewind or fast forward the internet.
+        /// The position in a _stream does nothing within the <see cref="NetworkSyncedStream"/> class as you cannot rewind or fast forward the internet.
         /// </summary>
         public override long Position { get; set; }
 
@@ -455,7 +465,7 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -486,7 +496,7 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -529,7 +539,7 @@ namespace SocketNetworking.Shared.Streams
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

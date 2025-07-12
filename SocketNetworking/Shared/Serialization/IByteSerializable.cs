@@ -19,10 +19,10 @@
         ByteWriter Serialize();
 
         /// <summary>
-        /// Method is called on Read(), place your instance logic here. (e.g. reading the data manually from the byte stream)
+        /// Method is called on Read(), place your instance logic here. (e.g. reading the data manually from the byte _stream)
         /// </summary>
         /// <param name="data">
-        /// The full current data stream. Note that the whole stream is given here, as we don't know how much of it is used by your type.
+        /// The full current data _stream. Note that the whole _stream is given here, as we don't know how much of it is used by your type.
         /// </param>
         /// <returns>
         /// Number of bytes that have been read.

@@ -189,7 +189,7 @@ namespace SocketNetworking.Shared.Transports
                         int result = Stream.ReadByte();
                         if (result == -1)
                         {
-                            Log.GlobalError("End of stream");
+                            Log.GlobalError("End of _stream");
                             break;
                         }
                         byte data = (byte)result;
@@ -237,7 +237,7 @@ namespace SocketNetworking.Shared.Transports
                 //    }
                 //    //if(bodySize > DataAmountAvailable)
                 //    //{
-                //    //    Log.GlobalError("Packet is larger than the amount of bytes sent over the network in the current stream!");
+                //    //    Log.GlobalError("Packet is larger than the amount of bytes sent over the network in the current _stream!");
                 //    //    break;
                 //    //}
                 //    fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh

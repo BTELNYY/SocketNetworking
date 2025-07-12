@@ -75,26 +75,18 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
             {
                 throw new InvalidOperationException("The array must be empty in order to deserialize.");
             }
-            int usedBytes = 0;
             ByteReader reader = new ByteReader(data);
             if (reader.IsEmpty)
             {
                 return reader;
             }
             int length = reader.ReadInt();
-            usedBytes += 4;
-            while (usedBytes < length + 4)
+            int elements = reader.ReadInt();
+            for (int i = 0; i < elements; i++)
             {
                 int currentChunkLength = reader.ReadInt();
-                usedBytes += 4;
-                if (currentChunkLength == 0)
-                {
-                    break;
-                }
                 byte[] readBytes = reader.Read(currentChunkLength);
                 DeserializeAndAdd(readBytes);
-                //reader.Remove(currentChunkLength);
-                usedBytes += currentChunkLength;
             }
             return reader;
         }
@@ -116,6 +108,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
         public ByteWriter Serialize()
         {
             ByteWriter writer = new ByteWriter();
+            writer.WriteInt(_internalList.Count);
             foreach (T element in _internalList)
             {
                 //Dont need to worry about type safety as we check in constructor
@@ -125,7 +118,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
                 writer.Write(finalBytes);
             }
             ByteWriter finalWriter = new ByteWriter();
-            finalWriter.WriteInt(writer.Length);
+            finalWriter.WriteInt((int)writer.Length);
             finalWriter.Write(writer.Data);
             return finalWriter;
         }

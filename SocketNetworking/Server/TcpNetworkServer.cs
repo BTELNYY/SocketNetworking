@@ -73,6 +73,12 @@ namespace SocketNetworking.Server
                     TcpTransport tcpTransport = new TcpTransport(socket);
                     //tcpTransport.Socket.NoDelay = true;
                     IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
+                    if (remoteIpEndPoint == null)
+                    {
+                        Log.Error("Remote Endpoint is null, this shouldn't happen!");
+                        tcpTransport.Close();
+                        return;
+                    }
                     Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
                     TcpNetworkClient client = (TcpNetworkClient)Activator.CreateInstance(ClientType);
                     client.InitRemoteClient(counter, tcpTransport);

@@ -49,7 +49,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

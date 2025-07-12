@@ -6,7 +6,6 @@ using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Authentication;
-using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
@@ -162,7 +161,7 @@ namespace SocketNetworking.Extras
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()
@@ -191,7 +190,7 @@ namespace SocketNetworking.Extras
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

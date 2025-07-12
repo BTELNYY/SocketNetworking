@@ -108,7 +108,7 @@ namespace SocketNetworking.Modding
 
         public int GetLength()
         {
-            return Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

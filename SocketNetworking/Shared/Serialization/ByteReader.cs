@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using SocketNetworking.Shared.Exceptions;
-using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
 {
@@ -71,6 +71,13 @@ namespace SocketNetworking.Shared.Serialization
             Array.Copy(data, newBuff, data.Length);
             RawData = newBuff;
             _workingSetData = RawData;
+        }
+
+        private Stream _stream;
+
+        public ByteReader(Stream stream)
+        {
+            this._stream = stream;
         }
 
         public ByteReader(byte[] data, bool showDebug) : this(data)
@@ -170,10 +177,10 @@ namespace SocketNetworking.Shared.Serialization
                 {
                     return new byte[0];
                 }
-                if (length > _workingSetData.Length)
+                if (length > DataLength)
                 {
                     Log.GlobalWarning($"Read a byte array with a broken size. Read: {length}, Actual: {_workingSetData.Length}");
-                    length = Math.Min(length, _workingSetData.Length);
+                    length = Math.Min(length, DataLength);
                 }
                 return Read(length);
             }
@@ -189,8 +196,14 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 IByteSerializable serializable = (IByteSerializable)Activator.CreateInstance(typeof(T));
-                int bytesUsed = serializable.Deserialize(_workingSetData).ReadBytes;
-                Remove(bytesUsed);
+                int length = ReadInt();
+                byte[] read = Read(length);
+                int bytesUsed = serializable.Deserialize(read).ReadBytes;
+                //if (bytesUsed != length)
+                //{
+                //    Log.GlobalWarning($"Deserializing {typeof(T).Name} has resulted in less bytes used then the structure specified.");
+                //}
+                //Remove(bytesUsed);
                 return (T)serializable;
             }
         }
@@ -245,8 +258,7 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                byte result = _workingSetData[0];
-                Remove(1);
+                byte result = Read(1)[0];
                 return result;
             }
         }
@@ -273,8 +285,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int sizeToRemove = sizeof(ulong);
-                ulong result = BitConverter.ToUInt64(_workingSetData, 0);
-                Remove(sizeToRemove);
+                ulong result = BitConverter.ToUInt64(Read(sizeToRemove), 0);
                 return (ulong)IPAddress.NetworkToHostOrder((long)result);
             }
         }
@@ -288,8 +299,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int sizeToRemove = sizeof(uint);
-                uint result = BitConverter.ToUInt32(_workingSetData, 0);
-                Remove(sizeToRemove);
+                uint result = BitConverter.ToUInt32(Read(sizeToRemove), 0);
                 return (uint)IPAddress.NetworkToHostOrder((int)result);
             }
         }
@@ -303,8 +313,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int sizeToRemove = sizeof(ushort);
-                ushort result = BitConverter.ToUInt16(_workingSetData, 0);
-                Remove(sizeToRemove);
+                ushort result = BitConverter.ToUInt16(Read(sizeToRemove), 0);
                 return (ushort)IPAddress.NetworkToHostOrder((short)result);
             }
         }
@@ -318,8 +327,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int sizeToRemove = sizeof(long);
-                long result = BitConverter.ToInt64(_workingSetData, 0);
-                Remove(sizeToRemove);
+                long result = BitConverter.ToInt64(Read(sizeToRemove), 0);
                 return IPAddress.NetworkToHostOrder(result);
             }
         }
@@ -348,8 +356,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int sizeToRemove = sizeof(short);
-                short result = BitConverter.ToInt16(_workingSetData, 0);
-                Remove(sizeToRemove);
+                short result = BitConverter.ToInt16(Read(sizeToRemove), 0);
                 return IPAddress.NetworkToHostOrder(result);
             }
         }
@@ -363,8 +370,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int sizeToRemove = sizeof(float);
-                float result = BitConverter.ToSingle(_workingSetData, 0);
-                Remove(sizeToRemove);
+                float result = BitConverter.ToSingle(Read(sizeToRemove), 0);
                 return result;
             }
         }
@@ -378,8 +384,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int sizeToRemove = sizeof(double);
-                double result = BitConverter.ToDouble(_workingSetData, 0);
-                Remove(sizeToRemove);
+                double result = BitConverter.ToDouble(Read(sizeToRemove), 0);
                 return result;
             }
         }
@@ -413,8 +418,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int sizeToRemove = sizeof(bool);
-                bool result = BitConverter.ToBoolean(_workingSetData, 0);
-                Remove(sizeToRemove);
+                bool result = BitConverter.ToBoolean(Read(sizeToRemove), 0);
                 return result;
             }
         }
