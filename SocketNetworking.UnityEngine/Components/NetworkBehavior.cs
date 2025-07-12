@@ -305,7 +305,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
 
-        public virtual void NetworkInvoke(string methodName, object[] args)
+        public virtual void NetworkInvoke(string methodName, params object[] args)
         {
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {

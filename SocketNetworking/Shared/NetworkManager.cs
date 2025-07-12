@@ -1317,6 +1317,11 @@ namespace SocketNetworking.Shared
             return result;
         }
 
+        public static NetworkInvocationPacket NetworkInvoke(object target, NetworkClient sender, string methodName, bool priority = false, bool ignoreResult = true, params object[] args)
+        {
+            return NetworkInvoke(target, sender, methodName, args, priority, ignoreResult);
+        }
+
         /// <summary>
         /// Sends a network invocation to the target <see cref="NetworkClient"/> with the target <see cref="object"/> which has to be a <see cref="INetworkObject"/> or a <see cref="NetworkClient"/>.
         /// </summary>

@@ -1169,6 +1169,17 @@ namespace SocketNetworking.Client
         }
 
         /// <summary>
+        /// Preforms a non-blocking Network Invocation (Like an RPC)
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        public void NetworkInvoke(object target, string methodName, bool priority = false, params object[] args)
+        {
+            NetworkManager.NetworkInvoke(target, this, methodName, args, priority);
+        }
+
+        /// <summary>
         /// Preforms a non-blocking Network Invocation (Like an RPC). This will try to find the method on the current <see cref="NetworkClient"/>
         /// </summary>
         /// <param name="methodName"></param>
@@ -1176,6 +1187,11 @@ namespace SocketNetworking.Client
         public void NetworkInvoke(string methodName, object[] args, bool priority = false)
         {
             NetworkManager.NetworkInvoke(this, this, methodName, args, priority);
+        }
+
+        public void NetworkInvoke(string methodName, bool priority = false, params object[] args)
+        {
+            NetworkInvoke(methodName, args, priority);
         }
 
         /// <summary>
