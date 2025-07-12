@@ -54,7 +54,7 @@ namespace SocketNetworking.UnityEngine
         private static INetworkSpawnable Spawn(ObjectManagePacket packet, NetworkHandle handle)
         {
             ByteReader reader = new ByteReader(packet.ExtraData);
-            UnityNetworkBehavior NetworkBehavior = reader.ReadPacketSerialized<UnityNetworkBehavior>();
+            UnityObjectData NetworkBehavior = reader.ReadPacketSerialized<UnityObjectData>();
             GameObject prefab = GetPrefabByID(NetworkBehavior.PrefabID);
             GameObject result = GameObject.Instantiate(prefab);
             List<string> trueTree = NetworkBehavior.Tree;

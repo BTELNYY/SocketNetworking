@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking
 {
@@ -15,6 +16,11 @@ namespace SocketNetworking
     /// </summary>
     public static class Extensions
     {
+        public static ByteReader GetReader(this byte[] bytes)
+        {
+            return new ByteReader(bytes);
+        }
+
         /// <summary>
         /// Turns <see cref="byte"/>s into a <see cref="string"/> in the format 00 00 00 00 00.
         /// </summary>

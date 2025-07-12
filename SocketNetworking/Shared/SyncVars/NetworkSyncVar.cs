@@ -50,6 +50,7 @@ namespace SocketNetworking.Shared.SyncVars
                 this.value = value;
                 ValueRaw = value;
                 Changed?.Invoke(value);
+                _onUpdated?.Invoke(value);
             }
         }
 
@@ -128,10 +129,17 @@ namespace SocketNetworking.Shared.SyncVars
 
         string _name = string.Empty;
 
+        protected NetworkSyncVar()
+        {
+
+        }
+
         public NetworkSyncVar(T value)
         {
             this.value = value;
         }
+
+        private Action<T> _onUpdated;
 
         public NetworkSyncVar(INetworkObject ownerObject, T value)
         {
@@ -150,6 +158,25 @@ namespace SocketNetworking.Shared.SyncVars
             this.value = value;
         }
 
+        public NetworkSyncVar(INetworkObject ownerObject, T value, Action<T> onUpdated)
+        {
+            OwnerObject = ownerObject;
+            this.value = value;
+            this._onUpdated = onUpdated;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner, Action<T> onUpdated)
+        {
+            OwnerObject = ownerObject;
+            _mode = syncOwner;
+            this._onUpdated = onUpdated;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner, T value, Action<T> onUpdated) : this(ownerObject, syncOwner, onUpdated)
+        {
+            this.value = value;
+        }
+
         public bool Equals(T other)
         {
             return other.Equals(value);
@@ -164,6 +191,7 @@ namespace SocketNetworking.Shared.SyncVars
         {
             this.value = value is T t ? t : default;
             Changed?.Invoke(this.value);
+            _onUpdated?.Invoke(this.value);
         }
 
         public virtual void RawSet(OwnershipMode mode, NetworkClient who)

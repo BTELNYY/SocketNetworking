@@ -148,7 +148,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         [PacketListener(typeof(NetworkAnimatorTriggerPacket), NetworkDirection.Any)]
-        public virtual void OnAnimatorTriggerPacket(NetworkAnimatorTriggerPacket packet, NetworkClient client)
+        public virtual void OnAnimatorTriggerPacket(NetworkClient client, NetworkAnimatorTriggerPacket packet)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
             {
@@ -166,7 +166,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         [PacketListener(typeof(NetworkAnimatorFloatValueUpdatePacket), NetworkDirection.Any)]
-        public virtual void OnAnimatorFloatUpdatePacket(NetworkAnimatorFloatValueUpdatePacket packet, NetworkClient client)
+        public virtual void OnAnimatorFloatUpdatePacket(NetworkClient client, NetworkAnimatorFloatValueUpdatePacket packet)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
             {
@@ -185,7 +185,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         [PacketListener(typeof(NetworkAnimatorBoolValueUpdatePacket), NetworkDirection.Any)]
-        public void OnAnimatorBoolUpdatePacket(NetworkAnimatorBoolValueUpdatePacket packet, NetworkClient client)
+        public void OnAnimatorBoolUpdatePacket(NetworkClient client, NetworkAnimatorBoolValueUpdatePacket packet)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
             {
@@ -197,7 +197,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         [PacketListener(typeof(NetworkAnimatorIntValueUpdatePacket), NetworkDirection.Any)]
-        public void OnAnimatorBoolUpdatePacket(NetworkAnimatorIntValueUpdatePacket packet, NetworkClient client)
+        public void OnAnimatorBoolUpdatePacket(NetworkClient client, NetworkAnimatorIntValueUpdatePacket packet)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
             {

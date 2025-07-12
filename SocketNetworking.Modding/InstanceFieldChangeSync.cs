@@ -11,6 +11,11 @@ namespace SocketNetworking.Modding
 {
     public class InstanceFieldChangeSync<T> : NetworkSyncVar<FieldChanged>
     {
+        protected InstanceFieldChangeSync()
+        {
+            
+        }
+
         public InstanceFieldChangeSync(FieldChanged value, T target) : base(value)
         {
             Type = typeof(T);
