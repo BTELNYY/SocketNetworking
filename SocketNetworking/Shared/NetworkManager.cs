@@ -711,6 +711,18 @@ namespace SocketNetworking.Shared
         }
 
         /// <summary>
+        /// Adds the <see cref="INetworkObject"/> if it does not exist.
+        /// </summary>
+        /// <param name="networkObject"></param>
+        public static void AddNetworkObjectIfNotExists(INetworkObject networkObject)
+        {
+            if(GetNetworkObjectByID(networkObject.NetworkID) == (null, null))
+            {
+                AddNetworkObject(networkObject);
+            }
+        }
+
+        /// <summary>
         /// Forces the library to re-check the type of the <paramref name="networkObject"/> before changing out its reference.
         /// </summary>
         /// <param name="networkObject"></param>

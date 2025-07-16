@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Reflection.Emit;
-using HarmonyLib;
+using HarmonyLib.Tools;
 
 namespace SocketNetworking.Tests.LocalTests
 {
@@ -10,11 +7,19 @@ namespace SocketNetworking.Tests.LocalTests
     {
         static void Main(string[] args)
         {
-            FieldWatcher.InjectILDeep<Test>();
+            HarmonyFileLog.Writer = Console.Out;
+            HarmonyFileLog.Enabled = true;
+            Modding.Patching.Fields.FieldWatcher.InjectIL(typeof(Test));
+            Modding.Patching.Fields.FieldWatcher.FieldChanged += FieldWatcher_FieldChanged;
             Test test = new Test();
             test.TestField();
             OrderedLinkedList<int> list = new OrderedLinkedList<int>(new int[] { 3, -1, 93, 9999, -38384, 34, 88 });
             Console.WriteLine(list.ToString());
+        }
+
+        private static void FieldWatcher_FieldChanged(object sender, Modding.Patching.Fields.FieldChangeEventArgs e)
+        {
+            Console.WriteLine($"Target: {e.Target.GetType().FullName}, Field: {e.Field.Name}, Value: {e.NewValue}");
         }
     }
 
@@ -26,6 +31,8 @@ namespace SocketNetworking.Tests.LocalTests
 
         float field2 = 0f;
 
+        int[] ints = new int[0];
+
         public void TestField()
         {
             wow += 1;
@@ -35,66 +42,10 @@ namespace SocketNetworking.Tests.LocalTests
                 field1 = random.Next();
                 field2 = random.Next();
             }
-        }
-    }
-
-    public static class FieldWatcher
-    {
-        static FieldWatcher()
-        {
-            Harmony.DEBUG = true;
-            Harmony = new Harmony("com.btelnyy.socketnetowking.patching");
-        }
-
-        public static Harmony Harmony { get; }
-
-        public static void RemoveDeepInjectedIL<T>(BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-        {
-            Type type = typeof(T);
-            foreach (MethodInfo method in type.GetMethodsDeep(flags))
-            {
-                Harmony.Unpatch(method, HarmonyPatchType.Transpiler, "com.btelnyy.socketnetowking.patching");
-            }
-        }
-
-        public static void InjectILDeep<T>(BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-        {
-            Type type = typeof(T);
-
-            //Use deep method to patch parents as well.
-            foreach (MethodInfo method in type.GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                try
-                {
-                    Harmony.Patch(method, transpiler: new HarmonyMethod(typeof(FieldWatcher).GetMethod(nameof(InterceptFieldWrites), BindingFlags.Static | BindingFlags.NonPublic)));
-                }
-                catch { }
-            }
-        }
-
-        private static IEnumerable<CodeInstruction> InterceptFieldWrites(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-        {
-            foreach (CodeInstruction instruction in instructions)
-            {
-                yield return instruction;
-                if (instruction.opcode == OpCodes.Stfld)
-                {
-                    FieldInfo fieldInfo = instruction.operand as FieldInfo;
-                    if (fieldInfo != null)
-                    {
-                        yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Ldtoken, fieldInfo);
-                        yield return new CodeInstruction(OpCodes.Call, typeof(FieldWatcher).GetMethod(nameof(ReportFieldChange), BindingFlags.Static | BindingFlags.NonPublic));
-                    }
-                }
-            }
-        }
-
-        private static void ReportFieldChange(object target, RuntimeFieldHandle fieldHandle)
-        {
-            FieldInfo fieldInfo = FieldInfo.GetFieldFromHandle(fieldHandle);
-            Console.WriteLine($"Target: {target.GetType().FullName}, Field: {fieldInfo.Name}, Value: {fieldInfo.GetValue(target)}");
-
+            ints = new int[3];
+            ints[0] = wow;
+            ints[1] = field1;
+            ints[2] = 0;
         }
     }
 }

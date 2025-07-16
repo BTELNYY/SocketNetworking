@@ -89,6 +89,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\SocketNetworking.Modding\SocketNetworking.Modding.csproj">
+      <Project>{f220d225-f930-460c-bd1e-88b57fc43a87}</Project>
+      <Name>SocketNetworking.Modding</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\SocketNetworking\SocketNetworking.csproj">
       <Project>{ab97887e-ef11-4ce3-83b6-7e91456cf035}</Project>
       <Name>SocketNetworking</Name>

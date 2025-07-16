@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
@@ -21,7 +22,7 @@ namespace SocketNetworking.Modding.Patching.Fields
 
         public static void RemoveInjectedIL(Type type, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         {
-            if (_watched.Contains(type))
+            if (!_watched.Contains(type))
             {
                 return;
             }
@@ -37,7 +38,7 @@ namespace SocketNetworking.Modding.Patching.Fields
 
         public static void InjectIL(Type type, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         {
-            if (!_watched.Contains(type))
+            if (_watched.Contains(type))
             {
                 return;
             }
@@ -61,6 +62,9 @@ namespace SocketNetworking.Modding.Patching.Fields
             InjectIL(type, flags);
         }
 
+
+        static FieldInfo lastArray;
+
         private static IEnumerable<CodeInstruction> InterceptFieldWrites(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             foreach (CodeInstruction instruction in instructions)
@@ -75,6 +79,24 @@ namespace SocketNetworking.Modding.Patching.Fields
                         yield return new CodeInstruction(OpCodes.Ldtoken, fieldInfo);
                         yield return new CodeInstruction(OpCodes.Call, typeof(FieldWatcher).GetMethod(nameof(ReportFieldChange), BindingFlags.Static | BindingFlags.NonPublic));
                     }
+                }
+                if(instruction.opcode == OpCodes.Ldfld)
+                {
+                    FieldInfo info = instruction.operand as FieldInfo;
+                    if(info != null && info.FieldType.IsArray)
+                    {
+                        lastArray = info;
+                    }
+                }
+                if(instruction.opcode == OpCodes.Stelem || instruction.opcode == OpCodes.Stelem_Ref || instruction.opcode == OpCodes.Stelem_I || instruction.opcode == OpCodes.Stelem_I1 || instruction.opcode == OpCodes.Stelem_I2 || instruction.opcode == OpCodes.Stelem_I4 || instruction.opcode == OpCodes.Stelem_I8 || instruction.opcode == OpCodes.Stelem_R4 || instruction.opcode == OpCodes.Stelem_R8)
+                {
+                    if(lastArray != null)
+                    {
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Ldtoken, lastArray);
+                        yield return new CodeInstruction(OpCodes.Call, typeof(FieldWatcher).GetMethod(nameof(ReportFieldChange), BindingFlags.Static | BindingFlags.NonPublic));
+                    }
+                    lastArray = null;
                 }
             }
         }

@@ -82,6 +82,7 @@
     <Compile Include="InstanceFieldChangeSync.cs" />
     <Compile Include="Patching\Fields\FieldChangeEventArgs.cs" />
     <Compile Include="Patching\Fields\FieldWatcher.cs" />
+    <Compile Include="Patching\Methods\PrefixHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -93,5 +94,6 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
