@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
@@ -265,6 +267,18 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public virtual IEnumerable<int> PrivilegedIDs
+        {
+            get
+            {
+                return _privs;
+            }
+            set
+            {
+                _privs = value.ToList();
+            }
+        }
+
         /// <summary>
         /// Preforms a send operation and syncs data across network, can be called on either client or server, method handles what happens.
         /// </summary>
@@ -352,6 +366,28 @@ namespace SocketNetworking.UnityEngine.Components
         public virtual void OnOwnerDisconnected(NetworkClient client)
         {
 
+        }
+        protected List<int> _privs = new List<int>();
+
+        public virtual bool HasPrivilege(int clientId)
+        {
+            return _privs.Contains(clientId);
+        }
+
+        public virtual void GrantPrivilege(int clientId)
+        {
+            if (!HasPrivilege(clientId))
+            {
+                _privs.Add(clientId);
+            }
+        }
+
+        public virtual void RemovePrivilege(int clientId)
+        {
+            if (HasPrivilege(clientId))
+            {
+                _privs.Remove(clientId);
+            }
         }
     }
 }

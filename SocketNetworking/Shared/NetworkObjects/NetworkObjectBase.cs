@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using SocketNetworking.Client;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
@@ -36,6 +38,18 @@ namespace SocketNetworking.Shared.NetworkObjects
         public virtual bool Active { get; set; } = true;
 
         public virtual bool Spawnable => true;
+
+        public virtual IEnumerable<int> PrivilegedIDs
+        {
+            get
+            {
+                return _privs;
+            }
+            set
+            {
+                _privs = value.ToList();
+            }
+        }
 
         /// <summary>
         /// This event is called when <see cref="Destroy"/> is called.
@@ -175,6 +189,29 @@ namespace SocketNetworking.Shared.NetworkObjects
         public virtual ByteWriter SendExtraData()
         {
             return new ByteWriter();
+        }
+
+        protected List<int> _privs = new List<int>();
+
+        public virtual bool HasPrivilege(int clientId)
+        {
+            return _privs.Contains(clientId);
+        }
+
+        public virtual void GrantPrivilege(int clientId)
+        {
+            if(!HasPrivilege(clientId))
+            {
+                _privs.Add(clientId);
+            }
+        }
+
+        public virtual void RemovePrivilege(int clientId)
+        {
+            if(HasPrivilege(clientId))
+            {
+                _privs.Remove(clientId);
+            }
         }
     }
 }

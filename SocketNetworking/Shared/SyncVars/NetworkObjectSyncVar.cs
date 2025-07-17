@@ -33,6 +33,7 @@ namespace SocketNetworking.Shared.SyncVars
                 throw new NullReferenceException();
             }
             Value.NetworkSetOwner(OwnerObject.OwnerClientID);
+            Value.NetworkSetPrivilege(OwnerObject.PrivilegedIDs);
             Value.NetworkSetOwnershipMode(OwnerObject.OwnershipMode);
             Value.NetworkSetVisibility(OwnerObject.ObjectVisibilityMode);
         }

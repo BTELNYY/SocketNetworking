@@ -1,4 +1,5 @@
-﻿using SocketNetworking.Client;
+﻿using System.Collections.Generic;
+using SocketNetworking.Client;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
@@ -45,6 +46,29 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// If this is false, the object is never updated. This includes <see cref="INetworkSyncVar"/> fields, <see cref="PacketListener>"/> and <see cref="NetworkInvokable"/> methods.
         /// </summary>
         bool Active { get; set; }
+
+        /// <summary>
+        /// All Privileged <see cref="NetworkClient"/> IDs. <b>This property is internal and does not update the network. Use <see cref="NetworkObjectExtensions.NetworkSetPrivilege(INetworkObject, IEnumerable{int})"/>.</b> Privilege allows the specified client(s) to call <see cref="NetworkInvokable"/> methods and change <see cref="INetworkSyncVar"/>s while not being the <see cref="INetworkObject.OwnerClientID"/>.
+        /// </summary>
+        IEnumerable<int> PrivilegedIDs { get; set; }
+
+        /// <summary>
+        /// Determines if a client has Privilege to use this object. Granting a client Privilege will allow it to act as its owner without actually being able to change the <see cref="OwnerClientID"/> or <see cref="OwnershipMode"/>, or <see cref="NetworkID"/>. Although this is synchronized to clients, client IDs are meaningless to everyone but the Server. Privilege allows the specified client(s) to call <see cref="NetworkInvokable"/> methods and change <see cref="INetworkSyncVar"/>s while not being the <see cref="INetworkObject.OwnerClientID"/>.
+        /// </summary>
+        /// <param name="clientId"></param>
+        bool HasPrivilege(int clientId);
+
+        /// <summary>
+        /// Grants Privilege to a client to use this object. Granting a client Privilege will allow it to act as its owner without actually being able to change the <see cref="OwnerClientID"/> or <see cref="OwnershipMode"/>, or <see cref="NetworkID"/>. <b>This method is internal and does not update the network. Use <see cref="NetworkObjectExtensions.NetworkAddPrivilege(INetworkObject, int)"/>.</b> Privilege allows the specified client(s) to call <see cref="NetworkInvokable"/> methods and change <see cref="INetworkSyncVar"/>s while not being the <see cref="INetworkObject.OwnerClientID"/>.
+        /// </summary>
+        /// <param name="clientId"></param>
+        void GrantPrivilege(int clientId);
+
+        /// <summary>
+        /// Removes Privilege from a client to use this object. Granting a client Privilege will allow it to act as its owner without actually being able to change the <see cref="OwnerClientID"/> or <see cref="OwnershipMode"/>, or <see cref="NetworkID"/>. <b>This method is internal and does not update the network. Use <see cref="NetworkObjectExtensions.NetworkRemovePrivilege(INetworkObject, int)"/>.</b> Privilege allows the specified client(s) to call <see cref="NetworkInvokable"/> methods and change <see cref="INetworkSyncVar"/>s while not being the <see cref="INetworkObject.OwnerClientID"/>.
+        /// </summary>
+        /// <param name="clientId"></param>
+        void RemovePrivilege(int clientId);
 
         /// <summary>
         /// Called on the object spanwer when the peer has finished spawning it.

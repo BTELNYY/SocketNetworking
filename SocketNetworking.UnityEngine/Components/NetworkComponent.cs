@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 using UnityEngine;
@@ -63,6 +64,33 @@ namespace SocketNetworking.UnityEngine.Components
                 throw new InvalidOperationException("All Network Objects must have a NetworkIdentity.");
             }
             OverrideIdentity(_identity);
+        }
+
+        public override IEnumerable<int> PrivilegedIDs
+        {
+            get
+            {
+                return Identity.PrivilegedIDs;
+            }
+            set
+            {
+                Identity.PrivilegedIDs = value;
+            }
+        }
+
+        public override bool HasPrivilege(int clientId)
+        {
+            return Identity.HasPrivilege(clientId);
+        }
+
+        public override void GrantPrivilege(int clientId)
+        {
+            Identity.GrantPrivilege(clientId);
+        }
+
+        public override void RemovePrivilege(int clientId)
+        {
+            Identity.RemovePrivilege(clientId);
         }
     }
 }

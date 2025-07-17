@@ -82,7 +82,7 @@ namespace SocketNetworking.Shared.SyncVars
                 {
                     throw new InvalidOperationException("Tried to modify a SyncVar while the local client was null!");
                 }
-                if ((SyncOwner == OwnershipMode.Client && OwnerObject.OwnerClientID != NetworkClient.LocalClient.ClientID) || SyncOwner == OwnershipMode.Server)
+                if ((SyncOwner == OwnershipMode.Client && OwnerObject.OwnerClientID != NetworkClient.LocalClient.ClientID && !OwnerObject.HasPrivilege(NetworkClient.LocalClient.ClientID)) || SyncOwner == OwnershipMode.Server)
                 {
                     throw new InvalidOperationException("Tried to modify a SyncVar without permission.");
                 }

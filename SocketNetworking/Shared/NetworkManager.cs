@@ -548,6 +548,7 @@ namespace SocketNetworking.Shared
                         modificationTarget.OnModify(packet, handle.Client);
                         modificationTarget.NetworkID = packet.NewNetworkID;
                         modificationTarget.OwnerClientID = packet.OwnerID;
+                        modificationTarget.PrivilegedIDs = packet.PrivilegedIDs;
                         modificationTarget.ObjectVisibilityMode = packet.ObjectVisibilityMode;
                         modificationTarget.OwnershipMode = packet.OwnershipMode;
                         modificationTarget.Active = packet.Active;
@@ -1081,11 +1082,15 @@ namespace SocketNetworking.Shared
                     {
                         if (syncVar.SyncOwner == OwnershipMode.Client && WhereAmI == ClientLocation.Remote)
                         {
-                            if (runner.ClientID != syncVar.OwnerObject.OwnerClientID)
+                            if (runner.ClientID != syncVar.OwnerObject.OwnerClientID && !syncVar.OwnerObject.HasPrivilege(runner.ClientID))
                             {
                                 return;
                             }
                         }
+                    }
+                    if(syncVar.SyncOwner == OwnershipMode.Server && WhereAmI == ClientLocation.Remote)
+                    {
+                        return;
                     }
                     object value = ByteConvert.Deserialize(data.Data, out int read);
                     syncVar.RawSet(value, runner);
@@ -1269,7 +1274,7 @@ namespace SocketNetworking.Shared
                 }
                 if (target is INetworkObject owned)
                 {
-                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != Receiver.ClientID)
+                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != Receiver.ClientID && !owned.HasPrivilege(Receiver.ClientID))
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }
@@ -1394,7 +1399,7 @@ namespace SocketNetworking.Shared
                 }
                 if (target is INetworkObject owned)
                 {
-                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != sender.ClientID)
+                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != sender.ClientID && !owned.HasPrivilege(sender.ClientID))
                     {
                         throw new SecurityException("Attempted to invoke network method which the client does not own.");
                     }

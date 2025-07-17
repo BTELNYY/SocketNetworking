@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Security;
@@ -56,7 +57,7 @@ namespace SocketNetworking
 
 
         /// <summary>
-        /// Checks if the given <see cref="NetworkClient"/> cam modify the <see cref="INetworkObject"/>.
+        /// Checks if the given <see cref="NetworkClient"/> cam modify the <see cref="INetworkObject"/>. Does not account for <see cref="INetworkObject.PrivilegedIDs"/>, Use <see cref="INetworkObject.HasPrivilege(int)"/> for that.
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="client"></param>
@@ -109,7 +110,7 @@ namespace SocketNetworking
         /// <param name="obj"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
-        public static void NetworkInvoke(this INetworkObject obj, string methodName, object[] args)
+        public static void NetworkInvokeOnAll(this INetworkObject obj, string methodName, object[] args)
         {
             NetworkServer.NetworkInvokeOnAll(obj, methodName, args);
         }
@@ -191,16 +192,9 @@ namespace SocketNetworking
                     throw new InvalidOperationException("Only servers can destroy objects this way.");
                 }
             }
-            ObjectManagePacket packet = new ObjectManagePacket()
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
             {
                 Action = ObjectManagePacket.ObjectManageAction.Destroy,
-                ObjectType = obj.GetType(),
-                OwnerID = obj.OwnerClientID,
-                NewNetworkID = obj.NetworkID,
-                NetworkIDTarget = obj.NetworkID,
-                OwnershipMode = obj.OwnershipMode,
-                Active = obj.Active,
-                ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
             switch (obj.ObjectVisibilityMode)
             {
@@ -337,17 +331,9 @@ namespace SocketNetworking
                     throw new InvalidOperationException("It seems this objects ID has been added and the type does not match.");
                 }
             }
-            ObjectManagePacket packet = new ObjectManagePacket()
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
             {
                 Action = ObjectManagePacket.ObjectManageAction.Create,
-                ObjectType = obj.GetType(),
-                OwnerID = obj.OwnerClientID,
-                NewNetworkID = obj.NetworkID,
-                NetworkIDTarget = obj.NetworkID,
-                OwnershipMode = obj.OwnershipMode,
-                ObjectVisibilityMode = obj.ObjectVisibilityMode,
-                Active = obj.Active,
-                ExtraData = obj.SendExtraData().Data,
             };
             if (obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
             {
@@ -388,17 +374,9 @@ namespace SocketNetworking
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");
             }
-            ObjectManagePacket packet = new ObjectManagePacket()
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
             {
                 Action = ObjectManagePacket.ObjectManageAction.Create,
-                ObjectType = obj.GetType(),
-                OwnerID = obj.OwnerClientID,
-                NewNetworkID = obj.NetworkID,
-                NetworkIDTarget = obj.NetworkID,
-                OwnershipMode = obj.OwnershipMode,
-                ObjectVisibilityMode = obj.ObjectVisibilityMode,
-                Active = obj.Active,
-                ExtraData = obj.SendExtraData().Data,
             };
             if (obj.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
             {
@@ -436,16 +414,10 @@ namespace SocketNetworking
         /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSetActive(this INetworkObject obj, bool state)
         {
-            ObjectManagePacket packet = new ObjectManagePacket()
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                ObjectType = obj.GetType(),
-                OwnerID = obj.OwnerClientID,
-                NetworkIDTarget = obj.NetworkID,
-                NewNetworkID = obj.NetworkID,
-                OwnershipMode = obj.OwnershipMode,
                 Active = state,
-                ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
@@ -477,16 +449,10 @@ namespace SocketNetworking
         /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSetOwner(this INetworkObject obj, int ownerId)
         {
-            ObjectManagePacket packet = new ObjectManagePacket()
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                ObjectType = obj.GetType(),
                 OwnerID = ownerId,
-                NetworkIDTarget = obj.NetworkID,
-                NewNetworkID = obj.NetworkID,
-                OwnershipMode = obj.OwnershipMode,
-                Active = obj.Active,
-                ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
             if (!obj.Active)
             {
@@ -522,16 +488,10 @@ namespace SocketNetworking
         /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSetOwnershipMode(this INetworkObject obj, OwnershipMode mode)
         {
-            ObjectManagePacket packet = new ObjectManagePacket()
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                ObjectType = obj.GetType(),
-                OwnerID = obj.OwnerClientID,
-                NetworkIDTarget = obj.NetworkID,
-                NewNetworkID = obj.NetworkID,
                 OwnershipMode = mode,
-                Active = obj.Active,
-                ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
             if (!obj.Active)
             {
@@ -559,6 +519,119 @@ namespace SocketNetworking
             obj.OwnershipMode = mode;
         }
 
+        /// <summary>
+        /// Adds a Privilege to a <see cref="NetworkClient"/> network wide. It is possible to desync yourself from the current authority because this method will modify the object before the packet is sent. For this reason, you should only use this method if you are sure you have authority to modify the object. Privilege allows the specified client(s) to call <see cref="NetworkInvokable"/> methods and change <see cref="INetworkSyncVar"/>s while not being the <see cref="INetworkObject.OwnerClientID"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="clientId"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static void NetworkAddPrivilege(this INetworkObject obj, int clientId)
+        {
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
+            obj.GrantPrivilege(clientId);
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
+            {
+                Action = ObjectManagePacket.ObjectManageAction.Modify,
+            };
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                NetworkClient.LocalClient.Send(packet);
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                switch (obj.ObjectVisibilityMode)
+                {
+                    case ObjectVisibilityMode.ServerOnly:
+                        break;
+                    case ObjectVisibilityMode.OwnerAndServer:
+                        NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
+                        client.Send(packet);
+                        break;
+                    case ObjectVisibilityMode.Everyone:
+                        NetworkServer.SendToAll(packet, obj);
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Syncs Privileges network wide. Privilege allows the specified client(s) to call <see cref="NetworkInvokable"/> methods and change <see cref="INetworkSyncVar"/>s while not being the <see cref="INetworkObject.OwnerClientID"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="clientId"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static void NetworkSetPrivilege(this INetworkObject obj, IEnumerable<int> privs)
+        {
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
+            {
+                Action = ObjectManagePacket.ObjectManageAction.Modify,
+                PrivilegedIDs = privs.ToList()
+            };
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                NetworkClient.LocalClient.Send(packet);
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                switch (obj.ObjectVisibilityMode)
+                {
+                    case ObjectVisibilityMode.ServerOnly:
+                        break;
+                    case ObjectVisibilityMode.OwnerAndServer:
+                        NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
+                        client.Send(packet);
+                        break;
+                    case ObjectVisibilityMode.Everyone:
+                        NetworkServer.SendToAll(packet, obj);
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Removes a Privilege from a <see cref="NetworkClient"/> network wide. It is possible to desync yourself from the current authority because this method will modify the object before the packet is sent. For this reason, you should only use this method if you are sure you have authority to modify the object. Privilege allows the specified client(s) to call <see cref="NetworkInvokable"/> methods and change <see cref="INetworkSyncVar"/>s while not being the <see cref="INetworkObject.OwnerClientID"/>.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="clientId"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static void NetworkRemovePrivilege(this INetworkObject obj, int clientId)
+        {
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
+            obj.RemovePrivilege(clientId);
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
+            {
+                Action = ObjectManagePacket.ObjectManageAction.Modify,
+            };
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                NetworkClient.LocalClient.Send(packet);
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                switch (obj.ObjectVisibilityMode)
+                {
+                    case ObjectVisibilityMode.ServerOnly:
+                        break;
+                    case ObjectVisibilityMode.OwnerAndServer:
+                        NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
+                        client.Send(packet);
+                        break;
+                    case ObjectVisibilityMode.Everyone:
+                        NetworkServer.SendToAll(packet, obj);
+                        break;
+                }
+            }
+        }
 
         /// <summary>
         /// Changes the <see cref="INetworkObject.NetworkID"/> network wide. This is a dangerous operation, as if you change this and refer to the old ID, the peer will fail to find the <see cref="INetworkObject"/>.
@@ -568,16 +641,10 @@ namespace SocketNetworking
         /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSetID(this INetworkObject obj, int newId)
         {
-            ObjectManagePacket packet = new ObjectManagePacket()
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                ObjectType = obj.GetType(),
-                OwnerID = obj.OwnerClientID,
-                NetworkIDTarget = obj.NetworkID,
                 NewNetworkID = newId,
-                OwnershipMode = obj.OwnershipMode,
-                Active = obj.Active,
-                ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
             if (!obj.Active)
             {
@@ -612,16 +679,9 @@ namespace SocketNetworking
         /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSync(this INetworkObject obj)
         {
-            ObjectManagePacket packet = new ObjectManagePacket()
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                ObjectType = obj.GetType(),
-                OwnerID = obj.OwnerClientID,
-                OwnershipMode = obj.OwnershipMode,
-                Active = obj.Active,
-                NetworkIDTarget = obj.NetworkID,
-                NewNetworkID = obj.NetworkID,
-                ObjectVisibilityMode = obj.ObjectVisibilityMode,
             };
             if (!obj.Active)
             {
@@ -657,15 +717,9 @@ namespace SocketNetworking
         /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkSetVisibility(this INetworkObject obj, ObjectVisibilityMode mode)
         {
-            ObjectManagePacket packet = new ObjectManagePacket()
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
             {
                 Action = ObjectManagePacket.ObjectManageAction.Modify,
-                ObjectType = obj.GetType(),
-                OwnerID = obj.OwnerClientID,
-                OwnershipMode = obj.OwnershipMode,
-                Active = obj.Active,
-                NetworkIDTarget = obj.NetworkID,
-                NewNetworkID = obj.NetworkID,
                 ObjectVisibilityMode = mode,
             };
             if (!obj.Active)
