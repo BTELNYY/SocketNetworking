@@ -69,6 +69,11 @@ namespace SocketNetworking.Shared.SyncVars
         /// </summary>
         public event Action<T> Changed;
 
+        /// <summary>
+        /// Determines if <see cref="PacketFlags.Priority"/> will be set when sending packets.
+        /// </summary>
+        public bool Priority { get; set; } = false;
+
         public virtual void Sync()
         {
             if (!OwnerObject.Active)
@@ -219,6 +224,7 @@ namespace SocketNetworking.Shared.SyncVars
             {
                 Data = new List<SyncVarData> { syncVarData },
             };
+            packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, Priority);
             return packet;
         }
 
