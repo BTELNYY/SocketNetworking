@@ -9,11 +9,11 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 {
     public sealed class ObjectManagePacket : TargetedPacket
     {
-        public ObjectManagePacket() 
+        public ObjectManagePacket()
         {
         }
 
-        public ObjectManagePacket(INetworkObject obj) 
+        public ObjectManagePacket(INetworkObject obj)
         {
             ObjectType = obj.GetType();
             OwnerID = obj.OwnerClientID;

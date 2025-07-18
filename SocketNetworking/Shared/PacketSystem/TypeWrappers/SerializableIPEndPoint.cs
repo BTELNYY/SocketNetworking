@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Serialization;
 

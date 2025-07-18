@@ -21,7 +21,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void RegisterComponent(NetworkComponent component)
         {
-            if(_components.Contains(component)) return;
+            if (_components.Contains(component)) return;
             _components.Add(component);
         }
 
@@ -45,7 +45,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                if(_data == null)
+                if (_data == null)
                 {
                     _data = new UnityObjectData()
                     {
@@ -69,7 +69,7 @@ namespace SocketNetworking.UnityEngine.Components
             ByteReader reader = base.ReceiveExtraData(extraData);
             ObjectData = reader.ReadPacketSerialized<UnityObjectData>();
             int count = reader.ReadInt();
-            if(count != _components.Count)
+            if (count != _components.Count)
             {
                 throw new InvalidOperationException($"Mismatch of component count from peer. Expected: {_components.Count}, Got: {count}");
             }
@@ -110,7 +110,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public int Index { get; set; }
 
-        public byte[] Data {  get; set; }
+        public byte[] Data { get; set; }
 
         public ByteReader Deserialize(byte[] data)
         {

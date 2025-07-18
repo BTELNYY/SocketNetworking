@@ -717,7 +717,7 @@ namespace SocketNetworking.Shared
         /// <param name="networkObject"></param>
         public static void AddNetworkObjectIfNotExists(INetworkObject networkObject)
         {
-            if(GetNetworkObjectByID(networkObject.NetworkID) == (null, null))
+            if (GetNetworkObjectByID(networkObject.NetworkID) == (null, null))
             {
                 AddNetworkObject(networkObject);
             }
@@ -1088,7 +1088,7 @@ namespace SocketNetworking.Shared
                             }
                         }
                     }
-                    if(syncVar.SyncOwner == OwnershipMode.Server && WhereAmI == ClientLocation.Remote)
+                    if (syncVar.SyncOwner == OwnershipMode.Server && WhereAmI == ClientLocation.Remote)
                     {
                         return;
                     }

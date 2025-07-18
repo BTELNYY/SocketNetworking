@@ -57,7 +57,7 @@ namespace SocketNetworking.Shared.Serialization
 
 
         private Stream _stream;
-        
+
         public ByteWriter(Stream stream)
         {
             this._stream = stream;

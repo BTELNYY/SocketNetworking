@@ -101,7 +101,7 @@ namespace SocketNetworking.Shared
                         ByteWriter writer2 = new ByteWriter();
                         writer2.WritePacketSerialized<StreamMetaData>(streamBase.GetMetaData());
                         result.Data = writer2.Data;
-                        if(result.Data.Length == 0)
+                        if (result.Data.Length == 0)
                         {
                             Log.GlobalError($"MetaData Serializer Error!");
                             return;

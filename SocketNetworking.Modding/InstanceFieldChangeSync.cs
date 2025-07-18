@@ -13,7 +13,7 @@ namespace SocketNetworking.Modding
     {
         protected InstanceFieldChangeSync()
         {
-            
+
         }
 
         public InstanceFieldChangeSync(FieldChanged value, T target) : base(value)

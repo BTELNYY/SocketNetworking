@@ -506,7 +506,7 @@ namespace SocketNetworking.Shared.Serialization
 
         public int GetLength()
         {
-            return (int)(int)Serialize().Length;
+            return (int)Serialize().Length;
         }
 
         public ByteWriter Serialize()

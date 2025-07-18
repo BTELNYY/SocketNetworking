@@ -251,7 +251,7 @@ namespace SocketNetworking.Shared.Streams
                 Log.Error($"Remote error: {packet.ErrorMessage}");
                 return;
             }
-            if(packet.Data.Length == 0)
+            if (packet.Data.Length == 0)
             {
                 Log.Error($"StreamPacket data is empty!");
                 return;

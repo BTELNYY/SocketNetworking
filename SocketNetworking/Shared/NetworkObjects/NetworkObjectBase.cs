@@ -200,7 +200,7 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual void GrantPrivilege(int clientId)
         {
-            if(!HasPrivilege(clientId))
+            if (!HasPrivilege(clientId))
             {
                 _privs.Add(clientId);
             }
@@ -208,7 +208,7 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual void RemovePrivilege(int clientId)
         {
-            if(HasPrivilege(clientId))
+            if (HasPrivilege(clientId))
             {
                 _privs.Remove(clientId);
             }

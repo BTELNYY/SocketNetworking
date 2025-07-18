@@ -1,7 +1,6 @@
 ﻿using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
-using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.SyncVars;
 using SocketNetworking.UnityEngine.TypeWrappers;
 using UnityEngine;
@@ -41,11 +40,11 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 transform.localScale = scale;
             });
-            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (rotation) => 
+            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (rotation) =>
             {
                 transform.rotation = rotation;
             });
-            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (pos) => 
+            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (pos) =>
             {
                 transform.position = pos;
             });

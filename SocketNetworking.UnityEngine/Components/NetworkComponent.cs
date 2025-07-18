@@ -25,10 +25,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void OverrideIdentity(NetworkIdentity identity)
         {
-            if(_identity != null)
-            {
-                _identity.UnregisterComponent(this);
-            }
+            _identity?.UnregisterComponent(this);
             _identity = identity;
             identity.RegisterComponent(this);
         }
