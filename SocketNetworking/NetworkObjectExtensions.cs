@@ -72,6 +72,10 @@ namespace SocketNetworking
             {
                 return false;
             }
+            if (obj.HasPrivilege(client.ClientID))
+            {
+                return true;
+            }
             return obj.OwnerClientID == client.ClientID;
         }
 

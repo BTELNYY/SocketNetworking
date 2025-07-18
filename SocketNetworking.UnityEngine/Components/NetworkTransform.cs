@@ -1,6 +1,7 @@
 ﻿using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.SyncVars;
 using SocketNetworking.UnityEngine.TypeWrappers;
 using UnityEngine;
@@ -36,6 +37,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public NetworkTransform()
         {
+            //Scale is set and not lerped because, why the fuck would it be lerped?
             scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (scale) =>
             {
                 transform.localScale = scale;
@@ -80,12 +82,19 @@ namespace SocketNetworking.UnityEngine.Components
 
         private Quaternion _localRotation;
 
-        private long Latency
+        /// <summary>
+        /// Returns the <see cref="NetworkClient.LocalClient"/>s <see cref="NetworkClient.Latency"/> or the <see cref="INetworkObject.OwnerClientID"/>s <see cref="NetworkClient.Latency"/>.
+        /// </summary>
+        public long Latency
         {
             get
             {
-                if(NetworkManager.WhereAmI == ClientLocation.Remote)
+                if (NetworkManager.WhereAmI == ClientLocation.Remote)
                 {
+                    if (this.GetOwner() == null)
+                    {
+                        return 0;
+                    }
                     return this.GetOwner().Latency;
                 }
                 else
@@ -202,14 +211,10 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetNetworkRotation), new object[] { vector3, relativeTo });
         }
 
-        [NetworkInvokable]
+        [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetNetworkRotation(SerializableVector3 euler, Space relativeTo)
         {
             transform.Rotate(euler.Vector, relativeTo);
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                NetworkRotate(euler.Vector, relativeTo);
-            }
         }
 
         public void NetworkRotate(Vector3 euler, float angle, Space relativeTo = Space.Self)
@@ -222,14 +227,10 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetNetworkRotation), new object[] { vector3, angle, relativeTo });
         }
 
-        [NetworkInvokable]
+        [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetNetworkRotation(SerializableVector3 euler, float angle, Space relativeTo)
         {
             transform.Rotate(euler.Vector, angle, relativeTo);
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                NetworkRotate(euler.Vector, angle, relativeTo);
-            }
         }
 
         public void NetworkRotateAround(Vector3 point, Vector3 axis, float angle)
@@ -243,14 +244,10 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetNetworkRotation), new object[] { vecPoint, vecAxis, angle });
         }
 
-        [NetworkInvokable]
+        [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetNetworkRotation(SerializableVector3 point, SerializableVector3 axis, float angle)
         {
             transform.RotateAround(point.Vector, axis.Vector, angle);
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                NetworkRotateAround(point.Vector, point.Vector, angle);
-            }
         }
 
         public void NetworkTranslate(Vector3 position, Space relativeTo = Space.Self)
@@ -262,14 +259,10 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetNetworkTranslate), new object[] { new SerializableVector3(position), relativeTo });
         }
 
-        [NetworkInvokable]
+        [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetNetworkTranslate(SerializableVector3 vector3, Space space)
         {
             transform.Translate(vector3.Vector, space);
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                NetworkTranslate(vector3.Vector, space);
-            }
         }
 
         public void NetworkLookAt(Vector3 position)
@@ -281,14 +274,10 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetNetworkLookAt), new object[] { new SerializableVector3(position) });
         }
 
-        [NetworkInvokable]
+        [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetNetworkLookAt(SerializableVector3 vector3)
         {
             transform.LookAt(vector3.Vector);
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                NetworkLookAt(vector3.Vector);
-            }
         }
     }
 }

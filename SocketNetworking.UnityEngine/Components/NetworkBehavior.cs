@@ -345,7 +345,19 @@ namespace SocketNetworking.UnityEngine.Components
         {
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkServer.NetworkInvokeOnAll(this, methodName, args);
+                if (ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
+                {
+                    NetworkServer.NetworkInvokeOnAll(this, methodName, args);
+                }
+                else if (ObjectVisibilityMode == ObjectVisibilityMode.OwnerAndServer)
+                {
+                    NetworkClient client = this.GetOwner();
+                    client?.NetworkInvoke(this, methodName, args);
+                }
+                else if (ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
+                {
+                    throw new InvalidOperationException("Can't network invoke on objects that don't have remote counter parts. (Object is hidden)");
+                }
             }
             else if (NetworkManager.WhereAmI == ClientLocation.Local)
             {

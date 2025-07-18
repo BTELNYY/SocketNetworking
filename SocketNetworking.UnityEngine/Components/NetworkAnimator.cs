@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using SocketNetworking.Client;
+using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.UnityEngine.Packets.NetworkAnimator;
@@ -100,8 +101,16 @@ namespace SocketNetworking.UnityEngine.Components
                     {
                         return;
                     }
+                    _animator.speed = value;
                     NetworkAnimatorSpeedUpdatePacket packet = new NetworkAnimatorSpeedUpdatePacket(value);
-                    Send(packet, this);
+                    if (IsServer)
+                    {
+                        NetworkServer.SendToAll(packet, this);
+                    }
+                    else
+                    {
+                        Send(packet, this);
+                    }
                 }
             }
         }
@@ -127,21 +136,13 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetPlayData), new object[] { hash, layer, normalizedTime });
         }
 
-        [NetworkInvokable]
+        [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetPlayData(NetworkClient client, int hash, int layer, float normalizedTime)
         {
-            if (!ShouldBeReceivingPacketsFrom(client))
-            {
-                return;
-            }
-            if (NetworkManager.WhereAmI == ClientLocation.Remote)
-            {
-                NetworkPlay(hash, layer, normalizedTime);
-            }
             _animator.Play(hash, layer, normalizedTime);
         }
 
-        [NetworkInvokable]
+        [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetPlayData(int hash, int layer, float normalizedTime)
         {
             _animator.Play(hash, layer, normalizedTime);
@@ -163,6 +164,10 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 ResetTrigger(packet.Hash);
             }
+            if (IsServer)
+            {
+                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.ClientID);
+            }
         }
 
         [PacketListener(typeof(NetworkAnimatorFloatValueUpdatePacket), NetworkDirection.Any)]
@@ -182,6 +187,10 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 SetFloat(packet.ValueHash, packet.Value);
             }
+            if (IsServer)
+            {
+                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.ClientID);
+            }
         }
 
         [PacketListener(typeof(NetworkAnimatorBoolValueUpdatePacket), NetworkDirection.Any)]
@@ -194,6 +203,10 @@ namespace SocketNetworking.UnityEngine.Components
             }
             Logger.Debug($"State Update: {GetNameFromHash(packet.ValueHash)}, Value: {packet.Value}");
             SetBool(packet.ValueHash, packet.Value);
+            if (IsServer)
+            {
+                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.ClientID);
+            }
         }
 
         [PacketListener(typeof(NetworkAnimatorIntValueUpdatePacket), NetworkDirection.Any)]
@@ -206,6 +219,10 @@ namespace SocketNetworking.UnityEngine.Components
             }
             Logger.Debug($"State Update: {GetNameFromHash(packet.ValueHash)}, Value: {packet.Value}");
             SetInteger(packet.ValueHash, packet.Value);
+            if (IsServer)
+            {
+                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.ClientID);
+            }
         }
 
         private Dictionary<int, float> _animStateFloat = new Dictionary<int, float>();

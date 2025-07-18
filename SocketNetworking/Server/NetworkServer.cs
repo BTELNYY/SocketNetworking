@@ -513,7 +513,7 @@ namespace SocketNetworking.Server
         public static void SendToAll(TargetedPacket packet, INetworkObject @object)
         {
             packet.NetworkIDTarget = @object.NetworkID;
-            SendToAll(packet);
+            SendToAll(packet, x => @object.CheckVisibility(x));
         }
 
         /// <summary>
@@ -537,22 +537,26 @@ namespace SocketNetworking.Server
             }
         }
 
-
         /// <summary>
-        /// Sends a <see cref="Packet"/> to all connected clients. Which match <paramref name="predicate"/>.
+        /// Sends a <see cref="Packet"/> to all <see cref="NetworkClient"/> which match <paramref name="predicate"/>.
         /// </summary>
         /// <param name="packet"></param>
-        /// <param name="target"></param>
         /// <param name="predicate"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        public static void SendToAll(TargetedPacket packet, INetworkObject target, Predicate<NetworkClient> predicate)
+        public static void SendToAll(TargetedPacket packet, INetworkObject @object, Predicate<NetworkClient> predicate)
         {
             if (!Active)
             {
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
-            packet.NetworkIDTarget = target.NetworkID;
-            SendToAll(packet, predicate);
+            packet.NetworkIDTarget = @object.NetworkID;
+            lock (ClientLock)
+            {
+                foreach (NetworkClient client in _clients.Values.Where(x => @object.CheckVisibility(x)).Where(client => predicate(client)))
+                {
+                    client.Send(packet);
+                }
+            }
         }
 
         public static void SentToAll(TargetedPacket packet, INetworkObject target, bool priority, bool toReadyOnly = false)
@@ -649,6 +653,8 @@ namespace SocketNetworking.Server
             }
         }
 
+
+
         /// <summary>
         /// Runs <see cref="NetworkClient.NetworkInvoke(object, string, object[], bool)"/> on all clients. <paramref name="readyOnly"/> determines if the clients must be <see cref="NetworkClient.Ready"/> to be called on.
         /// </summary>
@@ -674,7 +680,31 @@ namespace SocketNetworking.Server
                 client.NetworkInvoke(obj, methodName, args);
             }
         }
+
+
+        /// <summary>
+        /// Runs <see cref="NetworkClient.NetworkInvoke(object, string, object[], bool)"/> on all clients. <paramref name="readyOnly"/> determines if the clients must be <see cref="NetworkClient.Ready"/> to be called on.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <param name="filter"></param>
+        /// <param name="priority"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, Predicate<NetworkClient> filter, bool priority = false)
+        {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
+            List<NetworkClient> clients = _clients.Values.Where(x => filter(x)).ToList();
+            foreach (NetworkClient client in clients)
+            {
+                client.NetworkInvoke(obj, methodName, args);
+            }
+        }
     }
+
 
     /// <summary>
     /// Determines the server state.

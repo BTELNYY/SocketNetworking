@@ -1217,7 +1217,7 @@ namespace SocketNetworking.Shared
             OnNetworkInvocationResult?.Invoke(packet);
         }
 
-        internal static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient Receiver)
+        internal static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient Receiver, bool localCall = false)
         {
             Type targetType = packet.TargetType;
             if (targetType == null)
@@ -1258,40 +1258,43 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             }
             NetworkInvokable invokable = method.GetCustomAttribute<NetworkInvokable>();
-            if (invokable.Direction == NetworkDirection.Server && Receiver.CurrentClientLocation == ClientLocation.Remote)
+            if (!localCall)
             {
-                throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
-            }
-            if (invokable.Direction == NetworkDirection.Client && Receiver.CurrentClientLocation == ClientLocation.Local)
-            {
-                throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
-            }
-            if (invokable.SecureMode && Receiver.CurrentClientLocation != ClientLocation.Local)
-            {
-                if (target is NetworkClient client && client.ClientID != Receiver.ClientID)
+                if (invokable.Direction == NetworkDirection.Server && Receiver.CurrentClientLocation == ClientLocation.Remote)
                 {
-                    throw new SecurityException($"Attempted to invoke network method which the client does not own. {method.Name}");
+                    throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
                 }
-                if (target is INetworkObject owned)
+                if (invokable.Direction == NetworkDirection.Client && Receiver.CurrentClientLocation == ClientLocation.Local)
                 {
-                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != Receiver.ClientID && !owned.HasPrivilege(Receiver.ClientID))
-                    {
-                        throw new SecurityException("Attempted to invoke network method which the client does not own.");
-                    }
-                    else if (owned.OwnershipMode == OwnershipMode.Server && Receiver.CurrentClientLocation != ClientLocation.Local)
-                    {
-                        throw new SecurityException("Attempted to invoke network method which the client does not own.");
-                    }
-                    else if (owned.OwnershipMode == OwnershipMode.Public)
-                    {
-                        //do nothing, everyone owns this object.
-                    }
+                    throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
                 }
-                if (!(target is INetworkObject) && !(target is NetworkClient))
+                if (invokable.SecureMode && Receiver.CurrentClientLocation != ClientLocation.Local)
                 {
-                    if (!method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
+                    if (target is NetworkClient client && client.ClientID != Receiver.ClientID)
                     {
-                        Log.Warning("Method marked secure on an object takes NetworkClient as its first argument, please replace this with NetworkHandle. Method: " + packet.MethodName);
+                        throw new SecurityException($"Attempted to invoke network method which the client does not own. {method.Name}");
+                    }
+                    if (target is INetworkObject owned)
+                    {
+                        if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != Receiver.ClientID && !owned.HasPrivilege(Receiver.ClientID))
+                        {
+                            throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                        }
+                        else if (owned.OwnershipMode == OwnershipMode.Server && Receiver.CurrentClientLocation != ClientLocation.Local)
+                        {
+                            throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                        }
+                        else if (owned.OwnershipMode == OwnershipMode.Public)
+                        {
+                            //do nothing, everyone owns this object.
+                        }
+                    }
+                    if (!(target is INetworkObject) && !(target is NetworkClient))
+                    {
+                        if (!method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
+                        {
+                            Log.Warning("Method marked secure on an object takes NetworkClient as its first argument, please replace this with NetworkHandle. Method: " + packet.MethodName);
+                        }
                     }
                 }
             }
@@ -1325,12 +1328,24 @@ namespace SocketNetworking.Shared
                     method.Invoke(obj, args.ToArray());
                 }
             }
-            NetworkInvocations.Remove(packet.NetworkIDTarget);
-            NetworkInvokationResultPacket resultPacket = new NetworkInvokationResultPacket();
-            resultPacket.CallbackID = packet.CallbackID;
-            resultPacket.Result = ByteConvert.Serialize(result);
-            resultPacket.IgnoreResult = packet.IgnoreResult;
-            Receiver.Send(resultPacket);
+            if (invokable.Broadcast && packet.IgnoreResult && WhereAmI == ClientLocation.Remote && !localCall)
+            {
+                Predicate<NetworkClient> pred = x => x.ClientID != Receiver.ClientID;
+                if (!invokable.CallLocal)
+                {
+                    pred = x => true;
+                }
+                NetworkServer.NetworkInvokeOnAll(target, packet.MethodName, args.Skip(1).ToArray(), pred, priority: packet.Flags.HasFlag(PacketFlags.Priority));
+            }
+            if (!localCall)
+            {
+                NetworkInvocations.Remove(packet.NetworkIDTarget);
+                NetworkInvokationResultPacket resultPacket = new NetworkInvokationResultPacket();
+                resultPacket.CallbackID = packet.CallbackID;
+                resultPacket.Result = ByteConvert.Serialize(result);
+                resultPacket.IgnoreResult = packet.IgnoreResult;
+                Receiver.Send(resultPacket);
+            }
             return result;
         }
 
@@ -1433,7 +1448,18 @@ namespace SocketNetworking.Shared
             NetworkInvocations.Add(callbackID);
             packet.CallbackID = callbackID;
             packet.IgnoreResult = ignoreResult;
-            sender.Send(packet, priority);
+            if (ignoreResult && invokable.Broadcast && NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkServer.NetworkInvokeOnAll(target, methodName, args, priority: priority);
+            }
+            else
+            {
+                sender.Send(packet, priority);
+            }
+            if (invokable.CallLocal)
+            {
+                NetworkInvoke(packet, sender, true);
+            }
             return packet;
         }
 
