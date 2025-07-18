@@ -60,7 +60,7 @@ namespace SocketNetworking.UnityEngine
             List<string> trueTree = NetworkBehavior.Tree;
             trueTree.RemoveAt(0);
             trueTree.Reverse();
-            GameObject parent = Utility.Utility.FindByTree(trueTree);
+            GameObject parent = trueTree.FindParentByTree();
             if (parent == null)
             {
                 Log.GlobalError("Can't find parent by tree! Tree: " + string.Join("/", trueTree));
