@@ -210,6 +210,28 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         /// <summary>
+        /// Determines if the current code is on the client. This is done by checking if <see cref="IsServer"/> is false.
+        /// </summary>
+        public virtual bool IsClient
+        {
+            get
+            {
+                return !IsServer;
+            }
+        }
+
+        /// <summary>
+        /// Determines if the current code that is running is being executed on the server or client. Non-dedicated hosts will also return true in this case.
+        /// </summary>
+        public virtual bool IsServer
+        {
+            get
+            {
+                return NetworkManager.WhereAmI == ClientLocation.Remote;
+            }
+        }
+
+        /// <summary>
         /// Checks if the current execution point should be getting packets, basically if we arent the sync owner, we should get packets.
         /// </summary>
         public virtual bool ShouldBeReceivingPackets

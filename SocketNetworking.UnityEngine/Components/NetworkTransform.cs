@@ -42,19 +42,23 @@ namespace SocketNetworking.UnityEngine.Components
             });
             rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (rotation) =>
             {
-                transform.rotation = rotation;
+                //transform.rotation = rotation;
+                _rotation = rotation;
             });
             position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (pos) =>
             {
-                transform.position = pos;
+                //transform.position = pos;
+                _position = pos;
             });
             localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (localRotation) =>
             {
-                transform.localRotation = localRotation;
+                //transform.localRotation = localRotation;
+                _localRotation = localRotation;
             });
             localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (localPosition) =>
             {
-                transform.localPosition = localPosition;
+                //transform.localPosition = localPosition;
+                _localPosition = localPosition;
             });
         }
 
@@ -62,11 +66,50 @@ namespace SocketNetworking.UnityEngine.Components
 
         private NetworkSyncVar<Quaternion> rotation;
 
+        private Quaternion _rotation;
+
         private NetworkSyncVar<Vector3> position;
+
+        private Vector3 _position;
 
         private NetworkSyncVar<Vector3> localPosition;
 
+        private Vector3 _localPosition;
+
         private NetworkSyncVar<Quaternion> localRotation;
+
+        private Quaternion _localRotation;
+
+        private long Latency
+        {
+            get
+            {
+                if(NetworkManager.WhereAmI == ClientLocation.Remote)
+                {
+                    return this.GetOwner().Latency;
+                }
+                else
+                {
+                    return NetworkClient.LocalClient.Latency;
+                }
+            }
+        }
+
+        private float LerpTime
+        {
+            get
+            {
+                return Time.deltaTime * (float)(Latency / 0.5);
+            }
+        }
+
+        void Update()
+        {
+            transform.localPosition = Vector3.Lerp(transform.localPosition, _localPosition, LerpTime);
+            transform.position = Vector3.Lerp(transform.position, _position, LerpTime);
+            transform.localRotation = Quaternion.Slerp(transform.localRotation, _localRotation, LerpTime);
+            transform.rotation = Quaternion.Slerp(transform.rotation, _rotation, LerpTime);
+        }
 
         public Vector3 NetworkScale
         {
