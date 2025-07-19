@@ -103,7 +103,11 @@ namespace SocketNetworking.Modding.Patching.Fields
         private static void ReportFieldChange(object target, RuntimeFieldHandle fieldHandle)
         {
             FieldInfo fieldInfo = FieldInfo.GetFieldFromHandle(fieldHandle);
-            Console.WriteLine($"Target: {target.GetType().FullName}, Field: {fieldInfo.Name}, Value: {fieldInfo.GetValue(target)}");
+            if (fieldInfo.DeclaringType != target.GetType())
+            {
+                return;
+            }
+            //Console.WriteLine($"Target: {target.GetType().FullName}, Field: {fieldInfo.Name}, Value: {fieldInfo.GetValue(target)}");
             FieldChangeEventArgs args = new FieldChangeEventArgs(target, fieldInfo, fieldInfo.GetValue(target));
             FieldChanged?.Invoke(target, args);
         }

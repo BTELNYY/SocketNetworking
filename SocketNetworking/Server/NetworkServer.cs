@@ -350,6 +350,11 @@ namespace SocketNetworking.Server
         /// <returns></returns>
         protected virtual bool Validate()
         {
+            if(ClientType == null)
+            {
+                Log.Error("Can't start server: Client Type is not correct, cannot be null.");
+                return false;
+            }
             if (!ClientType.IsSubclassOf(typeof(NetworkClient)))
             {
                 Log.Error("Can't start server: Client Type is not correct. Should be a subclass of NetworkClient");
@@ -359,7 +364,7 @@ namespace SocketNetworking.Server
             {
                 Log.Warning("You have a mismatched client to thread ratio. Ensure that each thread can reserve the same amount of clients, meaning no remainder.");
             }
-            if (ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)) || ClientAvatar == null)
+            if (ClientAvatar == null || ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
             {
                 return true;
             }
