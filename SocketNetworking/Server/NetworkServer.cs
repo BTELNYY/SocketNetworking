@@ -350,7 +350,7 @@ namespace SocketNetworking.Server
         /// <returns></returns>
         protected virtual bool Validate()
         {
-            if(ClientType == null)
+            if (ClientType == null)
             {
                 Log.Error("Can't start server: Client Type is not correct, cannot be null.");
                 return false;

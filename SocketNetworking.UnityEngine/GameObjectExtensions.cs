@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine
@@ -31,14 +30,14 @@ namespace SocketNetworking.UnityEngine
 
         static GameObject FindParentByTree(ref List<string> tree, int index, GameObject current)
         {
-            if(current == null)
+            if (current == null)
             {
                 return null;
             }
             GameObject obj = current.transform.Find(tree[index]).gameObject;
             if (obj != null)
             {
-                if(tree.Count == index + 2)
+                if (tree.Count == index + 2)
                 {
                     return obj;
                 }
