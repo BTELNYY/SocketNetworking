@@ -651,7 +651,7 @@ namespace SocketNetworking.Server
             {
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
-            List<NetworkClient> readyClients = _clients.Values.Where(x => x.Ready).ToList();
+            List<NetworkClient> readyClients = _clients.Values.Where(x => target.CheckVisibility(x)).Where(x => x.Ready).ToList();
             foreach (NetworkClient client in readyClients)
             {
                 client.Send(packet, target);
@@ -676,6 +676,10 @@ namespace SocketNetworking.Server
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
             List<NetworkClient> clients = _clients.Values.ToList();
+            if (obj is INetworkObject netObj)
+            {
+                clients = clients.Where(x => netObj.CheckVisibility(x)).ToList();
+            }
             if (readyOnly)
             {
                 clients = clients.Where(x => x.Ready).ToList();
@@ -702,7 +706,12 @@ namespace SocketNetworking.Server
             {
                 throw new InvalidOperationException("Server method called when server is not active!");
             }
-            List<NetworkClient> clients = _clients.Values.Where(x => filter(x)).ToList();
+            List<NetworkClient> clients = _clients.Values.ToList();
+            if (obj is INetworkObject netObj)
+            {
+                clients = clients.Where(x => netObj.CheckVisibility(x)).ToList();
+            }
+            clients = clients.Where(x => filter(x)).ToList();
             foreach (NetworkClient client in clients)
             {
                 client.NetworkInvoke(obj, methodName, args);
