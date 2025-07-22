@@ -73,7 +73,7 @@ namespace SocketNetworking.Modding
             {
                 return;
             }
-            if(!Flags.HasFlag(BindingFlags.NonPublic) && args.Field.IsPrivate)
+            if (!Flags.HasFlag(BindingFlags.NonPublic) && args.Field.IsPrivate)
             {
                 return;
             }
@@ -112,7 +112,7 @@ namespace SocketNetworking.Modding
 
         public void WhitelistByType(Type type, BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
         {
-            foreach(FieldInfo field in typeof(T).GetFields(flags).Where(x => x.FieldType == type))
+            foreach (FieldInfo field in typeof(T).GetFields(flags).Where(x => x.FieldType == type))
             {
                 WhitelistField(field);
             }
@@ -128,11 +128,11 @@ namespace SocketNetworking.Modding
 
         public void WhitelistField(FieldInfo info)
         {
-            if(info.DeclaringType != typeof(T))
+            if (info.DeclaringType != typeof(T))
             {
                 throw new InvalidOperationException($"Field {info.Name} is not a part of {typeof(T).FullName}");
             }
-            if(_whitelistFields.Contains(info))
+            if (_whitelistFields.Contains(info))
             {
                 return;
             }
@@ -145,7 +145,7 @@ namespace SocketNetworking.Modding
             {
                 throw new InvalidOperationException($"Field {info.Name} is not a part of {typeof(T).FullName}");
             }
-            if(!_whitelistFields.Contains(info))
+            if (!_whitelistFields.Contains(info))
             {
                 return;
             }
@@ -158,7 +158,7 @@ namespace SocketNetworking.Modding
             {
                 throw new InvalidOperationException($"Field {info.Name} is not a part of {typeof(T).FullName}");
             }
-            if(_blacklistFields.Contains(info))
+            if (_blacklistFields.Contains(info))
             {
                 return;
             }
@@ -196,17 +196,17 @@ namespace SocketNetworking.Modding
             switch (Mode)
             {
                 case FieldWatchMode.All:
-                    foreach(FieldInfo info in typeof(T).GetFields(Flags))
+                    foreach (FieldInfo info in typeof(T).GetFields(Flags))
                     {
-                        var args = new FieldChangeEventArgs(Target, info);
+                        FieldChangeEventArgs args = new FieldChangeEventArgs(Target, info);
                         data.Data = ByteConvert.Serialize(args);
                         list.Add(data);
                     }
                     break;
                 case FieldWatchMode.Whitelist:
-                    foreach(FieldInfo info in _whitelistFields)
+                    foreach (FieldInfo info in _whitelistFields)
                     {
-                        var args = new FieldChangeEventArgs(Target, info);
+                        FieldChangeEventArgs args = new FieldChangeEventArgs(Target, info);
                         data.Data = ByteConvert.Serialize(args);
                         list.Add(data);
                     }
@@ -214,7 +214,7 @@ namespace SocketNetworking.Modding
                 case FieldWatchMode.Blacklist:
                     foreach (FieldInfo info in Target.GetType().GetFields().Except(_blacklistFields))
                     {
-                        var args = new FieldChangeEventArgs(Target, info);
+                        FieldChangeEventArgs args = new FieldChangeEventArgs(Target, info);
                         data.Data = ByteConvert.Serialize(args);
                         list.Add(data);
                     }
@@ -222,7 +222,7 @@ namespace SocketNetworking.Modding
                 case FieldWatchMode.Both:
                     foreach (FieldInfo info in _whitelistFields.Except(_blacklistFields))
                     {
-                        var args = new FieldChangeEventArgs(Target, info);
+                        FieldChangeEventArgs args = new FieldChangeEventArgs(Target, info);
                         data.Data = ByteConvert.Serialize(args);
                         list.Add(data);
                     }
@@ -232,17 +232,17 @@ namespace SocketNetworking.Modding
             foreach (List<SyncVarData> list1 in lists)
             {
                 packet.Data = list1;
-                if(NetworkManager.WhereAmI == ClientLocation.Remote)
+                if (NetworkManager.WhereAmI == ClientLocation.Remote)
                 {
                     NetworkServer.SendToAll(packet, x => OwnerObject.CheckVisibility(x));
                 }
-                else if(NetworkManager.WhereAmI == ClientLocation.Local)
+                else if (NetworkManager.WhereAmI == ClientLocation.Local)
                 {
-                    if((OwnershipMode == OwnershipMode.Client) && OwnerObject.OwnerClientID == NetworkClient.LocalClient.ClientID || OwnerObject.HasPrivilege(NetworkClient.LocalClient.ClientID))
+                    if ((OwnershipMode == OwnershipMode.Client) && OwnerObject.OwnerClientID == NetworkClient.LocalClient.ClientID || OwnerObject.HasPrivilege(NetworkClient.LocalClient.ClientID))
                     {
                         NetworkClient.LocalClient.Send(packet);
                     }
-                    else if(OwnershipMode == OwnershipMode.Public)
+                    else if (OwnershipMode == OwnershipMode.Public)
                     {
                         NetworkClient.LocalClient.Send(packet);
                     }
@@ -257,7 +257,7 @@ namespace SocketNetworking.Modding
 
         public void SyncAllTo(NetworkClient who)
         {
-            if(NetworkManager.WhereAmI != ClientLocation.Remote)
+            if (NetworkManager.WhereAmI != ClientLocation.Remote)
             {
                 return;
             }
@@ -269,7 +269,7 @@ namespace SocketNetworking.Modding
                 case FieldWatchMode.All:
                     foreach (FieldInfo info in typeof(T).GetFields(Flags))
                     {
-                        var args = new FieldChangeEventArgs(Target, info);
+                        FieldChangeEventArgs args = new FieldChangeEventArgs(Target, info);
                         data.Data = ByteConvert.Serialize(args);
                         list.Add(data);
                     }
@@ -277,7 +277,7 @@ namespace SocketNetworking.Modding
                 case FieldWatchMode.Whitelist:
                     foreach (FieldInfo info in _whitelistFields)
                     {
-                        var args = new FieldChangeEventArgs(Target, info);
+                        FieldChangeEventArgs args = new FieldChangeEventArgs(Target, info);
                         data.Data = ByteConvert.Serialize(args);
                         list.Add(data);
                     }
@@ -286,7 +286,7 @@ namespace SocketNetworking.Modding
                     List<SyncVarData> list3 = new List<SyncVarData>();
                     foreach (FieldInfo info in Target.GetType().GetFields().Except(_blacklistFields))
                     {
-                        var args = new FieldChangeEventArgs(Target, info);
+                        FieldChangeEventArgs args = new FieldChangeEventArgs(Target, info);
                         data.Data = ByteConvert.Serialize(args);
                         list.Add(data);
                     }
@@ -295,7 +295,7 @@ namespace SocketNetworking.Modding
                     List<SyncVarData> list4 = new List<SyncVarData>();
                     foreach (FieldInfo info in _whitelistFields.Except(_blacklistFields))
                     {
-                        var args = new FieldChangeEventArgs(Target, info);
+                        FieldChangeEventArgs args = new FieldChangeEventArgs(Target, info);
                         data.Data = ByteConvert.Serialize(args);
                         list.Add(data);
                     }

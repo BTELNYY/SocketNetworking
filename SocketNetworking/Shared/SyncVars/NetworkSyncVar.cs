@@ -230,7 +230,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         public virtual void SyncTo(NetworkClient who)
         {
-            if(!OwnerObject.CheckVisibility(who))
+            if (!OwnerObject.CheckVisibility(who))
             {
                 return;
             }

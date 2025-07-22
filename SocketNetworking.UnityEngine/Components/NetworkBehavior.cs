@@ -209,6 +209,26 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public virtual bool IsPrivileged
+        {
+            get
+            {
+                if (OwnershipMode == OwnershipMode.Public)
+                {
+                    return true;
+                }
+                else if (OwnershipMode == OwnershipMode.Server && NetworkManager.WhereAmI == ClientLocation.Remote)
+                {
+                    return true;
+                }
+                else if ((OwnershipMode == OwnershipMode.Client) && OwnerClientID == NetworkClient.LocalClient.ClientID || this.HasPrivilege(NetworkClient.LocalClient.ClientID))
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+
         /// <summary>
         /// Determines if the current code is on the client. This is done by checking if <see cref="IsServer"/> is false.
         /// </summary>

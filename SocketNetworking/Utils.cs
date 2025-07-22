@@ -23,10 +23,10 @@ namespace SocketNetworking
             List<List<T>> result = new List<List<T>>();
             List<T> currentList = new List<T>();
             int currentSize = 0;
-            foreach (var chunk in list)
+            foreach (T chunk in list)
             {
                 int size = chunk.GetLength();
-                if((currentSize + size) > maxSize)
+                if ((currentSize + size) > maxSize)
                 {
                     currentList = new List<T>();
                     currentSize = size;

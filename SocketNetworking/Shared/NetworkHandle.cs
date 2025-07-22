@@ -42,7 +42,7 @@ namespace SocketNetworking.Shared
         /// The <see cref="Packet"/> which casued this handle to be generated.
         /// </summary>
         public Packet InvocationPacket { get; }
-        
+
         /// <summary>
         /// The <see cref="Client"/>s <see cref="NetworkClient.ClientID"/>.
         /// </summary>

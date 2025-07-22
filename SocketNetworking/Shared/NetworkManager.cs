@@ -507,7 +507,7 @@ namespace SocketNetworking.Shared
                     case ObjectManagePacket.ObjectManageAction.Create:
                         throw new InvalidOperationException("Creation in modification loop (Internal Error)");
                     case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
-                        if(WhereAmI == ClientLocation.Local)
+                        if (WhereAmI == ClientLocation.Local)
                         {
                             throw new InvalidOperationException("Clients should not be creating objects.");
                         }
@@ -571,7 +571,7 @@ namespace SocketNetworking.Shared
                         break;
                 }
                 //replicate!
-                if(NetworkManager.WhereAmI == ClientLocation.Remote && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmModify && packet.Action != ObjectManagePacket.ObjectManageAction.Create)
+                if (NetworkManager.WhereAmI == ClientLocation.Remote && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmModify && packet.Action != ObjectManagePacket.ObjectManageAction.Create)
                 {
                     NetworkServer.SendToAll(packet, x => x.ClientID != handle.Client.ClientID);
                 }

@@ -20,7 +20,7 @@ namespace SocketNetworking.Modding.Patching.Fields
 
         public FieldChangeEventArgs(object target, FieldInfo info)
         {
-            Target = target; 
+            Target = target;
             Field = info;
             NewValue = info.GetValue(Target);
         }

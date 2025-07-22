@@ -10,6 +10,54 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkTransform : NetworkComponent
     {
+        public ComponentSyncMode SyncMode { get; set; } = ComponentSyncMode.Automatic;
+
+        public void SyncIfIsDifferent()
+        {
+            if (!IsPrivileged)
+            {
+                return;
+            }
+            if (position.Value != transform.position)
+            {
+                position.Value = transform.position;
+            }
+            if (rotation.Value != transform.rotation)
+            {
+                rotation.Value = transform.rotation;
+            }
+            if (localRotation.Value != transform.localRotation)
+            {
+                localRotation.Value = transform.localRotation;
+            }
+            if (localPosition.Value != transform.localPosition)
+            {
+                localPosition.Value = transform.localPosition;
+            }
+        }
+
+        void FixedUpdate()
+        {
+            if (SyncMode != ComponentSyncMode.PhysicsUpdate)
+            {
+                return;
+            }
+            SyncIfIsDifferent();
+        }
+
+        void Update()
+        {
+            transform.localPosition = Vector3.Lerp(transform.localPosition, _localPosition, LerpTime);
+            transform.position = Vector3.Lerp(transform.position, _position, LerpTime);
+            transform.localRotation = Quaternion.Slerp(transform.localRotation, _localRotation, LerpTime);
+            transform.rotation = Quaternion.Slerp(transform.rotation, _rotation, LerpTime);
+            if (SyncMode != ComponentSyncMode.FrameUpdate)
+            {
+                return;
+            }
+            SyncIfIsDifferent();
+        }
+
         public void ServerSync()
         {
             NetworkPosition = NetworkPosition;
@@ -110,14 +158,6 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 return Time.deltaTime * (float)(Latency / 0.5);
             }
-        }
-
-        void Update()
-        {
-            transform.localPosition = Vector3.Lerp(transform.localPosition, _localPosition, LerpTime);
-            transform.position = Vector3.Lerp(transform.position, _position, LerpTime);
-            transform.localRotation = Quaternion.Slerp(transform.localRotation, _localRotation, LerpTime);
-            transform.rotation = Quaternion.Slerp(transform.rotation, _rotation, LerpTime);
         }
 
         public Vector3 NetworkScale

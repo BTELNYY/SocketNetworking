@@ -15,9 +15,30 @@ namespace SocketNetworking
 {
     public static class NetworkObjectExtensions
     {
+        /// <summary>
+        /// Returns <see langword="true"/> if <see cref="NetworkManager.WhereAmI"/> is <see cref="ClientLocation.Remote"/>. Otherwise, checks <see cref="NetworkClient.LocalClient"/> against <see cref="INetworkObject.OwnerClientID"/> and <see cref="INetworkObject.PrivilegedIDs"/>. <b>This method should not be used on the server as a security measure as this method does not have context to check the permissions of a client.</b>
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static bool CheckOwnershipAndPrivilege(this INetworkObject obj)
+        {
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                return true;
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                if (obj.OwnerClientID == NetworkClient.LocalClient.ClientID || obj.HasPrivilege(NetworkClient.LocalClient.ClientID))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public static void ThrowIfNotServer(this INetworkObject obj)
         {
-            if(NetworkManager.WhereAmI != ClientLocation.Remote)
+            if (NetworkManager.WhereAmI != ClientLocation.Remote)
             {
                 throw new InvalidOperationException("This method can only be ran on the server.");
             }
@@ -25,7 +46,7 @@ namespace SocketNetworking
 
         public static void ThrowIfNotClient(this INetworkObject obj)
         {
-            if(NetworkManager.WhereAmI != ClientLocation.Local)
+            if (NetworkManager.WhereAmI != ClientLocation.Local)
             {
                 throw new InvalidOperationException("This method can only be ran on the client.");
             }
@@ -746,7 +767,7 @@ namespace SocketNetworking
             }
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                if(obj.CheckVisibility(who))
+                if (obj.CheckVisibility(who))
                 {
                     who.Send(packet);
                 }
