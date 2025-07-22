@@ -1194,6 +1194,11 @@ namespace SocketNetworking.Client
             NetworkInvoke(methodName, args, priority);
         }
 
+        public void NetworkInvoke(string methodName, params object[] args)
+        {
+            NetworkInvoke(methodName, args);
+        }
+
         /// <summary>
         /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value. This will try to find the method on the current <see cref="NetworkClient"/>
         /// </summary>
