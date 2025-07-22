@@ -22,7 +22,7 @@ namespace SocketNetworking.Shared.SyncVars
         /// <summary>
         /// The direction in which the <see cref="INetworkSyncVar"/> accepts changes to its state.
         /// </summary>
-        OwnershipMode SyncOwner { get; set; }
+        OwnershipMode OwnershipMode { get; set; }
 
         /// <summary>
         /// The raw value of the object. This should update the value of the object on the Network. See <see cref="RawSet(object, NetworkClient)"/>, which will update the value locally.
@@ -50,7 +50,7 @@ namespace SocketNetworking.Shared.SyncVars
         void SyncTo(NetworkClient who);
 
         /// <summary>
-        /// Forces the <see cref="INetworkSyncVar"/> to be synced to everyone (as applicable by <see cref="SyncOwner"/> and the <see cref="OwnerObject"/>s <see cref="ObjectVisibilityMode"/>)
+        /// Forces the <see cref="INetworkSyncVar"/> to be synced to everyone (as applicable by <see cref="OwnershipMode"/> and the <see cref="OwnerObject"/>s <see cref="ObjectVisibilityMode"/>)
         /// </summary>
         void Sync();
 

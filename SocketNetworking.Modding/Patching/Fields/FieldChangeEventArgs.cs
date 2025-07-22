@@ -17,5 +17,12 @@ namespace SocketNetworking.Modding.Patching.Fields
             Field = field;
             NewValue = newValue;
         }
+
+        public FieldChangeEventArgs(object target, FieldInfo info)
+        {
+            Target = target; 
+            Field = info;
+            NewValue = info.GetValue(Target);
+        }
     }
 }

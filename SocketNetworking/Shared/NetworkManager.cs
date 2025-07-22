@@ -1078,9 +1078,9 @@ namespace SocketNetworking.Shared
                         Log.Warning($"Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName} is not an actual sync var, but is listed as one.");
                         continue;
                     }
-                    if (syncVar.SyncOwner != OwnershipMode.Public)
+                    if (syncVar.OwnershipMode != OwnershipMode.Public)
                     {
-                        if (syncVar.SyncOwner == OwnershipMode.Client && WhereAmI == ClientLocation.Remote)
+                        if (syncVar.OwnershipMode == OwnershipMode.Client && WhereAmI == ClientLocation.Remote)
                         {
                             if (runner.ClientID != syncVar.OwnerObject.OwnerClientID && !syncVar.OwnerObject.HasPrivilege(runner.ClientID))
                             {
@@ -1088,7 +1088,7 @@ namespace SocketNetworking.Shared
                             }
                         }
                     }
-                    if (syncVar.SyncOwner == OwnershipMode.Server && WhereAmI == ClientLocation.Remote)
+                    if (syncVar.OwnershipMode == OwnershipMode.Server && WhereAmI == ClientLocation.Remote)
                     {
                         return;
                     }

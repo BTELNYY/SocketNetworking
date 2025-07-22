@@ -19,7 +19,7 @@ namespace SocketNetworking.Shared.SyncVars
         /// <summary>
         /// Sets who is allowed to set the value of this Sync var.
         /// </summary>
-        public OwnershipMode SyncOwner
+        public OwnershipMode OwnershipMode
         {
             get
             {
@@ -87,7 +87,7 @@ namespace SocketNetworking.Shared.SyncVars
                 {
                     throw new InvalidOperationException("Tried to modify a SyncVar while the local client was null!");
                 }
-                if ((SyncOwner == OwnershipMode.Client && OwnerObject.OwnerClientID != NetworkClient.LocalClient.ClientID && !OwnerObject.HasPrivilege(NetworkClient.LocalClient.ClientID)) || SyncOwner == OwnershipMode.Server)
+                if ((OwnershipMode == OwnershipMode.Client && OwnerObject.OwnerClientID != NetworkClient.LocalClient.ClientID && !OwnerObject.HasPrivilege(NetworkClient.LocalClient.ClientID)) || OwnershipMode == OwnershipMode.Server)
                 {
                     throw new InvalidOperationException("Tried to modify a SyncVar without permission.");
                 }
@@ -95,7 +95,7 @@ namespace SocketNetworking.Shared.SyncVars
             }
             if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                if (SyncOwner == OwnershipMode.Client)
+                if (OwnershipMode == OwnershipMode.Client)
                 {
                     if (OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.OwnerAndServer)
                     {
@@ -108,7 +108,7 @@ namespace SocketNetworking.Shared.SyncVars
                     }
                     else if (OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
                     {
-                        NetworkServer.SendToAll(packet);
+                        NetworkServer.SendToAll(packet, x => OwnerObject.CheckVisibility(x));
                     }
                 }
                 else
@@ -189,7 +189,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         public object Clone()
         {
-            return new NetworkSyncVar<T>(OwnerObject, SyncOwner, value);
+            return new NetworkSyncVar<T>(OwnerObject, OwnershipMode, value);
         }
 
         public virtual void RawSet(object value, NetworkClient who)
@@ -212,12 +212,12 @@ namespace SocketNetworking.Shared.SyncVars
                 NetworkIDTarget = OwnerObject.NetworkID,
                 Data = data,
                 TargetVar = Name,
-                Mode = SyncOwner,
+                Mode = OwnershipMode,
             };
             return syncVarData;
         }
 
-        SyncVarUpdatePacket GetPacket()
+        protected virtual SyncVarUpdatePacket GetPacket()
         {
             SyncVarData syncVarData = GetData();
             SyncVarUpdatePacket packet = new SyncVarUpdatePacket()
@@ -230,7 +230,20 @@ namespace SocketNetworking.Shared.SyncVars
 
         public virtual void SyncTo(NetworkClient who)
         {
+            if(!OwnerObject.CheckVisibility(who))
+            {
+                return;
+            }
             SyncVarUpdatePacket packet = GetPacket();
+            who.Send(packet);
+        }
+
+        public virtual void SyncTo(NetworkClient who, SyncVarUpdatePacket packet)
+        {
+            if (!OwnerObject.CheckVisibility(who))
+            {
+                return;
+            }
             who.Send(packet);
         }
 
