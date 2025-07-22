@@ -98,5 +98,22 @@ namespace SocketNetworking.Shared
         {
             Client.SendImmediate(packet);
         }
+
+        /// <summary>
+        /// Disconnects the <see cref="Client"/>
+        /// </summary>
+        public void Disconnect()
+        {
+            Client.Disconnect();
+        }
+
+        /// <summary>
+        /// Disconnects the <see cref="Client"/> with a <paramref name="reason"/>.
+        /// </summary>
+        /// <param name="reason"></param>
+        public void Disconnect(string reason)
+        {
+            Client.Disconnect(reason);
+        }
     }
 }

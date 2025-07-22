@@ -62,6 +62,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Components\ComponentSyncMode.cs" />
     <Compile Include="Components\NetworkBehavior.cs" />
     <Compile Include="Components\NetworkAnimator.cs" />
     <Compile Include="Components\NetworkClientReference.cs" />
@@ -83,6 +84,11 @@
     <Compile Include="Modding\Patches\UnityAnimator\Trigger\ResetStringTrigger.cs" />
     <Compile Include="Modding\Patches\UnityAnimator\Trigger\SetStringTriggerPatch.cs" />
     <Compile Include="Modding\Patches\UnityAnimator\Trigger\SetTriggerIntPatch.cs" />
+    <Compile Include="Modding\Patches\UnityTransform\Methods\SetPositionAndRotationPatch.cs" />
+    <Compile Include="Modding\Patches\UnityTransform\Property\LocalPositionSetPatch.cs" />
+    <Compile Include="Modding\Patches\UnityTransform\Property\LocalRotationSetPatch.cs" />
+    <Compile Include="Modding\Patches\UnityTransform\Property\RotationSetPatch.cs" />
+    <Compile Include="Modding\Patches\UnityTransform\Property\PositionSetPatch.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorBoolValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorFloatValueUpdatePacket.cs" />
     <Compile Include="Packets\NetworkAnimator\NetworkAnimatorIntValueUpdatePacket.cs" />
@@ -123,7 +129,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Modding\Patches\UnityAnimator\Property\" />
-    <Folder Include="Modding\Patches\UnityTransform\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
