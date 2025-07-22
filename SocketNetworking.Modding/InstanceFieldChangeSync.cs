@@ -181,12 +181,12 @@ namespace SocketNetworking.Modding
         /// <summary>
         /// Called when the <see cref="SyncAll"/> function has finished.
         /// </summary>
-        public static event Action SyncAllCompleted;
+        public event Action SyncAllCompleted;
 
         /// <summary>
         /// Called when the <see cref="SyncAllTo(NetworkClient)"/> function has completed.
         /// </summary>
-        public static event Action<NetworkClient> SyncAllToCompleted;
+        public event Action<NetworkClient> SyncAllToCompleted;
 
         public void SyncAll()
         {

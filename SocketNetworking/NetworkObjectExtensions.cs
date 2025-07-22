@@ -714,6 +714,34 @@ namespace SocketNetworking
         }
 
         /// <summary>
+        /// Resends all data about the <see cref="INetworkObject"/>. Use this if you manually modify any properties.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static void NetworkSync(this INetworkObject obj, NetworkClient who)
+        {
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
+            {
+                Action = ObjectManagePacket.ObjectManageAction.Modify,
+            };
+            if (!obj.Active)
+            {
+                throw new InvalidOperationException("Cannot modify inactive objects.");
+            }
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                if(obj.CheckVisibility(who))
+                {
+                    who.Send(packet);
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("Server code called on client.");
+            }
+        }
+
+        /// <summary>
         /// Sets the <see cref="INetworkObject.ObjectVisibilityMode"/> network wide. If the <see cref="INetworkObject.ObjectVisibilityMode"/> is <see cref="ObjectVisibilityMode.ServerOnly"/>, this method will fail. Use <see cref="NetworkSpawn(INetworkObject)"/>.
         /// </summary>
         /// <param name="obj"></param>

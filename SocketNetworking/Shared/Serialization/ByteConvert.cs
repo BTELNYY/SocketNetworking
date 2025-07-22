@@ -100,9 +100,8 @@ namespace SocketNetworking.Shared.Serialization
                 return sData;
             }
 
-            if (dataType.IsSubclassDeep(typeof(INetworkObject)))
+            if (data is INetworkObject networkObject)
             {
-                INetworkObject networkObject = data as INetworkObject;
                 writer.WriteInt(networkObject.NetworkID);
                 sData.Type = data.GetType();
                 sData.Data = writer.Data;

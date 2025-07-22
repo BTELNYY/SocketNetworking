@@ -417,7 +417,8 @@ namespace SocketNetworking.Shared
         internal static void ModifyNetworkObjectLocal(ObjectManagePacket packet, NetworkHandle handle)
         {
             //Spawning
-            if (packet.Action == ObjectManagePacket.ObjectManageAction.Create)
+            //prevent clients from spawning in whatever they want.
+            if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && WhereAmI == ClientLocation.Local)
             {
                 Type objType = packet.ObjectType;
                 if (objType == null)
@@ -506,6 +507,10 @@ namespace SocketNetworking.Shared
                     case ObjectManagePacket.ObjectManageAction.Create:
                         throw new InvalidOperationException("Creation in modification loop (Internal Error)");
                     case ObjectManagePacket.ObjectManageAction.ConfirmCreate:
+                        if(WhereAmI == ClientLocation.Local)
+                        {
+                            throw new InvalidOperationException("Clients should not be creating objects.");
+                        }
                         @object.OnNetworkSpawned(handle.Client);
                         if (@object.OwnerClientID == handle.Client.ClientID)
                         {
@@ -564,6 +569,11 @@ namespace SocketNetworking.Shared
                         modificationConfirmTarget.OnModified(handle.Client);
                         SendModifiedPulse(handle.Client, modificationConfirmTarget);
                         break;
+                }
+                //replicate!
+                if(NetworkManager.WhereAmI == ClientLocation.Remote && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmModify && packet.Action != ObjectManagePacket.ObjectManageAction.Create)
+                {
+                    NetworkServer.SendToAll(packet, x => x.ClientID != handle.Client.ClientID);
                 }
             }
         }

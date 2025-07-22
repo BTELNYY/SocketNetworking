@@ -187,7 +187,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         /// <summary>
-        /// Checks if the current point (where the code is executed) is the sync owner. If Sync ownership is ignored, always returns true.
+        /// Checks if the current point (where the code is executed) is the sync owner. If the <see cref="OwnershipMode"/> of the <see cref="INetworkObject"/> is <see cref="OwnershipMode.Public"/>, this method returns true. <see cref="INetworkObject.PrivilegedIDs"/> are not accounted for, only <see cref="OwnershipMode"/> and <see cref="OwnerClientID"/> are checked. If you want to check for Privilege, see <see cref="INetworkObject.HasPrivilege(int)"/>.
         /// </summary>
         public virtual bool IsOwner
         {
