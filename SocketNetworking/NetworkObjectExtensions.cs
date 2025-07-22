@@ -15,6 +15,22 @@ namespace SocketNetworking
 {
     public static class NetworkObjectExtensions
     {
+        public static void ThrowIfNotServer(this INetworkObject obj)
+        {
+            if(NetworkManager.WhereAmI != ClientLocation.Remote)
+            {
+                throw new InvalidOperationException("This method can only be ran on the server.");
+            }
+        }
+
+        public static void ThrowIfNotClient(this INetworkObject obj)
+        {
+            if(NetworkManager.WhereAmI != ClientLocation.Local)
+            {
+                throw new InvalidOperationException("This method can only be ran on the client.");
+            }
+        }
+
         /// <summary>
         /// Tries to get the <see cref="INetworkObject.OwnerClientID"/> as a <see cref="NetworkClient"/>. Note that this method should only be called on the server.
         /// </summary>

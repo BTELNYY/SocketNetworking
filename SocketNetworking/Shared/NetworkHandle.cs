@@ -42,6 +42,28 @@ namespace SocketNetworking.Shared
         /// The <see cref="Packet"/> which casued this handle to be generated.
         /// </summary>
         public Packet InvocationPacket { get; }
+        
+        /// <summary>
+        /// The <see cref="Client"/>s <see cref="NetworkClient.ClientID"/>.
+        /// </summary>
+        public int ClientID
+        {
+            get
+            {
+                return Client.ClientID;
+            }
+        }
+
+        /// <summary>
+        /// The <see cref="ClientLocation"/> of the <see cref="Client"/>.
+        /// </summary>
+        public ClientLocation ClientLocation
+        {
+            get
+            {
+                return Client.CurrentClientLocation;
+            }
+        }
 
         /// <summary>
         /// The <see cref="SocketNetworking.Shared.InvocationMode"/> of the handle.
@@ -57,6 +79,24 @@ namespace SocketNetworking.Shared
             {
                 return InvocationPacket.Flags.HasFlag(PacketFlags.AsymmetricalEncrypted) || InvocationPacket.Flags.HasFlag(PacketFlags.SymmetricalEncrypted);
             }
+        }
+
+        /// <summary>
+        /// Sends a packet to the <see cref="Client"/>.
+        /// </summary>
+        /// <param name="packet"></param>
+        public void Send(Packet packet)
+        {
+            Client.Send(packet);
+        }
+
+        /// <summary>
+        /// Sends a packet to the <see cref="Client"/>.
+        /// </summary>
+        /// <param name="packet"></param>
+        public void SendImmediate(Packet packet)
+        {
+            Client.SendImmediate(packet);
         }
     }
 }

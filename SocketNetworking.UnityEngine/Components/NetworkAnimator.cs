@@ -55,7 +55,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         [PacketListener(typeof(NetworkAnimatorPlayAnimPacket), NetworkDirection.Any)]
-        public void OnAnimtorUpdatePlaybackPacket(NetworkAnimatorPlayAnimPacket packet, NetworkClient client)
+        public void OnAnimtorUpdatePlaybackPacket(NetworkAnimatorPlayAnimPacket packet, NetworkHandle client)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
             {
@@ -76,7 +76,7 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         [PacketListener(typeof(NetworkAnimatorSpeedUpdatePacket), NetworkDirection.Any)]
-        public void OnAnimatorSpeedPacket(NetworkAnimatorSpeedUpdatePacket packet, NetworkClient client)
+        public void OnAnimatorSpeedPacket(NetworkAnimatorSpeedUpdatePacket packet, NetworkHandle client)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
             {
@@ -149,13 +149,13 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         [PacketListener(typeof(NetworkAnimatorTriggerPacket), NetworkDirection.Any)]
-        public virtual void OnAnimatorTriggerPacket(NetworkClient client, NetworkAnimatorTriggerPacket packet)
+        public virtual void OnAnimatorTriggerPacket(NetworkAnimatorTriggerPacket packet, NetworkHandle client)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
             {
                 return;
             }
-            Logger.Debug($"Trigger Update: {GetNameFromHash(packet.Hash)}, Setting trigger?: {packet.SetTrigger}, From: {client.ClientID}");
+            Logger.Debug($"Trigger Update: {GetNameFromHash(packet.Hash)}, Setting trigger?: {packet.SetTrigger}, From: {client.Client.ClientID}");
             if (packet.SetTrigger)
             {
                 SetTrigger(packet.Hash);
@@ -166,12 +166,12 @@ namespace SocketNetworking.UnityEngine.Components
             }
             if (IsServer)
             {
-                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.ClientID);
+                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.Client.ClientID);
             }
         }
 
         [PacketListener(typeof(NetworkAnimatorFloatValueUpdatePacket), NetworkDirection.Any)]
-        public virtual void OnAnimatorFloatUpdatePacket(NetworkClient client, NetworkAnimatorFloatValueUpdatePacket packet)
+        public virtual void OnAnimatorFloatUpdatePacket(NetworkAnimatorFloatValueUpdatePacket packet, NetworkHandle client)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
             {
@@ -189,12 +189,12 @@ namespace SocketNetworking.UnityEngine.Components
             }
             if (IsServer)
             {
-                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.ClientID);
+                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.Client.ClientID);
             }
         }
 
         [PacketListener(typeof(NetworkAnimatorBoolValueUpdatePacket), NetworkDirection.Any)]
-        public void OnAnimatorBoolUpdatePacket(NetworkClient client, NetworkAnimatorBoolValueUpdatePacket packet)
+        public void OnAnimatorBoolUpdatePacket(NetworkAnimatorBoolValueUpdatePacket packet, NetworkHandle client)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
             {
@@ -205,12 +205,12 @@ namespace SocketNetworking.UnityEngine.Components
             SetBool(packet.ValueHash, packet.Value);
             if (IsServer)
             {
-                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.ClientID);
+                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.Client.ClientID);
             }
         }
 
         [PacketListener(typeof(NetworkAnimatorIntValueUpdatePacket), NetworkDirection.Any)]
-        public void OnAnimatorBoolUpdatePacket(NetworkClient client, NetworkAnimatorIntValueUpdatePacket packet)
+        public void OnAnimatorBoolUpdatePacket(NetworkAnimatorIntValueUpdatePacket packet, NetworkHandle client)
         {
             if (!ShouldBeReceivingPacketsFrom(client))
             {
@@ -221,7 +221,7 @@ namespace SocketNetworking.UnityEngine.Components
             SetInteger(packet.ValueHash, packet.Value);
             if (IsServer)
             {
-                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.ClientID);
+                NetworkServer.SendToAll(packet, this, x => x.ClientID != client.Client.ClientID);
             }
         }
 
