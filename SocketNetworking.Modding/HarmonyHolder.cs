@@ -6,7 +6,7 @@ namespace SocketNetworking.Modding
     {
         static HarmonyHolder()
         {
-            Harmony = new Harmony("com.btelnyy.socketnetowking.patching");
+            Harmony = new Harmony("com.btelnyy.socketnetworking.patching");
         }
 
         public static Harmony Harmony { get; }

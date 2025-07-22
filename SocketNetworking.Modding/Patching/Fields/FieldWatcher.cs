@@ -31,7 +31,7 @@ namespace SocketNetworking.Modding.Patching.Fields
             }
             foreach (MethodInfo method in type.GetMethods(flags))
             {
-                Harmony.Unpatch(method, HarmonyPatchType.Transpiler, "com.btelnyy.socketnetowking.patching");
+                Harmony.Unpatch(method, HarmonyPatchType.Transpiler, "com.btelnyy.socketnetworking.patching");
             }
         }
 
