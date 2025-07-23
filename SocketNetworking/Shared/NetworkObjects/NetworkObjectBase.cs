@@ -51,6 +51,10 @@ namespace SocketNetworking.Shared.NetworkObjects
             }
         }
 
+        public virtual List<INetworkObject> RequiredObjects => new List<INetworkObject>();
+
+        public int SpawnPriority => 0;
+
         /// <summary>
         /// This event is called when <see cref="Destroy"/> is called.
         /// </summary>

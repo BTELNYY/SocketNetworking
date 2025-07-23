@@ -12,6 +12,16 @@ namespace SocketNetworking.Shared.NetworkObjects
     public interface INetworkObject : INetworkSpawnable
     {
         /// <summary>
+        /// List of <see cref="INetworkObject"/>s which are required to be spawned before this object. Note that you can most likely cause stack overflows if you are not careful.
+        /// </summary>
+        List<INetworkObject> RequiredObjects { get; }
+
+        /// <summary>
+        /// Used when sorting <see cref="INetworkObject"/>s for spawning.
+        /// </summary>
+        int SpawnPriority { get; }
+
+        /// <summary>
         /// The <see cref="NetworkClient.ClientID"/> of the current owner. This must not be a live property, Do NOT use the setter to update it networkside. Use <see cref="NetworkObjectExtensions.NetworkSetOwner(INetworkObject, int)"/> to set this network wide.
         /// </summary>
         int OwnerClientID { get; set; }

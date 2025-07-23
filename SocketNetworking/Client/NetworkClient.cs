@@ -2383,6 +2383,10 @@ namespace SocketNetworking.Client
                 try
                 {
                     List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
+                    objects.Sort((x, y) =>
+                    {
+                        return x.SpawnPriority - y.SpawnPriority;
+                    });
                     NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
                     foreach (INetworkObject @object in objects)
                     {
@@ -2403,6 +2407,10 @@ namespace SocketNetworking.Client
         public void ServerSyncNetworkObjects()
         {
             List<INetworkObject> objects = NetworkManager.GetNetworkObjects().Where(x => x.Spawnable).ToList();
+            objects.Sort((x, y) =>
+            {
+                return x.SpawnPriority - y.SpawnPriority;
+            });
             NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
             foreach (INetworkObject @object in objects)
             {

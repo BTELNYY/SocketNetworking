@@ -321,6 +321,10 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public virtual List<INetworkObject> RequiredObjects => new List<INetworkObject>();
+
+        public virtual int SpawnPriority => 0;
+
         /// <summary>
         /// Preforms a send operation and syncs data across network, can be called on either client or server, method handles what happens.
         /// </summary>

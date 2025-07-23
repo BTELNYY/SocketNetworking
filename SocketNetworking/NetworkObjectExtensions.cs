@@ -16,6 +16,24 @@ namespace SocketNetworking
     public static class NetworkObjectExtensions
     {
         /// <summary>
+        /// Requires all <see cref="INetworkObject"/>s specified by <see cref="INetworkObject.RequiredObjects"/> to be spawned.
+        /// </summary>
+        /// <param name="obj"></param>
+        public static void NetworkRequireObjectsSpawned(this INetworkObject obj)
+        {
+            obj.ThrowIfNotServer();
+            List<INetworkObject> clone = new List<INetworkObject>(obj.RequiredObjects);
+            clone.Sort((x, y) =>
+            {
+                return x.SpawnPriority - y.SpawnPriority;
+            });
+            foreach (INetworkObject obj2 in clone)
+            {
+                obj2.NetworkSpawn();
+            }
+        }
+
+        /// <summary>
         /// Returns <see langword="true"/> if <see cref="NetworkManager.WhereAmI"/> is <see cref="ClientLocation.Remote"/>. Otherwise, checks <see cref="NetworkClient.LocalClient"/> against <see cref="INetworkObject.OwnerClientID"/> and <see cref="INetworkObject.PrivilegedIDs"/>. <b>This method should not be used on the server as a security measure as this method does not have context to check the permissions of a client.</b>
         /// </summary>
         /// <param name="obj"></param>
