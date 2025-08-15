@@ -19,7 +19,17 @@ namespace SocketNetworking.UnityEngine.Components
         /// <summary>
         /// The <see cref="NetworkIdentity"/> of the current <see cref="GameObject"/>.
         /// </summary>
-        public NetworkIdentity Identity => _identity;
+        public NetworkIdentity Identity
+        {
+            get
+            {
+                if(_identity == null)
+                {
+                    EnsureIdentityExists();
+                }
+                return _identity;
+            }
+        }
 
         private NetworkIdentity _identity = null;
 
@@ -53,7 +63,7 @@ namespace SocketNetworking.UnityEngine.Components
             return new ByteReader(data);
         }
 
-        void Awake()
+        public void EnsureIdentityExists()
         {
             _identity = GetComponent<NetworkIdentity>();
             if (Identity == null)
@@ -61,6 +71,11 @@ namespace SocketNetworking.UnityEngine.Components
                 throw new InvalidOperationException("All Network Objects must have a NetworkIdentity.");
             }
             OverrideIdentity(_identity);
+        }
+
+        void Awake()
+        {
+            EnsureIdentityExists();
         }
 
         public override IEnumerable<int> PrivilegedIDs
