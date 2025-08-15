@@ -76,15 +76,6 @@ namespace SocketNetworking.UnityEngine.Components
         void Awake()
         {
             UnityNetworkManager.Register(this);
-        }
-
-        void OnDestroy()
-        {
-            UnityNetworkManager.Unregister(this);
-        }
-
-        public NetworkTransform()
-        {
             //Scale is set and not lerped because, why the fuck would it be lerped?
             scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (scale) =>
             {
@@ -110,6 +101,16 @@ namespace SocketNetworking.UnityEngine.Components
                 //transform.localPosition = localPosition;
                 _localPosition = localPosition;
             });
+        }
+
+        void OnDestroy()
+        {
+            UnityNetworkManager.Unregister(this);
+        }
+
+        public NetworkTransform()
+        {
+           
         }
 
         private NetworkSyncVar<Vector3> scale;

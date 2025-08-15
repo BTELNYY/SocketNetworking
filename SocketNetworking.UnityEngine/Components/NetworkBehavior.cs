@@ -197,7 +197,7 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return true;
                 }
-                else if (OwnershipMode == OwnershipMode.Server && NetworkManager.WhereAmI == ClientLocation.Remote)
+                else if (NetworkManager.WhereAmI == ClientLocation.Remote)
                 {
                     return true;
                 }
