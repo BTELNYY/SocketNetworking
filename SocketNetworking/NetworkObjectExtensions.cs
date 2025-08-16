@@ -34,6 +34,19 @@ namespace SocketNetworking
         }
 
         /// <summary>
+        /// Fakes a <see cref="ObjectManagePacket"/> with the <see cref="ObjectManagePacket.Action"/> being <see cref="ObjectManagePacket.ObjectManageAction.ConfirmCreate"/>. This can be used to help trigger <see cref="INetworkObject.OnNetworkSpawned(NetworkClient)"/> when you use a different approach rather than <see cref="NetworkSpawn(INetworkObject)"/>. <b>This method can only ba ran on the client.</b>
+        /// </summary>
+        /// <param name="obj"></param>
+        public static void ClientSendFakeCreatedMessage(this INetworkObject obj)
+        {
+            ObjectManagePacket packet = new ObjectManagePacket(obj)
+            {
+                Action = ObjectManagePacket.ObjectManageAction.ConfirmCreate,
+            };
+            NetworkClient.LocalClient.Send(packet);
+        }
+
+        /// <summary>
         /// Returns <see langword="true"/> if <see cref="NetworkManager.WhereAmI"/> is <see cref="ClientLocation.Remote"/>. Otherwise, checks <see cref="NetworkClient.LocalClient"/> against <see cref="INetworkObject.OwnerClientID"/> and <see cref="INetworkObject.PrivilegedIDs"/>. <b>This method should not be used on the server as a security measure as this method does not have context to check the permissions of a client.</b>
         /// </summary>
         /// <param name="obj"></param>

@@ -717,6 +717,25 @@ namespace SocketNetworking.Server
                 client.NetworkInvoke(obj, methodName, args);
             }
         }
+
+        public static void NetworkInvokeOnAll(string methodName, object[] args, Predicate<NetworkClient> filter, bool priority = false)
+        {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
+            List<NetworkClient> clients = _clients.Values.ToList();
+            clients = clients.Where(x => filter(x)).ToList();
+            foreach (NetworkClient client in clients)
+            {
+                client.NetworkInvoke(methodName, priority, args);
+            }
+        }
+
+        public static void NetworkInvokeOnAll(string methodName, object[] args, bool priority = false)
+        {
+            NetworkInvokeOnAll(methodName, args, x => true, priority);
+        }
     }
 
 
