@@ -217,5 +217,15 @@ namespace SocketNetworking.Shared.NetworkObjects
                 _privs.Remove(clientId);
             }
         }
+
+        public virtual void OnBeforeRegister()
+        {
+            
+        }
+
+        public virtual void OnAfterRegister()
+        {
+            
+        }
     }
 }

@@ -9,12 +9,12 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
     {
         public float AnimatorSpeed { get; set; } = 0f;
 
-        public NetworkAnimatorSpeedUpdatePacket()
+        public NetworkAnimatorSpeedUpdatePacket() : base()
         {
 
         }
 
-        public NetworkAnimatorSpeedUpdatePacket(float animatorSpeed)
+        public NetworkAnimatorSpeedUpdatePacket(float animatorSpeed) : this()
         {
             AnimatorSpeed = animatorSpeed;
         }

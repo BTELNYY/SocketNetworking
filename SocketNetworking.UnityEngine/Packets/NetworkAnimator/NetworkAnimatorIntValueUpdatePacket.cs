@@ -8,15 +8,15 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
     [PacketDefinition]
     public class NetworkAnimatorIntValueUpdatePacket : CustomPacket
     {
-        public NetworkAnimatorIntValueUpdatePacket() { }
+        public NetworkAnimatorIntValueUpdatePacket() : base() { }
 
-        public NetworkAnimatorIntValueUpdatePacket(int id, int value)
+        public NetworkAnimatorIntValueUpdatePacket(int id, int value) : this()
         {
             ValueHash = id;
             Value = value;
         }
 
-        public NetworkAnimatorIntValueUpdatePacket(string name, int value)
+        public NetworkAnimatorIntValueUpdatePacket(string name, int value) : this()
         {
             ValueHash = Animator.StringToHash(name);
             Value = value;

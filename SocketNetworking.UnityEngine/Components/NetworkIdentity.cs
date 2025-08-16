@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using SocketNetworking.Client;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
@@ -28,6 +29,22 @@ namespace SocketNetworking.UnityEngine.Components
         public void UnregisterComponent(NetworkComponent component)
         {
             _components.Remove(component);
+        }
+
+        public void DisableComponents()
+        {
+            foreach (NetworkComponent component in _components)
+            {
+                component.Enabled = false;
+            }
+        }
+
+        public void EnableComponents()
+        {
+            foreach (NetworkComponent component in _components)
+            {
+                component.Enabled = true;
+            }
         }
 
         public override void OnSync(NetworkClient client)

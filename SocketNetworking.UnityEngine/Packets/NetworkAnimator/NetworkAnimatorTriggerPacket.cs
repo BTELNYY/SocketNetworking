@@ -8,6 +8,8 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
     [PacketDefinition]
     public class NetworkAnimatorTriggerPacket : CustomPacket
     {
+        public NetworkAnimatorTriggerPacket() : base() { }
+
         public int Hash { get; set; } = 0;
 
         public void WriteName(string name)

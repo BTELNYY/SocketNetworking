@@ -9,15 +9,15 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
     [PacketDefinition]
     public class NetworkAnimatorBoolValueUpdatePacket : CustomPacket
     {
-        public NetworkAnimatorBoolValueUpdatePacket() { }
+        public NetworkAnimatorBoolValueUpdatePacket() : base() { }
 
-        public NetworkAnimatorBoolValueUpdatePacket(int id, bool value)
+        public NetworkAnimatorBoolValueUpdatePacket(int id, bool value) : this()
         {
             ValueHash = id;
             Value = value;
         }
 
-        public NetworkAnimatorBoolValueUpdatePacket(string name, bool value)
+        public NetworkAnimatorBoolValueUpdatePacket(string name, bool value) : this()
         {
             ValueHash = Animator.StringToHash(name);
             Value = value;

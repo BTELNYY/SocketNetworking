@@ -7,13 +7,13 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
     [PacketDefinition]
     public class NetworkTransformRotatePacket : NetworkTransformBasePacket
     {
+        public NetworkTransformRotatePacket() : base() { }
+
         public Vector3 Rotation { get; set; }
 
         public Space Space { get; set; }
 
         public float Angle { get; set; } = float.NaN;
-
-        public NetworkTransformRotatePacket() { }
 
         public NetworkTransformRotatePacket(Vector3 rotation, Space space)
         {

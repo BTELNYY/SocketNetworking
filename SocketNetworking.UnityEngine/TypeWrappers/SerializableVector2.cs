@@ -1,4 +1,5 @@
-﻿using SocketNetworking.Shared.Serialization;
+﻿using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.Serialization;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine.TypeWrappers

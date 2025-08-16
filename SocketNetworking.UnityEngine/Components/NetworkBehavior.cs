@@ -35,6 +35,21 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        /// <summary>
+        /// Determines if the current <see cref="NetworkBehavior"/> is <see cref="Behaviour.enabled"/> or not. This is different to <see cref="Active"/>, which disables the entire <see cref="GameObject"/> as well as will be synced. The <see cref="Enabled"/> flag is not synced however.
+        /// </summary>
+        public virtual bool Enabled
+        {
+            get
+            {
+                return enabled;
+            }
+            set
+            {
+                enabled = value;
+            }
+        }
+
         public virtual bool Spawnable => true;
 
         public virtual ObjectVisibilityMode ObjectVisibilityMode { get; set; }
@@ -446,6 +461,16 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 _privs.Remove(clientId);
             }
+        }
+
+        public virtual void OnBeforeRegister()
+        {
+            
+        }
+
+        public virtual void OnAfterRegister()
+        {
+            
         }
     }
 }

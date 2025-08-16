@@ -36,14 +36,14 @@ namespace SocketNetworking.UnityEngine
 
         static bool _initted = false;
 
-        internal static void Init()
+        public static void Init()
         {
             if (_initted)
             {
                 return;
             }
             _initted = true;
-            NetworkManager.ImportCustomPackets(Assembly.GetExecutingAssembly());
+            NetworkManager.ImportAssembly(Assembly.GetExecutingAssembly());
             NetworkServer.ClientType = typeof(UnityNetworkClient);
             RegisterSpawner(typeof(NetworkIdentity), Spawn, true);
             _dispatcherObject = new GameObject("Dispatcher");

@@ -266,6 +266,11 @@ namespace SocketNetworking.Shared
             {
                 CustomPacket packet = (CustomPacket)Activator.CreateInstance(type);
                 int customPacketId = packet.CustomPacketID;
+                if(customPacketId == -1)
+                {
+                    customPacketId = GetAutoPacketID(packet);
+                    Log.Info($"Packet {packet.GetType().Name} has a custom packet ID of -1. Assuming automatic ID assignment. You better PRAY this works the same on the peers. New ID: {customPacketId}");
+                }
                 if (AdditionalPacketTypes.ContainsKey(customPacketId))
                 {
                     if (AdditionalPacketTypes[customPacketId] == type)
@@ -820,15 +825,16 @@ namespace SocketNetworking.Shared
                 return PreCache.FirstOrDefault(x => x.TargetObject == t);
             }
             Type baseType = t.BaseType;
-            if (t.IsSubclassDeep(typeof(TypeWrapper<>)))
+            if (t.GetInterfaces().Contains(typeof(ITypeWrapper)))
             {
                 object obj = Activator.CreateInstance(t);
-                MethodInfo method = obj.GetType().GetMethod(nameof(TypeWrapper<object>.GetContainedType));
+                MethodInfo method = obj.GetType().GetMethod(nameof(ITypeWrapper.GetContainedType));
                 Type targetType = (Type)method.Invoke(obj, null);
                 if (!TypeToTypeWrapper.ContainsKey(targetType))
                 {
                     TypeToTypeWrapper.Add(targetType, t);
                 }
+                Log.Info($"Wrapper {obj.GetType().Name} maps to type {targetType.Name}");
             }
             NetworkObjectData networkObjectCache = new NetworkObjectData();
             networkObjectCache.TargetObject = t;

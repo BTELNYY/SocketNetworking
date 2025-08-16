@@ -100,6 +100,9 @@
     <Compile Include="Packets\NetworkTransform\NetworkTransformPositionUpdatePacket.cs" />
     <Compile Include="Packets\NetworkTransformBasePacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TypeWrappers\TypeWrapperQuaternion.cs" />
+    <Compile Include="TypeWrappers\TypeWrapperVector2.cs" />
+    <Compile Include="TypeWrappers\TypeWrapperVector3.cs" />
     <Compile Include="TypeWrappers\SerializableQuaternion.cs" />
     <Compile Include="TypeWrappers\SerializableVector2.cs" />
     <Compile Include="TypeWrappers\SerializableVector3.cs" />

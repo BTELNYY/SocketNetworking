@@ -8,7 +8,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
     /// </summary>
     public class CustomPacket : TargetedPacket
     {
-        public CustomPacket()
+        public CustomPacket() : base()
         {
             CustomPacketID = NetworkManager.GetAutoPacketID(this);
         }

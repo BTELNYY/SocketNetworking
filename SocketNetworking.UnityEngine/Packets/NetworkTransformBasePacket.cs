@@ -5,6 +5,8 @@ namespace SocketNetworking.UnityEngine.Packets
 {
     public class NetworkTransformBasePacket : CustomPacket
     {
+        public NetworkTransformBasePacket() : base() { }
+
         public string UUID { get; set; }
 
         public override ByteReader Deserialize(byte[] data)

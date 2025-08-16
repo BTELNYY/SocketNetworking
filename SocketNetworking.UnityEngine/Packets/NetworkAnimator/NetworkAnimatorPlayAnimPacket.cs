@@ -7,6 +7,8 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkAnimator
     [PacketDefinition]
     public class NetworkAnimatorPlayAnimPacket : CustomPacket
     {
+        public NetworkAnimatorPlayAnimPacket() : base() { }
+
         public bool IsStateHash { get; set; } = false;
 
         public bool DoNotPlayAnything { get; set; } = false;

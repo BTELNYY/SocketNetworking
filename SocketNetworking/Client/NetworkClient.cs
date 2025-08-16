@@ -1196,7 +1196,8 @@ namespace SocketNetworking.Client
 
         public void NetworkInvoke(string methodName, params object[] args)
         {
-            NetworkInvoke(methodName, args);
+            //NetworkInvoke(methodName, args);
+            NetworkInvoke(methodName, args, false);
         }
 
         /// <summary>

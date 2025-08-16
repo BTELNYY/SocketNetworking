@@ -7,6 +7,8 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
     [PacketDefinition]
     public class NetworkTransformRotateAroundPacket : NetworkTransformBasePacket
     {
+        public NetworkTransformRotateAroundPacket() : base() { }
+
         public Vector3 Point { get; set; }
 
         public Vector3 Axis { get; set; }
@@ -21,8 +23,6 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
             Axis = axis;
             Angle = angle;
         }
-
-        public NetworkTransformRotateAroundPacket() { }
 
         public override ByteWriter Serialize()
         {

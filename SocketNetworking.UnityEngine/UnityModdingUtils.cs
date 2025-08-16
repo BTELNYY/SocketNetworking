@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using System.Reflection;
+using HarmonyLib;
+using SocketNetworking.Shared;
 
 namespace SocketNetworking.UnityEngine
 {
@@ -6,8 +8,9 @@ namespace SocketNetworking.UnityEngine
     {
         public static Harmony Harmony = new Harmony("com.btelnyy.socketnetworking.patching.unityengine");
 
-        public static void PatchAll()
+        public static void Init()
         {
+            //NetworkManager.ImportAssembly(Assembly.GetExecutingAssembly());
             Harmony.PatchAll();
         }
     }

@@ -7,6 +7,8 @@ namespace SocketNetworking.UnityEngine.Packets.NetworkTransform
     [PacketDefinition]
     public class NetworkTransformPositionUpdatePacket : NetworkTransformBasePacket
     {
+        public NetworkTransformPositionUpdatePacket() : base() { }
+
         public Vector3 Position { get; set; } = Vector3.zero;
 
         public Quaternion Rotation { get; set; } = new Quaternion(0, 0, 0, 0);

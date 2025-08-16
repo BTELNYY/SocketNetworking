@@ -196,5 +196,15 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// Called when any <see cref="INetworkSyncVar"/> is changed.
         /// </summary>
         void OnSyncVarsChanged();
+
+        /// <summary>
+        /// Called before <see cref="NetworkObjectExtensions.NetworkSpawn(INetworkObject)"/> registers this object.
+        /// </summary>
+        void OnBeforeRegister();
+
+        /// <summary>
+        /// Called after <see cref="NetworkObjectExtensions.NetworkSpawn(INetworkObject)"/> registers this object.
+        /// </summary>
+        void OnAfterRegister();
     }
 }
