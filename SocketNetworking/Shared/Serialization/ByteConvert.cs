@@ -221,7 +221,7 @@ namespace SocketNetworking.Shared.Serialization
                 return sData;
             }
 
-            //last ditch effort...
+            //last ditch effort... Preferably don't send XML data over the network as its not efficient, use a type wrapper or something. 
 
             if (dataType.GetCustomAttribute<XmlRootAttribute>() != null)
             {

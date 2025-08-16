@@ -17,6 +17,11 @@ namespace SocketNetworking
     /// </summary>
     public static class Extensions
     {
+        /// <summary>
+        /// Converts <paramref name="input"/> to an object. <see cref="string.Empty"/> is returned on failure. 
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public static T FromXML<T>(this string input)
         {
             XmlSerializer xmlSerializer = new XmlSerializer(typeof(T));
@@ -33,6 +38,11 @@ namespace SocketNetworking
             }
         }
 
+        /// <summary>
+        /// Converts <paramref name="input"/> to an object. <see cref="string.Empty"/> is returned on failure. Uses <paramref name="type"/> to determine the type of data.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public static object FromXML(this string input, Type type)
         {
             XmlSerializer xmlSerializer = new XmlSerializer(type);
@@ -49,6 +59,11 @@ namespace SocketNetworking
         }
 
 
+        /// <summary>
+        /// Converts <paramref name="data"/> to XML. Default value is returned on failure.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public static string ToXML(this object data)
         {
             XmlSerializer xmlSerializer = new XmlSerializer(data.GetType());
@@ -65,6 +80,11 @@ namespace SocketNetworking
             }
         }
 
+        /// <summary>
+        /// Converts <paramref name="data"/> to XML. Default value is returned on failure.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public static string ToXML<T>(this T data)
         {
             XmlSerializer xmlSerializer = new XmlSerializer(typeof(T));
