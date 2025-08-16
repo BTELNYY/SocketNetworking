@@ -394,9 +394,7 @@ namespace SocketNetworking
             (INetworkObject, NetworkObjectData) result = NetworkManager.GetNetworkObjectByID(obj.NetworkID);
             if (result.Item1 == null)
             {
-                obj.OnBeforeRegister();
                 NetworkManager.AddNetworkObject(obj);
-                obj.OnAfterRegister();
             }
             else
             {

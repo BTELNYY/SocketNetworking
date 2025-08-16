@@ -719,9 +719,11 @@ namespace SocketNetworking.Shared
             }
             else
             {
+                networkObject.OnBeforeRegister();
                 NetworkObjectData data = GetNetworkObjectData(networkObject);
                 NetworkObjects.TryAdd(networkObject, data);
                 SendAddedPulse(networkObject);
+                networkObject.OnAfterRegister();
                 return true;
             }
         }

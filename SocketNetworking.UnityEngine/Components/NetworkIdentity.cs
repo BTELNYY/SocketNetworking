@@ -47,6 +47,11 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public virtual void SetupComponents()
+        {
+
+        }
+
         public override void OnSync(NetworkClient client)
         {
             base.OnSync(client);
@@ -109,6 +114,12 @@ namespace SocketNetworking.UnityEngine.Components
                 writer.WritePacketSerialized<ComponentData>(data);
             }
             return writer;
+        }
+
+        public override void OnBeforeRegister()
+        {
+            base.OnBeforeRegister();
+            SetupComponents();
         }
     }
 
