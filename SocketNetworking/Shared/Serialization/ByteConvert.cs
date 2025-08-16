@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Xml.Serialization;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.Exceptions;
@@ -220,6 +221,13 @@ namespace SocketNetworking.Shared.Serialization
                 return sData;
             }
 
+            //last ditch effort...
+
+            if (dataType.GetCustomAttribute<XmlRootAttribute>() != null)
+            {
+                writer.WriteXML(data);
+            }
+
             throw new NetworkConversionException($"Type '{data.GetType().FullName}' cannot be serialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
         }
 
@@ -404,6 +412,13 @@ namespace SocketNetworking.Shared.Serialization
                 double value = reader.ReadDouble();
                 read = reader.ReadBytes;
                 return Convert.ChangeType(value, data.Type);
+            }
+
+            if(data.Type.GetCustomAttribute<XmlRootAttribute>() != null)
+            {
+                object result = reader.ReadXML(data.Type);
+                read = reader.ReadBytes;
+                return result;
             }
 
             throw new NetworkConversionException($"Type '{data.Type.FullName}' cannot be deserialized. Please try making a TypeWrapper, or making this type IPacketSerializable");

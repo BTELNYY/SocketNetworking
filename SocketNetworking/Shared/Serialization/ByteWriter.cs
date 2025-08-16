@@ -91,6 +91,27 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
+        /// Writes the XML version of <paramref name="value"/> as a <see langword="string"/>. If serialization fails, <see cref="string.Empty"/> will be written.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        public void WriteXML<T>(T value)
+        {
+            string xml = value.ToXML<T>();
+            WriteString(xml);
+        }
+
+        /// <summary>
+        /// Identical to <see cref="WriteXML{T}(T)"/> but does not use generics.
+        /// </summary>
+        /// <param name="value"></param>
+        public void WriteXML(object value)
+        {
+            string xml = value.ToXML();
+            WriteString(xml);
+        }
+
+        /// <summary>
         /// Writes the <paramref name="value"/> by wrapping it in a <see cref="SerializedData"/> struct.
         /// </summary>
         /// <typeparam name="T"></typeparam>

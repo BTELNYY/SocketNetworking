@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Serialization;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking
@@ -16,6 +17,70 @@ namespace SocketNetworking
     /// </summary>
     public static class Extensions
     {
+        public static T FromXML<T>(this string input)
+        {
+            XmlSerializer xmlSerializer = new XmlSerializer(typeof(T));
+            StringReader stringReader = new StringReader(input);
+            try
+            {
+                T data = (T)xmlSerializer.Deserialize(stringReader);
+                return data;
+            }
+            catch (Exception ex)
+            {
+                Log.GlobalError(ex.ToString());
+                return default(T);
+            }
+        }
+
+        public static object FromXML(this string input, Type type)
+        {
+            XmlSerializer xmlSerializer = new XmlSerializer(type);
+            StringReader stringReader = new StringReader(input);
+            try
+            {
+                return xmlSerializer.Deserialize(stringReader);
+            }
+            catch (Exception ex)
+            {
+                Log.GlobalError(ex.ToString());
+                return Activator.CreateInstance(type);
+            }
+        }
+
+
+        public static string ToXML(this object data)
+        {
+            XmlSerializer xmlSerializer = new XmlSerializer(data.GetType());
+            StringWriter stringWriter = new StringWriter();
+            try
+            {
+                xmlSerializer.Serialize(stringWriter, data);
+                return stringWriter.ToString();
+            }
+            catch (Exception ex)
+            {
+                Log.GlobalError(ex.ToString());
+                return string.Empty;
+            }
+        }
+
+        public static string ToXML<T>(this T data)
+        {
+            XmlSerializer xmlSerializer = new XmlSerializer(typeof(T));
+            StringWriter stringWriter = new StringWriter();
+            try
+            {
+                xmlSerializer.Serialize(stringWriter, data);
+                return stringWriter.ToString();
+            }
+            catch (Exception ex)
+            {
+                Log.GlobalError(ex.ToString());
+                return string.Empty;
+            }
+        }
+
         public static ByteReader GetReader(this byte[] bytes)
         {
             return new ByteReader(bytes);

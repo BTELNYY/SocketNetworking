@@ -114,6 +114,28 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
+        /// Reads XML by using <see cref="ReadString"/>. If Deserialization fails, <see langword="default"/> will be returned.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public T ReadXML<T>()
+        {
+            string xml = ReadString();
+            return xml.FromXML<T>();
+        }
+
+        /// <summary>
+        /// Identical to <see cref="ReadXML{T}()"/> but does not use generics.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public object ReadXML(Type type)
+        {
+            string xml = ReadString();
+            return xml.FromXML(type);
+        }
+
+        /// <summary>
         /// Tries to read a <see cref="SerializedData"/> object and then casts its contained value to <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T"></typeparam>
