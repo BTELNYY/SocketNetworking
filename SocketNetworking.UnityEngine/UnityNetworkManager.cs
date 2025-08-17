@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
@@ -178,11 +179,21 @@ namespace SocketNetworking.UnityEngine
             }
         }
 
+        public static bool OverrideMultiplayerFlag = false;
+
         public static bool PlayingMultiplayer
         {
             get
             {
                 if (NetworkServer.Active)
+                {
+                    return true;
+                }
+                if (NetworkClient.LocalClient != null && NetworkClient.LocalClient.CurrentConnectionState != ConnectionState.Disconnected)
+                {
+                    return true;
+                }
+                if(OverrideMultiplayerFlag)
                 {
                     return true;
                 }
