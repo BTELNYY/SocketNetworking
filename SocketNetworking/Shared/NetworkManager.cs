@@ -266,7 +266,7 @@ namespace SocketNetworking.Shared
             {
                 CustomPacket packet = (CustomPacket)Activator.CreateInstance(type);
                 int customPacketId = packet.CustomPacketID;
-                if(customPacketId == -1)
+                if (customPacketId == -1)
                 {
                     customPacketId = GetAutoPacketID(packet);
                     Log.Info($"Packet {packet.GetType().Name} has a custom packet ID of -1. Assuming automatic ID assignment. You better PRAY this works the same on the peers. New ID: {customPacketId}");

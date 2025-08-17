@@ -110,7 +110,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public NetworkTransform()
         {
-           
+
         }
 
         private NetworkSyncVar<Vector3> scale;

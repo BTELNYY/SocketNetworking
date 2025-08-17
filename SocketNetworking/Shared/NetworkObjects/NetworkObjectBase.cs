@@ -220,12 +220,12 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public virtual void OnBeforeRegister()
         {
-            
+
         }
 
         public virtual void OnAfterRegister()
         {
-            
+
         }
     }
 }

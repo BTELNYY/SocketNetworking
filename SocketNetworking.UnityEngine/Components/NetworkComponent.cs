@@ -23,7 +23,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                if(_identity == null)
+                if (_identity == null)
                 {
                     EnsureIdentityExists();
                 }

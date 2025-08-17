@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using HarmonyLib;
-using SocketNetworking.Shared;
+﻿using HarmonyLib;
 
 namespace SocketNetworking.UnityEngine
 {

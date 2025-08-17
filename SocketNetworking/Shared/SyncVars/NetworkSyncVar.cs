@@ -224,7 +224,7 @@ namespace SocketNetworking.Shared.SyncVars
             {
                 Data = new List<SyncVarData> { syncVarData },
             };
-            if(Priority)
+            if (Priority)
             {
                 packet.Flags |= PacketFlags.Priority;
             }

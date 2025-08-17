@@ -414,7 +414,7 @@ namespace SocketNetworking.Shared.Serialization
                 return Convert.ChangeType(value, data.Type);
             }
 
-            if(data.Type.GetCustomAttribute<XmlRootAttribute>() != null)
+            if (data.Type.GetCustomAttribute<XmlRootAttribute>() != null)
             {
                 object result = reader.ReadXML(data.Type);
                 read = reader.ReadBytes;

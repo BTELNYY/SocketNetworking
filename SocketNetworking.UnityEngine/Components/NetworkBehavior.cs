@@ -465,12 +465,12 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnBeforeRegister()
         {
-            
+
         }
 
         public virtual void OnAfterRegister()
         {
-            
+
         }
     }
 }

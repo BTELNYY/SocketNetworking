@@ -33,7 +33,7 @@ namespace SocketNetworking.UnityEngine
             {
                 throw new InvalidOperationException("Tried to call server only function when the server was not active!");
             }
-            if(!identity.Spawnable)
+            if (!identity.Spawnable)
             {
                 return;
             }

@@ -34,7 +34,7 @@ namespace SocketNetworking
             catch (Exception ex)
             {
                 Log.GlobalError(ex.ToString());
-                return default(T);
+                return default;
             }
         }
 
