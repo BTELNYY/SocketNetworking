@@ -72,9 +72,9 @@ namespace SocketNetworking.UnityEngine
             return result.GetComponent<NetworkIdentity>();
         }
 
-        private static Dictionary<GameObject, NetworkTransform> _transforms = new Dictionary<GameObject, NetworkTransform>();
+        private static Dictionary<int, NetworkTransform> _transforms = new Dictionary<int, NetworkTransform>();
 
-        private static Dictionary<GameObject, NetworkAnimator> _animators = new Dictionary<GameObject, NetworkAnimator>();
+        private static Dictionary<int, NetworkAnimator> _animators = new Dictionary<int, NetworkAnimator>();
 
         private static Dictionary<int, GameObject> _prefabSpawnIds = new Dictionary<int, GameObject>();
 
@@ -90,18 +90,18 @@ namespace SocketNetworking.UnityEngine
 
         public static NetworkAnimator GetNetworkAnimator(GameObject obj)
         {
-            if (_animators.ContainsKey(obj))
+            if (_animators.ContainsKey(obj.GetInstanceID()))
             {
-                return _animators[obj];
+                return _animators[obj.GetInstanceID()];
             }
             return null;
         }
 
         public static NetworkTransform GetNetworkTransform(GameObject obj)
         {
-            if (_transforms.ContainsKey(obj))
+            if (_transforms.ContainsKey(obj.GetInstanceID()))
             {
-                return _transforms[obj];
+                return _transforms[obj.GetInstanceID()];
             }
             return null;
         }
@@ -194,12 +194,12 @@ namespace SocketNetworking.UnityEngine
         {
             if (obj.GetType() == typeof(NetworkTransform))
             {
-                _transforms.Add(obj.gameObject, (NetworkTransform)obj);
+                _transforms.Add(obj.gameObject.GetInstanceID(), (NetworkTransform)obj);
                 return;
             }
             if (obj.GetType() == typeof(NetworkAnimator))
             {
-                _animators.Add(obj.gameObject, (NetworkAnimator)obj);
+                _animators.Add(obj.gameObject.GetInstanceID(), (NetworkAnimator)obj);
                 return;
             }
         }
@@ -208,12 +208,12 @@ namespace SocketNetworking.UnityEngine
         {
             if (obj.GetType() == typeof(NetworkTransform))
             {
-                _transforms.Remove(obj.gameObject);
+                _transforms.Remove(obj.gameObject.GetInstanceID());
                 return;
             }
             if (obj.GetType() == typeof(NetworkAnimator))
             {
-                _animators.Remove(obj.gameObject);
+                _animators.Remove(obj.gameObject.GetInstanceID());
                 return;
             }
         }
