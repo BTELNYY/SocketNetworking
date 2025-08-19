@@ -193,7 +193,7 @@ namespace SocketNetworking.UnityEngine
                 {
                     return true;
                 }
-                if(OverrideMultiplayerFlag)
+                if (OverrideMultiplayerFlag)
                 {
                     return true;
                 }
@@ -205,11 +205,19 @@ namespace SocketNetworking.UnityEngine
         {
             if (obj.GetType() == typeof(NetworkTransform))
             {
+                if (_transforms.ContainsKey(obj.gameObject.GetInstanceID()))
+                {
+                    return;
+                }
                 _transforms.Add(obj.gameObject.GetInstanceID(), (NetworkTransform)obj);
                 return;
             }
             if (obj.GetType() == typeof(NetworkAnimator))
             {
+                if (_animators.ContainsKey(obj.gameObject.GetInstanceID()))
+                {
+                    return;
+                }
                 _animators.Add(obj.gameObject.GetInstanceID(), (NetworkAnimator)obj);
                 return;
             }
