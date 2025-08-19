@@ -108,11 +108,6 @@ namespace SocketNetworking.UnityEngine.Components
             UnityNetworkManager.Unregister(this);
         }
 
-        public NetworkTransform()
-        {
-
-        }
-
         private NetworkSyncVar<Vector3> scale;
 
         private NetworkSyncVar<Quaternion> rotation;
@@ -153,7 +148,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        private float LerpTime
+        public float LerpTime
         {
             get
             {
