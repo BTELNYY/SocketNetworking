@@ -568,7 +568,7 @@ namespace SocketNetworking.Server
         {
             if (priority)
             {
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
+                packet.Flags = priority ? packet.Flags |= PacketFlags.Priority : packet.Flags &= ~PacketFlags.Priority;
             }
             SendToAll(packet, target, (x) => !toReadyOnly || x.Ready);
         }

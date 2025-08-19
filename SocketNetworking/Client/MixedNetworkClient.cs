@@ -16,7 +16,6 @@ namespace SocketNetworking.Client
         public MixedNetworkClient() : base()
         {
             Transport = new TcpTransport();
-            _networkEncryptionManager = new NetworkEncryption(this);
         }
 
         protected override void OnLocalStopClient()

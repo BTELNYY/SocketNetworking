@@ -181,15 +181,18 @@ namespace SocketNetworking.Shared
 
         public NetworkEncryption(NetworkClient client)
         {
+            client.Log.Info($"Start generating key pair...");
             Client = client;
             SharedAes = new AesCryptoServiceProvider();
             SharedAes.GenerateIV();
             SharedAes.GenerateKey();
             SharedAes.Padding = PaddingMode.PKCS7;
-            RSA rsa = RSA.Create(KEY_SIZE);
+            RSA rsa = RSA.Create();
+            rsa.KeySize = KEY_SIZE;
             MyRSA = new RSACryptoServiceProvider(KEY_SIZE);
             MyRSA.ImportParameters(rsa.ExportParameters(true));
             OthersRSA = new RSACryptoServiceProvider(KEY_SIZE);
+            client.Log.Info("Done generating crypto!");
         }
 
         /// <summary>

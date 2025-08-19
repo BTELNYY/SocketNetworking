@@ -1121,7 +1121,7 @@ namespace SocketNetworking.Client
         /// <param name="priority"></param>
         public void Send(Packet packet, bool priority)
         {
-            packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
+            packet.Flags = priority ? packet.Flags |= PacketFlags.Priority : packet.Flags &= ~PacketFlags.Priority;
             Send(packet);
         }
 
@@ -1134,7 +1134,7 @@ namespace SocketNetworking.Client
         public void Send(TargetedPacket packet, INetworkObject sender, bool priority)
         {
             packet.NetworkIDTarget = sender.NetworkID;
-            packet.Flags = packet.Flags.SetFlag(PacketFlags.Priority, priority);
+            packet.Flags = priority ? packet.Flags |= PacketFlags.Priority : packet.Flags &= ~PacketFlags.Priority;
             Send(packet);
         }
 
@@ -1338,7 +1338,7 @@ namespace SocketNetworking.Client
             if (currentEncryptionState >= (int)EncryptionState.SymmetricalReady && !packet.Flags.HasFlag(PacketFlags.NoAES))
             {
                 //Log.Debug("Encrypting using SYMMETRICAL");
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymmetricalEncrypted, true);
+                packet.Flags |= PacketFlags.SymmetricalEncrypted;
             }
             else if (currentEncryptionState >= (int)EncryptionState.AsymmetricalReady && !packet.Flags.HasFlag(PacketFlags.NoRSA))
             {
@@ -1349,8 +1349,8 @@ namespace SocketNetworking.Client
             {
                 //Ensure the packet isn't encrypted if we don't support it.
                 //Log.Debug("Encryption is not supported at this moment, ensuring it isn't flagged as being enabled on this packet.");
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, false);
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.SymmetricalEncrypted, false);
+                packet.Flags &= ~PacketFlags.AsymmetricalEncrypted;
+                packet.Flags &= ~PacketFlags.SymmetricalEncrypted;
             }
             if (!packet.ValidateFlags())
             {
@@ -1365,7 +1365,7 @@ namespace SocketNetworking.Client
             //Log.Debug("Raw Serialized Packet: \n" + hex.ToString());
             if (packetDataBytes.Length > 1024 && !packet.Flags.HasFlag(PacketFlags.Compressed))
             {
-                packet.Flags = packet.Flags.SetFlag(PacketFlags.Compressed, true);
+                packet.Flags |= PacketFlags.Compressed;
                 //Log.Warning($"Forcing compression, the packet is larger than one kb! ({packetDataBytes.Length})");
                 return SerializePacket(packet);
             }
@@ -1385,7 +1385,7 @@ namespace SocketNetworking.Client
                 if (packetDataBytes.Length > NetworkEncryption.MaxBytesForAsymmetricalEncryption)
                 {
                     Log.Warning($"Packet is too large for RSA! Packet Size: {packetDataBytes.Length}, Max Packet Size: {NetworkEncryption.MaxBytesForAsymmetricalEncryption}. Packet: {packet}");
-                    packet.Flags = packet.Flags.SetFlag(PacketFlags.NoRSA, true);
+                    packet.Flags |= PacketFlags.NoRSA;
                     return SerializePacket(packet);
                 }
                 else

@@ -14,21 +14,24 @@ namespace SocketNetworking.UnityEngine
             NetworkClientReference reference = _clientObject.AddComponent<NetworkClientReference>();
             reference.NetworkClient = this;
             GameObject.DontDestroyOnLoad(_clientObject);
-            UnityNetworkManager.Dispatcher.Enqueue(PacketHandle());
             ManualPacketHandle = true;
             ClientIdUpdated += UnityNetworkClient_ClientIdUpdated;
+            PacketReadyToHandle += UnityNetworkClient_PacketReadyToHandle;
+        }
+
+        private void UnityNetworkClient_PacketReadyToHandle(Shared.PacketSystem.PacketHeader arg1, byte[] arg2)
+        {
+            Log.Debug("Packet Ready to handle!");
+            UnityNetworkManager.Dispatcher.Enqueue(() => 
+            {
+                Log.Debug("Next packet handle!");
+                HandleNextPacket();
+            });
         }
 
         private void UnityNetworkClient_ClientIdUpdated()
         {
             _clientObject.name = ClientID.ToString();
-        }
-
-        IEnumerator PacketHandle()
-        {
-            HandleNextPacket();
-            UnityNetworkManager.Dispatcher.Enqueue(PacketHandle());
-            yield return null;
         }
 
 

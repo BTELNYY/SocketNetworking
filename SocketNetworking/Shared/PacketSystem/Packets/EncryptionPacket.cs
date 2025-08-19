@@ -28,12 +28,12 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         {
             if (EncryptionFunction == EncryptionFunction.SymmetricalKeySend)
             {
-                Flags = Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, true);
+                Flags |= PacketFlags.AsymmetricalEncrypted;
             }
             else
             {
-                Flags = Flags.SetFlag(PacketFlags.AsymmetricalEncrypted, false);
-                Flags = Flags.SetFlag(PacketFlags.SymmetricalEncrypted, false);
+                Flags &= ~PacketFlags.AsymmetricalEncrypted;
+                Flags &= ~PacketFlags.SymmetricalEncrypted;
             }
             ByteWriter writer = base.Serialize();
             writer.WriteByte((byte)EncryptionFunction);
