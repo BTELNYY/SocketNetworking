@@ -169,7 +169,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public List<string> Tree { get; set; }
 
-        public byte[] Extra { get; set; }
+        public byte[] Extra { get; set; } = new byte[0];
 
         public virtual ByteReader Deserialize(byte[] data)
         {
