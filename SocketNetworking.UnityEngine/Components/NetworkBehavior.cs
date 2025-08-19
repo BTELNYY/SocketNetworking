@@ -64,21 +64,22 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnSync(NetworkClient client)
         {
-
+            Logger.Debug($"Triggered OnSync on {gameObject.name}. Client: {client}");
         }
 
         public virtual void OnAdded(INetworkObject addedObject)
         {
-
+            Logger.Debug($"Triggered OnAdded on {gameObject.name}. Object: {addedObject}");
         }
 
         public virtual void OnRemoved(INetworkObject removedObject)
         {
-
+            Logger.Debug($"Triggered OnRemoved on {gameObject.name}. Object: {removedObject}");
         }
 
         public virtual void OnDisconnected(NetworkClient client)
         {
+            Logger.Debug($"Triggered OnDisconnected on {gameObject.name}. Client: {client}");
             if (NetworkManager.WhereAmI != ClientLocation.Remote) { return; }
             if (client.ClientID == OwnerClientID)
             {
@@ -88,22 +89,22 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnReady(NetworkClient client, bool isReady)
         {
-
+            Logger.Debug($"Triggered OnReady on {gameObject.name}. Client: {client}, Ready: {isReady}");
         }
 
         public virtual void OnConnected(NetworkClient client)
         {
-
+            Logger.Debug($"Triggered OnConnected on {gameObject.name}. Client: {client}");
         }
 
         public virtual void OnNetworkSpawned(NetworkClient spawner)
         {
-
+            Logger.Debug($"Triggered OnNetworkSpawned on {gameObject.name}. Client: {spawner}");
         }
 
         public virtual void OnLocalSpawned(ObjectManagePacket packet)
         {
-
+            Logger.Debug($"Triggered OnLocalSpawned on {gameObject.name}. Packet: {packet}");
         }
 
         public virtual ByteReader ReceiveExtraData(byte[] extraData)
@@ -118,38 +119,38 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnClientDestroy(NetworkClient client)
         {
-
+            Logger.Debug($"Triggered OnClientDestroy on {gameObject.name}. Client: {client}");
         }
 
         public virtual void OnModified(NetworkClient modifier)
         {
-
+            Logger.Debug($"Triggered OnModify on {gameObject.name}. Client: {modifier}");
         }
 
         public virtual void OnModified(INetworkObject modifiedObject, NetworkClient modifier)
         {
-
+            Logger.Debug($"Triggered OnModified on {gameObject.name}. Modified Object: {modifiedObject}, Client: {modifier}");
         }
 
         public virtual void OnModify(ObjectManagePacket modifier, NetworkClient client)
         {
-
+            Logger.Debug($"Triggered OnModify on {gameObject.name}. Packet: {modifier}, Client: {client}");
         }
 
 
         public virtual void OnDestroyed(INetworkObject destroyedObject, NetworkClient client)
         {
-
+            Logger.Debug($"Triggered OnDestroyed on {gameObject.name}. Destroyed Object: {destroyedObject}, Client: {client}");
         }
 
         public virtual void OnCreated(INetworkObject createdObject, NetworkClient client)
         {
-
+            Logger.Debug($"Triggered OnCreated on {gameObject.name}. Created Object: {createdObject}, Client: {client}");
         }
 
         public virtual void OnServerDestroy()
         {
-
+            Logger.Debug($"Triggered OnServerDestroy on {gameObject.name}");
         }
 
         public virtual void Destroy()
@@ -176,17 +177,17 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnServerStarted()
         {
-
+            Logger.Debug($"Triggered OnServerStarted on {gameObject.name}");
         }
 
         public virtual void OnServerReady()
         {
-
+            Logger.Debug($"Triggered OnServerReady on {gameObject.name}");
         }
 
         public virtual void OnServerStopped()
         {
-
+            Logger.Debug($"Triggered OnServerStopped on {gameObject.name}");
         }
 
         void Awake()
@@ -418,28 +419,29 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
         {
-
+            Logger.Debug($"Triggered OnSyncVarChanged on {gameObject.name}. Client: {client}, Var: {what.Name}");
         }
 
         public virtual void OnSyncVarsChanged()
         {
-
+            Logger.Debug($"Triggered OnSyncVarsChanged on {gameObject.name}");
         }
 
         public virtual void OnOwnerNetworkSpawned(NetworkClient spawner)
         {
-
+            Logger.Debug($"Triggered OnOwnerNetworkSpawned on {gameObject.name} with Client: {spawner}");
         }
 
         public virtual void OnOwnerLocalSpawned(NetworkClient spawner)
         {
-
+            Logger.Debug($"Triggered OnOwnerLocalSpawned on {gameObject.name} with Client: {spawner}");
         }
 
         public virtual void OnOwnerDisconnected(NetworkClient client)
         {
-
+            Logger.Debug($"Triggered OnOwnerDisconnected on {gameObject.name} with Client: {client}");
         }
+
         protected List<int> _privs = new List<int>();
 
         public virtual bool HasPrivilege(int clientId)
@@ -465,12 +467,12 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnBeforeRegister()
         {
-
+            Logger.Debug($"Triggered OnBeforeRegister on {gameObject.name}");
         }
 
         public virtual void OnAfterRegister()
         {
-
+            Logger.Debug($"Triggered OnAfterRegister on {gameObject.name}");
         }
     }
 }
