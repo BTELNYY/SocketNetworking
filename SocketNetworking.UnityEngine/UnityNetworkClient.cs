@@ -7,7 +7,7 @@ namespace SocketNetworking.UnityEngine
 {
     public class UnityNetworkClient : MixedNetworkClient
     {
-        public UnityNetworkClient()
+        public UnityNetworkClient() : base()
         {
             UnityNetworkManager.Init();
             _clientObject = new GameObject($"{ClientID}");

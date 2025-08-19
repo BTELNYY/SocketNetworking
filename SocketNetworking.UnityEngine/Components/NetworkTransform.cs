@@ -143,6 +143,10 @@ namespace SocketNetworking.UnityEngine.Components
                 }
                 else
                 {
+                    if(NetworkClient.LocalClient == null)
+                    {
+                        return 0;
+                    }
                     return NetworkClient.LocalClient.Latency;
                 }
             }
@@ -152,7 +156,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                return Time.deltaTime * (float)(Latency / 0.5);
+                return Time.deltaTime * Mathf.Clamp((float)(Latency / 0.5), 1f, 1000f);
             }
         }
 

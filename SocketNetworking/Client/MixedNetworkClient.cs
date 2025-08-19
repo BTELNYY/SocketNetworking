@@ -13,7 +13,7 @@ namespace SocketNetworking.Client
     /// </summary>
     public class MixedNetworkClient : TcpNetworkClient
     {
-        public MixedNetworkClient()
+        public MixedNetworkClient() : base()
         {
             Transport = new TcpTransport();
             _networkEncryptionManager = new NetworkEncryption(this);

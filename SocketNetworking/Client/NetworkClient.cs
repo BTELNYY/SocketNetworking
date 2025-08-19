@@ -43,7 +43,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected NetworkClient()
+        protected NetworkClient() : base()
         {
             Log = new Log()
             {

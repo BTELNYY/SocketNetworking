@@ -12,7 +12,7 @@ namespace SocketNetworking.Client
     /// </summary>
     public class TcpNetworkClient : NetworkClient
     {
-        public TcpNetworkClient()
+        public TcpNetworkClient() : base()
         {
             Transport = new TcpTransport();
         }
