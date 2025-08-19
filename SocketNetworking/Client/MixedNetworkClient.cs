@@ -123,7 +123,7 @@ namespace SocketNetworking.Client
                     {
                         if (!UdpTransport.IsConnected)
                         {
-                            return;
+                            throw new InvalidOperationException("Trying to send Priority packets when priority is not available.");
                         }
                         ex = UdpTransport.Send(fullBytes, packet.Destination);
                     }
@@ -131,15 +131,15 @@ namespace SocketNetworking.Client
                     {
                         if (!TcpTransport.IsConnected)
                         {
-                            return;
+                            throw new InvalidOperationException("Trying to send packets when transport is not connected!");
                         }
                         ex = Transport.Send(fullBytes, packet.Destination);
                     }
-                    //Log.Debug("Packet sent!");
                     if (ex != null)
                     {
                         throw ex;
                     }
+                    Log.Debug("Packet sent! " + packet.ToString());
                 }
                 catch (Exception ex)
                 {
@@ -183,7 +183,7 @@ namespace SocketNetworking.Client
 
         public override void InitRemoteClient(int clientId, NetworkTransport socket)
         {
-            base.ClientIdUpdated += MixedNetworkClient_ClientIdUpdated;
+            ClientIdUpdated += MixedNetworkClient_ClientIdUpdated;
             base.InitRemoteClient(clientId, socket);
         }
 

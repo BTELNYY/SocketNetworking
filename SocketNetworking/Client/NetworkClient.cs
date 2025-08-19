@@ -561,6 +561,7 @@ namespace SocketNetworking.Client
                 {
                     Log.Success("Handshake Successful.");
                 }
+                Log.Debug("Update connection state");
             }
         }
 
@@ -816,16 +817,23 @@ namespace SocketNetworking.Client
         public virtual void InitRemoteClient(int clientId, NetworkTransport socket)
         {
             _clientId = clientId;
+            Log.Debug("Update ClientID");
             Log.Prefix = $"[Client {clientId}]";
             Transport = socket;
+            Log.Debug("Set Transport");
             _clientLocation = ClientLocation.Remote;
             if (NetworkServer.Authenticator != null)
             {
+                Log.Debug("Set auth provider.");
                 AuthenticationProvider = (AuthenticationProvider)Activator.CreateInstance(NetworkServer.Authenticator);
             }
+            Log.Debug("OnRemoteClientConnected Subscribe");
             ClientConnected += OnRemoteClientConnected;
+            Log.Debug("OnRemoteClientConnected Fire event");
             ClientConnected?.Invoke();
+            Log.Debug("Client Connected invoke!");
             ReadyStateChanged += OnReadyStateChanged;
+            Log.Debug("ReadyStateChanged subscribe!");
             //_packetReaderThread = new Thread(PacketReaderThreadMethod);
             //_packetReaderThread.Start();
             //_packetSenderThread = new Thread(PacketSenderThreadMethod);
@@ -1101,6 +1109,7 @@ namespace SocketNetworking.Client
             }
             else
             {
+                Log.Debug("Enqueue packet");
                 _toSendPackets.Enqueue(packet);
                 if (ManualPacketSend)
                 {
@@ -1248,6 +1257,7 @@ namespace SocketNetworking.Client
             {
                 Configuration = ClientConfiguration
             };
+            Log.Debug(dataPacket.ToString());
             Send(dataPacket);
         }
 
@@ -1257,6 +1267,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
+            Log.Debug("Update con state!");
             CurrentConnectionState = ConnectionState.Handshake;
         }
 
@@ -1295,14 +1306,14 @@ namespace SocketNetworking.Client
                 byte[] fullBytes = SerializePacket(packet);
                 try
                 {
-                    //Log.Debug($"Sending packet: {packet.ToString()}");
+                    Log.Debug($"Sending packet: {packet.ToString()}");
                     //bytesSent += (ulong)fullBytes.Length;
                     Exception ex = Transport.Send(fullBytes, packet.Destination);
                     if (ex != null)
                     {
                         throw ex;
                     }
-                    //Log.Debug("Packet sent!");
+                    Log.Debug("Packet sent!");
                 }
                 catch (Exception ex)
                 {
@@ -1320,6 +1331,16 @@ namespace SocketNetworking.Client
         /// <param name="packet"></param>
         protected virtual void PreparePacket(ref Packet packet)
         {
+            if (packet == null)
+            {
+                Log.Error("Packet is null!");
+                return;
+            }
+            if(Transport == null || Transport.LocalEndPoint == null || Transport.Peer == null)
+            {
+                Log.Error("Packet prep failed: Transport error.");
+                return;
+            }
             packet.Source = Transport.LocalEndPoint;
             packet.SendTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             //Port 0 is not a valid port.
@@ -1491,9 +1512,11 @@ namespace SocketNetworking.Client
                 StopClient();
                 return;
             }
+            Log.Debug("Do latency check!");
             DoLatencyCheck();
             if (!Transport.DataAvailable)
             {
+                Log.Debug("No data on transport!");
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
@@ -1579,6 +1602,7 @@ namespace SocketNetworking.Client
             //StringBuilder hex1 = new StringBuilder(fullPacket.Length * 2);
             //Log.Debug("Raw Deserialized Packet: \n" + hex1.ToString());
             PacketRead?.Invoke(header, fullPacket);
+            Log.Debug($"Read Packet success: {header.ToString()}");
             if (ManualPacketHandle)
             {
                 ReadPacketInfo packetInfo = new ReadPacketInfo()

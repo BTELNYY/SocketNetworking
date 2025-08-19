@@ -9,14 +9,14 @@ namespace SocketNetworking.UnityEngine
     {
         public UnityNetworkClient() : base()
         {
-            UnityNetworkManager.Init();
-            _clientObject = new GameObject($"{ClientID}");
-            NetworkClientReference reference = _clientObject.AddComponent<NetworkClientReference>();
-            reference.NetworkClient = this;
-            GameObject.DontDestroyOnLoad(_clientObject);
-            //ManualPacketHandle = true;
+            //UnityNetworkManager.Init();
+            //_clientObject = new GameObject($"{ClientID}");
+            //NetworkClientReference reference = _clientObject.AddComponent<NetworkClientReference>();
+            //reference.NetworkClient = this;
+            //GameObject.DontDestroyOnLoad(_clientObject);
+            ManualPacketHandle = true;
             ClientIdUpdated += UnityNetworkClient_ClientIdUpdated;
-            //PacketReadyToHandle += UnityNetworkClient_PacketReadyToHandle;
+            PacketReadyToHandle += UnityNetworkClient_PacketReadyToHandle;
         }
 
         private void UnityNetworkClient_PacketReadyToHandle(Shared.PacketSystem.PacketHeader arg1, byte[] arg2)
@@ -31,7 +31,7 @@ namespace SocketNetworking.UnityEngine
 
         private void UnityNetworkClient_ClientIdUpdated()
         {
-            _clientObject.name = ClientID.ToString();
+            //_clientObject.name = ClientID.ToString();
         }
 
 

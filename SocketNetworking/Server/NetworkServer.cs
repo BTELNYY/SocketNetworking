@@ -318,14 +318,17 @@ namespace SocketNetworking.Server
             _serverState = ServerState.Started;
             if (!Validate())
             {
+                Log.Error("Server validator error.");
                 return;
             }
             _serverInstance = this;
             handlers.Capacity = Config.DefaultThreads;
+            Log.Info($"Default Threads: {Config.DefaultThreads}");
             for (int i = 0; i < Config.DefaultThreads; i++)
             {
                 ClientHandler handler = new ClientHandler();
                 handlers.Add(handler);
+                Log.Info("Start Thread ID: " + i);
                 handler.Start();
             }
             _serverThread = new Thread(ServerStartThread);
