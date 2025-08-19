@@ -1017,18 +1017,25 @@ namespace SocketNetworking.Client
                 return;
             }
             Log.Info("Starting client!");
+            Log.Debug("Threads Create");
             _packetReaderThread?.Abort();
             _packetReaderThread = new Thread(PacketReaderThreadMethod);
             _packetSenderThread?.Abort();
             _packetSenderThread = new Thread(PacketSenderThreadMethod);
+            Log.Debug("Threads Create Done");
             _clientActive = true;
             _shuttingDown = false;
+            Log.Debug("Threads Start");
             _packetReaderThread.Start();
             _packetSenderThread.Start();
+            Log.Debug("Threads Start Done");
+            Log.Debug("Create Queues");
             _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
             _toSendPackets = new ConcurrentQueue<Packet>();
+            Log.Debug("Done Create Queues");
             ClientConnected?.Invoke();
             Clients.Add(this);
+            Log.Debug("Client started");
         }
 
         #endregion

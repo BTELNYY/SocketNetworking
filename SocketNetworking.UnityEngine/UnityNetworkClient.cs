@@ -14,9 +14,9 @@ namespace SocketNetworking.UnityEngine
             NetworkClientReference reference = _clientObject.AddComponent<NetworkClientReference>();
             reference.NetworkClient = this;
             GameObject.DontDestroyOnLoad(_clientObject);
-            ManualPacketHandle = true;
+            //ManualPacketHandle = true;
             ClientIdUpdated += UnityNetworkClient_ClientIdUpdated;
-            PacketReadyToHandle += UnityNetworkClient_PacketReadyToHandle;
+            //PacketReadyToHandle += UnityNetworkClient_PacketReadyToHandle;
         }
 
         private void UnityNetworkClient_PacketReadyToHandle(Shared.PacketSystem.PacketHeader arg1, byte[] arg2)

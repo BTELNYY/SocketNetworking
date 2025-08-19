@@ -97,13 +97,18 @@ namespace SocketNetworking.Server
                     IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                     Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on TCP.");
                     MixedNetworkClient client = (MixedNetworkClient)Activator.CreateInstance(ClientType);
+                    Log.Debug("Client created");
                     client.InitRemoteClient(counter, tcpTransport);
+                    Log.Debug("Client initted");
                     AddClient(client, counter);
+                    Log.Debug("Client added");
                     _awaitingUDPConnection.Add(client);
+                    Log.Debug("Client awaiting UDP.");
                     InvokeClientConnected(client);
                     ClientConnectRequest disconnect = AcceptClient(client);
                     if (!disconnect.Accepted)
                     {
+                        Log.Info("Rejected Client Connection with reason: " + disconnect.Message);
                         client.Disconnect(disconnect.Message);
                         socket?.Close();
                         return;
