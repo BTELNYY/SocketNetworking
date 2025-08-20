@@ -44,9 +44,13 @@ namespace SocketNetworking.UnityEngine
                 return;
             }
             _initted = true;
+            Log.GlobalInfo("Setup Main Thread detection.");
+            NetworkBehavior.mainThread = System.Threading.Thread.CurrentThread;
+            Log.GlobalInfo("Import current assembly to networking manager...");
             NetworkManager.ImportAssembly(Assembly.GetExecutingAssembly());
             NetworkServer.ClientType = typeof(UnityNetworkClient);
             RegisterSpawner(typeof(NetworkIdentity), Spawn, true);
+            Log.GlobalInfo("Set up dispatcher!");
             _dispatcherObject = new GameObject("Dispatcher");
             _dispatcher = _dispatcherObject.AddComponent<UnityMainThreadDispatcher>();
             GameObject.DontDestroyOnLoad(_dispatcherObject);

@@ -59,6 +59,15 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public override void Destroy()
+        {
+            foreach(NetworkComponent component in _components)
+            {
+                component.Destroy();
+            }
+            base.Destroy();
+        }
+
         public virtual void SetupComponents()
         {
 

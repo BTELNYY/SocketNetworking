@@ -12,13 +12,15 @@ namespace SocketNetworking.UnityEngine.Components
     {
         public ComponentSyncMode SyncMode { get; set; } = ComponentSyncMode.Automatic;
 
+        public float MinimumDifferenceForSync { get; set; } = 0.001f;
+
         public void SyncIfIsDifferent()
         {
             if (!IsPrivileged)
             {
                 return;
             }
-            if (position.Value != transform.position)
+            if (position.Value != transform.position && Vector3.Distance(position.Value, transform.position) > MinimumDifferenceForSync)
             {
                 position.Value = transform.position;
             }
@@ -30,10 +32,19 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 localRotation.Value = transform.localRotation;
             }
-            if (localPosition.Value != transform.localPosition)
+            if (localPosition.Value != transform.localPosition && Vector3.Distance(localPosition.Value, transform.localPosition) > MinimumDifferenceForSync)
             {
                 localPosition.Value = transform.localPosition;
             }
+        }
+
+        [NetworkInvokable(Direction = NetworkDirection.Server, Broadcast = true, CallLocal = true)]
+        private void ClientTeleport(NetworkHandle handle)
+        {
+            transform.rotation = rotation.Value;
+            transform.localRotation = localRotation.Value;
+            transform.position = position.Value;
+            transform.localPosition = localPosition.Value;
         }
 
         void FixedUpdate()
@@ -65,6 +76,7 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkLocalPosition = NetworkLocalPosition;
             NetworkLocalRotation = NetworkLocalRotation;
             NetworkScale = NetworkScale;
+            NetworkInvoke(nameof(ClientTeleport));
         }
 
         public override void OnNetworkSpawned(NetworkClient spawner)
@@ -76,6 +88,11 @@ namespace SocketNetworking.UnityEngine.Components
         void Awake()
         {
             UnityNetworkManager.Register(this);
+            //maybe, dont forget to set the default locations?
+            _rotation = transform.rotation;
+            _localRotation = transform.localRotation;
+            _position = transform.position;
+            _localPosition = transform.localPosition;
             //Scale is set and not lerped because, why the fuck would it be lerped?
             scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (scale) =>
             {
@@ -156,7 +173,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                return Time.deltaTime * Mathf.Clamp((float)(Latency / 0.5), 1f, 1000f);
+                return Time.deltaTime * Mathf.Clamp((float)(Latency / 0.5), 0.1f, 1000f);
             }
         }
 

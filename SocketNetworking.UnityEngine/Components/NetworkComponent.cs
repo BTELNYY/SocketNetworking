@@ -73,6 +73,11 @@ namespace SocketNetworking.UnityEngine.Components
             OverrideIdentity(_identity);
         }
 
+        public override void Destroy()
+        {
+            Destroy(this);
+        }
+
         void Awake()
         {
             EnsureIdentityExists();

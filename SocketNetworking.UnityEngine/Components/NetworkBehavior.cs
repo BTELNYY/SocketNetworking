@@ -16,11 +16,10 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkBehavior : MonoBehaviour, INetworkObject
     {
-        private Thread mainThread;
+        internal static Thread mainThread;
 
         private void Awake()
         {
-            mainThread = System.Threading.Thread.CurrentThread;
             NetworkServer.ServerReady += OnServerReady;
             NetworkServer.ServerStopped += OnServerStopped;
             NetworkServer.ServerStarted += OnServerStarted;
@@ -30,7 +29,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                return mainThread.Equals(System.Threading.Thread.CurrentThread);
+                return mainThread.Equals(Thread.CurrentThread);
             }
         }
 
@@ -46,11 +45,17 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
+                if(gameObject == null)
+                {
+                    Logger.Warning("GameObject is null in Active call!");
+                    Destroy(this);
+                    return false;
+                }
                 return gameObject.activeSelf;
             }
             set
             {
-                gameObject.SetActive(value);
+                gameObject?.SetActive(value);
             }
         }
 
@@ -244,7 +249,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void Destroy()
         {
-            GameObject.Destroy(this);
+            GameObject.Destroy(gameObject);
         }
 
 

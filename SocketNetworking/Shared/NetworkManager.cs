@@ -1392,6 +1392,10 @@ namespace SocketNetworking.Shared
         /// <exception cref="SecurityException"></exception>
         public static NetworkInvocationPacket NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args, bool priority = false, bool ignoreResult = true)
         {
+            if (args == null)
+            {
+                args = new object[0];
+            }
             if (target == null)
             {
                 throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.", new ArgumentNullException("target"));
@@ -1501,6 +1505,10 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public static T NetworkInvokeBlocking<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000, bool priority = false)
         {
+            if (args == null)
+            {
+                args = new object[0];
+            }
             NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
             MethodInfo method = target.GetType().GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault(x => x.Name == methodName);
             if (method != null && method.ReturnType == typeof(void))
