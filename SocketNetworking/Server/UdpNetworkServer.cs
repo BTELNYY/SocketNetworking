@@ -30,8 +30,8 @@ namespace SocketNetworking.Server
             int counter = 0;
             IPEndPoint listener = new IPEndPoint(IPAddress.Any, Config.Port);
             UdpClient udpClient = new UdpClient(listener);
-            InvokeServerReady();
             _serverState = ServerState.Ready;
+            InvokeServerReady();
             while (true)
             {
                 if (_isShuttingDown)
