@@ -102,14 +102,14 @@ namespace SocketNetworking.Misc
                         NetworkClient client = _clients[i];
                         if (client.CurrentConnectionState == Shared.ConnectionState.Disconnected || client.ShuttingDown)
                         {
-                            client.Log.Debug("RUNNER: Removing client because its disconnected or shutting down.");
+                            Log.GlobalWarning($"Client {i} is being removed from the current handler, it has been disconnected.");
                             _clients.RemoveAt(i);
                         }
                         else
                         {
-                            client.Log.Debug("RUNNER: READ");
+                            //client.Log.Debug("RUNNER: READ");
                             client.ReadNext();
-                            client.Log.Debug("RUNNER: WRITE");
+                            //client.Log.Debug("RUNNER: WRITE");
                             client.WriteNext();
                         }
                     }

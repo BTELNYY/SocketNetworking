@@ -10,12 +10,25 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkIdentity : NetworkBehavior
     {
+        private void Awake()
+        {
+            if (AutoRegister && !UnityNetworkManager.IsPrefab(gameObject))
+            {
+                RegisterObject();
+            }
+        }
+
         public override bool Spawnable => true;
 
         /// <summary>
         /// If true, <see cref="INetworkObject.OnSync(NetworkClient)"/> will be used to call <see cref="NetworkObjectExtensions.NetworkSpawn(INetworkObject, Client.NetworkClient)"/> to spawn this object on the new client.
         /// </summary>
         public bool AutoSpawn = false;
+
+        /// <summary>
+        /// If true, and if this Identity is not a prefab, will automatically register using <see cref="NetworkBehavior.RegisterObject()"/>
+        /// </summary>
+        public virtual bool AutoRegister => true;
 
         private List<NetworkComponent> _components = new List<NetworkComponent>();
 

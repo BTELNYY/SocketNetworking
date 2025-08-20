@@ -140,6 +140,16 @@ namespace SocketNetworking.UnityEngine
         }
 
         /// <summary>
+        /// Returns if the current <paramref name="object"/> is a registered prefab by comparing the <see cref="GameObject.GetInstanceID()"/>.
+        /// </summary>
+        /// <param name="object"></param>
+        /// <returns></returns>
+        public static bool IsPrefab(GameObject @object)
+        {
+            return _prefabSpawnIds.Values.FirstOrDefault(x => x.GetInstanceID() == @object.GetInstanceID()) != default(GameObject);
+        }
+
+        /// <summary>
         /// Registers a <see cref="GameObject"/> to be used as a prefab. The <see cref="GameObject"/> should Not be destroyed after being registered. The object Must have a <see cref="NetworkIdentity"/> attached.
         /// </summary>
         /// <param name="id">

@@ -105,6 +105,7 @@ namespace SocketNetworking.Client
                 PreparePacket(ref packet);
                 if (!InvokePacketSendRequest(packet))
                 {
+                    Log.Debug("Packet send was rejected.");
                     return;
                 }
                 if (packet.Flags.HasFlag(PacketFlags.Priority))
@@ -139,7 +140,7 @@ namespace SocketNetworking.Client
                     {
                         throw ex;
                     }
-                    Log.Debug("Packet sent! " + packet.ToString());
+                    //Log.Debug("Packet sent! " + packet.ToString());
                 }
                 catch (Exception ex)
                 {

@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using SocketNetworking.Client;
-using SocketNetworking.UnityEngine.Components;
+﻿using SocketNetworking.Client;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine
@@ -22,7 +20,7 @@ namespace SocketNetworking.UnityEngine
         private void UnityNetworkClient_PacketReadyToHandle(Shared.PacketSystem.PacketHeader arg1, byte[] arg2)
         {
             Log.Debug("Packet Ready to handle!");
-            UnityNetworkManager.Dispatcher.Enqueue(() => 
+            UnityNetworkManager.Dispatcher.Enqueue(() =>
             {
                 Log.Debug("Next packet handle!");
                 HandleNextPacket();

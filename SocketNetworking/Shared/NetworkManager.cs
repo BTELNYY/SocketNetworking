@@ -649,6 +649,7 @@ namespace SocketNetworking.Shared
         {
             foreach (INetworkObject @object in NetworkObjects.Keys)
             {
+                Log.Debug($"update obj: {@object.NetworkID}");
                 @object.OnConnected(client);
             }
         }

@@ -143,7 +143,7 @@ namespace SocketNetworking.UnityEngine.Components
                 }
                 else
                 {
-                    if(NetworkClient.LocalClient == null)
+                    if (NetworkClient.LocalClient == null)
                     {
                         return 0;
                     }

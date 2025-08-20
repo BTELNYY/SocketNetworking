@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
@@ -15,6 +16,24 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkBehavior : MonoBehaviour, INetworkObject
     {
+        private Thread mainThread;
+
+        private void Awake()
+        {
+            mainThread = System.Threading.Thread.CurrentThread;
+            NetworkServer.ServerReady += OnServerReady;
+            NetworkServer.ServerStopped += OnServerStopped;
+            NetworkServer.ServerStarted += OnServerStarted;
+        }
+
+        public bool IsOnMainThread
+        {
+            get
+            {
+                return mainThread.Equals(System.Threading.Thread.CurrentThread);
+            }
+        }
+
         public virtual OwnershipMode FallBackIfOwnerDisconnects
         {
             get
@@ -52,28 +71,43 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual bool Spawnable => true;
 
-        public virtual ObjectVisibilityMode ObjectVisibilityMode { get; set; }
+        public virtual ObjectVisibilityMode ObjectVisibilityMode { get; set; } = ObjectVisibilityMode.ServerOnly;
 
         public virtual bool AllowPublicModification => false;
 
-        public virtual int OwnerClientID { get; set; }
+        public virtual int OwnerClientID { get; set; } = 0;
 
-        public virtual OwnershipMode OwnershipMode { get; set; }
+        public virtual OwnershipMode OwnershipMode { get; set; } = OwnershipMode.Server;
 
-        public virtual int NetworkID { get; set; }
+        public virtual int NetworkID { get; set; } = 0;
 
         public virtual void OnSync(NetworkClient client)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnSync on {gameObject.name}. Client: {client}");
         }
 
         public virtual void OnAdded(INetworkObject addedObject)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnAdded on {gameObject.name}. Object: {addedObject}");
         }
 
         public virtual void OnRemoved(INetworkObject removedObject)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnRemoved on {gameObject.name}. Object: {removedObject}");
         }
 
@@ -89,21 +123,41 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnReady(NetworkClient client, bool isReady)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnReady on {gameObject.name}. Client: {client}, Ready: {isReady}");
         }
 
         public virtual void OnConnected(NetworkClient client)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnConnected on {gameObject.name}. Client: {client}");
         }
 
         public virtual void OnNetworkSpawned(NetworkClient spawner)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnNetworkSpawned on {gameObject.name}. Client: {spawner}");
         }
 
         public virtual void OnLocalSpawned(ObjectManagePacket packet)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnLocalSpawned on {gameObject.name}. Packet: {packet}");
         }
 
@@ -119,37 +173,72 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnClientDestroy(NetworkClient client)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnClientDestroy on {gameObject.name}. Client: {client}");
         }
 
         public virtual void OnModified(NetworkClient modifier)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnModify on {gameObject.name}. Client: {modifier}");
         }
 
         public virtual void OnModified(INetworkObject modifiedObject, NetworkClient modifier)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnModified on {gameObject.name}. Modified Object: {modifiedObject}, Client: {modifier}");
         }
 
         public virtual void OnModify(ObjectManagePacket modifier, NetworkClient client)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnModify on {gameObject.name}. Packet: {modifier}, Client: {client}");
         }
 
 
         public virtual void OnDestroyed(INetworkObject destroyedObject, NetworkClient client)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnDestroyed on {gameObject.name}. Destroyed Object: {destroyedObject}, Client: {client}");
         }
 
         public virtual void OnCreated(INetworkObject createdObject, NetworkClient client)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnCreated on {gameObject.name}. Created Object: {createdObject}, Client: {client}");
         }
 
         public virtual void OnServerDestroy()
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnServerDestroy on {gameObject.name}");
         }
 
@@ -177,29 +266,32 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnServerStarted()
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnServerStarted on {gameObject.name}");
         }
 
         public virtual void OnServerReady()
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnServerReady on {gameObject.name}");
         }
 
         public virtual void OnServerStopped()
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnServerStopped on {gameObject.name}");
-        }
-
-        void Awake()
-        {
-            NetworkServer.ServerReady += OnServerReady;
-            NetworkServer.ServerStopped += OnServerStopped;
-            NetworkServer.ServerStarted += OnServerStarted;
-        }
-
-        void Start()
-        {
-            RegisterObject();
         }
 
         /// <summary>
@@ -419,26 +511,51 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnSyncVarChanged on {gameObject.name}. Client: {client}, Var: {what.Name}");
         }
 
         public virtual void OnSyncVarsChanged()
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnSyncVarsChanged on {gameObject.name}");
         }
 
         public virtual void OnOwnerNetworkSpawned(NetworkClient spawner)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnOwnerNetworkSpawned on {gameObject.name} with Client: {spawner}");
         }
 
         public virtual void OnOwnerLocalSpawned(NetworkClient spawner)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnOwnerLocalSpawned on {gameObject.name} with Client: {spawner}");
         }
 
         public virtual void OnOwnerDisconnected(NetworkClient client)
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnOwnerDisconnected on {gameObject.name} with Client: {client}");
         }
 
@@ -467,11 +584,21 @@ namespace SocketNetworking.UnityEngine.Components
 
         public virtual void OnBeforeRegister()
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnBeforeRegister on {gameObject.name}");
         }
 
         public virtual void OnAfterRegister()
         {
+            if (!IsOnMainThread)
+            {
+                Logger.Warning("Called function on gameobject while not on main thread!");
+                return;
+            }
             Logger.Debug($"Triggered OnAfterRegister on {gameObject.name}");
         }
     }
