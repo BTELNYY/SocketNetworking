@@ -393,12 +393,11 @@ namespace SocketNetworking.Server
                 }
                 else
                 {
-                    NetworkClient cursedClient = (NetworkClient)Convert.ChangeType(client, ClientType);
-                    _clients.Add(clientId, cursedClient);
+                    _clients.Add(clientId, client);
                     ClientHandler handler = NextHandler();
-                    handler.AddClient(cursedClient);
-                    //Log.Debug($"Handler Client count: {handler.CurrentClientCount}");
-                    //Log.Debug($"Added client. ID: {clientId}, Type: {cursedClient.GetType().FullName}");
+                    handler.AddClient(client);
+                    Log.Debug($"Handler Client count: {handler.CurrentClientCount}");
+                    Log.Debug($"Added client. ID: {clientId}, Type: {client.GetType().FullName}");
                 }
             }
         }

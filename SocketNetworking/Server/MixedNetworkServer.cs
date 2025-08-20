@@ -67,8 +67,8 @@ namespace SocketNetworking.Server
             UdpReader = new Thread(AcceptUDP);
             UdpReader.Start();
             int counter = 0;
-            InvokeServerReady();
             _serverState = ServerState.Ready;
+            InvokeServerReady();
             while (true)
             {
                 if (_isShuttingDown)
