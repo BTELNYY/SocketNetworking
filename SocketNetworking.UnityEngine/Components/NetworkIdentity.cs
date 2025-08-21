@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using SocketNetworking.Client;
 using SocketNetworking.Shared.NetworkObjects;
@@ -66,6 +67,16 @@ namespace SocketNetworking.UnityEngine.Components
                 component.Destroy();
             }
             base.Destroy();
+        }
+
+        public List<NetworkComponent> Components => _components;
+
+        public void DestroyComponents()
+        {
+            foreach(NetworkComponent component in _components)
+            {
+                component.Destroy();
+            }
         }
 
         public virtual void SetupComponents()
