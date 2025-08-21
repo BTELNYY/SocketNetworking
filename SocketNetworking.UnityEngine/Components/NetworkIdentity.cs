@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using SocketNetworking.Client;
 using SocketNetworking.Shared.NetworkObjects;
@@ -62,7 +61,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public override void Destroy()
         {
-            foreach(NetworkComponent component in _components)
+            foreach (NetworkComponent component in _components)
             {
                 component.Destroy();
             }
@@ -73,7 +72,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void DestroyComponents()
         {
-            foreach(NetworkComponent component in _components)
+            foreach (NetworkComponent component in _components)
             {
                 component.Destroy();
             }

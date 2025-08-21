@@ -189,7 +189,7 @@ namespace SocketNetworking.Shared
         public static void ImportAssembly(Assembly target)
         {
             ImportCustomPackets(target);
-            List<Type> applicableTypes = target.GetTypes().ToList();
+            List<Type> applicableTypes = target.GetTypes().Where(x => x.IsSubclassDeep(typeof(NetworkClient)) || x.GetInterfaces().Contains(typeof(INetworkObject)) || x.GetInterfaces().Contains(typeof(ITypeWrapper))).ToList();
             foreach (Type t in applicableTypes)
             {
                 NetworkObjectData data = GetNetworkObjectData(t);
@@ -827,6 +827,7 @@ namespace SocketNetworking.Shared
             {
                 return PreCache.FirstOrDefault(x => x.TargetObject == t);
             }
+            Log.Info($"Type {t.Name} has never been seen before, registering.");
             Type baseType = t.BaseType;
             if (t.GetInterfaces().Contains(typeof(ITypeWrapper)))
             {
@@ -909,6 +910,7 @@ namespace SocketNetworking.Shared
                 syncVars.Add(field);
             }
             networkObjectCache.SyncVars = syncVars;
+            Log.Info($"Type {t.Name} has the following network object information: {networkObjectCache.ToString()}");
             return networkObjectCache;
         }
 
@@ -1088,13 +1090,13 @@ namespace SocketNetworking.Shared
                     FieldInfo field = networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar);
                     if (field == default)
                     {
-                        Log.Warning($"No such Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName}");
+                        Log.Warning($"No such Network Sync Var '{data.TargetVar}' on object type {obj.GetType().FullName}, object: {obj}");
                         continue;
                     }
                     INetworkSyncVar syncVar = field.GetValue(obj) as INetworkSyncVar;
                     if (syncVar == default)
                     {
-                        Log.Warning($"Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName} is not an actual sync var, but is listed as one.");
+                        Log.Warning($"Network Sync Var '{data.TargetVar}' on object {obj.GetType().FullName} is not an actual sync var, but is listed as one. Object: {obj}");
                         continue;
                     }
                     if (syncVar.OwnershipMode != OwnershipMode.Public)
@@ -1575,6 +1577,11 @@ namespace SocketNetworking.Shared
         public List<ValueTuple<MethodInfo, NetworkInvokable>> Invocables;
 
         public Type TargetObject;
+
+        public override string ToString()
+        {
+            return $"Type: {TargetObject.FullName}, Packet Listeners: {Listeners.Count}, SyncVars: {string.Join(", ", SyncVars.Select(x => x.Name))}, Invokables: {string.Join(", ", Invocables.Select(x => x.Item1.Name))}";
+        }
     }
 
     public class PacketListenerData

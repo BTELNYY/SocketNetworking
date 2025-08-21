@@ -1,4 +1,5 @@
-﻿using SocketNetworking.Client;
+﻿using System;
+using SocketNetworking.Client;
 using UnityEngine;
 
 namespace SocketNetworking.UnityEngine
@@ -21,7 +22,14 @@ namespace SocketNetworking.UnityEngine
         {
             UnityNetworkManager.Dispatcher.Enqueue(() =>
             {
-                HandleNextPacket();
+                try
+                {
+                    HandleNextPacket();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Packet Handling Error: \n{ex.ToString()}");
+                }
             });
         }
 

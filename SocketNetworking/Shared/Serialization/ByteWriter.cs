@@ -223,7 +223,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte written = Convert.ToByte(data);
-                
+
                 _workingSetData = _workingSetData.Concat(new byte[] { written }).ToArray();
             }
         }

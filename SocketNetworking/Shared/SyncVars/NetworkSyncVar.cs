@@ -207,6 +207,10 @@ namespace SocketNetworking.Shared.SyncVars
         public virtual SyncVarData GetData()
         {
             SerializedData data = ByteConvert.Serialize(value);
+            if (Name == string.Empty)
+            {
+                throw new InvalidOperationException($"SyncVar has no name! NetworkObject: {OwnerObject}");
+            }
             SyncVarData syncVarData = new SyncVarData()
             {
                 NetworkIDTarget = OwnerObject.NetworkID,

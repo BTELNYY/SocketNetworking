@@ -146,7 +146,7 @@ namespace SocketNetworking.Shared.PacketSystem
 
         public override string ToString()
         {
-            string result = $"Size: {Size}, Type: {Type}, Flags: {Flags.GetActiveFlagsString()}, Destination: {Destination}, Source: {Source}, SendTime: {SendTime}";
+            string result = $"Size: {Size}, Type: {Type}, Flags: {Flags.GetActiveFlagsString()}, Destination: {Destination?.ToString()}, Source: {Source?.ToString()}, SendTime: {SendTime}";
             return result;
         }
     }
