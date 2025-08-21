@@ -22,6 +22,11 @@ namespace SocketNetworking.UnityEngine.Modding.Patches.UnityTransform.Methods
             {
                 return;
             }
+            if (!transform.Enabled)
+            {
+                Log.GlobalWarning($"NetworkTransform is not enabled! Identity: {transform.Identity}");
+                return;
+            }
             transform.NetworkPosition = position;
             transform.NetworkRotation = rotation;
         }

@@ -20,31 +20,31 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 return;
             }
-            if (position.Value != transform.position && Vector3.Distance(position.Value, transform.position) > MinimumDifferenceForSync)
+            if (position.Value != Identity.gameObject.transform.position && Vector3.Distance(position.Value, Identity.gameObject.transform.position) > MinimumDifferenceForSync)
             {
-                position.Value = transform.position;
+                position.Value = Identity.gameObject.transform.position;
             }
-            if (rotation.Value != transform.rotation)
+            if (rotation.Value != Identity.gameObject.transform.rotation)
             {
-                rotation.Value = transform.rotation;
+                rotation.Value = Identity.gameObject.transform.rotation;
             }
-            if (localRotation.Value != transform.localRotation)
+            if (localRotation.Value != Identity.gameObject.transform.localRotation)
             {
-                localRotation.Value = transform.localRotation;
+                localRotation.Value = Identity.gameObject.transform.localRotation;
             }
-            if (localPosition.Value != transform.localPosition && Vector3.Distance(localPosition.Value, transform.localPosition) > MinimumDifferenceForSync)
+            if (localPosition.Value != Identity.gameObject.transform.localPosition && Vector3.Distance(localPosition.Value, Identity.gameObject.transform.localPosition) > MinimumDifferenceForSync)
             {
-                localPosition.Value = transform.localPosition;
+                localPosition.Value = Identity.gameObject.transform.localPosition;
             }
         }
 
         [NetworkInvokable(Direction = NetworkDirection.Server, Broadcast = true, CallLocal = true)]
         private void ClientTeleport(NetworkHandle handle)
         {
-            transform.rotation = rotation.Value;
-            transform.localRotation = localRotation.Value;
-            transform.position = position.Value;
-            transform.localPosition = localPosition.Value;
+            Identity.gameObject.transform.rotation = rotation.Value;
+            Identity.gameObject.transform.localRotation = localRotation.Value;
+            Identity.gameObject.transform.position = position.Value;
+            Identity.gameObject.transform.localPosition = localPosition.Value;
         }
 
         void FixedUpdate()
@@ -58,10 +58,11 @@ namespace SocketNetworking.UnityEngine.Components
 
         void Update()
         {
-            transform.localPosition = Vector3.Lerp(transform.localPosition, _localPosition, LerpTime);
-            transform.position = Vector3.Lerp(transform.position, _position, LerpTime);
-            transform.localRotation = Quaternion.Slerp(transform.localRotation, _localRotation, LerpTime);
-            transform.rotation = Quaternion.Slerp(transform.rotation, _rotation, LerpTime);
+            Identity.gameObject.transform.localScale = _scale;
+            Identity.gameObject.transform.localPosition = Vector3.Lerp(Identity.gameObject.transform.localPosition, _localPosition, LerpTime);
+            Identity.gameObject.transform.position = Vector3.Lerp(Identity.gameObject.transform.position, _position, LerpTime);
+            Identity.gameObject.transform.localRotation = Quaternion.Slerp(Identity.gameObject.transform.localRotation, _localRotation, LerpTime);
+            Identity.gameObject.transform.rotation = Quaternion.Slerp(Identity.gameObject.transform.rotation, _rotation, LerpTime);
             if (SyncMode != ComponentSyncMode.FrameUpdate)
             {
                 return;
@@ -69,13 +70,42 @@ namespace SocketNetworking.UnityEngine.Components
             SyncIfIsDifferent();
         }
 
+        public override void OnBeforeRegister()
+        {
+            base.OnBeforeRegister();
+            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (scale) =>
+            {
+                _scale = scale;
+            });
+            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (rotation) =>
+            {
+                //Identity.gameObject.transform.rotation = rotation;
+                _rotation = rotation;
+            });
+            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (pos) =>
+            {
+                //Identity.gameObject.transform.position = pos;
+                _position = pos;
+            });
+            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (localRotation) =>
+            {
+                //Identity.gameObject.transform.localRotation = localRotation;
+                _localRotation = localRotation;
+            });
+            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (localPosition) =>
+            {
+                //Identity.gameObject.transform.localPosition = localPosition;
+                _localPosition = localPosition;
+            });
+        }
+
         public void ServerSync()
         {
-            NetworkPosition = NetworkPosition;
-            NetworkRotation = NetworkRotation;
-            NetworkLocalPosition = NetworkLocalPosition;
-            NetworkLocalRotation = NetworkLocalRotation;
-            NetworkScale = NetworkScale;
+            NetworkPosition = Identity.gameObject.transform.position;
+            NetworkRotation = Identity.gameObject.transform.rotation;
+            NetworkLocalPosition = Identity.gameObject.transform.localPosition;
+            NetworkLocalRotation = Identity.gameObject.transform.localRotation;
+            NetworkScale = Identity.gameObject.transform.localScale;
             NetworkInvoke(nameof(ClientTeleport));
         }
 
@@ -88,36 +118,16 @@ namespace SocketNetworking.UnityEngine.Components
         void Awake()
         {
             UnityNetworkManager.Register(this);
-            //maybe, dont forget to set the default locations?
-            _rotation = transform.rotation;
-            _localRotation = transform.localRotation;
-            _position = transform.position;
-            _localPosition = transform.localPosition;
-            //Scale is set and not lerped because, why the fuck would it be lerped?
-            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (scale) =>
-            {
-                transform.localScale = scale;
-            });
-            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (rotation) =>
-            {
-                //transform.rotation = rotation;
-                _rotation = rotation;
-            });
-            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (pos) =>
-            {
-                //transform.position = pos;
-                _position = pos;
-            });
-            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (localRotation) =>
-            {
-                //transform.localRotation = localRotation;
-                _localRotation = localRotation;
-            });
-            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (localPosition) =>
-            {
-                //transform.localPosition = localPosition;
-                _localPosition = localPosition;
-            });
+            _rotation = Identity.gameObject.transform.rotation;
+            _localRotation = Identity.gameObject.transform.localRotation;
+            _position = Identity.gameObject.transform.position;
+            _localPosition = Identity.gameObject.transform.localPosition;
+            _scale = Identity.gameObject.transform.localScale;
+            NetworkPosition = Identity.gameObject.transform.position;
+            NetworkRotation = Identity.gameObject.transform.rotation;
+            NetworkLocalPosition = Identity.gameObject.transform.localPosition;
+            NetworkLocalRotation = Identity.gameObject.transform.localRotation;
+            NetworkScale = Identity.gameObject.transform.localScale;
         }
 
         void OnDestroy()
@@ -125,7 +135,15 @@ namespace SocketNetworking.UnityEngine.Components
             UnityNetworkManager.Unregister(this);
         }
 
+        public override void Destroy()
+        {
+            UnityNetworkManager.Unregister(this);
+            base.Destroy();
+        }
+
         private NetworkSyncVar<Vector3> scale;
+
+        private Vector3 _scale;
 
         private NetworkSyncVar<Quaternion> rotation;
 
@@ -181,7 +199,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                return transform.localScale;
+                return Identity.gameObject.transform.localScale;
             }
             set
             {
@@ -189,6 +207,11 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return;
                 }
+                if (scale == null)
+                {
+                    return;
+                }
+                _scale = value;
                 scale.Value = value;
             }
         }
@@ -197,7 +220,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                return transform.position;
+                return Identity.gameObject.transform.position;
             }
             set
             {
@@ -205,6 +228,11 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return;
                 }
+                if (position == null)
+                {
+                    return;
+                }
+                _position = value;
                 position.Value = value;
             }
         }
@@ -213,7 +241,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                return transform.localPosition;
+                return Identity.gameObject.transform.localPosition;
             }
             set
             {
@@ -221,6 +249,11 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return;
                 }
+                if (localPosition == null)
+                {
+                    return;
+                }
+                _localPosition = value;
                 localPosition.Value = value;
             }
         }
@@ -230,7 +263,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                return transform.rotation;
+                return Identity.gameObject.transform.rotation;
             }
             set
             {
@@ -238,6 +271,11 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return;
                 }
+                if (rotation == null)
+                {
+                    return;
+                }
+                _rotation = value;
                 rotation.Value = value;
             }
         }
@@ -246,7 +284,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                return transform.localRotation;
+                return Identity.gameObject.transform.localRotation;
             }
             set
             {
@@ -254,6 +292,11 @@ namespace SocketNetworking.UnityEngine.Components
                 {
                     return;
                 }
+                if (localRotation == null)
+                {
+                    return;
+                }
+                _localRotation = value;
                 localRotation.Value = value;
             }
         }
@@ -271,7 +314,7 @@ namespace SocketNetworking.UnityEngine.Components
         [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetNetworkRotation(SerializableVector3 euler, Space relativeTo)
         {
-            transform.Rotate(euler.Vector, relativeTo);
+            Identity.gameObject.transform.Rotate(euler.Vector, relativeTo);
         }
 
         public void NetworkRotate(Vector3 euler, float angle, Space relativeTo = Space.Self)
@@ -287,7 +330,7 @@ namespace SocketNetworking.UnityEngine.Components
         [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetNetworkRotation(SerializableVector3 euler, float angle, Space relativeTo)
         {
-            transform.Rotate(euler.Vector, angle, relativeTo);
+            Identity.gameObject.transform.Rotate(euler.Vector, angle, relativeTo);
         }
 
         public void NetworkRotateAround(Vector3 point, Vector3 axis, float angle)
@@ -304,7 +347,7 @@ namespace SocketNetworking.UnityEngine.Components
         [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetNetworkRotation(SerializableVector3 point, SerializableVector3 axis, float angle)
         {
-            transform.RotateAround(point.Vector, axis.Vector, angle);
+            Identity.gameObject.transform.RotateAround(point.Vector, axis.Vector, angle);
         }
 
         public void NetworkTranslate(Vector3 position, Space relativeTo = Space.Self)
@@ -319,7 +362,7 @@ namespace SocketNetworking.UnityEngine.Components
         [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetNetworkTranslate(SerializableVector3 vector3, Space space)
         {
-            transform.Translate(vector3.Vector, space);
+            Identity.gameObject.transform.Translate(vector3.Vector, space);
         }
 
         public void NetworkLookAt(Vector3 position)
@@ -334,7 +377,7 @@ namespace SocketNetworking.UnityEngine.Components
         [NetworkInvokable(callLocal: true, broadcast: true)]
         private void GetNetworkLookAt(SerializableVector3 vector3)
         {
-            transform.LookAt(vector3.Vector);
+            Identity.gameObject.transform.LookAt(vector3.Vector);
         }
     }
 }

@@ -54,6 +54,12 @@ namespace SocketNetworking.UnityEngine.Components
             UnityNetworkManager.Unregister(this);
         }
 
+        public override void Destroy()
+        {
+            UnityNetworkManager.Unregister(this);
+            base.Destroy();
+        }
+
         [PacketListener(typeof(NetworkAnimatorPlayAnimPacket), NetworkDirection.Any)]
         public void OnAnimtorUpdatePlaybackPacket(NetworkAnimatorPlayAnimPacket packet, NetworkHandle client)
         {

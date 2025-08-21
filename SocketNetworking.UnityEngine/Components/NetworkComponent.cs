@@ -40,17 +40,22 @@ namespace SocketNetworking.UnityEngine.Components
             identity.RegisterComponent(this);
         }
 
-        public override int NetworkID { get => _identity.NetworkID; set => _identity.NetworkID = value; }
+        public override int NetworkID { get => Identity.NetworkID; set => Identity.NetworkID = value; }
 
-        public override int OwnerClientID { get => _identity.OwnerClientID; set => _identity.OwnerClientID = value; }
+        public override int OwnerClientID { get => Identity.OwnerClientID; set => Identity.OwnerClientID = value; }
 
-        public override bool Active { get => _identity.Active; set => _identity.Active = value; }
+        public override bool Active { get => Identity.Active; set => Identity.Active = value; }
 
-        public override ObjectVisibilityMode ObjectVisibilityMode { get => _identity.ObjectVisibilityMode; set => _identity.ObjectVisibilityMode = value; }
+        public override ObjectVisibilityMode ObjectVisibilityMode { get => Identity.ObjectVisibilityMode; set => Identity.ObjectVisibilityMode = value; }
 
-        public override OwnershipMode OwnershipMode { get => _identity.OwnershipMode; set => _identity.OwnershipMode = value; }
+        public override OwnershipMode OwnershipMode { get => Identity.OwnershipMode; set => Identity.OwnershipMode = value; }
 
         public byte[] ComponentData = new byte[0];
+
+        public virtual void OnSetupComponent()
+        {
+
+        }
 
         public virtual ByteWriter SendComponentData()
         {
