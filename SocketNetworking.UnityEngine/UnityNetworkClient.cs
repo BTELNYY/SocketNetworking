@@ -19,10 +19,8 @@ namespace SocketNetworking.UnityEngine
 
         private void UnityNetworkClient_PacketReadyToHandle(Shared.PacketSystem.PacketHeader arg1, byte[] arg2)
         {
-            Log.Debug("Packet Ready to handle!");
             UnityNetworkManager.Dispatcher.Enqueue(() =>
             {
-                Log.Debug("Next packet handle!");
                 HandleNextPacket();
             });
         }

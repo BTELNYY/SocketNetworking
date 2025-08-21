@@ -32,6 +32,8 @@ namespace SocketNetworking.UnityEngine.Components
 
         private static readonly Queue<Action> _executionQueue = new Queue<Action>();
 
+        public int MaximumTasksPerFrame = 15;
+
         public void Update()
         {
             lock (_executionQueue)
@@ -42,9 +44,11 @@ namespace SocketNetworking.UnityEngine.Components
                     _cancelled = false;
                     return;
                 }
-                while (_executionQueue.Count > 0)
+                int curTasks = 0;
+                while (_executionQueue.Count > 0 && curTasks <= MaximumTasksPerFrame)
                 {
                     _executionQueue.Dequeue().Invoke();
+                    curTasks++;
                 }
             }
         }
