@@ -91,13 +91,17 @@ namespace SocketNetworking.Server
                     socket.Close();
                     continue;
                 }
+                else
+                {
+                    Log.Debug($"New socket connected! " + socket.Client.RemoteEndPoint);
+                }
                 _ = Task.Run(() =>
                 {
-                    TcpTransport tcpTransport = new TcpTransport(socket);
                     IPEndPoint remoteIpEndPoint = socket.Client.RemoteEndPoint as IPEndPoint;
                     Log.Info($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port} on TCP.");
                     MixedNetworkClient client = (MixedNetworkClient)Activator.CreateInstance(ClientType);
                     Log.Debug("Client created");
+                    TcpTransport tcpTransport = new TcpTransport(socket);
                     client.InitRemoteClient(counter, tcpTransport);
                     Log.Debug("Client initted");
                     AddClient(client, counter);

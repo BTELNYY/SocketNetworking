@@ -112,7 +112,8 @@ namespace SocketNetworking.Client
             try
             {
                 SslStream stream = new SslStream(TcpTransport.Stream, true, ServerVerifyCert);
-                stream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
+                stream.AuthenticateAsServer(certificate, false, SslProtocols.Default, true);
+                //stream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
                 TcpTransport.SslStream = stream;
             }
             catch (AuthenticationException ex)

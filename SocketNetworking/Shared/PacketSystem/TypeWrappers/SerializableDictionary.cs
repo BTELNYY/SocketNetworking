@@ -108,10 +108,12 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
+            List<KeyValuePair<TKey, TValue>> values1 = new List<KeyValuePair<TKey, TValue>>();
             for (int i = arrayIndex; i < keys.Count; i++)
             {
-                array.Append(new KeyValuePair<TKey, TValue>(keys[i], values[i]));
+                values1.Add(new KeyValuePair<TKey, TValue>(keys[i], values[i]));
             }
+            array = array.Concat(values1).ToArray();
         }
 
         public ByteReader Deserialize(byte[] data)

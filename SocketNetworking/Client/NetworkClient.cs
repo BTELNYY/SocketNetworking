@@ -913,7 +913,7 @@ namespace SocketNetworking.Client
             {
                 finalHostname = hostname;
             }
-            //Log.Info($"Connecting to {finalHostname}:{port}...");
+            Log.Info($"Connecting to {finalHostname}:{port}...");
             try
             {
                 Exception ex = Transport.Connect(finalHostname, port);
@@ -926,7 +926,7 @@ namespace SocketNetworking.Client
             {
                 NetworkErrorData networkErrorData = new NetworkErrorData("Connection Failed: " + ex.ToString(), false);
                 ConnectionError?.Invoke(networkErrorData);
-                //Log.Error($"Failed to connect: \n {ex}");
+                Log.Error($"Failed to connect: \n {ex}");
                 return false;
             }
             StartClient();
@@ -1648,7 +1648,7 @@ namespace SocketNetworking.Client
                     {
                         if (AuthenticationProvider == null)
                         {
-                            //Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
+                            Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
                             return;
                         }
                         NetworkHandle handle = new NetworkHandle(this);
@@ -1760,7 +1760,7 @@ namespace SocketNetworking.Client
                         //ruh roh
                         NetworkErrorData errorData = new NetworkErrorData("Disconnected by local client. Reason: " + connectionUpdatePacket.Reason, false);
                         ConnectionError?.Invoke(errorData);
-                        //Log.Error($"Disconnecting {ClientID} for " + connectionUpdatePacket.Reason);
+                        Log.Error($"Disconnecting {ClientID} for " + connectionUpdatePacket.Reason);
                         StopClient();
                     }
                     if (connectionUpdatePacket.State == ConnectionState.Handshake)
@@ -1834,7 +1834,7 @@ namespace SocketNetworking.Client
                     }
                     catch (Exception ex)
                     {
-                        //Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
+                        Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
                         NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket
                         {
                             Success = false,
@@ -1904,12 +1904,12 @@ namespace SocketNetworking.Client
                             }
                             break;
                         default:
-                            //Log.Error($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
+                            Log.Error($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
                             break;
                     }
                     break;
                 default:
-                    //Log.Error($"Packet is not handled! Info: Type: {header.Type}");
+                    Log.Error($"Packet is not handled! Info: Type: {header.Type}");
                     Disconnect("Client Sent an Unknown packet with PacketID " + header.Type.ToString());
                     break;
             }
@@ -1932,14 +1932,14 @@ namespace SocketNetworking.Client
                         Type t = NetworkManager.AdditionalPacketTypes.Values.FirstOrDefault(x => x.FullName == newPacketPairs[i]);
                         if (t == null)
                         {
-                            //Log.Error($"Can't find packet with name {newPacketPairs[i]}, this will cause more errors later!");
+                            Log.Error($"Can't find packet with name {newPacketPairs[i]}, this will cause more errors later!");
                             continue;
                         }
                         if (NetworkManager.AdditionalPacketTypes.ContainsKey(i))
                         {
                             if (!NetworkManager.IsDynamicAllocatedPacket(t))
                             {
-                                //Log.Error("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
+                                Log.Error("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
                                 continue;
                             }
                             if (homelessPackets.Contains(t))
@@ -1962,7 +1962,7 @@ namespace SocketNetworking.Client
                     {
                         built += $"ID: {i}, Full Name: {NetworkManager.AdditionalPacketTypes[i].FullName}\n";
                     }
-                    //Log.Info("Finished re-writing dynamic packets: " + built);
+                    Log.Info("Finished re-writing dynamic packets: " + built);
                     break;
                 case PacketType.AuthenticationStateUpdate:
                     AuthenticationStateUpdate authenticationStateUpdate = new AuthenticationStateUpdate();
@@ -1977,7 +1977,7 @@ namespace SocketNetworking.Client
                     {
                         if (AuthenticationProvider == null)
                         {
-                            //Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
+                            Log.Warning("Got an authentication request but not AuthenticationProvider is specified.");
                             return;
                         }
                         NetworkHandle handle = new NetworkHandle(this);
@@ -2058,21 +2058,21 @@ namespace SocketNetworking.Client
                     ReadyStateChanged?.Invoke(!_ready, _ready);
                     ClientReadyStateChanged?.Invoke(this);
                     NetworkManager.SendReadyPulse(this, Ready);
-                    //Log.Info("New Client Ready State: " + _ready.ToString());
+                    Log.Info("New Client Ready State: " + _ready.ToString());
                     break;
                 case PacketType.ServerData:
                     ServerDataPacket serverDataPacket = new ServerDataPacket();
                     serverDataPacket.Deserialize(data);
                     _clientId = serverDataPacket.YourClientID;
-                    //Log.Prefix = $"[Client {_clientId}]";
-                    //Log.Info("New Client ID: " + _clientId.ToString());
-                    //Log.Info("Server Supports SSL? " + serverDataPacket.UpgradeToSSL);
+                    Log.Prefix = $"[Client {_clientId}]";
+                    Log.Info("New Client ID: " + _clientId.ToString());
+                    Log.Info("Server Supports SSL? " + serverDataPacket.UpgradeToSSL);
                     if (serverDataPacket.Configuration.Protocol != ClientConfiguration.Protocol || serverDataPacket.Configuration.Version != ClientConfiguration.Version)
                     {
                         Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
                         break;
                     }
-                    //Log.Info(serverDataPacket.Configuration.ToString());
+                    Log.Info(serverDataPacket.Configuration.ToString());
                     ClientIdUpdated?.Invoke();
                     break;
                 case PacketType.SSLUpgrade:
@@ -2103,13 +2103,13 @@ namespace SocketNetworking.Client
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
                     connectionUpdatePacket.Deserialize(data);
-                    //Log.Info("New connection state: " + connectionUpdatePacket.State.ToString());
+                    Log.Info("New connection state: " + connectionUpdatePacket.State.ToString());
                     if (connectionUpdatePacket.State == ConnectionState.Disconnected)
                     {
                         //ruh roh
                         NetworkErrorData errorData = new NetworkErrorData("Disconnected by remote client. Reason: " + connectionUpdatePacket.Reason, false);
                         ConnectionError?.Invoke(errorData);
-                        //Log.Error("Disconnected: " + connectionUpdatePacket.Reason);
+                        Log.Error("Disconnected: " + connectionUpdatePacket.Reason);
                         StopClient();
                     }
                     if (connectionUpdatePacket.State == ConnectionState.Handshake)
@@ -2134,7 +2134,7 @@ namespace SocketNetworking.Client
                     }
                     catch (Exception ex)
                     {
-                        //Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
+                        Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
                         NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket
                         {
                             Success = false,
@@ -2205,12 +2205,12 @@ namespace SocketNetworking.Client
                             }
                             break;
                         default:
-                            //Log.Error($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
+                            Log.Error($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
                             break;
                     }
                     break;
                 default:
-                    //Log.Error($"Packet is not handled! Type: {header.Type}");
+                    Log.Error($"Packet is not handled! Type: {header.Type}");
                     Disconnect("Server Sent an Unknown packet with PacketID " + header.Type.ToString());
                     break;
             }

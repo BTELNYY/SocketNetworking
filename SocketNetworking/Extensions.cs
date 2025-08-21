@@ -184,10 +184,9 @@ namespace SocketNetworking
             }
             else
             {
-                foreach (T t in newData.Reverse())
-                {
-                    array = array.Prepend(t).ToArray();
-                }
+                T[] result = new T[array.Length + newData.Length];
+                Array.Copy(array, 0, result, newData.Length, array.Length);
+                Array.Copy(newData, 0, result, 0, newData.Length);
                 array = array.Take(array.Length - newData.Length).ToArray();
                 return array;
             }
@@ -221,11 +220,10 @@ namespace SocketNetworking
         /// </returns>
         public static T[] AppendAll<T>(this T[] target, T[] value)
         {
-            foreach (T item in value)
-            {
-                target = target.Append(item).ToArray();
-            }
-            return target;
+            T[] result = new T[target.Length + value.Length];
+            Array.Copy(target, 0, result, 0, target.Length);
+            Array.Copy(value, 0, result, target.Length, value.Length);
+            return result;
         }
 
         /// <summary>
