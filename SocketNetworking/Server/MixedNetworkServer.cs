@@ -61,7 +61,15 @@ namespace SocketNetworking.Server
             };
             Log.Info("Server starting...");
             TcpListener serverSocket = new TcpListener(IPAddress.Parse(Config.BindIP), Config.Port);
-            serverSocket.Start();
+            try
+            {
+                serverSocket.Start();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to start TCP Socket: " + ex.ToString());
+                return;
+            }
             Log.Info("Mixed Server Started.");
             Log.Info($"Listening on {Config.BindIP}:{Config.Port} (TCP)");
             UdpReader = new Thread(AcceptUDP);
@@ -73,14 +81,17 @@ namespace SocketNetworking.Server
             {
                 if (_isShuttingDown)
                 {
+                    Log.Info("Shutting down!");
                     break;
                 }
                 if (!ShouldAcceptConnections)
                 {
+                    //Log.Debug("Not accepting connections.");
                     continue;
                 }
                 if (!serverSocket.Pending())
                 {
+                    //Log.Debug("Nobody Connecting!");
                     continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();

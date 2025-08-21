@@ -89,7 +89,8 @@ namespace SocketNetworking.Shared.Serialization
             Type dataType = data.GetType();
             SerializedData sData = new SerializedData
             {
-                Type = dataType
+                Type = dataType,
+                DataNull = false,
             };
 
             if (dataType.IsSubclassOf(typeof(NetworkClient)))
@@ -226,6 +227,8 @@ namespace SocketNetworking.Shared.Serialization
             if (dataType.GetCustomAttribute<XmlRootAttribute>() != null)
             {
                 writer.WriteXML(data);
+                sData.Data = writer.Data;
+                return sData;
             }
 
             throw new NetworkConversionException($"Type '{data.GetType().FullName}' cannot be serialized. Please try making a TypeWrapper, or making this type IPacketSerializable");
