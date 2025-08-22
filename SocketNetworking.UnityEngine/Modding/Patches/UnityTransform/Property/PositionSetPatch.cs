@@ -18,13 +18,17 @@ namespace SocketNetworking.UnityEngine.Modding.Patches.UnityTransform.Property
             {
                 return;
             }
+            if (transform.Identity.gameObject.GetInstanceID() != __instance.gameObject.GetInstanceID())
+            {
+                Log.GlobalWarning($"Mismatch! {transform.Identity}, INSTANCE: {__instance.gameObject.name}");
+                return;
+            }
             if (transform.SyncMode != ComponentSyncMode.Automatic)
             {
                 return;
             }
             if (!transform.Enabled)
             {
-                Log.GlobalWarning($"NetworkTransform is not enabled! Identity: {transform.Identity}");
                 return;
             }
             transform.NetworkPosition = __0;

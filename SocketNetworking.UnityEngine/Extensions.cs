@@ -59,7 +59,7 @@ namespace SocketNetworking.UnityEngine
             return result;
         }
 
-        public static void WriteVector3Int(this ByteWriter writer, Vector2Int value)
+        public static void WriteVector2Int(this ByteWriter writer, Vector2Int value)
         {
             writer.WriteInt(value.x);
             writer.WriteInt(value.y);

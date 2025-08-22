@@ -72,6 +72,7 @@ namespace SocketNetworking.Shared.SyncVars
             {
                 if (!IsOwner)
                 {
+                    //Log.GlobalWarning($"Tried to set value without ownership. {ToString()}");
                     return;
                 }
                 this.value = value;
@@ -181,12 +182,23 @@ namespace SocketNetworking.Shared.SyncVars
         {
             OwnerObject = ownerObject;
             this.value = value;
+            _mode = OwnerObject.OwnershipMode;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, T value, string name) : this(ownerObject, value)
+        {
+            Name = name;
         }
 
         public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner)
         {
             OwnerObject = ownerObject;
             _mode = syncOwner;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner, string name) : this(ownerObject, syncOwner)
+        {
+            Name = name;
         }
 
         public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner, T value) : this(ownerObject, syncOwner)
@@ -199,6 +211,7 @@ namespace SocketNetworking.Shared.SyncVars
             OwnerObject = ownerObject;
             this.value = value;
             this._onUpdated = onUpdated;
+            _mode = OwnerObject.OwnershipMode;
         }
 
         public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner, Action<T> onUpdated)
@@ -226,8 +239,13 @@ namespace SocketNetworking.Shared.SyncVars
         public virtual void RawSet(object value, NetworkClient who)
         {
             this.value = value is T t ? t : default;
+            if (!(value is T))
+            {
+                Log.GlobalWarning($"Value is not {typeof(T).Name}! It is: {value.GetType().Name}");
+            }
             Changed?.Invoke(this.value);
             _onUpdated?.Invoke(this.value);
+            Log.GlobalDebug($"Got Value: {this.value}");
         }
 
         public virtual void RawSet(OwnershipMode mode, NetworkClient who)
@@ -237,6 +255,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         public virtual SyncVarData GetData()
         {
+            Log.GlobalDebug($"Value: {value}");
             SerializedData data = ByteConvert.Serialize(value);
             if (Name == string.Empty)
             {
@@ -292,6 +311,11 @@ namespace SocketNetworking.Shared.SyncVars
         public bool Equals(NetworkSyncVar<T> other)
         {
             return other.Value.Equals(Value);
+        }
+
+        public override string ToString()
+        {
+            return $"SyncVar Name: {Name}, Object: {OwnerObject}, CurrentValue: {this.value}";
         }
     }
 }

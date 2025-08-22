@@ -99,7 +99,11 @@ namespace SocketNetworking.UnityEngine
             {
                 return _animators[obj.GetInstanceID()];
             }
-            return null;
+            else
+            {
+                //Log.Warning($"{obj.name} does not have an NetworkAnimator.");
+                return obj.GetComponent<NetworkAnimator>();
+            }
         }
 
         public static NetworkTransform GetNetworkTransform(GameObject obj)
@@ -108,7 +112,11 @@ namespace SocketNetworking.UnityEngine
             {
                 return _transforms[obj.GetInstanceID()];
             }
-            return null;
+            else
+            {
+                //Log.Warning($"{obj.name} does not have an NetworkTransform.");
+                return obj.GetComponent<NetworkTransform>();
+            }
         }
 
         public static int NextAvailablePrefabID
@@ -217,19 +225,21 @@ namespace SocketNetworking.UnityEngine
 
         public static void Register(NetworkBehavior obj)
         {
-            if (obj.GetType() == typeof(NetworkTransform))
+            if (obj.GetType().IsSubclassOf(typeof(NetworkTransform)))
             {
                 if (_transforms.ContainsKey(obj.gameObject.GetInstanceID()))
                 {
+                    Log.Warning("Tried to register duplicate object: " + obj);
                     return;
                 }
                 _transforms.Add(obj.gameObject.GetInstanceID(), (NetworkTransform)obj);
                 return;
             }
-            if (obj.GetType() == typeof(NetworkAnimator))
+            if (obj.GetType().IsSubclassOf(typeof(NetworkAnimator)))
             {
                 if (_animators.ContainsKey(obj.gameObject.GetInstanceID()))
                 {
+                    Log.Warning("Tried to register duplicate object: " + obj);
                     return;
                 }
                 _animators.Add(obj.gameObject.GetInstanceID(), (NetworkAnimator)obj);
@@ -239,12 +249,12 @@ namespace SocketNetworking.UnityEngine
 
         public static void Unregister(NetworkBehavior obj)
         {
-            if (obj.GetType() == typeof(NetworkTransform))
+            if (obj.GetType().IsSubclassOf(typeof(NetworkTransform)))
             {
                 _transforms.Remove(obj.gameObject.GetInstanceID());
                 return;
             }
-            if (obj.GetType() == typeof(NetworkAnimator))
+            if (obj.GetType().IsSubclassOf(typeof(NetworkAnimator)))
             {
                 _animators.Remove(obj.gameObject.GetInstanceID());
                 return;

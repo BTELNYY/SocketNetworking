@@ -1084,13 +1084,17 @@ namespace SocketNetworking.Shared
             List<SyncVarData> publicReplicated = new List<SyncVarData>();
             foreach (SyncVarData data in packet.Data)
             {
-                foreach (INetworkObject obj in NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget))
+                List<INetworkObject> objs = NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget).ToList();
+                foreach (INetworkObject obj in objs)
                 {
                     NetworkObjectData networkObjectData = NetworkObjects[obj];
                     FieldInfo field = networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar);
                     if (field == default)
                     {
-                        Log.Warning($"No such Network Sync Var '{data.TargetVar}' on object type {obj.GetType().FullName}, object: {obj}");
+                        if (objs.Count == 1)
+                        {
+                            Log.Warning($"No such Network Sync Var '{data.TargetVar}' on object type {obj.GetType().FullName}, object: {obj}");
+                        }
                         continue;
                     }
                     INetworkSyncVar syncVar = field.GetValue(obj) as INetworkSyncVar;
@@ -1105,15 +1109,16 @@ namespace SocketNetworking.Shared
                         {
                             if (runner.ClientID != syncVar.OwnerObject.OwnerClientID && !syncVar.OwnerObject.HasPrivilege(runner.ClientID))
                             {
-                                return;
+                                continue;
                             }
                         }
                     }
                     if (syncVar.OwnershipMode == OwnershipMode.Server && WhereAmI == ClientLocation.Remote)
                     {
-                        return;
+                        continue;
                     }
                     object value = ByteConvert.Deserialize(data.Data, out int read);
+                    Log.Debug($"Set {syncVar.Name} to {value} on {syncVar.OwnerObject}");
                     syncVar.RawSet(value, runner);
                     syncVar.RawSet(data.Mode, runner);
                     syncVar.OwnerObject.OnSyncVarChanged(runner, syncVar);

@@ -16,6 +16,14 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 RegisterObject();
             }
+            if (!Enabled)
+            {
+                DisableComponents();
+            }
+            else
+            {
+                EnableComponents();
+            }
         }
 
         public override bool Spawnable => true;
@@ -92,6 +100,16 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        public override void RegisterObject()
+        {
+            SetupComponents();
+            base.RegisterObject();
+            foreach (NetworkComponent component in _components)
+            {
+                component.RegisterObject();
+            }
+        }
+
         private UnityObjectData _data;
 
         public UnityObjectData ObjectData
@@ -145,12 +163,6 @@ namespace SocketNetworking.UnityEngine.Components
                 writer.WritePacketSerialized<ComponentData>(data);
             }
             return writer;
-        }
-
-        public override void OnBeforeRegister()
-        {
-            base.OnBeforeRegister();
-            SetupComponents();
         }
     }
 

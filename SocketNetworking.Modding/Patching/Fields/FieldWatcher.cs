@@ -51,7 +51,10 @@ namespace SocketNetworking.Modding.Patching.Fields
                 {
                     Harmony.Patch(method, transpiler: new HarmonyMethod(typeof(FieldWatcher).GetMethod(nameof(InterceptFieldWrites), BindingFlags.Static | BindingFlags.NonPublic)));
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.GlobalError($"Patch error: " + ex.ToString());
+                }
             }
         }
 

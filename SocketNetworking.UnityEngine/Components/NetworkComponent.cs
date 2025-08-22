@@ -52,6 +52,32 @@ namespace SocketNetworking.UnityEngine.Components
 
         public byte[] ComponentData = new byte[0];
 
+        public override bool Enabled
+        {
+            get
+            {
+                //we aren't registered?
+                if (NetworkID == 0)
+                {
+                    Enabled = false;
+                    return false;
+                }
+                return base.Enabled;
+            }
+            set
+            {
+                base.Enabled = value;
+            }
+        }
+
+        private void Start()
+        {
+            if (NetworkManager.WhereAmI == ClientLocation.Unknown || NetworkID == 0)
+            {
+                Enabled = false;
+            }
+        }
+
         public virtual void OnSetupComponent()
         {
 
@@ -78,14 +104,27 @@ namespace SocketNetworking.UnityEngine.Components
             OverrideIdentity(_identity);
         }
 
+        public override void RegisterObject()
+        {
+            if (gameObject == null)
+            {
+                return;
+            }
+            base.RegisterObject();
+        }
+
         public override void Destroy()
         {
-            Destroy(this);
+            DestroyImmediate(this);
         }
 
         void Awake()
         {
             EnsureIdentityExists();
+            if (NetworkManager.WhereAmI == ClientLocation.Unknown || NetworkID == 0)
+            {
+                Enabled = false;
+            }
         }
 
         public override IEnumerable<int> PrivilegedIDs

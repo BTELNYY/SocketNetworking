@@ -10,13 +10,13 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkTransform : NetworkComponent
     {
-        public ComponentSyncMode SyncMode { get; set; } = ComponentSyncMode.Automatic;
+        public ComponentSyncMode SyncMode { get; set; } = ComponentSyncMode.FrameUpdate;
 
         public float MinimumDifferenceForSync { get; set; } = 0.001f;
 
         public void SyncIfIsDifferent()
         {
-            if (!IsPrivileged)
+            if (!IsOwner)
             {
                 return;
             }
@@ -74,11 +74,30 @@ namespace SocketNetworking.UnityEngine.Components
         {
             if (!IsOwner)
             {
-                Identity.gameObject.transform.localScale = scale.Value;
-                Identity.gameObject.transform.localPosition = Vector3.Lerp(Identity.gameObject.transform.localPosition, localPosition.Value, LerpTime);
-                Identity.gameObject.transform.position = Vector3.Lerp(Identity.gameObject.transform.position, position.Value, LerpTime);
-                Identity.gameObject.transform.localRotation = Quaternion.Slerp(Identity.gameObject.transform.localRotation, localRotation.Value, LerpTime);
-                Identity.gameObject.transform.rotation = Quaternion.Slerp(Identity.gameObject.transform.rotation, rotation.Value, LerpTime);
+                if (scale != null)
+                {
+                    Identity.gameObject.transform.localScale = scale.Value;
+                }
+                if (localPosition != null)
+                {
+                    Identity.gameObject.transform.localPosition = localPosition.Value;
+                    //Identity.gameObject.transform.localPosition = Vector3.Lerp(Identity.gameObject.transform.localPosition, localPosition.Value, LerpTime);
+                }
+                if (position != null)
+                {
+                    Identity.gameObject.transform.position = position.Value;
+                    //Identity.gameObject.transform.position = Vector3.Lerp(Identity.gameObject.transform.position, position.Value, LerpTime);
+                }
+                if (localRotation != null)
+                {
+                    Identity.gameObject.transform.localRotation = localRotation.Value;
+                    //Identity.gameObject.transform.localRotation = Quaternion.Slerp(Identity.gameObject.transform.localRotation, localRotation.Value, LerpTime);
+                }
+                if (rotation != null)
+                {
+                    Identity.gameObject.transform.rotation = rotation.Value;
+                    //Identity.gameObject.transform.rotation = Quaternion.Slerp(Identity.gameObject.transform.rotation, rotation.Value, LerpTime);
+                }
             }
             if (SyncMode != ComponentSyncMode.FrameUpdate)
             {
@@ -89,12 +108,12 @@ namespace SocketNetworking.UnityEngine.Components
 
         public override void OnBeforeRegister()
         {
+            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(scale));
+            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(rotation));
+            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(position));
+            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(localRotation));
+            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(localPosition));
             base.OnBeforeRegister();
-            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode);
-            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode);
-            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode);
-            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode);
-            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode);
         }
 
 
@@ -103,20 +122,15 @@ namespace SocketNetworking.UnityEngine.Components
         /// </summary>
         public void ServerSync()
         {
-            NetworkPosition = Identity.gameObject.transform.position;
-            NetworkRotation = Identity.gameObject.transform.rotation;
-            NetworkLocalPosition = Identity.gameObject.transform.localPosition;
-            NetworkLocalRotation = Identity.gameObject.transform.localRotation;
-            NetworkScale = Identity.gameObject.transform.localScale;
             NetworkInvoke(nameof(ClientUpdatePositionsSafe), Identity.gameObject.transform.position, Identity.gameObject.transform.localPosition, Identity.gameObject.transform.rotation, Identity.gameObject.transform.localRotation, Identity.gameObject.transform.localScale);
-            ServerTeleport();
+            //ServerTeleport();
         }
 
         [NetworkInvokable(Direction = NetworkDirection.Server, Broadcast = true)]
         private void ClientUpdatePositionsSafe(NetworkHandle handle, Vector3 pos, Vector3 lpos, Quaternion rot, Quaternion lrot, Vector3 scale)
         {
             position.RawSet(pos, handle.Client);
-            localPosition.RawSet(pos, handle.Client);
+            localPosition.RawSet(lpos, handle.Client);
             rotation.RawSet(rot, handle.Client);
             localRotation.RawSet(lrot, handle.Client);
             this.scale.RawSet(scale, handle.Client);
@@ -131,6 +145,11 @@ namespace SocketNetworking.UnityEngine.Components
         void Awake()
         {
             UnityNetworkManager.Register(this);
+            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(scale));
+            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(rotation));
+            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(position));
+            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(localRotation));
+            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(localPosition));
             if (IsOwner)
             {
                 NetworkPosition = Identity.gameObject.transform.position;
@@ -218,11 +237,17 @@ namespace SocketNetworking.UnityEngine.Components
                 //{
                 //    return;
                 //}
-                if (scale == null)
+                //Identity.gameObject.transform.localScale = value;
+                if (!Enabled)
                 {
                     return;
                 }
-                Identity.gameObject.transform.localScale = value;
+                //Logger.Debug($"Update Scale: {value}");
+                if (scale == null)
+                {
+                    Logger.Debug($"Null scale, {Identity}");
+                    scale = new NetworkSyncVar<Vector3>(this, NetworkScale, nameof(scale));
+                }
                 scale.Value = value;
             }
         }
@@ -239,11 +264,17 @@ namespace SocketNetworking.UnityEngine.Components
                 //{
                 //    return;
                 //}
-                if (position == null)
+                //Identity.gameObject.transform.position = value;
+                if (!Enabled)
                 {
                     return;
                 }
-                Identity.gameObject.transform.position = value;
+                //Logger.Debug($"Update Position: {value}, {Identity}");
+                if (position == null)
+                {
+                    Logger.Debug($"Null position, {Identity}");
+                    position = new NetworkSyncVar<Vector3>(this, NetworkPosition, nameof(position));
+                }
                 position.Value = value;
             }
         }
@@ -260,11 +291,17 @@ namespace SocketNetworking.UnityEngine.Components
                 //{
                 //    return;
                 //}
-                if (localPosition == null)
+                //Identity.gameObject.transform.localPosition = value;
+                if (!Enabled)
                 {
                     return;
                 }
-                Identity.gameObject.transform.localPosition = value;
+                //Logger.Debug($"Update Local Position: {value}, {Identity}");
+                if (localPosition == null)
+                {
+                    Logger.Debug($"Null localPosition, {Identity}");
+                    localPosition = new NetworkSyncVar<Vector3>(this, NetworkLocalPosition, nameof(localPosition));
+                }
                 localPosition.Value = value;
             }
         }
@@ -282,11 +319,17 @@ namespace SocketNetworking.UnityEngine.Components
                 //{
                 //    return;
                 //}
-                if (rotation == null)
+                //Identity.gameObject.transform.rotation = value;
+                if (!Enabled)
                 {
                     return;
                 }
-                Identity.gameObject.transform.rotation = value;
+                //Logger.Debug($"Update Rotation: {value}");
+                if (rotation == null)
+                {
+                    Logger.Debug($"Null rotation: {Identity}");
+                    rotation = new NetworkSyncVar<Quaternion>(this, NetworkRotation, nameof(rotation));
+                }
                 rotation.Value = value;
             }
         }
@@ -303,11 +346,17 @@ namespace SocketNetworking.UnityEngine.Components
                 //{
                 //    return;
                 //}
-                if (localRotation == null)
+                //Identity.gameObject.transform.localRotation = value;
+                if (!Enabled)
                 {
                     return;
                 }
-                Identity.gameObject.transform.localRotation = value;
+                //Logger.Debug($"Update Local Rotation: {value}");
+                if (localRotation == null)
+                {
+                    Logger.Debug($"Null localRotation: {Identity}");
+                    localRotation = new NetworkSyncVar<Quaternion>(this, NetworkLocalRotation, nameof(localRotation));
+                }
                 localRotation.Value = value;
             }
         }
