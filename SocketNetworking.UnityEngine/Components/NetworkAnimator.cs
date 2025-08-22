@@ -142,14 +142,9 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkInvoke(nameof(GetPlayData), new object[] { hash, layer, normalizedTime });
         }
 
-        [NetworkInvokable(callLocal: true, broadcast: true)]
-        private void GetPlayData(NetworkClient client, int hash, int layer, float normalizedTime)
-        {
-            _animator.Play(hash, layer, normalizedTime);
-        }
 
         [NetworkInvokable(callLocal: true, broadcast: true)]
-        private void GetPlayData(int hash, int layer, float normalizedTime)
+        private void GetPlayData(NetworkHandle handle, int hash, int layer, float normalizedTime)
         {
             _animator.Play(hash, layer, normalizedTime);
         }
