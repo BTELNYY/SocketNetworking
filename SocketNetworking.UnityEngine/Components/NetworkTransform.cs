@@ -38,9 +38,23 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
-        [NetworkInvokable(Direction = NetworkDirection.Server, Broadcast = true, CallLocal = true)]
+        /// <summary>
+        /// Forces the remote clients to instantly move the object to the current position on the server instead of using <see cref="Vector3.Lerp(Vector3, Vector3, float)"/> or <see cref="Quaternion.Lerp(Quaternion, Quaternion, float)"/>. Note that if the client has outdated values for the <see cref="INetworkSyncVar"/>s, the teleportation may be inaccurate. Use <see cref="ServerSync"/> to avoid this.
+        /// </summary>
+        public void ServerTeleport()
+        {
+            NetworkInvoke(nameof(ClientTeleport));
+        }
+
+        [NetworkInvokable(Direction = NetworkDirection.Server, Broadcast = true)]
         private void ClientTeleport(NetworkHandle handle)
         {
+            //prevent stack overflow.
+            if (IsClient && IsOwner)
+            {
+                return;
+            }
+            Identity.gameObject.transform.localScale = scale.Value;
             Identity.gameObject.transform.rotation = rotation.Value;
             Identity.gameObject.transform.localRotation = localRotation.Value;
             Identity.gameObject.transform.position = position.Value;
@@ -58,11 +72,14 @@ namespace SocketNetworking.UnityEngine.Components
 
         void Update()
         {
-            Identity.gameObject.transform.localScale = _scale;
-            Identity.gameObject.transform.localPosition = Vector3.Lerp(Identity.gameObject.transform.localPosition, _localPosition, LerpTime);
-            Identity.gameObject.transform.position = Vector3.Lerp(Identity.gameObject.transform.position, _position, LerpTime);
-            Identity.gameObject.transform.localRotation = Quaternion.Slerp(Identity.gameObject.transform.localRotation, _localRotation, LerpTime);
-            Identity.gameObject.transform.rotation = Quaternion.Slerp(Identity.gameObject.transform.rotation, _rotation, LerpTime);
+            if (!IsOwner)
+            {
+                Identity.gameObject.transform.localScale = scale.Value;
+                Identity.gameObject.transform.localPosition = Vector3.Lerp(Identity.gameObject.transform.localPosition, localPosition.Value, LerpTime);
+                Identity.gameObject.transform.position = Vector3.Lerp(Identity.gameObject.transform.position, position.Value, LerpTime);
+                Identity.gameObject.transform.localRotation = Quaternion.Slerp(Identity.gameObject.transform.localRotation, localRotation.Value, LerpTime);
+                Identity.gameObject.transform.rotation = Quaternion.Slerp(Identity.gameObject.transform.rotation, rotation.Value, LerpTime);
+            }
             if (SyncMode != ComponentSyncMode.FrameUpdate)
             {
                 return;
@@ -73,32 +90,17 @@ namespace SocketNetworking.UnityEngine.Components
         public override void OnBeforeRegister()
         {
             base.OnBeforeRegister();
-            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (scale) =>
-            {
-                _scale = scale;
-            });
-            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (rotation) =>
-            {
-                //Identity.gameObject.transform.rotation = rotation;
-                _rotation = rotation;
-            });
-            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (pos) =>
-            {
-                //Identity.gameObject.transform.position = pos;
-                _position = pos;
-            });
-            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, (localRotation) =>
-            {
-                //Identity.gameObject.transform.localRotation = localRotation;
-                _localRotation = localRotation;
-            });
-            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, (localPosition) =>
-            {
-                //Identity.gameObject.transform.localPosition = localPosition;
-                _localPosition = localPosition;
-            });
+            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode);
+            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode);
+            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode);
+            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode);
+            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode);
         }
 
+
+        /// <summary>
+        /// Synchronizes all <see cref="INetworkSyncVar"/>s on this <see cref="NetworkTransform"/> then calls <see cref="ServerTeleport"/>.
+        /// </summary>
         public void ServerSync()
         {
             NetworkPosition = Identity.gameObject.transform.position;
@@ -106,7 +108,18 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkLocalPosition = Identity.gameObject.transform.localPosition;
             NetworkLocalRotation = Identity.gameObject.transform.localRotation;
             NetworkScale = Identity.gameObject.transform.localScale;
-            NetworkInvoke(nameof(ClientTeleport));
+            NetworkInvoke(nameof(ClientUpdatePositionsSafe), Identity.gameObject.transform.position, Identity.gameObject.transform.localPosition, Identity.gameObject.transform.rotation, Identity.gameObject.transform.localRotation, Identity.gameObject.transform.localScale);
+            ServerTeleport();
+        }
+
+        [NetworkInvokable(Direction = NetworkDirection.Server, Broadcast = true)]
+        private void ClientUpdatePositionsSafe(NetworkHandle handle, Vector3 pos, Vector3 lpos, Quaternion rot, Quaternion lrot, Vector3 scale)
+        {
+            position.RawSet(pos, handle.Client);
+            localPosition.RawSet(pos, handle.Client);
+            rotation.RawSet(rot, handle.Client);
+            localRotation.RawSet(lrot, handle.Client);
+            this.scale.RawSet(scale, handle.Client);
         }
 
         public override void OnNetworkSpawned(NetworkClient spawner)
@@ -118,16 +131,14 @@ namespace SocketNetworking.UnityEngine.Components
         void Awake()
         {
             UnityNetworkManager.Register(this);
-            _rotation = Identity.gameObject.transform.rotation;
-            _localRotation = Identity.gameObject.transform.localRotation;
-            _position = Identity.gameObject.transform.position;
-            _localPosition = Identity.gameObject.transform.localPosition;
-            _scale = Identity.gameObject.transform.localScale;
-            NetworkPosition = Identity.gameObject.transform.position;
-            NetworkRotation = Identity.gameObject.transform.rotation;
-            NetworkLocalPosition = Identity.gameObject.transform.localPosition;
-            NetworkLocalRotation = Identity.gameObject.transform.localRotation;
-            NetworkScale = Identity.gameObject.transform.localScale;
+            if (IsOwner)
+            {
+                NetworkPosition = Identity.gameObject.transform.position;
+                NetworkRotation = Identity.gameObject.transform.rotation;
+                NetworkLocalPosition = Identity.gameObject.transform.localPosition;
+                NetworkLocalRotation = Identity.gameObject.transform.localRotation;
+                NetworkScale = Identity.gameObject.transform.localScale;
+            }
         }
 
         void OnDestroy()
@@ -143,23 +154,23 @@ namespace SocketNetworking.UnityEngine.Components
 
         private NetworkSyncVar<Vector3> scale;
 
-        private Vector3 _scale;
+        //private Vector3 _scale;
 
         private NetworkSyncVar<Quaternion> rotation;
 
-        private Quaternion _rotation;
+        //private Quaternion _rotation;
 
         private NetworkSyncVar<Vector3> position;
 
-        private Vector3 _position;
+        //private Vector3 _position;
 
         private NetworkSyncVar<Vector3> localPosition;
 
-        private Vector3 _localPosition;
+        //private Vector3 _localPosition;
 
         private NetworkSyncVar<Quaternion> localRotation;
 
-        private Quaternion _localRotation;
+        //private Quaternion _localRotation;
 
         /// <summary>
         /// Returns the <see cref="NetworkClient.LocalClient"/>s <see cref="NetworkClient.Latency"/> or the <see cref="INetworkObject.OwnerClientID"/>s <see cref="NetworkClient.Latency"/>.
@@ -203,15 +214,15 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
-                if (!IsOwner)
-                {
-                    return;
-                }
+                //if (!IsOwner)
+                //{
+                //    return;
+                //}
                 if (scale == null)
                 {
                     return;
                 }
-                _scale = value;
+                Identity.gameObject.transform.localScale = value;
                 scale.Value = value;
             }
         }
@@ -224,15 +235,15 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
-                if (!IsOwner)
-                {
-                    return;
-                }
+                //if (!IsOwner)
+                //{
+                //    return;
+                //}
                 if (position == null)
                 {
                     return;
                 }
-                _position = value;
+                Identity.gameObject.transform.position = value;
                 position.Value = value;
             }
         }
@@ -245,15 +256,15 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
-                if (!IsOwner)
-                {
-                    return;
-                }
+                //if (!IsOwner)
+                //{
+                //    return;
+                //}
                 if (localPosition == null)
                 {
                     return;
                 }
-                _localPosition = value;
+                Identity.gameObject.transform.localPosition = value;
                 localPosition.Value = value;
             }
         }
@@ -267,15 +278,15 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
-                if (!IsOwner)
-                {
-                    return;
-                }
+                //if (!IsOwner)
+                //{
+                //    return;
+                //}
                 if (rotation == null)
                 {
                     return;
                 }
-                _rotation = value;
+                Identity.gameObject.transform.rotation = value;
                 rotation.Value = value;
             }
         }
@@ -288,15 +299,15 @@ namespace SocketNetworking.UnityEngine.Components
             }
             set
             {
-                if (!IsOwner)
-                {
-                    return;
-                }
+                //if (!IsOwner)
+                //{
+                //    return;
+                //}
                 if (localRotation == null)
                 {
                     return;
                 }
-                _localRotation = value;
+                Identity.gameObject.transform.localRotation = value;
                 localRotation.Value = value;
             }
         }

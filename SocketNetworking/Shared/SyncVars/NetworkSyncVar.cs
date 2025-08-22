@@ -14,6 +14,29 @@ namespace SocketNetworking.Shared.SyncVars
     /// <typeparam name="T"></typeparam>
     public class NetworkSyncVar<T> : IEquatable<T>, IEquatable<NetworkSyncVar<T>>, ICloneable, INetworkSyncVar
     {
+        /// <summary>
+        /// Determines if the current executor has the ability to set the <see cref="Value"/> of this <see cref="INetworkSyncVar"/>. This will always return <see langword=""/> if: <see cref="NetworkManager.WhereAmI"/> is <see cref="ClientLocation.Remote"/>, <see cref="OwnershipMode"/> is <see cref="OwnershipMode.Public"/>, <see cref="OwnershipMode"/> is <see cref="OwnershipMode.Client"/> and <see cref="NetworkClient.LocalClient"/>'s <see cref="NetworkClient.ClientID"/> is the same as <see cref="OwnerObject"/>s <see cref="INetworkObject.OwnerClientID"/>. Otherwise, this will return <see langword="false"/>.
+        /// </summary>
+        public bool IsOwner
+        {
+            get
+            {
+                if (NetworkManager.WhereAmI == ClientLocation.Remote)
+                {
+                    return true;
+                }
+                if (OwnershipMode == OwnershipMode.Public)
+                {
+                    return true;
+                }
+                if (OwnershipMode == OwnershipMode.Client && NetworkClient.LocalClient != null && NetworkClient.LocalClient.ClientID == OwnerObject.OwnerClientID)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+
         public INetworkObject OwnerObject { get; set; }
 
         /// <summary>
@@ -47,6 +70,10 @@ namespace SocketNetworking.Shared.SyncVars
             }
             set
             {
+                if (!IsOwner)
+                {
+                    return;
+                }
                 this.value = value;
                 ValueRaw = value;
                 Changed?.Invoke(value);
@@ -59,6 +86,10 @@ namespace SocketNetworking.Shared.SyncVars
             get => Value;
             set
             {
+                if (!IsOwner)
+                {
+                    return;
+                }
                 this.value = (T)value;
                 Sync();
             }
