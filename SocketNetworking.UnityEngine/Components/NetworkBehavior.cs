@@ -25,6 +25,20 @@ namespace SocketNetworking.UnityEngine.Components
             NetworkServer.ServerStarted += OnServerStarted;
         }
 
+        protected Log _log;
+
+        public Log Log
+        {
+            get
+            {
+                if (_log == null)
+                {
+                    _log = new Log($"[{GetType().Name}] [NetID: {NetworkID}]");
+                }
+                return _log;
+            }
+        }
+
         public bool IsOnMainThread
         {
             get

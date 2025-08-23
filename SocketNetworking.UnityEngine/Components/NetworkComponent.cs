@@ -67,6 +67,14 @@ namespace SocketNetworking.UnityEngine.Components
             set
             {
                 base.Enabled = value;
+                if (value)
+                {
+                    OnEnableComponent();
+                }
+                else
+                {
+                    OnDisableComponent();
+                }
             }
         }
 
@@ -79,6 +87,16 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
         public virtual void OnSetupComponent()
+        {
+
+        }
+
+        public virtual void OnEnableComponent()
+        {
+
+        }
+
+        public virtual void OnDisableComponent()
         {
 
         }

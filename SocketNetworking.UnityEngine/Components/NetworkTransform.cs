@@ -38,6 +38,29 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        private void EnsureSyncVarsExist()
+        {
+            if (!IsOnMainThread)
+            {
+                Log.Error("Trying to set SyncVars not on main thread!");
+                UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                {
+                    EnsureSyncVarsExist();
+                });
+                return;
+            }
+            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(scale));
+            scale.RawSet(Identity.gameObject.transform.localScale, null);
+            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(rotation));
+            rotation.RawSet(Identity.gameObject.transform.rotation, null);
+            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(position));
+            position.RawSet(Identity.gameObject.transform.position, null);
+            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(localRotation));
+            localRotation.RawSet(Identity.gameObject.transform.localRotation, null);
+            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(localPosition));
+            localPosition.RawSet(Identity.gameObject.transform.localPosition, null);
+        }
+
         /// <summary>
         /// Forces the remote clients to instantly move the object to the current position on the server instead of using <see cref="Vector3.Lerp(Vector3, Vector3, float)"/> or <see cref="Quaternion.Lerp(Quaternion, Quaternion, float)"/>. Note that if the client has outdated values for the <see cref="INetworkSyncVar"/>s, the teleportation may be inaccurate. Use <see cref="ServerSync"/> to avoid this.
         /// </summary>
@@ -108,11 +131,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public override void OnBeforeRegister()
         {
-            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(scale));
-            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(rotation));
-            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(position));
-            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(localRotation));
-            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(localPosition));
+            EnsureSyncVarsExist();
             base.OnBeforeRegister();
         }
 
@@ -123,12 +142,13 @@ namespace SocketNetworking.UnityEngine.Components
         public void ServerSync()
         {
             NetworkInvoke(nameof(ClientUpdatePositionsSafe), Identity.gameObject.transform.position, Identity.gameObject.transform.localPosition, Identity.gameObject.transform.rotation, Identity.gameObject.transform.localRotation, Identity.gameObject.transform.localScale);
-            //ServerTeleport();
+            ServerTeleport();
         }
 
         [NetworkInvokable(Direction = NetworkDirection.Server, Broadcast = true)]
         private void ClientUpdatePositionsSafe(NetworkHandle handle, Vector3 pos, Vector3 lpos, Quaternion rot, Quaternion lrot, Vector3 scale)
         {
+            Log.Debug($"Got safe pos update: Pos: {pos}, LPos: {lpos}, Rot: {rot}, LRot: {lrot}, Scale: {scale}");
             position.RawSet(pos, handle.Client);
             localPosition.RawSet(lpos, handle.Client);
             rotation.RawSet(rot, handle.Client);
@@ -139,7 +159,7 @@ namespace SocketNetworking.UnityEngine.Components
         public override void OnNetworkSpawned(NetworkClient spawner)
         {
             base.OnNetworkSpawned(spawner);
-            ServerSync();
+            //ServerSync();
         }
 
         void Awake()
@@ -147,11 +167,7 @@ namespace SocketNetworking.UnityEngine.Components
             UnityNetworkManager.Register(this);
             if (Enabled)
             {
-                scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(scale));
-                rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(rotation));
-                position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(position));
-                localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(localRotation));
-                localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(localPosition));
+                EnsureSyncVarsExist();
             }
             if (Enabled && IsOwner)
             {
