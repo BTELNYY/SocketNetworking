@@ -255,7 +255,7 @@ namespace SocketNetworking.Shared.SyncVars
 
         public virtual SyncVarData GetData()
         {
-            Log.GlobalDebug($"Value: {value}");
+            //Log.GlobalDebug($"Value: {value}");
             SerializedData data = ByteConvert.Serialize(value);
             if (Name == string.Empty)
             {

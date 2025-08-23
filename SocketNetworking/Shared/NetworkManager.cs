@@ -107,6 +107,7 @@ namespace SocketNetworking.Shared
                     }
                     if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Count() != 0)
                     {
+                        Log.Error("Both server and several local clients are active, can't determine network location.");
                         return ClientLocation.Unknown;
                     }
                 }
@@ -190,6 +191,7 @@ namespace SocketNetworking.Shared
         {
             ImportCustomPackets(target);
             List<Type> applicableTypes = target.GetTypes().Where(x => x.IsSubclassDeep(typeof(NetworkClient)) || x.GetInterfaces().Contains(typeof(INetworkObject)) || x.GetInterfaces().Contains(typeof(ITypeWrapper))).ToList();
+            Log.Info($"Importing Assembly! Name: {target.GetName().Name}, Valid Types: {applicableTypes.Count}");
             foreach (Type t in applicableTypes)
             {
                 NetworkObjectData data = GetNetworkObjectData(t);
@@ -447,6 +449,7 @@ namespace SocketNetworking.Shared
                             NetworkIDTarget = packet.NetworkIDTarget,
                         };
                         handle.Client.Send(alreadyExistsPacket);
+                        Log.Warning($"We already have '{existingObject.Item1}' on NetID {packet.NewNetworkID}, sending a already exists response.");
                         return;
                     }
                 }
@@ -525,7 +528,11 @@ namespace SocketNetworking.Shared
                         @object.SyncVars(handle.Client);
                         break;
                     case ObjectManagePacket.ObjectManageAction.AlreadyExists:
-                        //this is fine, just ignore it!
+                        //this is fine, just ignore it! - Still log it.
+                        if (WhereAmI == ClientLocation.Remote)
+                        {
+                            Log.Warning($"Seems that client {handle.ClientID} already had '{@object}' spawned. Good for them. Try to avoid sending unneeded spawn packets.");
+                        }
                         break;
                     case ObjectManagePacket.ObjectManageAction.Destroy:
                         INetworkObject destructionTarget = @object;
@@ -649,7 +656,6 @@ namespace SocketNetworking.Shared
         {
             foreach (INetworkObject @object in NetworkObjects.Keys)
             {
-                Log.Debug($"update obj: {@object.NetworkID}");
                 @object.OnConnected(client);
             }
         }
@@ -715,17 +721,24 @@ namespace SocketNetworking.Shared
             }
             if (NetworkObjects.ContainsKey(networkObject))
             {
-                //Log.Warning("Tried to add network object that already exists.");
+                Log.Warning("Tried to add network object that already exists.");
                 return false;
             }
             else
             {
                 networkObject.OnBeforeRegister();
                 NetworkObjectData data = GetNetworkObjectData(networkObject);
-                NetworkObjects.TryAdd(networkObject, data);
-                SendAddedPulse(networkObject);
-                networkObject.OnAfterRegister();
-                return true;
+                bool added = NetworkObjects.TryAdd(networkObject, data);
+                if (added)
+                {
+                    SendAddedPulse(networkObject);
+                    networkObject.OnAfterRegister();
+                }
+                else
+                {
+                    Log.Error($"Failed to add {networkObject}!");
+                }
+                return added;
             }
         }
 
@@ -777,21 +790,29 @@ namespace SocketNetworking.Shared
         /// </returns>
         public static bool RemoveNetworkObject(INetworkObject networkObject)
         {
-            if (networkObject.NetworkID == 0)
-            {
-                Log.Error($"Network Object {networkObject.GetType().Name} was ignored because NetworkID 0 is reserved. Please choose another ID.");
-                return false;
-            }
+            //Redundant, we don't care what ID the object is, we just want it gone.
+            //if (networkObject.NetworkID == 0)
+            //{
+            //    Log.Error($"Network Object {networkObject.GetType().Name} was ignored because NetworkID 0 is reserved. Please choose another ID.");
+            //    return false;
+            //}
             if (!NetworkObjects.ContainsKey(networkObject))
             {
-                Log.Warning("Tried to remove NetworObject that doesn't exist.");
+                Log.Warning("Tried to remove NetworkObject that doesn't exist.");
                 return false;
             }
             else
             {
-                NetworkObjects.TryRemove(networkObject, out NetworkObjectData value);
-                SendRemovedPulse(networkObject);
-                return true;
+                bool removed = NetworkObjects.TryRemove(networkObject, out NetworkObjectData value);
+                if (removed)
+                {
+                    SendRemovedPulse(networkObject);
+                }
+                else
+                {
+                    Log.Error($"Failed to remove {networkObject}!");
+                }
+                return removed;
             }
         }
 
@@ -804,6 +825,10 @@ namespace SocketNetworking.Shared
         /// </returns>
         public static int RemoveAllNetworkObjectsByID(int id)
         {
+            if (id == 0)
+            {
+                Log.Warning("Trying to remove all objects with NetID 0, are you sure you know what you are doing?");
+            }
             List<INetworkObject> networkObjects = NetworkObjects.Keys.Where(x => x.NetworkID == id).ToList();
             int removed = 0;
             foreach (INetworkObject netObj in networkObjects)
@@ -928,6 +953,7 @@ namespace SocketNetworking.Shared
                 INetworkSyncVar var;
                 if (field.GetValue(target) == null)
                 {
+                    Log.Warning($"Field '{field.Name}' on '{target}' is returning null, creating one dynamically. (Not good, try to use OnBeforeRegister()!)");
                     var = (INetworkSyncVar)Activator.CreateInstance(field.FieldType, target, target.OwnershipMode);
                 }
                 else
@@ -940,6 +966,7 @@ namespace SocketNetworking.Shared
                 }
                 if (var.Name == string.Empty)
                 {
+                    Log.Warning($"Field '{field.Name}' on '{target}' is not named correctly. Have you considered naming it before object registration? This can be ignored if you don't care to do this.");
                     var.Name = field.Name;
                 }
                 field.SetValue(target, var);
@@ -983,10 +1010,10 @@ namespace SocketNetworking.Shared
             //Log.Debug(packetType.Name);
             Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[cPacket.CustomPacketID]);
             ByteReader reader = packet.Deserialize(data);
-            if (reader.ReadBytes < header.Size)
-            {
-                //Log.Warning($"Packet with ID {cPacket.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read. Actual: {reader.ReadBytes}, Header: {header.Size}");
-            }
+            //if (reader.ReadBytes < header.Size)
+            //{
+            //    Log.Warning($"Packet with ID {cPacket.CustomPacketID} was not fully consumed, the header specified a length which was greater then what was read. Actual: {reader.ReadBytes}, Header: {header.Size}");
+            //}
             object changedPacket = Convert.ChangeType(packet, packetType);
             NetworkHandle handle = new NetworkHandle(runningClient, (Packet)changedPacket);
             if (cPacket.NetworkIDTarget == 0)
@@ -1095,6 +1122,11 @@ namespace SocketNetworking.Shared
                         {
                             Log.Warning($"No such Network Sync Var '{data.TargetVar}' on object type {obj.GetType().FullName}, object: {obj}");
                         }
+                        continue;
+                    }
+                    if (field.GetValue(obj) == null)
+                    {
+                        Log.Warning($"Network Sync Var '{data.TargetVar}' is null on object {obj}");
                         continue;
                     }
                     INetworkSyncVar syncVar = field.GetValue(obj) as INetworkSyncVar;
@@ -1225,7 +1257,7 @@ namespace SocketNetworking.Shared
                     return curMethod;
                 }
             }
-            Log.GlobalError($"Can't find method {name} with args {string.Join(",", arguments.Select(x => x.Name))}");
+            Log.Error($"Can't find method {name} with args {string.Join(",", arguments.Select(x => x.Name))}");
             return null;
         }
 

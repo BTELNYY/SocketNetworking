@@ -10,7 +10,7 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkTransform : NetworkComponent
     {
-        public ComponentSyncMode SyncMode { get; set; } = ComponentSyncMode.FrameUpdate;
+        public ComponentSyncMode SyncMode { get; set; } = ComponentSyncMode.Manual;
 
         public float MinimumDifferenceForSync { get; set; } = 0.001f;
 
@@ -145,12 +145,15 @@ namespace SocketNetworking.UnityEngine.Components
         void Awake()
         {
             UnityNetworkManager.Register(this);
-            scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(scale));
-            rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(rotation));
-            position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(position));
-            localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(localRotation));
-            localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(localPosition));
-            if (IsOwner)
+            if (Enabled)
+            {
+                scale = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(scale));
+                rotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(rotation));
+                position = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(position));
+                localRotation = new NetworkSyncVar<Quaternion>(this, Identity.OwnershipMode, nameof(localRotation));
+                localPosition = new NetworkSyncVar<Vector3>(this, Identity.OwnershipMode, nameof(localPosition));
+            }
+            if (Enabled && IsOwner)
             {
                 NetworkPosition = Identity.gameObject.transform.position;
                 NetworkRotation = Identity.gameObject.transform.rotation;
