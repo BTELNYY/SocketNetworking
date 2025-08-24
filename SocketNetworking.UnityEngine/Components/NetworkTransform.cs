@@ -10,7 +10,7 @@ namespace SocketNetworking.UnityEngine.Components
 {
     public class NetworkTransform : NetworkComponent
     {
-        public ComponentSyncMode SyncMode { get; set; } = ComponentSyncMode.Manual;
+        public ComponentSyncMode SyncMode { get; set; } = ComponentSyncMode.Automatic;
 
         public float MinimumDifferenceForSync { get; set; } = 0.001f;
 
