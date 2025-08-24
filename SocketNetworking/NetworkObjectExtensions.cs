@@ -404,18 +404,16 @@ namespace SocketNetworking
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");
             }
-            (INetworkObject, NetworkObjectData) result = NetworkManager.GetNetworkObjectByID(obj.NetworkID);
-            if (result.Item1 == null)
+            List<(INetworkObject, NetworkObjectData)> result = NetworkManager.GetNetworkObjectsByID(obj.NetworkID);
+            foreach ((INetworkObject, NetworkObjectData) obData in result)
             {
-                NetworkManager.AddNetworkObject(obj);
-            }
-            else
-            {
-                if (result.Item1.GetType() != obj.GetType())
+                INetworkObject netObj = obData.Item1;
+                if (netObj.GetType() == obj.GetType())
                 {
-                    throw new InvalidOperationException("It seems this objects ID has been added and the type does not match.");
+                    Log.GlobalWarning($"Object is duplicated by type with NetID {obj.NetworkID}. This will lead to unexplained behavior. It is recommended that you only keep one type of object per NetID. Original: {netObj}, Duplicate: {obj}");
                 }
             }
+            NetworkManager.AddNetworkObject(obj);
             ObjectManagePacket packet = new ObjectManagePacket(obj)
             {
                 Action = ObjectManagePacket.ObjectManageAction.Create,
@@ -455,6 +453,16 @@ namespace SocketNetworking
             {
                 throw new InvalidOperationException("This object is not spawnable.");
             }
+            List<(INetworkObject, NetworkObjectData)> result = NetworkManager.GetNetworkObjectsByID(obj.NetworkID);
+            foreach ((INetworkObject, NetworkObjectData) obData in result)
+            {
+                INetworkObject netObj = obData.Item1;
+                if (netObj.GetType() == obj.GetType())
+                {
+                    Log.GlobalWarning($"Object is duplicated by type with NetID {obj.NetworkID}. This will lead to unexplained behavior. It is recommended that you only keep one type of object per NetID. Original: {netObj}, Duplicate: {obj}");
+                }
+            }
+            NetworkManager.AddNetworkObject(obj);
             if (NetworkManager.WhereAmI == ClientLocation.Local)
             {
                 throw new InvalidOperationException("Only servers can spawn objects this way.");

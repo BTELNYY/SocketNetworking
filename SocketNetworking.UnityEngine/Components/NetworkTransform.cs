@@ -97,26 +97,26 @@ namespace SocketNetworking.UnityEngine.Components
         {
             if (!IsOwner)
             {
-                if (scale != null)
+                if (scale != null && scale.HasHadValueSet)
                 {
                     Identity.gameObject.transform.localScale = scale.Value;
                 }
-                if (localPosition != null)
+                if (localPosition != null && localPosition.HasHadValueSet)
                 {
                     Identity.gameObject.transform.localPosition = localPosition.Value;
                     //Identity.gameObject.transform.localPosition = Vector3.Lerp(Identity.gameObject.transform.localPosition, localPosition.Value, LerpTime);
                 }
-                if (position != null)
+                if (position != null && position.HasHadValueSet)
                 {
                     Identity.gameObject.transform.position = position.Value;
                     //Identity.gameObject.transform.position = Vector3.Lerp(Identity.gameObject.transform.position, position.Value, LerpTime);
                 }
-                if (localRotation != null)
+                if (localRotation != null && localRotation.HasHadValueSet)
                 {
                     Identity.gameObject.transform.localRotation = localRotation.Value;
                     //Identity.gameObject.transform.localRotation = Quaternion.Slerp(Identity.gameObject.transform.localRotation, localRotation.Value, LerpTime);
                 }
-                if (rotation != null)
+                if (rotation != null && rotation.HasHadValueSet)
                 {
                     Identity.gameObject.transform.rotation = rotation.Value;
                     //Identity.gameObject.transform.rotation = Quaternion.Slerp(Identity.gameObject.transform.rotation, rotation.Value, LerpTime);

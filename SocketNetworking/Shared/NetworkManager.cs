@@ -318,7 +318,7 @@ namespace SocketNetworking.Shared
         private static readonly List<NetworkObjectData> PreCache = new List<NetworkObjectData>();
 
         /// <summary>
-        /// Attempts to find a <see cref="INetworkObject"/> by <see cref="INetworkObject.NetworkID"/>.
+        /// Attempts to find a <see cref="INetworkObject"/> by <see cref="INetworkObject.NetworkID"/>. Will return the first one found.
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -330,6 +330,33 @@ namespace SocketNetworking.Shared
                 return (obj, NetworkObjects[obj]);
             }
             return (null, null);
+        }
+
+        /// <summary>
+        /// Attempts to find all <see cref="INetworkObject"/>s with a specific <paramref name="id"/>.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static List<(INetworkObject, NetworkObjectData)> GetNetworkObjectsByID(int id)
+        {
+            return NetworkObjects.Where(x => x.Key.NetworkID == id).Select(x => (x.Key, x.Value)).ToList();
+        }
+
+        /// <summary>
+        /// Prints all <see cref="INetworkObject"/>s from <see cref="NetworkObjects"/> using <see cref="Log.Info(string)"/>.
+        /// </summary>
+        public static void PrintNetworkObjects()
+        {
+            Log.Info($"PRINT NETWORK OBJECTS!!!");
+            List<INetworkObject> objs = NetworkObjects.Keys.ToList();
+            objs.Sort((x, y) =>
+            {
+                return x.NetworkID - y.NetworkID;
+            });
+            foreach (INetworkObject networkObject in objs)
+            {
+                Log.Info($"Object: {networkObject}, Data: {NetworkObjects[networkObject]}");
+            }
         }
 
         private static readonly List<NetworkObjectSpawner> NetworkObjectSpawners = new List<NetworkObjectSpawner>();

@@ -57,6 +57,19 @@ namespace SocketNetworking.Shared.SyncVars
 
         OwnershipMode _mode;
 
+        private bool _valueSetBefore = false;
+
+        /// <summary>
+        /// Determines if the value of <see cref="Value"/> has been set for this <see cref="INetworkSyncVar"/> before either by local or remote means.
+        /// </summary>
+        public bool HasHadValueSet
+        {
+            get
+            {
+                return _valueSetBefore;
+            }
+        }
+
         T value = default;
 
         /// <summary>
@@ -77,6 +90,7 @@ namespace SocketNetworking.Shared.SyncVars
                 }
                 this.value = value;
                 ValueRaw = value;
+                _valueSetBefore = true;
                 Changed?.Invoke(value);
                 _onUpdated?.Invoke(value);
             }
@@ -242,6 +256,14 @@ namespace SocketNetworking.Shared.SyncVars
             if (!(value is T))
             {
                 Log.GlobalWarning($"Value is not {typeof(T).Name}! It is: {value.GetType().Name}");
+            }
+            if (who != null)
+            {
+                _valueSetBefore = true;
+            }
+            else
+            {
+                Log.GlobalWarning("NetworkClient setting SyncVar is null. If you did not intend for this, this is a bad sign. SyncVar: " + Name);
             }
             Changed?.Invoke(this.value);
             _onUpdated?.Invoke(this.value);
