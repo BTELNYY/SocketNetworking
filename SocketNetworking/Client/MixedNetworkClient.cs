@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
@@ -150,6 +151,75 @@ namespace SocketNetworking.Client
                 }
                 InvokePacketSent(packet);
             }
+        }
+
+        private List<OrderedPacketData> lastPackets = new List<OrderedPacketData>();
+
+        protected override void HandlePacket(PacketHeader header, byte[] fullPacket)
+        {
+            if (header.Flags.HasFlag(PacketFlags.KeepInOrder))
+            {
+                if (header.Flags.HasFlag(PacketFlags.IsTargeted))
+                {
+                    TargetedPacket packet = new TargetedPacket();
+                    packet.Deserialize(fullPacket);
+                    int index = lastPackets.FindIndex(x => x.Target == packet.NetworkIDTarget && x.Header.Flags == packet.Flags && x.Header.Type == packet.Type);
+                    if (index != -1)
+                    {
+                        long sendTime = lastPackets[index].SendTime;
+                        if (sendTime > packet.SendTime)
+                        {
+                            Log.Warning($"Dropping {packet}. Out of order packet!");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        OrderedPacketData packetData = new OrderedPacketData();
+                        packetData.FullPacket = fullPacket;
+                        packetData.SendTime = packet.SendTime;
+                        packetData.Target = packet.NetworkIDTarget;
+                        packetData.Header = header;
+                        lastPackets.Add(packetData);
+                    }
+                }
+                else
+                {
+                    Packet packet = new Packet();
+                    packet.Deserialize(fullPacket);
+                    int index = lastPackets.FindIndex(x => x.Header.Size == packet.Size && x.Header.Flags == packet.Flags && x.Header.Type == packet.Type);
+                    if (index != -1)
+                    {
+                        long sendTime = lastPackets[index].SendTime;
+                        if (sendTime > packet.SendTime)
+                        {
+                            Log.Warning($"Dropping {packet}. Out of order packet!");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        OrderedPacketData packetData = new OrderedPacketData();
+                        packetData.FullPacket = fullPacket;
+                        packetData.SendTime = packet.SendTime;
+                        packetData.Target = -1;
+                        packetData.Header = header;
+                        lastPackets.Add(packetData);
+                    }
+                }
+            }
+            base.HandlePacket(header, fullPacket);
+        }
+
+        private struct OrderedPacketData
+        {
+            public PacketHeader Header;
+
+            public byte[] FullPacket;
+
+            public long SendTime;
+
+            public int Target;
         }
 
         protected override void RawReader()

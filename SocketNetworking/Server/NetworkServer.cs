@@ -671,7 +671,7 @@ namespace SocketNetworking.Server
         /// <param name="readyOnly"></param>
         /// <param name="priority"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, bool readyOnly = false, bool priority = false)
+        public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, bool readyOnly = false)
         {
             if (!Active)
             {
@@ -694,7 +694,7 @@ namespace SocketNetworking.Server
 
 
         /// <summary>
-        /// Runs <see cref="NetworkClient.NetworkInvoke(object, string, object[], bool)"/> on all clients. <paramref name="readyOnly"/> determines if the clients must be <see cref="NetworkClient.Ready"/> to be called on.
+        /// Runs <see cref="NetworkClient.NetworkInvoke(object, string, object[])"/> on all clients. <paramref name="readyOnly"/> determines if the clients must be <see cref="NetworkClient.Ready"/> to be called on.
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="methodName"></param>
@@ -702,7 +702,7 @@ namespace SocketNetworking.Server
         /// <param name="filter"></param>
         /// <param name="priority"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, Predicate<NetworkClient> filter, bool priority = false)
+        public static void NetworkInvokeOnAll(object obj, string methodName, Predicate<NetworkClient> filter, params object[] args)
         {
             if (!Active)
             {
@@ -720,7 +720,7 @@ namespace SocketNetworking.Server
             }
         }
 
-        public static void NetworkInvokeOnAll(string methodName, object[] args, Predicate<NetworkClient> filter, bool priority = false)
+        public static void NetworkInvokeOnAll(string methodName, object[] args, Predicate<NetworkClient> filter)
         {
             if (!Active)
             {
@@ -730,13 +730,13 @@ namespace SocketNetworking.Server
             clients = clients.Where(x => filter(x)).ToList();
             foreach (NetworkClient client in clients)
             {
-                client.NetworkInvoke(methodName, priority, args);
+                client.NetworkInvoke(methodName, args);
             }
         }
 
-        public static void NetworkInvokeOnAll(string methodName, object[] args, bool priority = false)
+        public static void NetworkInvokeOnAll(string methodName, object[] args)
         {
-            NetworkInvokeOnAll(methodName, args, x => true, priority);
+            NetworkInvokeOnAll(methodName, args, x => true);
         }
     }
 

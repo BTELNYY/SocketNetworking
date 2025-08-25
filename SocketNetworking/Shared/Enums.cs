@@ -50,10 +50,10 @@ namespace SocketNetworking.Shared
     }
 
     /// <summary>
-    /// <see cref="PacketFlags"/> are used to give metadata to packets for the sending method to interpert. For exmaple, flagging the packet as <see cref="PacketFlags.SymmetricalEncrypted"/> will use the symmetrical key sent in the Encryption Handshake during connection time. Some flags cannot be used if the framework for them has not yet been implemented. (Handshake isn't complete, RSA/AES keys are not exchanged, or they are incorrect.)
+    /// <see cref="PacketFlags"/> are used to give metadata to packets for the sending method to interpert. For example, flagging the packet as <see cref="PacketFlags.SymmetricalEncrypted"/> will use the symmetrical key sent in the Encryption Handshake during connection time. Some flags cannot be used if the framework for them has not yet been implemented. (Handshake isn't complete, RSA/AES keys are not exchanged, or they are incorrect.)
     /// </summary>
     [Flags]
-    public enum PacketFlags : byte
+    public enum PacketFlags : short
     {
         /// <summary>
         /// No flags are set.
@@ -72,7 +72,7 @@ namespace SocketNetworking.Shared
         /// </summary>
         SymmetricalEncrypted = 4,
         /// <summary>
-        /// Used to specify this packet is to be treated with priority, being sent first. This can cause out of order situations, so its best to use this only for systems which are not affected by this.
+        /// Used to specify this packet is to be treated with priority, being sent first. This can cause out of order situations, so its best to use this only for systems which are not affected by this. Does nothing if you are not using <see cref="MixedNetworkClient"/>. If you want to try keeping this packets in order, flip <see cref="PacketFlags.KeepInOrder"/> to true.
         /// </summary>
         Priority = 8,
         /// <summary>
@@ -87,6 +87,14 @@ namespace SocketNetworking.Shared
         /// Prevents this packet from being encrypted using <see cref="PacketFlags.SymmetricalEncrypted"/>.
         /// </summary>
         NoAES = 64,
+        /// <summary>
+        /// Prevents this packet from being sent out of order. Does nothing if you do not have <see cref="PacketFlags.Priority"/> set to true or are not using <see cref="MixedNetworkClient"/>. This is done by checking the <see cref="PacketSystem.Packet.SendTime"/> of this packet compared to the last recieved packet. The last recieved packet is defined as the last packet of the same <see cref="PacketSystem.Packet.Type"/>, <see cref="PacketSystem.Packet.Flags"/> and <see cref="PacketSystem.TargetedPacket.NetworkIDTarget"/> (if applicable, otherwise uses size). Note that the old packet must also have this flag set in order to count, packets without this flag are simply not checked.
+        /// </summary>
+        KeepInOrder = 128,
+        /// <summary>
+        /// Determines if the current packet is <see cref="PacketSystem.TargetedPacket"/>/
+        /// </summary>
+        IsTargeted = 256,
     }
 
     /// <summary>

@@ -9,6 +9,12 @@ namespace SocketNetworking.Shared.PacketSystem
         /// </summary>
         public int NetworkIDTarget { get; set; } = 0;
 
+        public override bool ValidatePacket()
+        {
+            Flags |= PacketFlags.IsTargeted;
+            return base.ValidatePacket();
+        }
+
         public override ByteReader Deserialize(byte[] data)
         {
             ByteReader reader = base.Deserialize(data);

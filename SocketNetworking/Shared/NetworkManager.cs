@@ -1420,7 +1420,7 @@ namespace SocketNetworking.Shared
                 {
                     pred = x => true;
                 }
-                NetworkServer.NetworkInvokeOnAll(target, packet.MethodName, args.Skip(1).ToArray(), pred, priority: packet.Flags.HasFlag(PacketFlags.Priority));
+                NetworkServer.NetworkInvokeOnAll(target, packet.MethodName, pred, args.Skip(1).ToArray());
             }
             if (!localCall)
             {
@@ -1434,9 +1434,9 @@ namespace SocketNetworking.Shared
             return result;
         }
 
-        public static NetworkInvocationPacket NetworkInvoke(object target, NetworkClient sender, string methodName, bool priority = false, bool ignoreResult = true, params object[] args)
+        public static NetworkInvocationPacket NetworkInvoke(object target, NetworkClient sender, string methodName, bool ignoreResult = true, params object[] args)
         {
-            return NetworkInvoke(target, sender, methodName, args, priority, ignoreResult);
+            return NetworkInvoke(target, sender, methodName, args, ignoreResult);
         }
 
         /// <summary>
@@ -1456,7 +1456,7 @@ namespace SocketNetworking.Shared
         /// </param>
         /// <exception cref="NetworkInvocationException"></exception>
         /// <exception cref="SecurityException"></exception>
-        public static NetworkInvocationPacket NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args, bool priority = false, bool ignoreResult = true)
+        public static NetworkInvocationPacket NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args, bool ignoreResult = true)
         {
             if (args == null)
             {
@@ -1537,13 +1537,29 @@ namespace SocketNetworking.Shared
             NetworkInvocations.Add(callbackID);
             packet.CallbackID = callbackID;
             packet.IgnoreResult = ignoreResult;
-            if (ignoreResult && invokable.Broadcast && NetworkManager.WhereAmI == ClientLocation.Remote)
+            if (invokable.Priority)
             {
-                NetworkServer.NetworkInvokeOnAll(target, methodName, args, priority: priority);
+                packet.Flags |= PacketFlags.Priority;
             }
             else
             {
-                sender.Send(packet, priority);
+                packet.Flags &= ~PacketFlags.Priority;
+            }
+            if (invokable.KeepOrdered)
+            {
+                packet.Flags |= PacketFlags.KeepInOrder;
+            }
+            else
+            {
+                packet.Flags &= ~PacketFlags.KeepInOrder;
+            }
+            if (ignoreResult && invokable.Broadcast && NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkServer.NetworkInvokeOnAll(target, methodName, args);
+            }
+            else
+            {
+                sender.Send(packet);
             }
             if (invokable.CallLocal)
             {
@@ -1552,9 +1568,9 @@ namespace SocketNetworking.Shared
             return packet;
         }
 
-        public static NetworkInvocationCallback<T> NetworkInvoke<T>(object target, NetworkClient sender, string methodName, object[] args, bool priority = false)
+        public static NetworkInvocationCallback<T> NetworkInvoke<T>(object target, NetworkClient sender, string methodName, params object[] args)
         {
-            NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
+            NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, false);
             return new NetworkInvocationCallback<T>(packet.CallbackID);
         }
 
@@ -1569,13 +1585,13 @@ namespace SocketNetworking.Shared
         /// <param name="msTimeOut"></param>
         /// <param name="priority"></param>
         /// <returns></returns>
-        public static T NetworkInvokeBlocking<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000, bool priority = false)
+        public static T NetworkInvokeBlocking<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000)
         {
             if (args == null)
             {
                 args = new object[0];
             }
-            NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, priority, false);
+            NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, false);
             MethodInfo method = target.GetType().GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault(x => x.Name == methodName);
             if (method != null && method.ReturnType == typeof(void))
             {

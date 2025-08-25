@@ -113,7 +113,7 @@ namespace SocketNetworking.Shared.PacketSystem
         {
             ByteWriter writer = new ByteWriter();
             writer.WriteByte((byte)Type);
-            writer.WriteByte((byte)Flags);
+            writer.WriteShort((short)Flags);
             SerializableIPEndPoint destination = new SerializableIPEndPoint(Destination);
             SerializableIPEndPoint source = new SerializableIPEndPoint(Source);
             writer.WriteWrapper<SerializableIPEndPoint, IPEndPoint>(destination);
@@ -137,7 +137,7 @@ namespace SocketNetworking.Shared.PacketSystem
             {
                 throw new NetworkConversionException("Given network data doesn't match packets internal data type. Either routing failed, or deserialization failed.");
             }
-            Flags = (PacketFlags)reader.ReadByte();
+            Flags = (PacketFlags)reader.ReadShort();
             Destination = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
             Source = reader.ReadWrapper<SerializableIPEndPoint, IPEndPoint>();
             SendTime = reader.ReadLong();
@@ -156,7 +156,7 @@ namespace SocketNetworking.Shared.PacketSystem
     /// </summary>
     public struct PacketHeader
     {
-        public const int HeaderLength = 6;
+        public const int HeaderLength = 7;
 
         public int Size;
         public PacketType Type;
@@ -178,10 +178,10 @@ namespace SocketNetworking.Shared.PacketSystem
         }
 
         /// <summary>
-        /// Gets a <see cref="PacketHeader"/> using at minimum 16 bytes of data.
+        /// Gets a <see cref="PacketHeader"/> using at minimum <see cref="PacketHeader.HeaderLength"/> bytes of data.
         /// </summary>
         /// <param name="data">
-        /// A 16 <see cref="byte"/> long array to use to fetch the packet header.
+        /// A <see cref="PacketHeader.HeaderLength"/> <see cref="byte"/> long array to use to fetch the packet header.
         /// </param>
         /// <returns>
         /// The completed <see cref="PacketHeader"/>
@@ -200,8 +200,25 @@ namespace SocketNetworking.Shared.PacketSystem
             ByteReader reader = new ByteReader(data);
             int size = reader.ReadInt();
             PacketType type = (PacketType)reader.ReadByte();
-            PacketFlags flags = (PacketFlags)reader.ReadByte();
+            PacketFlags flags = (PacketFlags)reader.ReadShort();
             return new PacketHeader(size, type, flags);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is PacketHeader header &&
+                   Size == header.Size &&
+                   Type == header.Type &&
+                   Flags == header.Flags;
+        }
+
+        public override int GetHashCode()
+        {
+            int hashCode = 1261777533;
+            hashCode = hashCode * -1521134295 + Size.GetHashCode();
+            hashCode = hashCode * -1521134295 + Type.GetHashCode();
+            hashCode = hashCode * -1521134295 + Flags.GetHashCode();
+            return hashCode;
         }
 
         public override string ToString()

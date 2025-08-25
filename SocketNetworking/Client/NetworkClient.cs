@@ -732,7 +732,7 @@ namespace SocketNetworking.Client
         /// </returns>
         public bool ClientRequestEncryption()
         {
-            return NetworkInvokeBlocking<bool>(nameof(ServerGetEncryptionRequest), new object[] { });
+            return NetworkInvokeBlocking<bool>(nameof(ServerGetEncryptionRequest));
         }
 
         [NetworkInvokable(NetworkDirection.Client)]
@@ -1175,11 +1175,10 @@ namespace SocketNetworking.Client
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
-        /// <param name="priority"></param>
         /// <returns></returns>
-        public T NetworkInvoke<T>(object target, string methodName, object[] args, float maxTimeMs = 5000, bool priority = false)
+        public T NetworkInvoke<T>(object target, string methodName, float maxTimeMs = 5000, params object[] args)
         {
-            return NetworkManager.NetworkInvokeBlocking<T>(target, this, methodName, args, maxTimeMs, priority);
+            return NetworkManager.NetworkInvokeBlocking<T>(target, this, methodName, args, maxTimeMs);
         }
 
         /// <summary>
@@ -1188,20 +1187,9 @@ namespace SocketNetworking.Client
         /// <param name="target"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
-        public void NetworkInvoke(object target, string methodName, object[] args, bool priority = false)
+        public void NetworkInvoke(object target, string methodName, params object[] args)
         {
-            NetworkManager.NetworkInvoke(target, this, methodName, args, priority);
-        }
-
-        /// <summary>
-        /// Preforms a non-blocking Network Invocation (Like an RPC)
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="methodName"></param>
-        /// <param name="args"></param>
-        public void NetworkInvoke(object target, string methodName, bool priority = false, params object[] args)
-        {
-            NetworkManager.NetworkInvoke(target, this, methodName, args, priority);
+            NetworkManager.NetworkInvoke(target, this, methodName, args);
         }
 
         /// <summary>
@@ -1209,20 +1197,9 @@ namespace SocketNetworking.Client
         /// </summary>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
-        public void NetworkInvoke(string methodName, object[] args, bool priority = false)
-        {
-            NetworkManager.NetworkInvoke(this, this, methodName, args, priority);
-        }
-
-        public void NetworkInvoke(string methodName, bool priority = false, params object[] args)
-        {
-            NetworkInvoke(methodName, args, priority);
-        }
-
         public void NetworkInvoke(string methodName, params object[] args)
         {
-            //NetworkInvoke(methodName, args);
-            NetworkInvoke(methodName, args, false);
+            NetworkManager.NetworkInvoke(this, this, methodName, args);
         }
 
         /// <summary>
@@ -1232,11 +1209,10 @@ namespace SocketNetworking.Client
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
-        /// <param name="priority"></param>
         /// <returns></returns>
-        public T NetworkInvokeBlocking<T>(string methodName, object[] args, float maxTimeMs = 5000, bool priority = false)
+        public T NetworkInvokeBlocking<T>(string methodName, float maxTimeMs = 5000, params object[] args)
         {
-            return NetworkManager.NetworkInvokeBlocking<T>(this, this, methodName, args, maxTimeMs, priority);
+            return NetworkManager.NetworkInvokeBlocking<T>(this, this, methodName, args, maxTimeMs);
         }
 
         /// <summary>
@@ -1245,11 +1221,10 @@ namespace SocketNetworking.Client
         /// <typeparam name="T"></typeparam>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
-        /// <param name="priority"></param>
         /// <returns></returns>
-        public NetworkInvocationCallback<T> NetworkInvoke<T>(string methodName, object[] args, bool priority = false)
+        public NetworkInvocationCallback<T> NetworkInvoke<T>(string methodName, params object[] args)
         {
-            return NetworkManager.NetworkInvoke<T>(this, this, methodName, args, priority);
+            return NetworkManager.NetworkInvoke<T>(this, this, methodName, args);
         }
 
         #endregion
@@ -2216,7 +2191,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        protected void HandlePacket(PacketHeader header, byte[] fullPacket)
+        protected virtual void HandlePacket(PacketHeader header, byte[] fullPacket)
         {
             if (CurrentClientLocation == ClientLocation.Remote)
             {

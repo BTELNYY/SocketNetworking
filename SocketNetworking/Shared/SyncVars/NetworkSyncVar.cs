@@ -116,9 +116,14 @@ namespace SocketNetworking.Shared.SyncVars
         public event Action<T> Changed;
 
         /// <summary>
-        /// Determines if <see cref="PacketFlags.Priority"/> will be set when sending packets.
+        /// Determines if <see cref="PacketFlags.Priority"/> will be set when sending packets. Really only works with <see cref="MixedNetworkClient"/>.
         /// </summary>
         public bool Priority { get; set; } = false;
+
+        /// <summary>
+        /// Determines if <see cref="PacketFlags.KeepInOrder"/> will be set when sending packets. Only works with <see cref="MixedNetworkClient"/> and <see cref="Priority"/>.
+        /// </summary>
+        public bool KeepOrdered { get; set; } = false;
 
         public virtual void Sync()
         {

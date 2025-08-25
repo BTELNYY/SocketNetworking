@@ -17,9 +17,25 @@ namespace SocketNetworking.Shared.Attributes
         /// </summary>
         public bool SecureMode { get; set; } = true;
 
+        /// <summary>
+        /// Will cause the server to re-transmit the invocation across the network.
+        /// </summary>
         public bool Broadcast { get; set; } = false;
 
+        /// <summary>
+        /// Will invoke this method on the local (invoker) as well as the remote.
+        /// </summary>
         public bool CallLocal { get; set; } = false;
+
+        /// <summary>
+        /// Determines the <see cref="PacketFlags.Priority"/> flag. This only really has an effect if using the <see cref="MixedNetworkClient"/>.
+        /// </summary>
+        public bool Priority { get; set; } = false;
+
+        /// <summary>
+        /// Determines the <see cref="PacketFlags.KeepInOrder"/> flag. This only really has an effect if using the <see cref="MixedNetworkClient"/> and <see cref="Priority"/> feature.
+        /// </summary>
+        public bool KeepOrdered { get; set; } = false;
 
         /// <summary>
         /// Creates a new instance of the <see cref="NetworkInvokable"/> attribute. Note that <see cref="SecureMode"/> is set to true using this constroctur, meaning that security is done. The method that is attached to this attribute must have the object implement <see cref="INetworkOwned"/>, or be a <see cref="NetworkClient"/>. OR, the method may take a <see cref="NetworkClient"/> as its first argument, this does not garrauntee safety, but does allow you to check manually. Not doing any of these will generate a warning at runtime. Note that if called from the server, security checks aren't applied.
@@ -54,10 +70,12 @@ namespace SocketNetworking.Shared.Attributes
             SecureMode = secureMode;
         }
 
-        public NetworkInvokable(NetworkDirection direction = NetworkDirection.Any, bool secureMode = true, bool broadcast = false, bool callLocal = false) : this(direction, secureMode)
+        public NetworkInvokable(NetworkDirection direction = NetworkDirection.Any, bool secureMode = true, bool broadcast = false, bool callLocal = false, bool priority = false, bool keepOrdered) : this(direction, secureMode)
         {
             Broadcast = broadcast;
             CallLocal = callLocal;
+            Priority = priority;
+            KeepOrdered = keepOrdered;
         }
     }
 }
