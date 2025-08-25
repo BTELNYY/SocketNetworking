@@ -1168,20 +1168,6 @@ namespace SocketNetworking.Client
         #region Network Invoke
 
         /// <summary>
-        /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="target"></param>
-        /// <param name="methodName"></param>
-        /// <param name="args"></param>
-        /// <param name="maxTimeMs"></param>
-        /// <returns></returns>
-        public T NetworkInvoke<T>(object target, string methodName, float maxTimeMs = 5000, params object[] args)
-        {
-            return NetworkManager.NetworkInvokeBlocking<T>(target, this, methodName, args, maxTimeMs);
-        }
-
-        /// <summary>
         /// Preforms a non-blocking Network Invocation (Like an RPC)
         /// </summary>
         /// <param name="target"></param>
@@ -1197,7 +1183,7 @@ namespace SocketNetworking.Client
         /// </summary>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
-        public void NetworkInvoke(string methodName, params object[] args)
+        public void NetworkInvokeOnClient(string methodName, params object[] args)
         {
             NetworkManager.NetworkInvoke(this, this, methodName, args);
         }
@@ -1222,7 +1208,7 @@ namespace SocketNetworking.Client
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        public NetworkInvocationCallback<T> NetworkInvoke<T>(string methodName, params object[] args)
+        public NetworkInvocationCallback<T> NetworkInvokeBlockingCallback<T>(string methodName, params object[] args)
         {
             return NetworkManager.NetworkInvoke<T>(this, this, methodName, args);
         }
@@ -2340,7 +2326,7 @@ namespace SocketNetworking.Client
         /// <param name="severity"></param>
         public void SendLog(string message, LogSeverity severity)
         {
-            NetworkInvoke(nameof(GetError), new object[] { message, (int)severity });
+            NetworkInvokeOnClient(nameof(GetError), new object[] { message, (int)severity });
         }
 
         [NetworkInvokable(NetworkDirection.Any)]
@@ -2404,7 +2390,7 @@ namespace SocketNetworking.Client
                     {
                         return x.SpawnPriority - y.SpawnPriority;
                     });
-                    NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
+                    NetworkInvokeOnClient(nameof(OnSyncBegin), new object[] { objects.Count });
                     foreach (INetworkObject @object in objects)
                     {
                         @object.NetworkSpawn(this);
@@ -2428,7 +2414,7 @@ namespace SocketNetworking.Client
             {
                 return x.SpawnPriority - y.SpawnPriority;
             });
-            NetworkInvoke(nameof(OnSyncBegin), new object[] { objects.Count });
+            NetworkInvokeOnClient(nameof(OnSyncBegin), new object[] { objects.Count });
             foreach (INetworkObject @object in objects)
             {
                 @object.NetworkSpawn(this);
@@ -2456,7 +2442,7 @@ namespace SocketNetworking.Client
                 avatar.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
             }
             avatar.NetworkSpawn();
-            NetworkInvoke(nameof(GetClientAvatar), new object[] { avatar.NetworkID });
+            NetworkInvokeOnClient(nameof(GetClientAvatar), new object[] { avatar.NetworkID });
             //Log.Info($"Avatar Specify: {avatar.NetworkID}");
             _avatar = avatar;
         }

@@ -1460,7 +1460,7 @@ namespace SocketNetworking.Shared
                 targetID = networkObject.NetworkID;
                 if (!networkObject.Active)
                 {
-                    throw new InvalidOperationException("Cannot NetworkInvoke on inactive objects.");
+                    throw new InvalidOperationException("Cannot NetworkInvokeOnClient on inactive objects.");
                 }
             }
             else if (!(target is NetworkClient client))
@@ -1559,7 +1559,7 @@ namespace SocketNetworking.Shared
         }
 
         /// <summary>
-        /// Tries to call a NetworkInvoke method and get its return. This method will block the calling thread until the remote method has returned. <b>Do not call this on the thread that reads packets, this will freeze the application as the thread will wait forever.</b>
+        /// Tries to call a NetworkInvokeOnClient method and get its return. This method will block the calling thread until the remote method has returned. <b>Do not call this on the thread that reads packets, this will freeze the application as the thread will wait forever.</b>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="target"></param>
@@ -1587,25 +1587,25 @@ namespace SocketNetworking.Shared
             {
                 if (!sender.IsTransportConnected)
                 {
-                    Log.Error($"NetworkInvoke on method {methodName} failed because the NetworkClient is not connected.");
+                    Log.Error($"NetworkInvokeOnClient on method {methodName} failed because the NetworkClient is not connected.");
                     break;
                 }
                 if (stopwatch.ElapsedMilliseconds > msTimeOut)
                 {
-                    Log.Error($"NetworkInvoke on method {methodName} timed out after {msTimeOut}ms of processing.");
+                    Log.Error($"NetworkInvokeOnClient on method {methodName} timed out after {msTimeOut}ms of processing.");
                     break;
                 }
             }
-            //Log.Debug($"NetworkInvoke on {methodName} successfully returned and took {stopwatch.ElapsedMilliseconds}ms");
+            //Log.Debug($"NetworkInvokeOnClient on {methodName} successfully returned and took {stopwatch.ElapsedMilliseconds}ms");
             NetworkInvokationResultPacket resultPacket = networkResultAwaiter.ResultPacket;
             if (resultPacket == null)
             {
-                Log.Error($"NetworkInvoke on method {methodName} failed remotely! Error: null");
+                Log.Error($"NetworkInvokeOnClient on method {methodName} failed remotely! Error: null");
                 return default;
             }
             if (!resultPacket.Success)
             {
-                Log.Error($"NetworkInvoke on method {methodName} failed remotely! Error: " + resultPacket.ErrorMessage);
+                Log.Error($"NetworkInvokeOnClient on method {methodName} failed remotely! Error: " + resultPacket.ErrorMessage);
                 return default;
             }
             object result = ByteConvert.Deserialize(resultPacket.Result, out int read);

@@ -730,7 +730,7 @@ namespace SocketNetworking.Server
             clients = clients.Where(x => filter(x)).ToList();
             foreach (NetworkClient client in clients)
             {
-                client.NetworkInvoke(methodName, args);
+                client.NetworkInvokeOnClient(methodName, args);
             }
         }
 

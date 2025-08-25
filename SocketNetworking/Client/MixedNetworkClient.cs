@@ -272,7 +272,7 @@ namespace SocketNetworking.Client
 
         private void ServerSendUDPInfo(int passKey)
         {
-            NetworkInvoke(nameof(ClientReceiveUDPInfo), new object[] { passKey });
+            NetworkInvokeOnClient(nameof(ClientReceiveUDPInfo), new object[] { passKey });
         }
 
         [NetworkInvokable(NetworkDirection.Server)]
