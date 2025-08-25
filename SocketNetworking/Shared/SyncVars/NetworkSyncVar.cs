@@ -272,7 +272,7 @@ namespace SocketNetworking.Shared.SyncVars
             }
             Changed?.Invoke(this.value);
             _onUpdated?.Invoke(this.value);
-            Log.GlobalDebug($"Got Value: {this.value}");
+            //Log.GlobalDebug($"Got Value: {this.value}");
         }
 
         public virtual void RawSet(OwnershipMode mode, NetworkClient who)

@@ -149,7 +149,7 @@ namespace SocketNetworking.Shared.Transports
 
         byte[] buffer = new byte[Packet.MaxPacketSize];
 
-        byte[] packetSizeBuffer = new byte[4];
+        readonly byte[] packetSizeBuffer = new byte[4];
 
         /// <summary>
         /// Attempts to read a full packet. (this blocks the TCP connection until it can be read)
@@ -240,7 +240,7 @@ namespace SocketNetworking.Shared.Transports
                 //    //    Log.GlobalError("Packet is larger than the amount of bytes sent over the network in the current _stream!");
                 //    //    break;
                 //    //}
-                //    fillSize -= sizeof(int); // this kinda desyncs fillsize from the actual size of the buffer, but eh
+                //    fillSize -= sizeof(int); // this kind of desyncs fill size from the actual size of the buffer, but eh
                 //                             // read the rest of the whole packet
                 //    if (bodySize > Packet.MaxPacketSize || bodySize < 0)
                 //    {
@@ -328,7 +328,9 @@ namespace SocketNetworking.Shared.Transports
             }
         }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public async override Task<(byte[], Exception, IPEndPoint)> ReceiveAsync()
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             return Receive();
         }

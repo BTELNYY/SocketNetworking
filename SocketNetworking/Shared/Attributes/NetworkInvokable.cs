@@ -38,12 +38,12 @@ namespace SocketNetworking.Shared.Attributes
         public bool KeepOrdered { get; set; } = false;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="NetworkInvokable"/> attribute. Note that <see cref="SecureMode"/> is set to true using this constroctur, meaning that security is done. The method that is attached to this attribute must have the object implement <see cref="INetworkOwned"/>, or be a <see cref="NetworkClient"/>. OR, the method may take a <see cref="NetworkClient"/> as its first argument, this does not garrauntee safety, but does allow you to check manually. Not doing any of these will generate a warning at runtime. Note that if called from the server, security checks aren't applied.
+        /// Creates a new instance of the <see cref="NetworkInvokable"/> attribute. Note that <see cref="SecureMode"/> is set to true using this constructor, meaning that security is done. The method that is attached to this attribute must have the object implement <see cref="INetworkOwned"/>, or be a <see cref="NetworkClient"/>. OR, the method may take a <see cref="NetworkClient"/> as its first argument, this does not guarantee safety, but does allow you to check manually. Not doing any of these will generate a warning at runtime. Note that if called from the server, security checks aren't applied.
         /// </summary>
         public NetworkInvokable() { }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="NetworkInvokable"/> attribute. If <see cref="SecureMode"/> is <see cref="true"/>, the method that is attached to this attribute must have the object must be a <see cref="NetworkClient"/>. OR, the method may take a <see cref="NetworkHandle"/> as its first argument, this does not garrauntee safety, but does allow you to check manually. Not doing any of these will generate a warning at runtime. Note that if called from the server, security checks aren't applied.
+        /// Creates a new instance of the <see cref="NetworkInvokable"/> attribute. If <see cref="SecureMode"/> is <see cref="true"/>, the method that is attached to this attribute must have the object must be a <see cref="NetworkClient"/>. OR, the method may take a <see cref="NetworkHandle"/> as its first argument, this does not guarantee safety, but does allow you to check manually. Not doing any of these will generate a warning at runtime. Note that if called from the server, security checks aren't applied.
         /// </summary>
         /// <param name="secureMode"></param>
         public NetworkInvokable(bool secureMode)
@@ -70,7 +70,7 @@ namespace SocketNetworking.Shared.Attributes
             SecureMode = secureMode;
         }
 
-        public NetworkInvokable(NetworkDirection direction = NetworkDirection.Any, bool secureMode = true, bool broadcast = false, bool callLocal = false, bool priority = false, bool keepOrdered) : this(direction, secureMode)
+        public NetworkInvokable(NetworkDirection direction = NetworkDirection.Any, bool secureMode = true, bool broadcast = false, bool callLocal = false, bool priority = false, bool keepOrdered = false) : this(direction, secureMode)
         {
             Broadcast = broadcast;
             CallLocal = callLocal;

@@ -88,7 +88,7 @@ namespace SocketNetworking.Shared.PacketSystem
         public IPEndPoint Source { get; set; } = new IPEndPoint(IPAddress.Loopback, 0);
 
         /// <summary>
-        /// The unix timestemp when the <see cref="Packet"/> was sent in milliseconds
+        /// The Unix timestamp when the <see cref="Packet"/> was sent in milliseconds
         /// </summary>
         public long SendTime { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 

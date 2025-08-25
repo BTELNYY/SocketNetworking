@@ -454,11 +454,7 @@ namespace SocketNetworking.Shared
             //prevent clients from spawning in whatever they want.
             if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && WhereAmI == ClientLocation.Local)
             {
-                Type objType = packet.ObjectType;
-                if (objType == null)
-                {
-                    throw new NullReferenceException("Cannot find type by name or assembly.");
-                }
+                Type objType = packet.ObjectType ?? throw new NullReferenceException("Cannot find type by name or assembly.");
                 (INetworkObject, NetworkObjectData) existingObject = GetNetworkObjectByID(packet.NewNetworkID);
                 if (existingObject.Item1 != null)
                 {
@@ -1177,7 +1173,7 @@ namespace SocketNetworking.Shared
                         continue;
                     }
                     object value = ByteConvert.Deserialize(data.Data, out int read);
-                    Log.Debug($"Set {syncVar.Name} to {value} on {syncVar.OwnerObject}");
+                    //Log.Debug($"Set {syncVar.Name} to {value} on {syncVar.OwnerObject}");
                     syncVar.RawSet(value, runner);
                     syncVar.RawSet(data.Mode, runner);
                     syncVar.OwnerObject.OnSyncVarChanged(runner, syncVar);
@@ -1304,11 +1300,7 @@ namespace SocketNetworking.Shared
 
         internal static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient Receiver, bool localCall = false)
         {
-            Type targetType = packet.TargetType;
-            if (targetType == null)
-            {
-                throw new NetworkInvocationException($"Cannot find type: '{packet.TargetType}'.", new NullReferenceException());
-            }
+            Type targetType = packet.TargetType ?? throw new NetworkInvocationException($"Cannot find type: '{packet.TargetType}'.", new NullReferenceException());
             object target = Receiver;
             List<object> targets = new List<object>();
             if (packet.NetworkIDTarget != 0)
@@ -1337,11 +1329,7 @@ namespace SocketNetworking.Shared
             }
             Type[] arguments = packet.Arguments.Select(x => x.Type).ToArray();
             MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invocables.Select(x => x.Item1).ToArray();
-            MethodInfo method = GetNetworkInvokeMethod(methods, arguments, packet.MethodName);
-            if (method == null)
-            {
-                throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
-            }
+            MethodInfo method = GetNetworkInvokeMethod(methods, arguments, packet.MethodName) ?? throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             NetworkInvokable invokable = method.GetCustomAttribute<NetworkInvokable>();
             if (!localCall)
             {
@@ -1481,11 +1469,7 @@ namespace SocketNetworking.Shared
             }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
             MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invocables.Select(x => x.Item1).ToArray();
-            MethodInfo method = GetNetworkInvokeMethod(methods, arguments, methodName);
-            if (method == null)
-            {
-                throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
-            }
+            MethodInfo method = GetNetworkInvokeMethod(methods, arguments, methodName) ?? throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             NetworkInvokable invokable = method.GetCustomAttribute<NetworkInvokable>();
             if (invokable.Direction == NetworkDirection.Client && sender.CurrentClientLocation == ClientLocation.Remote)
             {
