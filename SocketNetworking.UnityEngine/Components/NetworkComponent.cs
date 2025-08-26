@@ -11,6 +11,19 @@ namespace SocketNetworking.UnityEngine.Components
     /// </summary>
     public class NetworkComponent : NetworkBehavior
     {
+
+        public override bool IsRegistered
+        {
+            get
+            {
+                if (_identity == null)
+                {
+                    return false;
+                }
+                return base.IsRegistered;
+            }
+        }
+
         /// <summary>
         /// Use <see cref="NetworkIdentity"/> to spawn objects from prefabs.
         /// </summary>
@@ -40,7 +53,7 @@ namespace SocketNetworking.UnityEngine.Components
             identity.RegisterComponent(this);
         }
 
-        public override int NetworkID { get => Identity.NetworkID; set => Identity.NetworkID = value; }
+        public override int NetworkID { get => Identity != null ? Identity.NetworkID : 0; set => Identity.NetworkID = value; }
 
         public override int OwnerClientID { get => Identity.OwnerClientID; set => Identity.OwnerClientID = value; }
 
@@ -114,12 +127,19 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void EnsureIdentityExists()
         {
-            _identity = GetComponent<NetworkIdentity>();
-            if (Identity == null)
+            try
             {
-                throw new InvalidOperationException("All Network Objects must have a NetworkIdentity.");
+                _identity = gameObject.GetComponent<NetworkIdentity>();
+                if (_identity == null)
+                {
+                    throw new InvalidOperationException("All Network Objects must have a NetworkIdentity.");
+                }
+                OverrideIdentity(_identity);
             }
-            OverrideIdentity(_identity);
+            catch (Exception e)
+            {
+                Log.GlobalError($"Identity cannot be created!\n{e}");
+            }
         }
 
         public override void RegisterObject()

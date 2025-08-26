@@ -47,6 +47,22 @@ namespace SocketNetworking.UnityEngine.Components
             }
         }
 
+        /// <summary>
+        /// Determines if the current <see cref="INetworkObject"/> is registered.
+        /// </summary>
+        public virtual bool IsRegistered
+        {
+            get
+            {
+                if (gameObject == null)
+                {
+                    return false;
+                }
+                if (NetworkID == 0 || NetworkID == 1) return false;
+                return NetworkManager.IsRegistered(this);
+            }
+        }
+
         public virtual OwnershipMode FallBackIfOwnerDisconnects
         {
             get
@@ -127,7 +143,14 @@ namespace SocketNetworking.UnityEngine.Components
                 Logger.Warning("Called function on gameobject while not on main thread!");
                 return;
             }
-            Logger.Debug($"Triggered OnRemoved on {gameObject?.name}. Object: {removedObject}");
+            //if (removedObject != null)
+            //{
+            //    Logger?.Debug($"Triggered OnRemoved on {gameObject?.name}. Object: {removedObject}");
+            //}
+            //else
+            //{
+            //    Logger?.Debug($"Triggered OnRemoved on {gameObject?.name}. Object: null");
+            //}
         }
 
         public virtual void OnDisconnected(NetworkClient client)
@@ -623,7 +646,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public override string ToString()
         {
-            if (IsOnMainThread)
+            if (IsOnMainThread && gameObject != null)
             {
                 return $"Type: {GetType().FullName} with Network ID {NetworkID} on GameObject: {gameObject.name}";
             }
