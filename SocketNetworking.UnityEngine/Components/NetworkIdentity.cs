@@ -91,18 +91,9 @@ namespace SocketNetworking.UnityEngine.Components
 
         }
 
-        public override void OnSync(NetworkClient client)
-        {
-            base.OnSync(client);
-            if (AutoSpawn)
-            {
-                this.NetworkSpawn(client);
-            }
-        }
-
         public override void RegisterObject()
         {
-            SetupComponents();
+            //SetupComponents();
             base.RegisterObject();
             foreach (NetworkComponent component in _components)
             {

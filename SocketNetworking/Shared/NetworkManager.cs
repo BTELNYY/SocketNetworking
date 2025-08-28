@@ -390,6 +390,7 @@ namespace SocketNetworking.Shared
                 TargetType = type
             };
             NetworkObjectSpawners.Add(spawnerStruct);
+            Log.Info($"Registered spawner {spawnerStruct}");
             return true;
         }
 
@@ -455,35 +456,42 @@ namespace SocketNetworking.Shared
             if (packet.Action == ObjectManagePacket.ObjectManageAction.Create && WhereAmI == ClientLocation.Local)
             {
                 Type objType = packet.ObjectType ?? throw new NullReferenceException("Cannot find type by name or assembly.");
-                (INetworkObject, NetworkObjectData) existingObject = GetNetworkObjectByID(packet.NewNetworkID);
-                if (existingObject.Item1 != null)
+                List<(INetworkObject, NetworkObjectData)> existingObjects = GetNetworkObjectsByID(packet.NewNetworkID);
+                foreach ((INetworkObject, NetworkObjectData) obj in existingObjects)
                 {
-                    if (existingObject.Item1.GetType() != objType)
+                    if (obj.Item1 != null && obj.Item1.Spawnable)
                     {
-                        existingObject.Item1.LocalDestroy();
-                    }
-                    else
-                    {
-                        ObjectManagePacket alreadyExistsPacket = new ObjectManagePacket()
+                        if (obj.Item1.GetType() != objType)
                         {
-                            Action = ObjectManagePacket.ObjectManageAction.AlreadyExists,
-                            ObjectType = objType,
-                            NewNetworkID = packet.NewNetworkID,
-                            NetworkIDTarget = packet.NetworkIDTarget,
-                        };
-                        handle.Client.Send(alreadyExistsPacket);
-                        Log.Warning($"We already have '{existingObject.Item1}' on NetID {packet.NewNetworkID}, sending a already exists response.");
-                        return;
+                            obj.Item1.LocalDestroy();
+                        }
+                        else
+                        {
+                            ObjectManagePacket alreadyExistsPacket = new ObjectManagePacket()
+                            {
+                                Action = ObjectManagePacket.ObjectManageAction.AlreadyExists,
+                                ObjectType = objType,
+                                NewNetworkID = packet.NewNetworkID,
+                                NetworkIDTarget = packet.NetworkIDTarget,
+                            };
+                            handle.Client.Send(alreadyExistsPacket);
+                            Log.Warning($"We already have '{obj.Item1}' on NetID {packet.NewNetworkID}, sending a already exists response.");
+                            return;
+                        }
                     }
                 }
+
+                Log.Info($"Spawning a new instance of {objType}");
                 NetworkObjectSpawner objSpawner = GetBestSpawner(objType);
                 INetworkObject netObj;
                 if (objSpawner == null)
                 {
+                    Log.Info($"No spawner found for type {objType}, using Activator.");
                     netObj = (INetworkObject)Activator.CreateInstance(objType);
                 }
                 else
                 {
+                    Log.Info($"Best spawner select for type {objType}.");
                     netObj = (INetworkObject)objSpawner.Spawner.Invoke(packet, handle);
                 }
                 if (netObj == null)
@@ -1630,6 +1638,11 @@ namespace SocketNetworking.Shared
         public bool AllowSubclasses;
 
         public Type TargetType;
+
+        public override string ToString()
+        {
+            return $"Delegate: {Spawner.Method.Name}, Target Type: {TargetType}, Allows Subclasses?: {AllowSubclasses}";
+        }
     }
 
     public class NetworkObjectData
@@ -1644,7 +1657,12 @@ namespace SocketNetworking.Shared
 
         public override string ToString()
         {
-            return $"Type: {TargetObject.FullName}, Packet Listeners: {Listeners.Count}, SyncVars: {string.Join(", ", SyncVars.Select(x => x.Name))}, Invokables: {string.Join(", ", Invocables.Select(x => x.Item1.Name))}";
+            string listenerResult = "";
+            foreach (Type listener in Listeners.Keys)
+            {
+                listenerResult += $"Type: {listener}, Methods: {Listeners[listener].Select(x => x.ToString())}";
+            }
+            return $"Type: {TargetObject.FullName}, Packet Listeners: {listenerResult}, SyncVars: {string.Join(", ", SyncVars.Select(x => x.Name))}, Invokables: {string.Join(", ", Invocables.Select(x => x.Item1.Name))}";
         }
     }
 
@@ -1653,5 +1671,10 @@ namespace SocketNetworking.Shared
         public PacketListener Attribute;
 
         public MethodInfo AttachedMethod;
+
+        public override string ToString()
+        {
+            return $"Target Packet Type: {Attribute.DefinedType}, Method: {AttachedMethod.Name}";
+        }
     }
 }

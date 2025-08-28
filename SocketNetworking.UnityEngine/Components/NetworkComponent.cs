@@ -11,7 +11,6 @@ namespace SocketNetworking.UnityEngine.Components
     /// </summary>
     public class NetworkComponent : NetworkBehavior
     {
-
         public override bool IsRegistered
         {
             get
@@ -48,12 +47,16 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void OverrideIdentity(NetworkIdentity identity)
         {
+            if (_identity == identity)
+            {
+                return;
+            }
             _identity?.UnregisterComponent(this);
             _identity = identity;
             identity.RegisterComponent(this);
         }
 
-        public override int NetworkID { get => Identity != null ? Identity.NetworkID : 0; set => Identity.NetworkID = value; }
+        public override int NetworkID { get => _identity != null ? Identity.NetworkID : 0; set => Identity.NetworkID = value; }
 
         public override int OwnerClientID { get => Identity.OwnerClientID; set => Identity.OwnerClientID = value; }
 
@@ -129,6 +132,10 @@ namespace SocketNetworking.UnityEngine.Components
         {
             try
             {
+                if (this == null)
+                {
+                    throw new InvalidOperationException("We are so fucked right now.");
+                }
                 _identity = gameObject.GetComponent<NetworkIdentity>();
                 if (_identity == null)
                 {
@@ -153,6 +160,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public override void Destroy()
         {
+            Log.Debug("Destroying!");
             DestroyImmediate(this);
         }
 

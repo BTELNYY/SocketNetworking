@@ -426,13 +426,14 @@ namespace SocketNetworking
             switch (obj.ObjectVisibilityMode)
             {
                 case ObjectVisibilityMode.ServerOnly:
+                    Log.GlobalWarning("Trying to NetworkSpawn a server only object. (Probably not the smartest plan.)");
                     break;
                 case ObjectVisibilityMode.OwnerAndServer:
                     NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
                     client.Send(packet);
                     break;
                 case ObjectVisibilityMode.Everyone:
-                    NetworkServer.SendToAll(packet, obj);
+                    NetworkServer.SendToAll(packet);
                     break;
             }
             obj.OnLocalSpawned(packet);
@@ -479,6 +480,7 @@ namespace SocketNetworking
             switch (obj.ObjectVisibilityMode)
             {
                 case ObjectVisibilityMode.ServerOnly:
+                    Log.GlobalWarning("Trying to NetworkSpawn a server only object. (Probably not the smartest plan.)");
                     break;
                 case ObjectVisibilityMode.OwnerAndServer:
                     NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
