@@ -150,8 +150,9 @@ namespace SocketNetworking.Shared.Serialization
                     object obj = ByteConvert.Deserialize(data, out int read);
                     return (T)obj;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Log.GlobalError($"Error in deserialization of type {typeof(T)}! \n{ex}");
                     return default;
                 }
             }
@@ -197,11 +198,12 @@ namespace SocketNetworking.Shared.Serialization
                 int length = ReadInt();
                 if (length == 0)
                 {
+                    //Log.GlobalDebug($"Read empty byte array.");
                     return new byte[0];
                 }
                 if (length > DataLength)
                 {
-                    Log.GlobalWarning($"Read a byte array with a broken size. Read: {length}, Actual: {_workingSetData.Length}");
+                    //Log.GlobalWarning($"Read a byte array with a broken size. Read: {length}, Actual: {_workingSetData.Length}");
                     length = Math.Min(length, DataLength);
                 }
                 return Read(length);
@@ -219,6 +221,7 @@ namespace SocketNetworking.Shared.Serialization
             {
                 IByteSerializable serializable = (IByteSerializable)Activator.CreateInstance(typeof(T));
                 int length = ReadInt();
+                //Log.GlobalDebug($"Type: {serializable.GetType()}, Bytes: {length}");
                 byte[] read = Read(length);
                 int bytesUsed = serializable.Deserialize(read).ReadBytes;
                 //if (bytesUsed != length)
@@ -241,8 +244,11 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] bytes = ReadByteArray();
+                //Log.GlobalDebug(bytes.Length.ToString());
                 TypeWrapper<K> wrapper = (TypeWrapper<K>)Activator.CreateInstance(typeof(T));
+                //Log.GlobalDebug(wrapper.GetType().Name);
                 ValueTuple<K, int> result = wrapper.Deserialize(bytes);
+                //Log.GlobalDebug(result.Item2.ToString());
                 //Remove(result.Item2);
                 return result.Item1;
             }

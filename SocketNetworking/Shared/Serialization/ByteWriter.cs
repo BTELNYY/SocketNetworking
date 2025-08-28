@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Text;
 using SocketNetworking.Shared.Exceptions;
 
@@ -156,9 +155,20 @@ namespace SocketNetworking.Shared.Serialization
                 }
                 object wrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
                 //Hacky fix.
-                MethodInfo serializer = wrapper.GetType().GetMethod("Serialize");
-                byte[] result = (byte[])serializer.Invoke(wrapper, new object[] { any });
-                WriteByteArray(result);
+                if (wrapper is ITypeWrapper typeWrapper)
+                {
+                    if (typeWrapper.GetContainedType() != any.GetType())
+                    {
+                        throw new NetworkConversionException($"Type wrapper {wrapper.GetType().Name} is not intended for type: " + type.FullName);
+                    }
+                    typeWrapper.RawValue = any;
+                    byte[] result = typeWrapper.SerializeRaw();
+                    WriteByteArray(result);
+                }
+                else
+                {
+                    throw new NetworkConversionException("Type wrapper is not ITypeWrapper for type: " + type.FullName);
+                }
             }
         }
 
@@ -187,7 +197,7 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 int oldLength = _workingSetData.Length;
-                int expectedLength = 4 + data.Length + _workingSetData.Length;
+                int expectedLength = sizeof(int) + data.Length + _workingSetData.Length;
                 WriteInt(data.Length);
                 if (data.Length == 0)
                 {

@@ -202,7 +202,7 @@ namespace SocketNetworking.UnityEngine.Components
 
         public int PrefabID { get; set; }
 
-        public List<string> Tree { get; set; }
+        public List<string> Tree { get; set; } = new List<string>();
 
         public byte[] Extra { get; set; } = new byte[0];
 
@@ -230,6 +230,11 @@ namespace SocketNetworking.UnityEngine.Components
             writer.WritePacketSerialized<SerializableList<string>>(tree);
             writer.WriteByteArray(Extra);
             return writer;
+        }
+
+        public override string ToString()
+        {
+            return $"Object Name: {Name}, PrefabID: {PrefabID}, Tree: {string.Join("/", Tree)}, Extra Data Length: {Extra.Length}";
         }
     }
 }

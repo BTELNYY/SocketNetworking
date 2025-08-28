@@ -13,6 +13,7 @@ namespace SocketNetworking.Example.Basics.Client
 
         public static void Main(string[] args)
         {
+            Log.Levels = Log.FULL_LOG;
             Log.OnLog += ExampleLogger.HandleNetworkLog;
             NetworkManager.ImportAssembly(Utility.GetAssembly());
             TestClient client = new TestClient();

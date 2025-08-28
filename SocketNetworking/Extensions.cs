@@ -498,7 +498,7 @@ namespace SocketNetworking
 
 
         /// <summary>
-        /// Checks if the type is a sublcass of the generic type <paramref name="generic"/>.
+        /// Checks if the type is a sublcass of the target type <paramref name="generic"/>.
         /// </summary>
         /// <param name="toCheck"></param>
         /// <param name="generic"></param>
@@ -521,15 +521,19 @@ namespace SocketNetworking
         /// Checks how many <see cref="Type"/>s are between two types.
         /// </summary>
         /// <param name="toCheck"></param>
-        /// <param name="generic"></param>
+        /// <param name="target"></param>
         /// <returns></returns>
-        public static int HowManyClassesUp(this Type toCheck, Type generic)
+        public static int HowManyClassesUp(this Type toCheck, Type target)
         {
             int counter = -1;
-            while (toCheck != null && toCheck != typeof(object))
+            while (toCheck != null)
             {
+                if (toCheck == typeof(object))
+                {
+                    return -1;
+                }
                 Type cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
-                if (generic == cur)
+                if (target == cur)
                 {
                     return counter + 1;
                 }

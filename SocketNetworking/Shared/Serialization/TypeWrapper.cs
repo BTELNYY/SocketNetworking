@@ -28,6 +28,7 @@ namespace SocketNetworking.Shared.Serialization
         /// The <typeparamref name="T"/> value contained in the <see cref="TypeWrapper{T}"/>. Note that if you have not called <see cref="Deserialize(byte[])"/> yet, this value will be <see langword="default"/>.
         /// </summary>
         public T Value { get; set; }
+
         public object RawValue
         {
             get

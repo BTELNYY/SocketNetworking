@@ -78,7 +78,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public override string ToString()
         {
-            return base.ToString() + $" Action: {Action}";
+            return base.ToString() + $" Action: {Action}, ExtraData Length: {ExtraData.Length}";
         }
 
         public enum ObjectManageAction : byte

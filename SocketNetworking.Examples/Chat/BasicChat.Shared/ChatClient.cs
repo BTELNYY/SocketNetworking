@@ -72,12 +72,12 @@ namespace BasicChat.Shared
             msg.Content = message;
             msg.Sender = Avatar.NetworkID;
             msg.Target = 0;
-            NetworkInvoke(nameof(ServerGetMessage), new object[] { msg });
+            NetworkInvoke(this, nameof(ServerGetMessage), msg);
         }
 
         public void ServerSendMessage(Message message)
         {
-            NetworkInvoke(nameof(ClientGetMessage), new object[] { message });
+            NetworkInvoke(this, nameof(ClientGetMessage), message);
         }
 
         [NetworkInvokable(NetworkDirection.Client)]
@@ -111,7 +111,7 @@ namespace BasicChat.Shared
                 {
                     return;
                 }
-                owner.NetworkInvoke(nameof(ClientGetMessage), new object[] { message });
+                owner.NetworkInvoke(this, nameof(ClientGetMessage), message);
             }
         }
 

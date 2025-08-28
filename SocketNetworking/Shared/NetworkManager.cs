@@ -420,12 +420,13 @@ namespace SocketNetworking.Shared
         public static NetworkObjectSpawner GetBestSpawner(Type type)
         {
             NetworkObjectSpawner objSpawner = null;
-            int bestApproxObj = 0;
+            int bestApproxObj = int.MaxValue;
             foreach (NetworkObjectSpawner possibleSpawner in NetworkObjectSpawners)
             {
                 if (possibleSpawner.AllowSubclasses)
                 {
                     int distance = type.HowManyClassesUp(possibleSpawner.TargetType);
+                    Log.Debug($"{possibleSpawner.TargetType} is {distance} classes away from {type}");
                     if (distance == -1)
                     {
                         continue;
@@ -498,6 +499,7 @@ namespace SocketNetworking.Shared
                 {
                     throw new NullReferenceException($"Failed to spawn {objType.FullName}");
                 }
+                Log.Info($"Object created: {netObj}");
                 netObj.NetworkID = packet.NewNetworkID;
                 netObj.OwnerClientID = packet.OwnerID;
                 netObj.OwnershipMode = packet.OwnershipMode;
@@ -1660,7 +1662,7 @@ namespace SocketNetworking.Shared
             string listenerResult = "";
             foreach (Type listener in Listeners.Keys)
             {
-                listenerResult += $"Type: {listener}, Methods: {Listeners[listener].Select(x => x.ToString())}";
+                listenerResult += $"Type: {listener}, Methods: {string.Join(" | ", Listeners[listener].Select(x => x.ToString()))}";
             }
             return $"Type: {TargetObject.FullName}, Packet Listeners: {listenerResult}, SyncVars: {string.Join(", ", SyncVars.Select(x => x.Name))}, Invokables: {string.Join(", ", Invocables.Select(x => x.Item1.Name))}";
         }

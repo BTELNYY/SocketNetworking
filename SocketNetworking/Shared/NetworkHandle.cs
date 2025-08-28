@@ -50,6 +50,10 @@ namespace SocketNetworking.Shared
         {
             get
             {
+                if (Client == null)
+                {
+                    return 0;
+                }
                 return Client.ClientID;
             }
         }
@@ -114,6 +118,11 @@ namespace SocketNetworking.Shared
         public void Disconnect(string reason)
         {
             Client.Disconnect(reason);
+        }
+
+        public override string ToString()
+        {
+            return $"ClientID: {ClientID}, Packet: {InvocationPacket}";
         }
     }
 }
