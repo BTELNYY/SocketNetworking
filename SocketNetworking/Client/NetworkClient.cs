@@ -29,7 +29,7 @@ namespace SocketNetworking.Client
         private static NetworkClient _instance;
 
         /// <summary>
-        /// Gets the local singleton for the <see cref="NetworkClient"/>. Can only be called on the client, multiple <see cref="NetworkClient"/>s on the local context are not recommended. Technically, you can have as many as you'd like. But you would be restricted only having <see cref="NetworkInvoke(string, object[], bool)"/>, as <see cref="INetworkObject"/>s would collide.
+        /// Gets the local singleton for the <see cref="NetworkClient"/>. Can only be called on the client, multiple <see cref="NetworkClient"/>s on the local context are not recommended. Technically, you can have as many as you'd like. But you would be restricted only having <see cref="NetworkInvokeOnClient"/>, as <see cref="INetworkObject"/>s would collide.
         /// </summary>
         public static NetworkClient LocalClient
         {
@@ -275,7 +275,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Only has instances on the local client. Use <see cref="NetworkServer.ConnectedClients"/> for server side clients.
         /// </summary>
-        public readonly static HashSet<NetworkClient> Clients = new HashSet<NetworkClient>();
+        public static readonly HashSet<NetworkClient> Clients = new HashSet<NetworkClient>();
 
 
         private int _clientId = 0;
@@ -805,7 +805,10 @@ namespace SocketNetworking.Client
         }
 
 
-        private void PrivateInit()
+        /// <summary>
+        /// Called on both server and client before <see cref="Init"/>
+        /// </summary>
+        protected virtual void PrivateInit()
         {
 
         }
@@ -2268,21 +2271,28 @@ namespace SocketNetworking.Client
         /// </summary>
         public void ServerSyncPackets()
         {
-            Dictionary<int, string> packets = NetworkManager.PacketPairsSerialized;
-            while (packets.Count > 0)
+            try
             {
-                Dictionary<int, string> section = new Dictionary<int, string>();
-                for (int i = 0; i < Math.Min(10, packets.Count); i++)
+                Dictionary<int, string> packets = NetworkManager.PacketPairsSerialized;
+                while (packets.Count > 0)
                 {
-                    KeyValuePair<int, string> keyPair = packets.First();
-                    packets.Remove(keyPair.Key);
-                    section.Add(keyPair.Key, keyPair.Value);
+                    Dictionary<int, string> section = new Dictionary<int, string>();
+                    for (int i = 0; i < Math.Min(10, packets.Count); i++)
+                    {
+                        KeyValuePair<int, string> keyPair = packets.First();
+                        packets.Remove(keyPair.Key);
+                        section.Add(keyPair.Key, keyPair.Value);
+                    }
+                    PacketMappingPacket packetMapping = new PacketMappingPacket()
+                    {
+                        Mapping = section,
+                    };
+                    Send(packetMapping);
                 }
-                PacketMappingPacket packetMapping = new PacketMappingPacket()
-                {
-                    Mapping = section,
-                };
-                Send(packetMapping);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Unable to sync custom packets! \n{e}");
             }
         }
 
@@ -2332,12 +2342,12 @@ namespace SocketNetworking.Client
         [NetworkInvokable(NetworkDirection.Any)]
         private void GetError(NetworkHandle handle, string message, int level)
         {
-            //Log.Any("[From Peer]: " + message, (LogSeverity)level);
+            Log.Any("[From Peer]: " + message, (LogSeverity)level);
         }
 
         private void OnReadyStateChanged(bool oldState, bool newState)
         {
-            if (!newState)
+            if (!Ready)
             {
                 return;
             }
@@ -2356,8 +2366,13 @@ namespace SocketNetworking.Client
         /// </summary>
         public void ServerAutoSpecifyAvatar()
         {
-            if (NetworkServer.ClientAvatar == null || !NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
+            if (NetworkServer.ClientAvatar == null)
             {
+                return;
+            }
+            else if (!NetworkServer.ClientAvatar.GetInterfaces().Contains(typeof(INetworkAvatar)))
+            {
+                Log.Error($"ClientAvatar specified in the NetworkServer does not specify interface INetworkAvatar.");
                 return;
             }
             INetworkObject result = null;
@@ -2442,7 +2457,7 @@ namespace SocketNetworking.Client
                 avatar.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
             }
             avatar.NetworkSpawn();
-            NetworkInvokeOnClient(nameof(GetClientAvatar), new object[] { avatar.NetworkID });
+            NetworkInvokeOnClient(nameof(GetClientAvatar), avatar.NetworkID);
             Log.Info($"Avatar Specify: {avatar.NetworkID}");
             _avatar = avatar;
         }
@@ -2454,7 +2469,7 @@ namespace SocketNetworking.Client
             (INetworkObject, NetworkObjectData) result = NetworkManager.GetNetworkObjectByID(id);
             if (result.Item1 == null)
             {
-                Log.Warning("Got a client avatar, can't find the ID? ID: " + id);
+                Log.Error("Got a client avatar, can't find the ID? ID: " + id);
                 return;
             }
             Avatar = (INetworkAvatar)result.Item1;
