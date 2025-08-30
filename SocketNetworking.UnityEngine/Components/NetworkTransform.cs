@@ -148,7 +148,7 @@ namespace SocketNetworking.UnityEngine.Components
         [NetworkInvokable(Direction = NetworkDirection.Server, Broadcast = true)]
         private void ClientUpdatePositionsSafe(NetworkHandle handle, Vector3 pos, Vector3 lpos, Quaternion rot, Quaternion lrot, Vector3 scale)
         {
-            Log.Debug($"Got safe pos update: Pos: {pos}, LPos: {lpos}, Rot: {rot}, LRot: {lrot}, Scale: {scale}");
+            //Log.Debug($"Got safe pos update: Pos: {pos}, LPos: {lpos}, Rot: {rot}, LRot: {lrot}, Scale: {scale}");
             position.RawSet(pos, handle.Client);
             localPosition.RawSet(lpos, handle.Client);
             rotation.RawSet(rot, handle.Client);

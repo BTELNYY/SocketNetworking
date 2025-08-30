@@ -663,13 +663,12 @@ namespace SocketNetworking.Server
 
 
         /// <summary>
-        /// Runs <see cref="NetworkClient.NetworkInvoke(object, string, object[], bool)"/> on all clients. <paramref name="readyOnly"/> determines if the clients must be <see cref="NetworkClient.Ready"/> to be called on.
+        /// Runs <see cref="NetworkClient.NetworkInvoke(object, string, object[])"/> on all clients. <paramref name="readyOnly"/> determines if the clients must be <see cref="NetworkClient.Ready"/> to be called on.
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <param name="readyOnly"></param>
-        /// <param name="priority"></param>
         /// <exception cref="InvalidOperationException"></exception>
         public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, bool readyOnly = false)
         {
@@ -685,6 +684,30 @@ namespace SocketNetworking.Server
             if (readyOnly)
             {
                 clients = clients.Where(x => x.Ready).ToList();
+            }
+            foreach (NetworkClient client in clients)
+            {
+                client.NetworkInvoke(obj, methodName, args);
+            }
+        }
+
+        /// <summary>
+        /// Runs <see cref="NetworkClient.NetworkInvoke(object, string, object[])"/> on all clients.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static void NetworkInvokeOnAll(object obj, string methodName, params object[] args)
+        {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
+            List<NetworkClient> clients = _clients.Values.ToList();
+            if (obj is INetworkObject netObj)
+            {
+                clients = clients.Where(x => netObj.CheckVisibility(x)).ToList();
             }
             foreach (NetworkClient client in clients)
             {
