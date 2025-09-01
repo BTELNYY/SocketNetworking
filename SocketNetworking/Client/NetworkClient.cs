@@ -732,7 +732,7 @@ namespace SocketNetworking.Client
         /// </returns>
         public bool ClientRequestEncryption()
         {
-            return NetworkInvokeBlocking<bool>(nameof(ServerGetEncryptionRequest));
+            return NetworkInvokeBlockingOnClient<bool>(nameof(ServerGetEncryptionRequest));
         }
 
         [NetworkInvokable(NetworkDirection.Client)]
@@ -1199,9 +1199,22 @@ namespace SocketNetworking.Client
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
         /// <returns></returns>
-        public T NetworkInvokeBlocking<T>(string methodName, float maxTimeMs = 5000, params object[] args)
+        public T NetworkInvokeBlockingOnClient<T>(string methodName, float maxTimeMs = 5000, params object[] args)
         {
             return NetworkManager.NetworkInvokeBlocking<T>(this, this, methodName, args, maxTimeMs);
+        }
+
+        /// <summary>
+        /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <param name="maxTimeMs"></param>
+        /// <returns></returns>
+        public T NetworkInvokeBlocking<T>(object obj, string methodName, float maxTimeMs = 5000, params object[] args)
+        {
+            return NetworkManager.NetworkInvokeBlocking<T>(obj, this, methodName, args, maxTimeMs);
         }
 
         /// <summary>

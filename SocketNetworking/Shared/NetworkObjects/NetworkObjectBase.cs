@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using SocketNetworking.Client;
+using SocketNetworking.Server;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.SyncVars;
@@ -226,6 +227,58 @@ namespace SocketNetworking.Shared.NetworkObjects
         public virtual void OnAfterRegister()
         {
 
+        }
+
+        /// <summary>
+        /// Uses <see cref="NetworkManager.NetworkInvoke(object, NetworkClient, string, bool, object[])"/> to call a method. If called on the <see cref="ClientLocation.Local"/>, will attempt to call the server. if called on the <see cref="ClientLocation.Remote"/>, will call the function on all clients connected.
+        /// </summary>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <exception cref="NullReferenceException"></exception>
+        public void NetworkInvoke(string methodName, params object[] args)
+        {
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                if (NetworkClient.LocalClient == null)
+                {
+                    throw new NullReferenceException("LocalClient is null and we are on the local peer.");
+                }
+                NetworkClient.LocalClient.NetworkInvoke(this, methodName, args);
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkServer.NetworkInvokeOnAll(this, methodName, args);
+            }
+        }
+
+        /// <summary>
+        /// Calls <see cref="NetworkManager.NetworkInvoke{T}(object, NetworkClient, string, object[])"/> on this object. If called on the <see cref="ClientLocation.Local"/>, will call the method on the server. If called on the <see cref="ClientLocation.Remote"/>, the target client will be the owner. (if any, found by <see cref="OwnerClientID"/>.)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        /// <exception cref="NullReferenceException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public T NetworkInvokeBlocking<T>(string methodName, params object[] args)
+        {
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                if (NetworkClient.LocalClient == null)
+                {
+                    throw new NullReferenceException("LocalClient is null and we are on the local peer.");
+                }
+                return NetworkClient.LocalClient.NetworkInvokeBlocking<T>(this, methodName, 5000, args);
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkClient owner = this.GetOwner();
+                if (owner != null)
+                {
+                    return owner.NetworkInvokeBlocking<T>(this, methodName, 5000, args);
+                }
+            }
+            throw new InvalidOperationException();
         }
     }
 }
