@@ -11,7 +11,7 @@ namespace SocketNetworking.Shared
     public enum OwnershipMode : byte
     {
         /// <summary>
-        /// The client owns the object.
+        /// The <see cref="INetworkObject.OwnerClientID"/> owns the object.
         /// </summary>
         Client,
         /// <summary>

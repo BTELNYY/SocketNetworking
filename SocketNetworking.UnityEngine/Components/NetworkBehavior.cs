@@ -455,7 +455,7 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
-                return Log.GetInstance();
+                return Log;
             }
         }
 
