@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
     <OutputType>Library</OutputType>
     <RootNamespace>SocketNetworking.Example.SharedData</RootNamespace>
     <AssemblyTitle>SocketNetworking.Example.SharedData</AssemblyTitle>

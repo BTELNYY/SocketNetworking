@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+#if NET48
             this.txtUsername = new System.Windows.Forms.TextBox();
             this.txtPassword = new System.Windows.Forms.TextBox();
             this.btnAccept = new System.Windows.Forms.Button();
@@ -138,7 +139,7 @@
             this.TopMost = true;
             this.ResumeLayout(false);
             this.PerformLayout();
-
+#endif
         }
 
         #endregion

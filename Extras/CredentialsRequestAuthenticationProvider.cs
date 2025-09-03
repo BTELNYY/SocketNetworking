@@ -71,6 +71,7 @@ namespace SocketNetworking.Extras
             }
             else
             {
+#if NET48
                 UniversalCredentialsWindow credentials = new UniversalCredentialsWindow();
                 credentials.lblCaption.Text = caption;
                 credentials.lblMessage.Text = message;
@@ -81,6 +82,9 @@ namespace SocketNetworking.Extras
                 }
                 username = credentials.txtUsername.Text;
                 password = credentials.txtPassword.Text;
+#elif NETSTANDARD2_0_OR_GREATER
+                Log.GlobalWarning("Can't use windows forms credentials screen here, implement your own UI!");
+#endif
             }
             response.Username = username ?? "";
             response.Password = password ?? "";
