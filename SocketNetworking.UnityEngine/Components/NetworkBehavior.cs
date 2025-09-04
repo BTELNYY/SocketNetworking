@@ -343,6 +343,10 @@ namespace SocketNetworking.UnityEngine.Components
         {
             get
             {
+                if (NetworkManager.WhereAmI == ClientLocation.Unknown)
+                {
+                    return false;
+                }
                 if (OwnershipMode == OwnershipMode.Public)
                 {
                     return true;
