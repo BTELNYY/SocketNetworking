@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net48</TargetFrameworks>
+    <TargetFrameworks>net48</TargetFrameworks>
     <OutputType>Library</OutputType>
     <AssemblyTitle>BasicChat.Shared</AssemblyTitle>
     <Product>BasicChat.Shared</Product>
