@@ -141,7 +141,7 @@ namespace SocketNetworking.Shared
             {
                 lock (_lock)
                 {
-                    SharedAes = new AesCryptoServiceProvider();
+                    SharedAes = Aes.Create();
                     SharedAes.Padding = PaddingMode.PKCS7;
                     SharedAes.Key = value.Item1;
                     SharedAes.IV = value.Item2;
@@ -183,7 +183,7 @@ namespace SocketNetworking.Shared
         {
             client.Log.Info($"Start generating key pair...");
             Client = client;
-            SharedAes = new AesCryptoServiceProvider();
+            SharedAes = Aes.Create();
             SharedAes.GenerateIV();
             SharedAes.GenerateKey();
             SharedAes.Padding = PaddingMode.PKCS7;
@@ -209,10 +209,10 @@ namespace SocketNetworking.Shared
             {
                 if (useSymmetry)
                 {
-                    Aes aes = new AesCryptoServiceProvider();
+                    Aes aes = Aes.Create();
                     aes.Padding = PaddingMode.PKCS7;
-                    aes.Key = OthersAesKeys[peer].Item1;
-                    aes.IV = OthersAesKeys[peer].Item2;
+                    aes.Key = SharedAesKey.Item1;
+                    aes.IV = SharedAesKey.Item2;
                     MemoryStream stream = new MemoryStream(data);
                     using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write))
                     {
@@ -246,10 +246,10 @@ namespace SocketNetworking.Shared
             {
                 if (useSymmetry)
                 {
-                    Aes aes = new AesCryptoServiceProvider();
+                    Aes aes = Aes.Create();
                     aes.Padding = PaddingMode.PKCS7;
-                    aes.Key = OthersAesKeys[peer].Item1;
-                    aes.IV = OthersAesKeys[peer].Item2;
+                    aes.Key = SharedAesKey.Item1;
+                    aes.IV = SharedAesKey.Item2;
                     MemoryStream stream = new MemoryStream(data);
                     using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Write))
                     {
@@ -279,12 +279,10 @@ namespace SocketNetworking.Shared
             {
                 if (useSymmetry)
                 {
-                    AesCryptoServiceProvider aes = new AesCryptoServiceProvider
-                    {
-                        Padding = PaddingMode.PKCS7,
-                        Key = SharedAesKey.Item1,
-                        IV = SharedAesKey.Item2
-                    };
+                    Aes aes = Aes.Create();
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.Key = SharedAesKey.Item1;
+                    aes.IV = SharedAesKey.Item2;
                     MemoryStream stream = new MemoryStream();
                     using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write))
                     {
@@ -315,12 +313,10 @@ namespace SocketNetworking.Shared
             {
                 if (useSymmetry)
                 {
-                    AesCryptoServiceProvider aes = new AesCryptoServiceProvider
-                    {
-                        Padding = PaddingMode.PKCS7,
-                        Key = SharedAesKey.Item1,
-                        IV = SharedAesKey.Item2
-                    };
+                    Aes aes = Aes.Create();
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.Key = SharedAesKey.Item1;
+                    aes.IV = SharedAesKey.Item2;
                     MemoryStream stream = new MemoryStream();
                     using (CryptoStream cryptoStream = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Write))
                     {
