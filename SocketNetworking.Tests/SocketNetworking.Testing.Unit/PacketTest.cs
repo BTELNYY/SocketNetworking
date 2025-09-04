@@ -1,9 +1,6 @@
-﻿using System;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SocketNetworking.Shared.PacketSystem.Packets;
+﻿using SocketNetworking.Shared.PacketSystem.Packets;
 
-namespace SocketNetworking.Tests.Unit
+namespace SocketNetworking.Testing.Unit
 {
     [TestClass]
     public class PacketTest

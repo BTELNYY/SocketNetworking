@@ -1059,7 +1059,7 @@ namespace SocketNetworking.Client
             //Log.Debug("Client started");
         }
 
-#endregion
+        #endregion
 
         #region Packet Sending
 

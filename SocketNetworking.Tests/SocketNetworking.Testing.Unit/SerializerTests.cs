@@ -1,11 +1,10 @@
 ﻿using System.Net;
 using System.Reflection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.Tests.Unit
+namespace SocketNetworking.Testing.Unit
 {
     [TestClass]
     public class SerializerTests

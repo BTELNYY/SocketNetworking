@@ -1,8 +1,7 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared.Streams;
 
-namespace SocketNetworking.Tests.Unit
+namespace SocketNetworking.Testing.Unit
 {
     [TestClass]
     public class StreamTest

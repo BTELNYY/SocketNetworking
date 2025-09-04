@@ -184,11 +184,12 @@ namespace SocketNetworking
             }
             else
             {
-                T[] result = new T[array.Length + newData.Length];
-                Array.Copy(array, 0, result, newData.Length, array.Length);
+                T[] result = new T[array.Length];
+                //array = array.Take(array.Length - newData.Length).ToArray();
+                Array.Copy(array, 0, result, newData.Length, array.Length - newData.Length);
                 Array.Copy(newData, 0, result, 0, newData.Length);
-                array = array.Take(array.Length - newData.Length).ToArray();
-                return array;
+                //array = array.Take(array.Length - newData.Length).ToArray();
+                return result;
             }
         }
 

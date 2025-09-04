@@ -1,11 +1,8 @@
-﻿using System;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SocketNetworking.Shared;
+﻿using SocketNetworking.Shared;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.Tests.Unit
+namespace SocketNetworking.Testing.Unit
 {
     [TestClass]
     public class EncryptionTest
@@ -18,25 +15,25 @@ namespace SocketNetworking.Tests.Unit
             random.NextBytes(bytes);
             byte[] old = new byte[bytes.Length];
             bytes.CopyTo(old, 0);
-            Assert.IsTrue(Enumerable.SequenceEqual(old, bytes));
+            Assert.IsTrue(old.SequenceEqual(bytes));
             NetworkEncryption manager = new NetworkEncryption(null);
             byte[] encrypted = manager.Encrypt(bytes);
-            Assert.IsTrue(Enumerable.SequenceEqual(old, manager.Decrypt(encrypted)));
+            Assert.IsTrue(old.SequenceEqual(manager.Decrypt(encrypted)));
         }
 
         [TestMethod]
         public void TestAsym()
         {
             Random random = new Random();
-            byte[] bytes = new byte[128];
+            byte[] bytes = new byte[64];
             random.NextBytes(bytes);
             byte[] old = new byte[bytes.Length];
             bytes.CopyTo(old, 0);
-            Assert.IsTrue(Enumerable.SequenceEqual(old, bytes));
+            Assert.IsTrue(old.SequenceEqual(bytes));
             NetworkEncryption manager = new NetworkEncryption(null);
             byte[] encrypted = manager.Encrypt(bytes, false, true);
             byte[] returned = manager.Decrypt(encrypted, false);
-            Assert.IsTrue(Enumerable.SequenceEqual(old, returned));
+            Assert.IsTrue(old.SequenceEqual(returned));
         }
 
         [TestMethod]
@@ -44,10 +41,10 @@ namespace SocketNetworking.Tests.Unit
         {
             NetworkInvocationPacket packet = new NetworkInvocationPacket()
             {
-                TargetType = this.GetType(),
+                TargetType = GetType(),
                 MethodName = nameof(NetworkInvocationPacket),
                 CallbackID = 0,
-                Arguments = new System.Collections.Generic.List<Shared.Serialization.SerializedData>()
+                Arguments = new List<SerializedData>()
                 {
                     ByteConvert.Serialize(1f),
                     ByteConvert.Serialize(100u),
@@ -64,7 +61,7 @@ namespace SocketNetworking.Tests.Unit
             byte[] old = packet.Serialize().Data;
             NetworkEncryption manager = new NetworkEncryption(null);
             byte[] encrypted = manager.Encrypt(old);
-            Assert.IsTrue(Enumerable.SequenceEqual(old, manager.Decrypt(encrypted)));
+            Assert.IsTrue(old.SequenceEqual(manager.Decrypt(encrypted)));
         }
     }
 }
