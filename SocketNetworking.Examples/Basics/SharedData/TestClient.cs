@@ -17,7 +17,7 @@ namespace SocketNetworking.Example.Basics.SharedData
 
         public void NetworkInvokeSomeMethod(float someFloat, int someInt)
         {
-            TestResult result = NetworkInvokeBlocking<TestResult>(this, "SomeNetworkMethod", maxTimeMs: 5000, someFloat, someInt, new ValueTuple<int, int>(1, 3));
+            TestResult result = NetworkInvokeBlocking<TestResult>(this, "SomeNetworkMethod", maxTimeMs: 5000f, someFloat, someInt, new ValueTuple<int, int>(1, 3));
             Log.GlobalDebug(result.ToString());
         }
 
