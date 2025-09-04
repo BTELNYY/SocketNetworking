@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace SocketNetworking.Tests.Unit
+﻿namespace SocketNetworking.Testing.Unit
 {
     [TestClass]
     public class CompressionTest
@@ -17,7 +13,7 @@ namespace SocketNetworking.Tests.Unit
             Buffer.BlockCopy(bytes, 0, old, 0, bytes.Length);
             bytes = bytes.Compress();
             byte[] newBytes = bytes.Decompress();
-            Assert.IsTrue(Enumerable.SequenceEqual(newBytes, old));
+            Assert.IsTrue(newBytes.SequenceEqual(old));
         }
     }
 }

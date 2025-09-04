@@ -1009,8 +1009,10 @@ namespace SocketNetworking.Client
         protected virtual void OnLocalStopClient()
         {
             NetworkManager.SendDisconnectedPulse(this);
+#if NET48
             _packetReaderThread?.Abort();
             _packetSenderThread?.Abort();
+#endif
             _packetReaderThread = null;
             _packetSenderThread = null;
         }
@@ -1033,10 +1035,13 @@ namespace SocketNetworking.Client
                 return;
             }
             Log.Info("Starting client!");
-            //Log.Debug("Threads Create");
+            //Log.Debug("Threads Create")
+            //Aborting isn't technically needed but....
+#if NET48
             _packetReaderThread?.Abort();
-            _packetReaderThread = new Thread(PacketReaderThreadMethod);
             _packetSenderThread?.Abort();
+#endif
+            _packetReaderThread = new Thread(PacketReaderThreadMethod);
             _packetSenderThread = new Thread(PacketSenderThreadMethod);
             //Log.Debug("Threads Create Done");
             _clientActive = true;

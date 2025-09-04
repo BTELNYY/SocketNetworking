@@ -1,147 +1,22 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{AB97887E-EF11-4CE3-83B6-7E91456CF035}</ProjectGuid>
+    <TargetFrameworks>netstandard2.0;net48;net8.0</TargetFrameworks>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SocketNetworking</RootNamespace>
-    <AssemblyName>SocketNetworking</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <AssemblyTitle>SocketNetworking</AssemblyTitle>
+    <Product>SocketNetworking</Product>
+    <Copyright>Copyright ©  2023</Copyright>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Shared\Attributes\NoAutoSpawn.cs" />
-    <Compile Include="Shared\Attributes\NetworkInvokable.cs" />
-    <Compile Include="Shared\Attributes\NetworkNonSerialized.cs" />
-    <Compile Include="Shared\Attributes\NetworkSerialized.cs" />
-    <Compile Include="Shared\Attributes\PacketDefinition.cs" />
-    <Compile Include="Shared\Attributes\PacketListener.cs" />
-    <Compile Include="Shared\Attributes\TypeWrapperAttribute.cs" />
-    <Compile Include="Client\MixedNetworkClient.cs" />
-    <Compile Include="Client\TcpNetworkClient.cs" />
-    <Compile Include="Client\UdpNetworkClient.cs" />
-    <Compile Include="Misc\CallbackTimer.cs" />
-    <Compile Include="Shared\Exceptions\NetworkInvocationException.cs" />
-    <Compile Include="Shared\Exceptions\NetworkConversionException.cs" />
-    <Compile Include="Misc\ChoiceEvent.cs" />
-    <Compile Include="Misc\ClientHandler.cs" />
-    <Compile Include="Misc\Console\FancyConsole.cs" />
-    <Compile Include="Misc\NetworkInvocationCallback.cs" />
-    <Compile Include="Misc\ObjectPool.cs" />
-    <Compile Include="NetworkObjectExtensions.cs" />
-    <Compile Include="Shared\Serialization\ITypeWrapper.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\AuthenticationPacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\AuthenticationStateUpdate.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\ClientToClientPacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\KeepAlivePacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\ObjectManagePacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\PacketMappingPacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\SSLUpgradePacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\StreamPacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\SyncVarUpdatePacket.cs" />
-    <Compile Include="Shared\PacketSystem\TargetedPacket.cs" />
-    <Compile Include="Shared\PacketSystem\TypeWrappers\SerializableType.cs" />
-    <Compile Include="Shared\Authentication\AuthenticationProvider.cs" />
-    <Compile Include="Shared\Events\ClientConnectRequest.cs" />
-    <Compile Include="Server\NetworkServerConfig.cs" />
-    <Compile Include="Server\MixedNetworkServer.cs" />
-    <Compile Include="Server\TcpNetworkServer.cs" />
-    <Compile Include="Server\UdpNetworkServer.cs" />
-    <Compile Include="Shared\Events\PacketSendRequest.cs" />
-    <Compile Include="Shared\NetworkObjects\INetworkAvatar.cs" />
-    <Compile Include="Shared\NetworkObjects\INetworkSpawnable.cs" />
-    <Compile Include="Shared\NetworkStreams.cs" />
-    <Compile Include="Shared\Streams\NetworkSyncedStream.cs" />
-    <Compile Include="Shared\SyncVars\INetworkSyncVar.cs" />
-    <Compile Include="Shared\NetworkObjects\NetworkAvatarBase.cs" />
-    <Compile Include="Shared\NetworkHandle.cs" />
-    <Compile Include="Shared\NetworkObjects\NetworkObjectBase.cs" />
-    <Compile Include="Shared\SyncVars\NetworkObjectSyncVar.cs" />
-    <Compile Include="Shared\SyncVars\NetworkSyncVar.cs" />
-    <Compile Include="Shared\Transports\NetworkTransport.cs" />
-    <Compile Include="Shared\Serialization\ByteConvert.cs" />
-    <Compile Include="Shared\NetworkEncryption.cs" />
-    <Compile Include="Shared\NetworkManager.cs" />
-    <Compile Include="Misc\NetworkResultAwaiter.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\EncryptionPacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\NetworkInvokationPacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\NetworkInvokationResultPacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\ReadyStateUpdatePacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\ClientDataPacket.cs" />
-    <Compile Include="Shared\Serialization\TypeWrapper.cs" />
-    <Compile Include="Shared\PacketSystem\TypeWrappers\SerializableDictionary.cs" />
-    <Compile Include="Shared\Messages\ProtocolConfiguration.cs" />
-    <Compile Include="Shared\Enums.cs" />
-    <Compile Include="Shared\Exceptions\CustomPacketCollisionException.cs" />
-    <Compile Include="Extensions.cs" />
-    <Compile Include="Client\NetworkClient.cs" />
-    <Compile Include="Log.cs" />
-    <Compile Include="Server\NetworkServer.cs" />
-    <Compile Include="Shared\NetworkObjects\INetworkObject.cs" />
-    <Compile Include="Shared\Serialization\IByteSerializable.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\ConnectionUpdatePacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\ServerDataPacket.cs" />
-    <Compile Include="Shared\PacketSystem\Packets\CustomPacket.cs" />
-    <Compile Include="Shared\Serialization\ByteWriter.cs" />
-    <Compile Include="Shared\Serialization\ByteReader.cs" />
-    <Compile Include="Shared\PacketSystem\Packet.cs" />
-    <Compile Include="Shared\PacketSystem\TypeWrappers\SerializableIPAddress.cs" />
-    <Compile Include="Shared\PacketSystem\TypeWrappers\SerializableIPEndPoint.cs" />
-    <Compile Include="Shared\PacketSystem\TypeWrappers\SerializableList.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Shared\Transports\TcpTransport.cs" />
-    <Compile Include="Shared\Transports\UdpTransport.cs" />
-    <Compile Include="Utils.cs" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
