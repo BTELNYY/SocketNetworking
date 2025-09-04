@@ -12,7 +12,7 @@ namespace BasicChat.Shared
     {
         public ChatAvatar()
         {
-            _name = new NetworkSyncVar<string>(this, OwnershipMode.Server);
+            
         }
 
         public string Name
@@ -24,6 +24,12 @@ namespace BasicChat.Shared
         }
 
         private NetworkSyncVar<string> _name;
+
+        public override void OnBeforeRegister()
+        {
+            base.OnBeforeRegister();
+            _name = new NetworkSyncVar<string>(this, OwnershipMode.Server);
+        }
 
         public override void OnLocalSpawned(ObjectManagePacket packet)
         {
