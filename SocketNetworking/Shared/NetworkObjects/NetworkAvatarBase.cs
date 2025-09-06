@@ -28,7 +28,7 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public override void OnBeforeRegister()
         {
-            base.OnBeforeRegister(); 
+            base.OnBeforeRegister();
             _pubKey = new NetworkSyncVar<string>(this, OwnershipMode.Client);
             _ping = new NetworkSyncVar<long>(this, OwnershipMode.Server, 0);
             _pubKey.Changed += (x) =>

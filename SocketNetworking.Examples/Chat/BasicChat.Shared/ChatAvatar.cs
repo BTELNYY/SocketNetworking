@@ -12,7 +12,7 @@ namespace BasicChat.Shared
     {
         public ChatAvatar()
         {
-            
+
         }
 
         public string Name
