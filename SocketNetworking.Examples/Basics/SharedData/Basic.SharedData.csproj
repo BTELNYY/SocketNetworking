@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>net48</TargetFrameworks>
     <OutputType>Library</OutputType>
-    <RootNamespace>SocketNetworking.Example.SharedData</RootNamespace>
+    <RootNamespace>Basic.SharedData</RootNamespace>
     <AssemblyTitle>SocketNetworking.Example.SharedData</AssemblyTitle>
     <Product>SocketNetworking.Example.SharedData</Product>
     <Copyright>Copyright ©  2024</Copyright>

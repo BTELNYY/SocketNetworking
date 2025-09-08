@@ -1,9 +1,10 @@
 ﻿using System;
+using Basic.SharedData;
+using SocketNetworking;
 using SocketNetworking.Client;
-using SocketNetworking.Example.Basics.SharedData;
 using SocketNetworking.Shared;
 
-namespace SocketNetworking.Example.Basics.Client
+namespace Basic.Client
 {
     public class Program
     {

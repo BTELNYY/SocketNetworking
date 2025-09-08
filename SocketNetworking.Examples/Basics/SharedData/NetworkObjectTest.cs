@@ -1,8 +1,9 @@
-﻿using SocketNetworking.Client;
+﻿using SocketNetworking;
+using SocketNetworking.Client;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.SyncVars;
 
-namespace SocketNetworking.Example.Basics.SharedData
+namespace Basic.SharedData
 {
     public class NetworkObjectTest : NetworkAvatarBase
     {

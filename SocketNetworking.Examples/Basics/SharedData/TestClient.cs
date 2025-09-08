@@ -4,7 +4,7 @@ using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Streams;
 
-namespace SocketNetworking.Example.Basics.SharedData
+namespace Basic.SharedData
 {
     public class TestClient : MixedNetworkClient
     {

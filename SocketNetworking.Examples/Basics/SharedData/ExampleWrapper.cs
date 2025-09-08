@@ -1,7 +1,7 @@
 ﻿using System;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.Example.Basics.SharedData
+namespace Basic.SharedData
 {
     public class ExampleWrapper : TypeWrapper<ValueTuple<int, int>>
     {

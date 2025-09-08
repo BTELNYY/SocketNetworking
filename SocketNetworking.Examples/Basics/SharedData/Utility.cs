@@ -5,7 +5,7 @@ using System.Reflection;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.PacketSystem.Packets;
 
-namespace SocketNetworking.Example.Basics.SharedData
+namespace Basic.SharedData
 {
     public class Utility
     {

@@ -1,6 +1,7 @@
 ﻿using System;
+using SocketNetworking;
 
-namespace SocketNetworking.Example.Basics.SharedData
+namespace Basic.SharedData
 {
     public class ExampleLogger
     {

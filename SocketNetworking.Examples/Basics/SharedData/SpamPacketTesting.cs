@@ -2,7 +2,7 @@
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Serialization;
 
-namespace SocketNetworking.Example.Basics.SharedData
+namespace Basic.SharedData
 {
     [PacketDefinition]
     public class SpamPacketTesting : CustomPacket

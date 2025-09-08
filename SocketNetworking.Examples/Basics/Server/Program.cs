@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading;
+using Basic.SharedData;
+using SocketNetworking;
 using SocketNetworking.Client;
-using SocketNetworking.Example.Basics.SharedData;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 
-namespace SocketNetworking.Example.Basics.Server
+namespace Basic.Server
 {
     public class Program
     {
