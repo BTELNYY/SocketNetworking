@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>net48</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <RootNamespace>SocketNetworking.Example.Client</RootNamespace>
+    <RootNamespace>Basic.Client</RootNamespace>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -32,7 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Extras\SocketNetworking.Extras.csproj" />
-    <ProjectReference Include="..\SharedData\SocketNetworking.Example.Basics.SharedData.csproj" />
+    <ProjectReference Include="..\SharedData\Basic.SharedData.csproj" />
     <ProjectReference Include="..\..\..\SocketNetworking\SocketNetworking.csproj" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />

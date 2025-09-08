@@ -1,4 +1,5 @@
 ﻿using System;
+using SocketNetworking;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
@@ -11,22 +12,22 @@ namespace Basic.SharedData
         [NetworkInvokable(NetworkDirection.Server)]
         private TestResult SomeNetworkMethod(NetworkHandle handle, float someFloat, int someInt, ValueTuple<int, int> values)
         {
-            Log.GlobalDebug($"{someFloat}, {someInt}, {values.Item1 + values.Item2}");
+            Log.Debug($"{someFloat}, {someInt}, {values.Item1 + values.Item2}");
             return TestResult.Result2;
         }
 
         public void NetworkInvokeSomeMethod(float someFloat, int someInt)
         {
             TestResult result = NetworkInvokeBlocking<TestResult>(this, "SomeNetworkMethod", maxTimeMs: 5000f, someFloat, someInt, new ValueTuple<int, int>(1, 3));
-            Log.GlobalDebug(result.ToString());
+            Log.Debug(result.ToString());
         }
 
         [PacketListener(typeof(ExampleCustomPacket), NetworkDirection.Any)]
         public void Listener(ExampleCustomPacket packet, NetworkHandle handle)
         {
-            Log.GlobalInfo($"Got a packet! Data: {packet.Data}, Flags: {packet.Flags.GetActiveFlagsString()}, Encrypted?: {handle.WasEncrypted}");
-            Log.GlobalInfo($"Packet currently: {packet.Data}");
-            Log.GlobalInfo($"Packet struct: {packet.Struct.ToString()}");
+            Log.Info($"Got a packet! Data: {packet.Data}, Flags: {packet.Flags.GetActiveFlagsString()}, Encrypted?: {handle.WasEncrypted}");
+            Log.Info($"Packet currently: {packet.Data}");
+            Log.Info($"Packet struct: {packet.Struct.ToString()}");
         }
 
         public override void Init()
