@@ -145,6 +145,7 @@ namespace SocketNetworking.Shared.Serialization
                 dataType = typeof(int);
                 data = Convert.ChangeType(data, typeof(int));
                 sData.Type = data.GetType();
+                return sData;
             }
 
             if (dataType == typeof(string))
