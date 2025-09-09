@@ -120,7 +120,10 @@ namespace SocketNetworking.Client
                 DefaultStreamErrorCode = DefaultStreamClosedCode,
                 ClientAuthenticationOptions = new System.Net.Security.SslClientAuthenticationOptions()
                 {
-                    ApplicationProtocols = [SslApplicationProtocol.Http2],
+                    ApplicationProtocols =
+                    [
+                        new SslApplicationProtocol(ClientConfiguration.Protocol)
+                    ],
                     TargetHost = hostname,
                 }
             };

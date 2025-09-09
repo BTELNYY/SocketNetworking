@@ -41,7 +41,7 @@ namespace SocketNetworking.Server
                 ServerAuthenticationOptions = new SslServerAuthenticationOptions
                 {
                     // Specify the application protocols that the server supports. This list must be a subset of the protocols specified in QuicListenerOptions.ApplicationProtocols.
-                    ApplicationProtocols = [SslApplicationProtocol.Http2],
+                    ApplicationProtocols = [new SslApplicationProtocol(ServerConfiguration.Protocol)],
                     // Server certificate, it can also be provided via ServerCertificateContext or ServerCertificateSelectionCallback.
                     ServerCertificate = Config.Certificate,
                 }
