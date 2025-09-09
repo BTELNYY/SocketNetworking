@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Quic;
+using System.Net.Sockets;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
+using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Client
 {
@@ -21,6 +23,9 @@ namespace SocketNetworking.Client
         public QuicConnection Connection { get; private set; }
 
         public QuicStream Stream { get; private set; }
+
+        //Technically, quic does support SSL. But not live switching to it.
+        public override bool SupportsSSL => false;
 
         public override bool IsConnected
         {
@@ -51,6 +56,9 @@ namespace SocketNetworking.Client
         public void SetupRemoteClient(QuicConnection connection)
         {
             Connection = connection;
+            Task<QuicStream> tS = connection.AcceptInboundStreamAsync().AsTask();
+            tS.Wait();
+            Stream = tS.Result;
         }
 
         public override bool Connect(string hostname, ushort port)
@@ -129,14 +137,130 @@ namespace SocketNetworking.Client
             return;
         }
 
+        public override void SendImmediate(Packet packet)
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (NoPacketSending)
+            {
+                return;
+            }
+            if (_toSendPackets.IsEmpty)
+            {
+                return;
+            }
+            lock (streamLock)
+            {
+                PreparePacket(ref packet);
+                if (!InvokePacketSendRequest(packet))
+                {
+                    return;
+                }
+                byte[] fullBytes = SerializePacket(packet);
+                try
+                {
+                    Stream.Write(fullBytes, 0, fullBytes.Length);
+                    _sentBytes += (ulong)fullBytes.Length;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                    InvokeConnectionError(networkErrorData);
+                }
+                InvokePacketSent(packet);
+            }
+        }
+
         protected override void SendNextPacketInternal()
         {
-            base.SendNextPacketInternal();
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (NoPacketSending)
+            {
+                return;
+            }
+            if (_toSendPackets.IsEmpty)
+            {
+                return;
+            }
+            lock (streamLock)
+            {
+                _toSendPackets.TryDequeue(out Packet packet);
+                PreparePacket(ref packet);
+                if (!InvokePacketSendRequest(packet))
+                {
+                    return;
+                }
+                byte[] fullBytes = SerializePacket(packet);
+                try
+                {
+                    Stream.Write(fullBytes, 0, fullBytes.Length);
+                    _sentBytes += (ulong)fullBytes.Length;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                    InvokeConnectionError(networkErrorData);
+                }
+                InvokePacketSent(packet);
+            }
         }
+
+        private ulong _sentBytes = 0;
+
+        public override ulong BytesSent => _sentBytes;
+
+        private ulong _recievedBytes = 0;
+
+        public override ulong BytesReceived => _recievedBytes;
+
+        private IAsyncResult _readResult;
 
         protected override void RawReader()
         {
-            base.RawReader();
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (!IsTransportConnected)
+            {
+                StopClient();
+                return;
+            }
+            //Log.Debug("Do latency check!");
+            DoLatencyCheck();
+            if (!Transport.DataAvailable)
+            {
+                //Log.Debug("No data on transport!");
+                return;
+            }
+            if (_readResult != null)
+            {
+                return;
+            }
+            _readResult = Stream.BeginRead(_headerBuffer, 0, 4, ReadStream, null);
+        }
+
+        private byte[] _headerBuffer = new byte[4];
+
+        private byte[] _buffer;
+
+        private void ReadStream(IAsyncResult ar)
+        {
+            int length = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(_headerBuffer, 0));
+            _buffer = new byte[length];
+            Stream.Read(_headerBuffer, 0, length);
+            byte[] fullPacket = _headerBuffer.FastConcat(_buffer);
+            _recievedBytes += (ulong)fullPacket.Length;
+            DeserializeRetry(fullPacket, Connection.RemoteEndPoint);
+            _readResult = null;
+            Stream.EndRead(ar);
         }
     }
 }
