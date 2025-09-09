@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Quic;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Runtime.Versioning;
 using System.Text;
@@ -26,13 +27,30 @@ namespace SocketNetworking.Server
 
         private QuicListener _listner;
 
+        public SslServerAuthenticationOptions ServerAuthenticationOptions { get; private set; }
+
         protected override void ServerStartThread()
         {
             Log.Info("Starting QUIC Server...");
+            QuicServerConnectionOptions connectionOptions = new QuicServerConnectionOptions()
+            {
+                DefaultCloseErrorCode = QuicNetworkClient.DefaultErrorCode,
+
+                DefaultStreamErrorCode = QuicNetworkClient.DefaultStreamClosedCode,
+
+                ServerAuthenticationOptions = new SslServerAuthenticationOptions
+                {
+                    // Specify the application protocols that the server supports. This list must be a subset of the protocols specified in QuicListenerOptions.ApplicationProtocols.
+                    ApplicationProtocols = [SslApplicationProtocol.Http2],
+                    // Server certificate, it can also be provided via ServerCertificateContext or ServerCertificateSelectionCallback.
+                    ServerCertificate = Config.Certificate,
+                }
+            };
             Task<QuicListener> listener = QuicListener.ListenAsync(new QuicListenerOptions()
             {
                 ListenEndPoint = IPEndPoint.Parse($"{Config.BindIP}:{Config.Port}"),
-                ApplicationProtocols = new List<System.Net.Security.SslApplicationProtocol>() { System.Net.Security.SslApplicationProtocol.Http2 }
+                ApplicationProtocols = new List<System.Net.Security.SslApplicationProtocol>() { System.Net.Security.SslApplicationProtocol.Http2 },
+                ConnectionOptionsCallback = (_, _, _) => ValueTask.FromResult(connectionOptions)
             }).AsTask();
             listener.Wait();
             Log.Info($"Started listening on {Config.BindIP}:{Config.Port}");

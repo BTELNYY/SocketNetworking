@@ -1629,6 +1629,11 @@ namespace SocketNetworking.Shared
             }
         }
 
+        public static void ImportAssembly(object value)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 

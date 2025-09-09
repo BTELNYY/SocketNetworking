@@ -11,7 +11,6 @@ namespace Basic.Server
 {
     public class Program
     {
-
         static readonly string Title = "Clients: {count}";
 
         public static void Main(string[] args)
