@@ -40,10 +40,8 @@ namespace SocketNetworking.Server
 
                 ServerAuthenticationOptions = new SslServerAuthenticationOptions
                 {
-                    // Specify the application protocols that the server supports. This list must be a subset of the protocols specified in QuicListenerOptions.ApplicationProtocols.
                     ApplicationProtocols = [new SslApplicationProtocol(ServerConfiguration.Protocol)],
-                    // Server certificate, it can also be provided via ServerCertificateContext or ServerCertificateSelectionCallback.
-                    ServerCertificate = Config.Certificate,
+                    //ServerCertificate = Config.Certificate,
                 }
             };
             Task<QuicListener> listener = QuicListener.ListenAsync(new QuicListenerOptions()
@@ -53,8 +51,8 @@ namespace SocketNetworking.Server
                 ConnectionOptionsCallback = (_, _, _) => ValueTask.FromResult(connectionOptions)
             }).AsTask();
             listener.Wait();
-            Log.Info($"Started listening on {Config.BindIP}:{Config.Port}");
             _listner = listener.Result;
+            Log.Info($"Started listening on {_listner.LocalEndPoint.Address}:{_listner.LocalEndPoint.Port}");
             int counter = 0;
             while (!_isShuttingDown)
             {

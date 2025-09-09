@@ -127,10 +127,18 @@ namespace SocketNetworking.Client
                     TargetHost = hostname,
                 }
             };
-            QuicConnection connection = await QuicConnection.ConnectAsync(options);
-            QuicStream stream = await connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional);
-            Connection = connection;
-            Stream = stream;
+            try
+            {
+                QuicConnection connection = await QuicConnection.ConnectAsync(options);
+                QuicStream stream = await connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional);
+                Connection = connection;
+                Stream = stream;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex.ToString());
+                return false;
+            }
             return true;
         }
 
