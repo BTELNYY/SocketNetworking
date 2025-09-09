@@ -354,11 +354,11 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Returns the Address to which the socket is connected too, In the format IP:Port
         /// </summary>
-        public string ConnectedIPAndPort
+        public virtual string ConnectedIPAndPort
         {
             get
             {
-                IPEndPoint remoteIpEndPoint = Transport.Peer;
+                IPEndPoint remoteIpEndPoint = ConnectedPeer;
                 return $"{remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}";
             }
         }
@@ -366,11 +366,11 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Returns the connection IP
         /// </summary>
-        public string ConnectedHostname
+        public virtual string ConnectedHostname
         {
             get
             {
-                IPEndPoint remoteIpEndPoint = Transport.Peer;
+                IPEndPoint remoteIpEndPoint = ConnectedPeer;
                 return $"{remoteIpEndPoint.Address}";
             }
         }
@@ -378,12 +378,20 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Returns the connection port
         /// </summary>
-        public int ConnectedPort
+        public virtual int ConnectedPort
         {
             get
             {
-                IPEndPoint remoteIpEndPoint = Transport.Peer;
+                IPEndPoint remoteIpEndPoint = ConnectedPeer;
                 return remoteIpEndPoint.Port;
+            }
+        }
+
+        public virtual IPEndPoint ConnectedPeer
+        {
+            get
+            {
+                return Transport.Peer;
             }
         }
 
@@ -493,7 +501,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// <see cref="bool"/> which determines if the client has connected to a server
         /// </summary>
-        public bool IsTransportConnected
+        public virtual bool IsTransportConnected
         {
             get
             {
@@ -512,7 +520,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Determines if the client is connected to anything.
         /// </summary>
-        public bool IsConnected
+        public virtual bool IsConnected
         {
             get
             {
@@ -878,7 +886,7 @@ namespace SocketNetworking.Client
         /// <returns>
         /// A <see cref="bool"/> indicating connection success. Note this only returns the status of the socket connection, not of the full connection action. E.g. you can still fail to connect if the server refuses to accept the client.
         /// </returns>
-        public bool Connect(string hostname, ushort port)
+        public virtual bool Connect(string hostname, ushort port)
         {
             if (CurrentClientLocation == ClientLocation.Remote)
             {
@@ -1022,7 +1030,7 @@ namespace SocketNetworking.Client
             NetworkServer.RemoveClient(this);
         }
 
-        void StartClient()
+        protected virtual void StartClient()
         {
             if (CurrentClientLocation == ClientLocation.Remote)
             {
@@ -1126,7 +1134,6 @@ namespace SocketNetworking.Client
             }
             else
             {
-                //Log.Debug("Enqueue packet");
                 _toSendPackets.Enqueue(packet);
                 if (ManualPacketSend)
                 {
