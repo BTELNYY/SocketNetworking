@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Quic;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Runtime.Versioning;
 using System.Text;
@@ -116,7 +117,12 @@ namespace SocketNetworking.Client
             {
                 RemoteEndPoint = IPEndPoint.Parse(finalHostname + ":" + port),
                 DefaultCloseErrorCode = DefaultErrorCode,
-                DefaultStreamErrorCode = DefaultStreamClosedCode
+                DefaultStreamErrorCode = DefaultStreamClosedCode,
+                ClientAuthenticationOptions = new System.Net.Security.SslClientAuthenticationOptions()
+                {
+                    ApplicationProtocols = [SslApplicationProtocol.Http2],
+                    TargetHost = hostname,
+                }
             };
             QuicConnection connection = await QuicConnection.ConnectAsync(options);
             QuicStream stream = await connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional);

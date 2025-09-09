@@ -61,6 +61,7 @@ namespace SocketNetworking.Server
                 _ = Task.Run(async () =>
                 {
                     QuicConnection connection = await _listner.AcceptConnectionAsync();
+                    Log.Info($"Connecting client {counter} from {connection.RemoteEndPoint.Address}:{connection.RemoteEndPoint.Port}");
                     QuicNetworkClient client = new QuicNetworkClient();
                     client.InitRemoteClient(counter, null);
                     client.SetupRemoteClient(connection);
