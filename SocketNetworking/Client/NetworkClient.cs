@@ -1188,10 +1188,13 @@ namespace SocketNetworking.Client
         /// <param name="target"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
+        [Obsolete]
         public void NetworkInvoke(object target, string methodName, params object[] args)
         {
             NetworkManager.NetworkInvoke(target, this, methodName, args);
         }
+
+
 
         /// <summary>
         /// Preforms a non-blocking Network Invocation (Like an RPC). This will try to find the method on the current <see cref="NetworkClient"/>
@@ -1823,11 +1826,11 @@ namespace SocketNetworking.Client
                     }
                     catch (Exception ex)
                     {
-                        Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
+                        Log.Warning($"Network Invocation Failed! Method Index: {networkInvocationPacket.MethodIndex}, Error: {ex}");
                         NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket
                         {
                             Success = false,
-                            ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message,
+                            ErrorMessage = $"Method: {networkInvocationPacket.MethodIndex} Message: " + ex.Message,
                             Result = SerializedData.NullData,
                             CallbackID = networkInvocationPacket.CallbackID,
                             IgnoreResult = false
@@ -2123,11 +2126,11 @@ namespace SocketNetworking.Client
                     }
                     catch (Exception ex)
                     {
-                        Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
+                        Log.Warning($"Network Invocation Failed! Method Index:  {networkInvocationPacket.MethodIndex}, Error: {ex}");
                         NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket
                         {
                             Success = false,
-                            ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message,
+                            ErrorMessage = $"Method: {networkInvocationPacket.MethodIndex} Message: " + ex.Message,
                             Result = SerializedData.NullData,
                             CallbackID = networkInvocationPacket.CallbackID,
                             IgnoreResult = false

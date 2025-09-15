@@ -58,7 +58,7 @@ namespace Basic.Server
                 {
                     if (c is TestClient client && c.Ready)
                     {
-                        //client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
+                        client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
                         ExampleCustomPacket packet = new ExampleCustomPacket
                         {
                             Data = "test"
