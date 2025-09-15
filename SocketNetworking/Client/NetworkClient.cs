@@ -1194,7 +1194,10 @@ namespace SocketNetworking.Client
             NetworkManager.NetworkInvoke(target, this, methodName, args);
         }
 
-
+        public void NetworkInvoke(Delegate target, params object[] args)
+        {
+            NetworkManager.NetworkInvoke(this, target, true, args);
+        }
 
         /// <summary>
         /// Preforms a non-blocking Network Invocation (Like an RPC). This will try to find the method on the current <see cref="NetworkClient"/>
@@ -1227,9 +1230,16 @@ namespace SocketNetworking.Client
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
         /// <returns></returns>
+        [Obsolete]
         public T NetworkInvokeBlocking<T>(object obj, string methodName, float maxTimeMs = 5000, params object[] args)
         {
             return NetworkManager.NetworkInvokeBlocking<T>(obj, this, methodName, args, maxTimeMs);
+        }
+
+
+        public T NetworkInvokeBlocking<T>(Delegate target, float maxTimeMs = 5000, params object[] args)
+        {
+            return NetworkManager.NetworkInvokeBlocking<T>(this, target, args, maxTimeMs);
         }
 
         /// <summary>
@@ -1239,9 +1249,15 @@ namespace SocketNetworking.Client
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <returns></returns>
+        [Obsolete]
         public NetworkInvocationCallback<T> NetworkInvokeBlockingCallback<T>(string methodName, params object[] args)
         {
             return NetworkManager.NetworkInvoke<T>(this, this, methodName, args);
+        }
+
+        public NetworkInvocationCallback<T> NetworkInvokeBlockingCallback<T>(Delegate @delegate, params object[] args)
+        {
+            return NetworkManager.NetworkInvoke<T>(this, @delegate, args);
         }
 
         #endregion
