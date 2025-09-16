@@ -69,6 +69,14 @@ namespace SocketNetworking.Misc
             }
         }
 
+        public void ClearClients()
+        {
+            lock (_lock)
+            {
+                Clients.Clear();
+            }
+        }
+
         public ClientHandler() : this(new List<NetworkClient>()) { }
 
         bool die = false;

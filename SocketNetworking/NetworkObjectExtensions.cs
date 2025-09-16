@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Security;
+using System.Security.Cryptography;
+using System.Threading;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
@@ -167,9 +169,19 @@ namespace SocketNetworking
         /// <param name="sender"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
+        [Obsolete]
         public static void NetworkInvoke(this INetworkObject @object, NetworkClient sender, string methodName, object[] args)
         {
             NetworkManager.NetworkInvoke(@object, sender, methodName, args);
+        }
+
+        public static void NetworkInvoke(this INetworkObject obj, NetworkClient sender, Delegate del, params object[] args)
+        {
+            if (!ReferenceEquals(obj, del.Target))
+            {
+                return;
+            }
+            NetworkManager.NetworkInvoke(sender, del, true, args);
         }
 
         /// <summary>
@@ -184,9 +196,19 @@ namespace SocketNetworking
         /// How long before the system should time out and fail?
         /// </param>
         /// <returns></returns>
+        [Obsolete]
         public static T NetworkInvoke<T>(this INetworkObject obj, NetworkClient sender, string methodName, object[] args, float timeOutMs = 5000f)
         {
             return NetworkManager.NetworkInvokeBlocking<T>(obj, sender, methodName, args, timeOutMs);
+        }
+
+        public static T NetworkInvoke<T>(this INetworkObject obj, NetworkClient sender, Delegate del, float timeOutMs = 5000f, params object[] args)
+        {
+            if (!ReferenceEquals(obj, del.Target))
+            {
+                return default;
+            }
+            return NetworkManager.NetworkInvokeBlocking<T>(sender, del, args, timeOutMs);
         }
 
         /// <summary>
@@ -195,9 +217,19 @@ namespace SocketNetworking
         /// <param name="obj"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
+        [Obsolete]
         public static void NetworkInvokeOnAll(this INetworkObject obj, string methodName, object[] args)
         {
             NetworkServer.NetworkInvokeOnAll(obj, methodName, args);
+        }
+
+        public static void NetworkInvokeOnAll(this INetworkObject obj, Delegate @delegate, params object[] args)
+        {
+            if (!ReferenceEquals(obj, @delegate.Target))
+            {
+                return;
+            }
+            NetworkServer.NetworkInvokeOnAll(@delegate, args);
         }
 
         /// <summary>

@@ -1204,6 +1204,7 @@ namespace SocketNetworking.Client
         /// </summary>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
+        [Obsolete]
         public void NetworkInvokeOnClient(string methodName, params object[] args)
         {
             NetworkManager.NetworkInvoke(this, this, methodName, args);
@@ -1838,7 +1839,7 @@ namespace SocketNetworking.Client
                     networkInvocationPacket.Deserialize(data);
                     try
                     {
-                        NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                        NetworkManager.NetworkInvokeInternal(networkInvocationPacket, this);
                     }
                     catch (Exception ex)
                     {
@@ -1858,7 +1859,7 @@ namespace SocketNetworking.Client
                     NetworkInvokationResultPacket networkInvocationResultPacket = new NetworkInvokationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
                     //Log.Debug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
-                    NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
+                    NetworkManager.NetworkInvokeInternal(networkInvocationResultPacket, this);
                     break;
                 case PacketType.Encryption:
                     EncryptionPacket encryptionPacket = new EncryptionPacket();
@@ -2138,7 +2139,7 @@ namespace SocketNetworking.Client
                     //Log.Debug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
                     {
-                        NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                        NetworkManager.NetworkInvokeInternal(networkInvocationPacket, this);
                     }
                     catch (Exception ex)
                     {
@@ -2158,7 +2159,7 @@ namespace SocketNetworking.Client
                     NetworkInvokationResultPacket networkInvocationResultPacket = new NetworkInvokationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
                     //Log.Debug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
-                    NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
+                    NetworkManager.NetworkInvokeInternal(networkInvocationResultPacket, this);
                     break;
                 case PacketType.Encryption:
                     EncryptionPacket encryptionPacket = new EncryptionPacket();

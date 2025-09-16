@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
@@ -519,6 +520,47 @@ namespace SocketNetworking.UnityEngine.Components
         }
 
 
+        public virtual void NetworkInvoke(Delegate @delegate, params object[] args)
+        {
+            if (!ReferenceEquals(@delegate.Target, this))
+            {
+                return;
+            }
+            if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                if (ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
+                {
+                    NetworkServer.NetworkInvokeOnAll(@delegate, args);
+                }
+                else if (ObjectVisibilityMode == ObjectVisibilityMode.OwnerAndServer)
+                {
+                    NetworkClient client = this.GetOwner();
+                    client?.NetworkInvoke(@delegate, args);
+                }
+                else if (ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
+                {
+                    throw new InvalidOperationException("Can't network invoke on objects that don't have remote counter parts. (Object is hidden)");
+                }
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                if (NetworkClient.LocalClient == null)
+                {
+                    throw new InvalidOperationException("Attempted to networkinvoke using a client when the game client is not set!");
+                }
+                else
+                {
+                    //This is a nice check, buts its useless against patching. This is checked again on the server :3
+                    if (!this.HasPermission(NetworkClient.LocalClient))
+                    {
+                        return;
+                    }
+                    NetworkManager.NetworkInvoke(NetworkClient.LocalClient, @delegate, args);
+                }
+            }
+        }
+
+        [Obsolete]
         public virtual void NetworkInvoke(string methodName, params object[] args)
         {
             if (NetworkManager.WhereAmI == ClientLocation.Remote)

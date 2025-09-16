@@ -1305,7 +1305,7 @@ namespace SocketNetworking.Shared
             return null;
         }
 
-        internal static void NetworkInvoke(NetworkInvokationResultPacket packet, NetworkClient Receiver)
+        internal static void NetworkInvokeInternal(NetworkInvokationResultPacket packet, NetworkClient Receiver)
         {
             if (packet.IgnoreResult)
             {
@@ -1319,7 +1319,7 @@ namespace SocketNetworking.Shared
             OnNetworkInvocationResult?.Invoke(packet);
         }
 
-        internal static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient Receiver, bool localCall = false)
+        internal static object NetworkInvokeInternal(NetworkInvocationPacket packet, NetworkClient Receiver, bool localCall = false)
         {
             Type targetType = packet.TargetType ?? throw new NetworkInvocationException($"Cannot find type: '{packet.TargetType}'.", new NullReferenceException());
             object target = Receiver;
@@ -1588,7 +1588,7 @@ namespace SocketNetworking.Shared
             }
             if (invokable.CallLocal)
             {
-                NetworkInvoke(packet, sender, true);
+                NetworkInvokeInternal(packet, sender, true);
             }
             return packet;
         }
@@ -1699,7 +1699,7 @@ namespace SocketNetworking.Shared
             }
             if (invokable.CallLocal)
             {
-                NetworkInvoke(packet, sender, true);
+                NetworkInvokeInternal(packet, sender, true);
             }
             return packet;
         }

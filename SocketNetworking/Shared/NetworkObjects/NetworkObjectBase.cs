@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.PacketSystem.Packets;
@@ -235,6 +236,7 @@ namespace SocketNetworking.Shared.NetworkObjects
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <exception cref="NullReferenceException"></exception>
+        [Obsolete]
         public void NetworkInvoke(string methodName, params object[] args)
         {
             if (NetworkManager.WhereAmI == ClientLocation.Local)
@@ -248,6 +250,26 @@ namespace SocketNetworking.Shared.NetworkObjects
             else if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
                 NetworkServer.NetworkInvokeOnAll(this, methodName, args);
+            }
+        }
+
+        public void NetworkInvoke(Delegate @delegate, params object[] args)
+        {
+            if (@delegate.Target != this)
+            {
+                return;
+            }
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                if (NetworkClient.LocalClient == null)
+                {
+                    throw new NullReferenceException("LocalClient is null and we are on the local peer.");
+                }
+                NetworkClient.LocalClient.NetworkInvoke(@delegate, args);
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkServer.NetworkInvokeOnAll(@delegate, args);
             }
         }
 
