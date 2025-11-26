@@ -8,6 +8,9 @@ using SocketNetworking.Shared;
 namespace QuicServer
 {
     [RequiresPreviewFeatures]
+    [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("windows")]
+    [SupportedOSPlatform("macOS")]
     public class Program
     {
         static readonly string Title = "Clients: {count}";

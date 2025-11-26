@@ -8,6 +8,7 @@ using System.Net.Quic;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Runtime.Versioning;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Client;
@@ -34,10 +35,16 @@ namespace SocketNetworking.Server
 
         protected override bool Validate()
         {
-            if (Config.Certificate == null)
+            if (Config.Certificate == null && Config.CertificatePath == "")
             {
                 Log.Error("QUIC Requires a certificate.");
                 return false;
+            }
+            else if (Config.CertificatePath != "")
+            {
+                X509Certificate cert = new X509Certificate(Config.CertificatePath);
+                Config.Certificate = cert;
+                Log.Info("Loaded default certificate for: " + cert.Subject);
             }
             return base.Validate();
         }
@@ -57,13 +64,24 @@ namespace SocketNetworking.Server
                 {
                     ApplicationProtocols = [new SslApplicationProtocol(ServerConfiguration.Protocol)],
                     ServerCertificate = Config.Certificate,
+                    RemoteCertificateValidationCallback = (sender, cert, chain, errors) => 
+                    {
+                        return true;
+                    },
+                    ServerCertificateSelectionCallback = (sender, host) => 
+                    {
+                        return Config.Certificate;
+                    }
                 }
             };
             Task<QuicListener> listener = QuicListener.ListenAsync(new QuicListenerOptions()
             {
                 ListenEndPoint = IPEndPoint.Parse($"{Config.BindIP}:{Config.Port}"),
                 ApplicationProtocols = new List<System.Net.Security.SslApplicationProtocol>() { new SslApplicationProtocol(ServerConfiguration.Protocol) },
-                ConnectionOptionsCallback = (_, _, _) => ValueTask.FromResult(connectionOptions)
+                ConnectionOptionsCallback = async (con, info, token) => 
+                {   
+                    return connectionOptions;
+                }
             }).AsTask();
             listener.Wait();
             _listner = listener.Result;
