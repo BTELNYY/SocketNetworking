@@ -15,6 +15,9 @@ using SocketNetworking.Shared.PacketSystem;
 namespace SocketNetworking.Client
 {
     [RequiresPreviewFeatures]
+    [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("windows")]
+    [SupportedOSPlatform("macOS")]
     public class QuicNetworkClient : NetworkClient
     {
         public const long DefaultErrorCode = 0x0A;
@@ -125,6 +128,10 @@ namespace SocketNetworking.Client
                         new SslApplicationProtocol(ClientConfiguration.Protocol)
                     ],
                     TargetHost = hostname,
+                    RemoteCertificateValidationCallback = (sender, cert, chain, errors ) => 
+                    {
+                        return true;
+                    }
                 }
             };
             try

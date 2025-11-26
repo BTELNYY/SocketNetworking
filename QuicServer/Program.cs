@@ -14,6 +14,7 @@ namespace QuicServer
 
         public static void Main(string[] args)
         {
+            Log.Levels = Log.FULL_LOG;
             Log.OnLog += ExampleLogger.HandleNetworkLog;
             AppDomain.CurrentDomain.ProcessExit += (sender, evtArgs) =>
             {

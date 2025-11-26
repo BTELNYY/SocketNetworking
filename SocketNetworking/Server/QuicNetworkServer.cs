@@ -18,6 +18,9 @@ using SocketNetworking.Shared.Events;
 namespace SocketNetworking.Server
 {
     [RequiresPreviewFeatures]
+    [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("windows")]
+    [SupportedOSPlatform("macOS")]
     public class QuicNetworkServer : NetworkServer
     {
         public override void StartServer()
@@ -29,25 +32,37 @@ namespace SocketNetworking.Server
 
         public SslServerAuthenticationOptions ServerAuthenticationOptions { get; private set; }
 
+        protected override bool Validate()
+        {
+            if (Config.Certificate == null)
+            {
+                Log.Error("QUIC Requires a certificate.");
+                return false;
+            }
+            return base.Validate();
+        }
+
         protected override void ServerStartThread()
         {
             Log.Info("Starting QUIC Server...");
+            if (Config.Certificate == null)
+            {
+                throw new InvalidOperationException("QUIC Requires a certificate.");
+            }
             QuicServerConnectionOptions connectionOptions = new QuicServerConnectionOptions()
             {
                 DefaultCloseErrorCode = QuicNetworkClient.DefaultErrorCode,
-
                 DefaultStreamErrorCode = QuicNetworkClient.DefaultStreamClosedCode,
-
                 ServerAuthenticationOptions = new SslServerAuthenticationOptions
                 {
                     ApplicationProtocols = [new SslApplicationProtocol(ServerConfiguration.Protocol)],
-                    //ServerCertificate = Config.Certificate,
+                    ServerCertificate = Config.Certificate,
                 }
             };
             Task<QuicListener> listener = QuicListener.ListenAsync(new QuicListenerOptions()
             {
                 ListenEndPoint = IPEndPoint.Parse($"{Config.BindIP}:{Config.Port}"),
-                ApplicationProtocols = new List<System.Net.Security.SslApplicationProtocol>() { System.Net.Security.SslApplicationProtocol.Http2 },
+                ApplicationProtocols = new List<System.Net.Security.SslApplicationProtocol>() { new SslApplicationProtocol(ServerConfiguration.Protocol) },
                 ConnectionOptionsCallback = (_, _, _) => ValueTask.FromResult(connectionOptions)
             }).AsTask();
             listener.Wait();
@@ -58,31 +73,38 @@ namespace SocketNetworking.Server
             {
                 _ = Task.Run(async () =>
                 {
-                    QuicConnection connection = await _listner.AcceptConnectionAsync();
-                    Log.Info($"Connecting client {counter} from {connection.RemoteEndPoint.Address}:{connection.RemoteEndPoint.Port}");
-                    QuicNetworkClient client = new QuicNetworkClient();
-                    client.InitRemoteClient(counter, null);
-                    client.SetupRemoteClient(connection);
-                    AddClient(client, counter);
-                    ClientConnectRequest disconnect = AcceptClient(client);
-                    if (!disconnect.Accepted)
+                    try
                     {
-                        client.Disconnect(disconnect.Message);
-                        return;
-                    }
-                    CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
-                    {
-                        if (x == null)
+                        QuicConnection connection = await _listner.AcceptConnectionAsync();
+                        Log.Info($"Connecting client {counter} from {connection.RemoteEndPoint.Address}:{connection.RemoteEndPoint.Port}");
+                        QuicNetworkClient client = new QuicNetworkClient();
+                        client.InitRemoteClient(counter, null);
+                        client.SetupRemoteClient(connection);
+                        AddClient(client, counter);
+                        ClientConnectRequest disconnect = AcceptClient(client);
+                        if (!disconnect.Accepted)
                         {
+                            client.Disconnect(disconnect.Message);
                             return;
                         }
-                        if (x.CurrentConnectionState != ConnectionState.Connected)
+                        CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                         {
-                            x.Disconnect("Failed to handshake in time.");
-                        }
-                    }, client, Config.HandshakeTime);
-                    callback.Start();
-                    counter++;
+                            if (x == null)
+                            {
+                                return;
+                            }
+                            if (x.CurrentConnectionState != ConnectionState.Connected)
+                            {
+                                x.Disconnect("Failed to handshake in time.");
+                            }
+                        }, client, Config.HandshakeTime);
+                        callback.Start();
+                        counter++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Client failed to connect! Error: " + ex.ToString());
+                    }
                 });
             }
         }
