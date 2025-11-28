@@ -131,7 +131,7 @@ namespace SocketNetworking.Client
                     RemoteCertificateValidationCallback = (sender, cert, chain, errors ) => 
                     {
                         return true;
-                    }
+                    },
                 }
             };
             try

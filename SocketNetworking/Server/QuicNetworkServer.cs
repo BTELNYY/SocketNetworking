@@ -70,8 +70,13 @@ namespace SocketNetworking.Server
                     },
                     ServerCertificateSelectionCallback = (sender, host) => 
                     {
+                        if (Config.Certificate == null)
+                        {
+                            Log.Error("Certificate null!");
+                        }
                         return Config.Certificate;
-                    }
+                    },
+                    ClientCertificateRequired = false,
                 }
             };
             Task<QuicListener> listener = QuicListener.ListenAsync(new QuicListenerOptions()
@@ -89,11 +94,12 @@ namespace SocketNetworking.Server
             int counter = 0;
             while (!_isShuttingDown)
             {
-                _ = Task.Run(async () =>
+                try
                 {
-                    try
+                    _listner.AcceptConnectionAsync().AsTask().Wait();
+                    QuicConnection connection = _listner.AcceptConnectionAsync().AsTask().Result;
+                    _ = Task.Run(async () =>
                     {
-                        QuicConnection connection = await _listner.AcceptConnectionAsync();
                         Log.Info($"Connecting client {counter} from {connection.RemoteEndPoint.Address}:{connection.RemoteEndPoint.Port}");
                         QuicNetworkClient client = new QuicNetworkClient();
                         client.InitRemoteClient(counter, null);
@@ -118,15 +124,19 @@ namespace SocketNetworking.Server
                         }, client, Config.HandshakeTime);
                         callback.Start();
                         counter++;
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Client failed to connect! Error: " + ex.ToString());
-                    }
-                });
-            }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex.ToString());
+                }
+            };
+            
         }
+        
     }
+    
 }
+
 
 #endif
