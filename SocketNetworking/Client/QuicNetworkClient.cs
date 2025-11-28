@@ -72,6 +72,16 @@ namespace SocketNetworking.Client
             return result.Result;
         }
 
+        /// <summary>
+        /// Client Connection options. This property will be changed on connection. See <see cref="OnPreConnect"/>,
+        /// </summary>
+        public QuicClientConnectionOptions ClientConnectionOptions { get; private set; } = new QuicClientConnectionOptions();
+
+        /// <summary>
+        /// Called right before a connection is made in <see cref="ConnectAsync(string, ushort)"/>, used to allow the developer to modify the connection options before the connection is made.
+        /// </summary>
+        public event Func<QuicClientConnectionOptions, QuicClientConnectionOptions> OnPreConnect;
+
         public async Task<bool> ConnectAsync(string hostname, ushort port)
         {
             if (CurrentClientLocation == ClientLocation.Remote)
@@ -116,7 +126,7 @@ namespace SocketNetworking.Client
                 finalHostname = hostname;
             }
             Log.Info($"Connecting to {finalHostname}:{port}...");
-            QuicClientConnectionOptions options = new QuicClientConnectionOptions()
+            ClientConnectionOptions = new QuicClientConnectionOptions()
             {
                 RemoteEndPoint = IPEndPoint.Parse(finalHostname + ":" + port),
                 DefaultCloseErrorCode = DefaultErrorCode,
@@ -134,9 +144,13 @@ namespace SocketNetworking.Client
                     },
                 }
             };
+            if (OnPreConnect.GetInvocationList().Length > 0)
+            {
+                ClientConnectionOptions = OnPreConnect(ClientConnectionOptions);
+            }
             try
             {
-                QuicConnection connection = await QuicConnection.ConnectAsync(options);
+                QuicConnection connection = await QuicConnection.ConnectAsync(ClientConnectionOptions);
                 QuicStream stream = await connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional);
                 Connection = connection;
                 Stream = stream;

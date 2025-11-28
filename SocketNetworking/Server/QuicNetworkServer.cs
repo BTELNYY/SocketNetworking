@@ -29,9 +29,17 @@ namespace SocketNetworking.Server
             base.StartServer();
         }
 
-        private QuicListener _listner;
+        private QuicListener _listener;
 
-        public SslServerAuthenticationOptions ServerAuthenticationOptions { get; private set; }
+        /// <summary>
+        /// Server authentication options to be used.
+        /// </summary>
+        public SslServerAuthenticationOptions ServerAuthenticationOptions { get; set; }
+
+        /// <summary>
+        /// QUIC Server connection options
+        /// </summary>
+        public QuicServerConnectionOptions ConnectionOptions { get; set; } = new QuicServerConnectionOptions();
 
         protected override bool Validate()
         {
@@ -56,28 +64,29 @@ namespace SocketNetworking.Server
             {
                 throw new InvalidOperationException("QUIC Requires a certificate.");
             }
-            QuicServerConnectionOptions connectionOptions = new QuicServerConnectionOptions()
+            ServerAuthenticationOptions = new SslServerAuthenticationOptions
+            {
+                ApplicationProtocols = [new SslApplicationProtocol(ServerConfiguration.Protocol)],
+                ServerCertificate = Config.Certificate,
+                RemoteCertificateValidationCallback = (sender, cert, chain, errors) =>
+                {
+                    return true;
+                },
+                ServerCertificateSelectionCallback = (sender, host) =>
+                {
+                    if (Config.Certificate == null)
+                    {
+                        Log.Error("Certificate null!");
+                    }
+                    return Config.Certificate;
+                },
+                ClientCertificateRequired = false,
+            };
+            ConnectionOptions = new QuicServerConnectionOptions()
             {
                 DefaultCloseErrorCode = QuicNetworkClient.DefaultErrorCode,
                 DefaultStreamErrorCode = QuicNetworkClient.DefaultStreamClosedCode,
-                ServerAuthenticationOptions = new SslServerAuthenticationOptions
-                {
-                    ApplicationProtocols = [new SslApplicationProtocol(ServerConfiguration.Protocol)],
-                    ServerCertificate = Config.Certificate,
-                    RemoteCertificateValidationCallback = (sender, cert, chain, errors) => 
-                    {
-                        return true;
-                    },
-                    ServerCertificateSelectionCallback = (sender, host) => 
-                    {
-                        if (Config.Certificate == null)
-                        {
-                            Log.Error("Certificate null!");
-                        }
-                        return Config.Certificate;
-                    },
-                    ClientCertificateRequired = false,
-                }
+                ServerAuthenticationOptions = this.ServerAuthenticationOptions
             };
             Task<QuicListener> listener = QuicListener.ListenAsync(new QuicListenerOptions()
             {
@@ -85,19 +94,19 @@ namespace SocketNetworking.Server
                 ApplicationProtocols = new List<System.Net.Security.SslApplicationProtocol>() { new SslApplicationProtocol(ServerConfiguration.Protocol) },
                 ConnectionOptionsCallback = async (con, info, token) => 
                 {   
-                    return connectionOptions;
+                    return ConnectionOptions;
                 }
             }).AsTask();
             listener.Wait();
-            _listner = listener.Result;
-            Log.Info($"Started listening on {_listner.LocalEndPoint.Address}:{_listner.LocalEndPoint.Port}");
+            _listener = listener.Result;
+            Log.Info($"Started listening on {_listener.LocalEndPoint.Address}:{_listener.LocalEndPoint.Port}");
             int counter = 0;
             while (!_isShuttingDown)
             {
                 try
                 {
-                    _listner.AcceptConnectionAsync().AsTask().Wait();
-                    QuicConnection connection = _listner.AcceptConnectionAsync().AsTask().Result;
+                    _listener.AcceptConnectionAsync().AsTask().Wait();
+                    QuicConnection connection = _listener.AcceptConnectionAsync().AsTask().Result;
                     _ = Task.Run(async () =>
                     {
                         Log.Info($"Connecting client {counter} from {connection.RemoteEndPoint.Address}:{connection.RemoteEndPoint.Port}");
@@ -130,13 +139,8 @@ namespace SocketNetworking.Server
                 {
                     Log.Error(ex.ToString());
                 }
-            };
-            
-        }
-        
-    }
-    
+            };   
+        }   
+    }    
 }
-
-
 #endif
