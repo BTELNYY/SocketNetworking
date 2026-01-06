@@ -1,15 +1,11 @@
 ﻿#if NET8_0_OR_GREATER
-
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Quic;
 using System.Net.Security;
-using System.Net.Sockets;
 using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
@@ -88,59 +84,59 @@ namespace SocketNetworking.Server
                 DefaultStreamErrorCode = QuicNetworkClient.DefaultStreamClosedCode,
                 ServerAuthenticationOptions = this.ServerAuthenticationOptions
             };
-            Task<QuicListener> listener = QuicListener.ListenAsync(new QuicListenerOptions()
+            _ = Task.Run(async () =>
             {
-                ListenEndPoint = IPEndPoint.Parse($"{Config.BindIP}:{Config.Port}"),
-                ApplicationProtocols = new List<System.Net.Security.SslApplicationProtocol>() { new SslApplicationProtocol(ServerConfiguration.Protocol) },
-                ConnectionOptionsCallback = async (con, info, token) => 
-                {   
-                    return ConnectionOptions;
-                }
-            }).AsTask();
-            listener.Wait();
-            _listener = listener.Result;
-            Log.Info($"Started listening on {_listener.LocalEndPoint.Address}:{_listener.LocalEndPoint.Port}");
-            int counter = 0;
-            while (!_isShuttingDown)
-            {
-                try
+                _listener = await QuicListener.ListenAsync(new QuicListenerOptions()
                 {
-                    _listener.AcceptConnectionAsync().AsTask().Wait();
-                    QuicConnection connection = _listener.AcceptConnectionAsync().AsTask().Result;
-                    _ = Task.Run(async () =>
+                    ListenEndPoint = IPEndPoint.Parse($"{Config.BindIP}:{Config.Port}"),
+                    ApplicationProtocols = new List<System.Net.Security.SslApplicationProtocol>() { new SslApplicationProtocol(ServerConfiguration.Protocol) },
+                    ConnectionOptionsCallback = async (con, info, token) =>
                     {
-                        Log.Info($"Connecting client {counter} from {connection.RemoteEndPoint.Address}:{connection.RemoteEndPoint.Port}");
-                        QuicNetworkClient client = new QuicNetworkClient();
-                        client.InitRemoteClient(counter, null);
-                        client.SetupRemoteClient(connection);
-                        AddClient(client, counter);
-                        ClientConnectRequest disconnect = AcceptClient(client);
-                        if (!disconnect.Accepted)
+                        return ConnectionOptions;
+                    }
+                });
+                Log.Info($"Started listening on {_listener.LocalEndPoint.Address}:{_listener.LocalEndPoint.Port}");
+                int counter = 0;
+                while (!_isShuttingDown)
+                {
+                    try
+                    {
+                        QuicConnection connection = await _listener.AcceptConnectionAsync();
+                        _ = Task.Run(async () =>
                         {
-                            client.Disconnect(disconnect.Message);
-                            return;
-                        }
-                        CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
-                        {
-                            if (x == null)
+                            Log.Info($"Connecting client {counter} from {connection.RemoteEndPoint.Address}:{connection.RemoteEndPoint.Port}");
+                            QuicNetworkClient client = new QuicNetworkClient();
+                            client.InitRemoteClient(counter, null);
+                            client.SetupRemoteClient(connection);
+                            AddClient(client, counter);
+                            ClientConnectRequest disconnect = AcceptClient(client);
+                            if (!disconnect.Accepted)
                             {
+                                await client.DisconnectAsync(disconnect.Message);
                                 return;
                             }
-                            if (x.CurrentConnectionState != ConnectionState.Connected)
+                            CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                             {
-                                x.Disconnect("Failed to handshake in time.");
-                            }
-                        }, client, Config.HandshakeTime);
-                        callback.Start();
-                        counter++;
-                    });
+                                if (x == null)
+                                {
+                                    return;
+                                }
+                                if (x.CurrentConnectionState != ConnectionState.Connected)
+                                {
+                                    x.Disconnect("Failed to handshake in time.");
+                                }
+                            }, client, Config.HandshakeTime);
+                            callback.Start();
+                            counter++;
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex.ToString());
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex.ToString());
-                }
-            };   
-        }   
-    }    
+            });
+        }
+    }
 }
 #endif

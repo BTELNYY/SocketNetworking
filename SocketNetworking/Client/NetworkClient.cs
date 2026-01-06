@@ -944,6 +944,34 @@ namespace SocketNetworking.Client
             return true;
         }
 
+        public virtual async Task DisconnectAsync(string message)
+        {
+            ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
+            {
+                State = ConnectionState.Disconnected,
+                Reason = message
+            };
+            await SendImmediateAsync(connectionUpdatePacket);
+            _connectionState = ConnectionState.Disconnected;
+            NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
+            ConnectionError?.Invoke(errorData);
+            ClientDisconnected?.Invoke();
+            if (CurrentClientLocation == ClientLocation.Remote)
+            {
+                Log.Info($"Disconnecting Client {ClientID} for " + message);
+            }
+            if (CurrentClientLocation == ClientLocation.Local)
+            {
+                Log.Info("Disconnecting from server. Reason: " + message);
+            }
+            StopClient();
+        }
+
+        public virtual async Task DisconnectAsync()
+        {
+            await DisconnectAsync("Disconnected");
+        }
+
         /// <summary>
         /// Send a disconnect message to the other party and kill local client
         /// </summary>
@@ -1105,6 +1133,38 @@ namespace SocketNetworking.Client
             {
                 //Log.Debug($"Send to {packet.Destination}");
                 Exception ex = Transport.Send(fullBytes, packet.Destination);
+                if (ex != null)
+                {
+                    throw ex;
+                }
+                //Log.Debug("Sent!");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet immediate! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                ConnectionError?.Invoke(networkErrorData);
+            }
+        }
+
+        public virtual async Task SendImmediateAsync(Packet packet)
+        {
+            if (NoPacketHandling)
+            {
+                //Log.Debug("No packet handling!");
+                return;
+            }
+            if (!Transport.IsConnected)
+            {
+                //Log.Debug("Transport not connected?");
+                return;
+            }
+            PreparePacket(ref packet);
+            byte[] fullBytes = SerializePacket(packet);
+            try
+            {
+                //Log.Debug($"Send to {packet.Destination}");
+                Exception ex = await Transport.SendAsync(fullBytes, packet.Destination);
                 if (ex != null)
                 {
                     throw ex;
@@ -1539,6 +1599,34 @@ namespace SocketNetworking.Client
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
+            //bytesReceived += (ulong)packet.Item1.Length;
+            if (packet.Item1 == null)
+            {
+                Log.Warning("Transport received a null byte array.");
+                return;
+            }
+            DeserializeRetry(packet.Item1, packet.Item3);
+        }
+
+        protected virtual async Task RawReaderAsync()
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (!IsTransportConnected)
+            {
+                StopClient();
+                return;
+            }
+            //Log.Debug("Do latency check!");
+            DoLatencyCheck();
+            if (!Transport.DataAvailable)
+            {
+                //Log.Debug("No data on transport!");
+                return;
+            }
+            (byte[], Exception, IPEndPoint) packet = await Transport.ReceiveAsync();
             //bytesReceived += (ulong)packet.Item1.Length;
             if (packet.Item1 == null)
             {
@@ -2259,10 +2347,15 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Reads the next packet and handles it. (Non-blocking)
         /// </summary>
-        internal void ReadNext()
+        public void ReadNext()
         {
             RawReader();
             //Log.Debug("Reader ran");
+        }
+
+        public async Task ReadNextAsync()
+        {
+            await RawReaderAsync();
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.PacketSystem;
@@ -238,6 +239,34 @@ namespace SocketNetworking.Client
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive();
+            if (packet.Item2 != null)
+            {
+                Log.Error(packet.Item2.ToString());
+                return;
+            }
+            if (packet.Item1.Length == 0)
+            {
+                return;
+            }
+            DeserializeRetry(packet.Item1, packet.Item3);
+        }
+
+        protected override async Task RawReaderAsync()
+        {
+            base.RawReader();
+            if (_shuttingDown)
+            {
+                return;
+            }
+            if (!UdpTransport.IsConnected)
+            {
+                return;
+            }
+            if (!UdpTransport.DataAvailable)
+            {
+                return;
+            }
+            (byte[], Exception, IPEndPoint) packet = await UdpTransport.ReceiveAsync();
             if (packet.Item2 != null)
             {
                 Log.Error(packet.Item2.ToString());

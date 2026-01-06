@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.PacketSystem.Packets;

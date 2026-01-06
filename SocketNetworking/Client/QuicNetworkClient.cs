@@ -51,7 +51,7 @@ namespace SocketNetworking.Client
             }
         }
 
-        
+
 
         public override IPEndPoint ConnectedPeer => Connection.RemoteEndPoint;
 
@@ -138,7 +138,7 @@ namespace SocketNetworking.Client
                         new SslApplicationProtocol(ClientConfiguration.Protocol)
                     ],
                     TargetHost = hostname,
-                    RemoteCertificateValidationCallback = (sender, cert, chain, errors ) => 
+                    RemoteCertificateValidationCallback = (sender, cert, chain, errors) =>
                     {
                         return true;
                     },
