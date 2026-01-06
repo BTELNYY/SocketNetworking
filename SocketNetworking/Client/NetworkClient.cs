@@ -1042,6 +1042,9 @@ namespace SocketNetworking.Client
             GC.Collect();
         }
 
+        /// <summary>
+        /// Called in <see cref="StopClient"/> when the client is stopping, and is a local client.
+        /// </summary>
         protected virtual void OnLocalStopClient()
         {
             NetworkManager.SendDisconnectedPulse(this);
@@ -1053,11 +1056,17 @@ namespace SocketNetworking.Client
             _packetSenderThread = null;
         }
 
+        /// <summary>
+        /// Called in <see cref="StopClient"/> when the client is stopping, and is a remote client.
+        /// </summary>
         protected virtual void OnRemoteStopClient()
         {
             NetworkServer.RemoveClient(this);
         }
 
+        /// <summary>
+        /// Called internally to start the client. Does not connect to anything, just prepares the system to work.
+        /// </summary>
         protected virtual void StartClient()
         {
             if (CurrentClientLocation == ClientLocation.Remote)
@@ -1147,6 +1156,11 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Sends the <paramref name="packet"/> immediately. Async
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
         public virtual async Task SendImmediateAsync(Packet packet)
         {
             if (NoPacketHandling)
@@ -1254,6 +1268,11 @@ namespace SocketNetworking.Client
             NetworkManager.NetworkInvoke(target, this, methodName, args);
         }
 
+        /// <summary>
+        /// Peforms an Rpc on the current client given the <paramref name="target"/> and <paramref name="args"/>. Return type is ignored.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="args"></param>
         public void NetworkInvokeOnClient(Delegate target, params object[] args)
         {
             NetworkManager.NetworkInvoke(this, target, true, args);
@@ -1359,6 +1378,9 @@ namespace SocketNetworking.Client
 
         protected ConcurrentQueue<Packet> _toSendPackets = new ConcurrentQueue<Packet>();
 
+        /// <summary>
+        /// Actually performs the sending of the next packet.
+        /// </summary>
         protected virtual void SendNextPacketInternal()
         {
             if (NoPacketHandling)
@@ -2376,6 +2398,9 @@ namespace SocketNetworking.Client
 
         DateTime _lastSent = DateTime.UtcNow;
 
+        /// <summary>
+        /// Performs the latency check.
+        /// </summary>
         protected virtual void DoLatencyCheck()
         {
             if (DateTime.UtcNow - _lastSent >= TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive))
@@ -2384,6 +2409,10 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Updates the current latency.
+        /// </summary>
+        /// <param name="packet"></param>
         protected virtual void DoLatency(KeepAlivePacket packet)
         {
             _latency = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - packet.SendTime;
@@ -2474,7 +2503,7 @@ namespace SocketNetworking.Client
         /// <param name="severity"></param>
         public void SendLog(string message, LogSeverity severity)
         {
-            NetworkInvokeOnClient(nameof(GetError), new object[] { message, (int)severity });
+            NetworkInvokeOnClient((Action<NetworkHandle, string, int>)(GetError), new object[] { message, (int)severity });
         }
 
         [NetworkInvokable(NetworkDirection.Any)]
@@ -2543,7 +2572,7 @@ namespace SocketNetworking.Client
                     {
                         return x.SpawnPriority - y.SpawnPriority;
                     });
-                    NetworkInvokeOnClient(nameof(OnSyncBegin), new object[] { objects.Count });
+                    NetworkInvokeOnClient((Action<NetworkHandle, int>)(OnSyncBegin), new object[] { objects.Count });
                     foreach (INetworkObject @object in objects)
                     {
                         @object.NetworkSpawn(this);
@@ -2567,7 +2596,7 @@ namespace SocketNetworking.Client
             {
                 return x.SpawnPriority - y.SpawnPriority;
             });
-            NetworkInvokeOnClient(nameof(OnSyncBegin), new object[] { objects.Count });
+            NetworkInvokeOnClient((Action<NetworkHandle, int>)(OnSyncBegin), new object[] { objects.Count });
             foreach (INetworkObject @object in objects)
             {
                 @object.NetworkSpawn(this);
@@ -2595,7 +2624,7 @@ namespace SocketNetworking.Client
                 avatar.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
             }
             avatar.NetworkSpawn();
-            NetworkInvokeOnClient(nameof(GetClientAvatar), avatar.NetworkID);
+            NetworkInvokeOnClient((Action<NetworkHandle, int>)GetClientAvatar, avatar.NetworkID);
             Log.Info($"Avatar Specify: {avatar.NetworkID}");
             _avatar = avatar;
         }
@@ -2616,12 +2645,18 @@ namespace SocketNetworking.Client
         #endregion
     }
 
+    /// <summary>
+    /// Represents a partially proccessed packet.
+    /// </summary>
     public struct ReadPacketInfo
     {
         public PacketHeader Header;
         public byte[] Data;
     }
 
+    /// <summary>
+    /// Represents error data.
+    /// </summary>
     public struct NetworkErrorData
     {
         public string Error { get; private set; }
