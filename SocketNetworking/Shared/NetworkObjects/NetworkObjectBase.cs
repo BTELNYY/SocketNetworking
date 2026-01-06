@@ -264,7 +264,7 @@ namespace SocketNetworking.Shared.NetworkObjects
                 {
                     throw new NullReferenceException("LocalClient is null and we are on the local peer.");
                 }
-                NetworkClient.LocalClient.NetworkInvoke(@delegate, args);
+                NetworkClient.LocalClient.NetworkInvokeOnClient(@delegate, args);
             }
             else if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {

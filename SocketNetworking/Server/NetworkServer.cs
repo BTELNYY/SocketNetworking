@@ -716,7 +716,7 @@ namespace SocketNetworking.Server
             }
             foreach (NetworkClient client in clients)
             {
-                client.NetworkInvoke(target, args);
+                client.NetworkInvokeOnClient(target, args);
             }
         }
 
@@ -788,7 +788,7 @@ namespace SocketNetworking.Server
             clients = clients.Where(x => filter(x)).ToList();
             foreach (NetworkClient client in clients)
             {
-                client.NetworkInvoke(target, args);
+                client.NetworkInvokeOnClient(target, args);
             }
         }
 

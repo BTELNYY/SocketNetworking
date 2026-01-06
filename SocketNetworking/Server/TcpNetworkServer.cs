@@ -53,7 +53,8 @@ namespace SocketNetworking.Server
             int counter = 0;
             _serverState = ServerState.Ready;
             InvokeServerReady();
-            _ = Task.Run(async () => {
+            _ = Task.Run(async () =>
+            {
                 while (true)
                 {
                     if (_isShuttingDown)

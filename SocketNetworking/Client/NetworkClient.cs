@@ -1254,7 +1254,7 @@ namespace SocketNetworking.Client
             NetworkManager.NetworkInvoke(target, this, methodName, args);
         }
 
-        public void NetworkInvoke(Delegate target, params object[] args)
+        public void NetworkInvokeOnClient(Delegate target, params object[] args)
         {
             NetworkManager.NetworkInvoke(this, target, true, args);
         }

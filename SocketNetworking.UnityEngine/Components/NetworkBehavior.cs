@@ -534,7 +534,7 @@ namespace SocketNetworking.UnityEngine.Components
                 else if (ObjectVisibilityMode == ObjectVisibilityMode.OwnerAndServer)
                 {
                     NetworkClient client = this.GetOwner();
-                    client?.NetworkInvoke(@delegate, args);
+                    client?.NetworkInvokeOnClient(@delegate, args);
                 }
                 else if (ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)
                 {
