@@ -67,9 +67,9 @@ namespace SocketNetworking.Client
 
         public override bool Connect(string hostname, ushort port)
         {
-            Task<bool> result = ConnectAsync(hostname, port);
-            result.Wait();
-            return result.Result;
+            return Task.Run(() => {
+                return ConnectAsync(hostname, port);
+            }).Result;
         }
 
         /// <summary>
@@ -168,9 +168,9 @@ namespace SocketNetworking.Client
             DisconnectAsync(message).Wait();
         }
 
-        public async Task DisconnectAsync(string message)
+        public override async Task DisconnectAsync(string message)
         {
-            base.Disconnect(message);
+            await base.DisconnectAsync(message);
             await Connection.CloseAsync(0x0);
             return;
         }
@@ -210,6 +210,40 @@ namespace SocketNetworking.Client
                 }
                 InvokePacketSent(packet);
             }
+        }
+
+        public override async Task SendImmediateAsync(Packet packet)
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (NoPacketSending)
+            {
+                return;
+            }
+            if (_toSendPackets.IsEmpty)
+            {
+                return;
+            }
+            PreparePacket(ref packet);
+            if (!InvokePacketSendRequest(packet))
+            {
+                return;
+            }
+            byte[] fullBytes = SerializePacket(packet);
+            try
+            {
+                await Stream.WriteAsync(fullBytes, 0, fullBytes.Length);
+                _sentBytes += (ulong)fullBytes.Length;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                InvokeConnectionError(networkErrorData);
+            }
+            InvokePacketSent(packet);
         }
 
         protected override void SendNextPacketInternal()
@@ -285,6 +319,33 @@ namespace SocketNetworking.Client
             _readResult = Stream.BeginRead(_headerBuffer, 0, 4, ReadStream, null);
         }
 
+        protected override async Task RawReaderAsync()
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (!IsTransportConnected)
+            {
+                StopClient();
+                return;
+            }
+            //Log.Debug("Do latency check!");
+            DoLatencyCheck();
+            if (!Transport.DataAvailable)
+            {
+                //Log.Debug("No data on transport!");
+                return;
+            }
+            await Stream.ReadAsync(_headerBuffer, 0, 4);
+            int length = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(_headerBuffer, 0));
+            _buffer = new byte[length];
+            await Stream.ReadAsync(_buffer, 0, length);
+            byte[] fullPacket = _headerBuffer.FastConcat(_buffer);
+            _recievedBytes += (ulong)fullPacket.Length;
+            DeserializeRetry(fullPacket, Connection.RemoteEndPoint);
+        }
+
         private byte[] _headerBuffer = new byte[4];
 
         private byte[] _buffer;
@@ -293,7 +354,7 @@ namespace SocketNetworking.Client
         {
             int length = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(_headerBuffer, 0));
             _buffer = new byte[length];
-            Stream.Read(_headerBuffer, 0, length);
+            Stream.Read(_buffer, 0, length);
             byte[] fullPacket = _headerBuffer.FastConcat(_buffer);
             _recievedBytes += (ulong)fullPacket.Length;
             DeserializeRetry(fullPacket, Connection.RemoteEndPoint);

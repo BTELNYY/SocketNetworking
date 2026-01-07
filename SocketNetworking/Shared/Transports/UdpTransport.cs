@@ -399,5 +399,18 @@ namespace SocketNetworking.Shared.Transports
                 }
             }
         }
+
+        public override async Task<Exception> ConnectAsync(string hostname, int port)
+        {
+            return await Task.Run(() =>
+            {
+                return Connect(hostname, port);
+            });
+        }
+
+        public override async Task CloseAsync()
+        {
+            await Task.Run(Close);
+        }
     }
 }

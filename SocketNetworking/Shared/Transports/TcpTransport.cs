@@ -332,7 +332,29 @@ namespace SocketNetworking.Shared.Transports
         public async override Task<(byte[], Exception, IPEndPoint)> ReceiveAsync()
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
-            return Receive();
+            return await Task.Run(Receive);
+        }
+
+        public override async Task<Exception> ConnectAsync(string hostname, int port)
+        {
+            if (Client == null)
+            {
+                Client = new TcpClient();
+            }
+            try
+            {
+                await Client.ConnectAsync(hostname, port);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return ex;
+            }
+        }
+
+        public override async Task CloseAsync()
+        {
+            await Task.Run(Close);
         }
     }
 }

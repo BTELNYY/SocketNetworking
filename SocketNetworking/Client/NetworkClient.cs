@@ -43,6 +43,9 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Initializes the NetworkClient, sets up logging, the <see cref="NetworkEncryption"/> manager as as well as the <see cref="NetworkStreams"/> support.
+        /// </summary>
         protected NetworkClient() : base()
         {
             Log = new Log()
