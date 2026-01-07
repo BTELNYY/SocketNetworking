@@ -165,7 +165,7 @@ namespace SocketNetworking.Client
 
         public override void Disconnect(string message)
         {
-            DisconnectAsync(message).Wait();
+            _ = DisconnectAsync(message);
         }
 
         public override async Task DisconnectAsync(string message)

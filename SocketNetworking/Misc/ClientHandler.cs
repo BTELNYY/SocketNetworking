@@ -89,7 +89,6 @@ namespace SocketNetworking.Misc
         public void Stop()
         {
             die = true;
-            Thread.Abort();
         }
 
         object _lock = new object();
