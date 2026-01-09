@@ -1428,6 +1428,47 @@ namespace SocketNetworking.Client
             }
         }
 
+        protected virtual async Task SendNextPacketInternalAsync()
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (NoPacketSending)
+            {
+                return;
+            }
+            if (_toSendPackets.IsEmpty)
+            {
+                return;
+            }
+            _toSendPackets.TryDequeue(out Packet packet);
+            PreparePacket(ref packet);
+            if (!InvokePacketSendRequest(packet))
+            {
+                return;
+            }
+            byte[] fullBytes = SerializePacket(packet);
+            try
+            {
+                //Log.Debug($"Sending packet: {packet.ToString()}");
+                //bytesSent += (ulong)fullBytes.Length;
+                Exception ex = await Transport.SendAsync(fullBytes, packet.Destination);
+                if (ex != null)
+                {
+                    throw ex;
+                }
+                //Log.Debug("Packet sent!");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                ConnectionError?.Invoke(networkErrorData);
+            }
+            InvokePacketSent(packet);
+        }
+
         /// <summary>
         /// Called before serialization, if the base is not called, the <see cref="Packet.Source"/> will be null.
         /// </summary>
@@ -1583,6 +1624,19 @@ namespace SocketNetworking.Client
                 return;
             }
             SendNextPacketInternal();
+        }
+
+        private async Task RawWriterAsync()
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (_manualPacketSend)
+            {
+                return;
+            }
+            await SendNextPacketInternalAsync();
         }
 
         #endregion
@@ -2390,6 +2444,15 @@ namespace SocketNetworking.Client
         {
             RawWriter();
             //Log.Debug("Writer ran");
+        }
+
+        /// <summary>
+        /// Writes the next packet asynchronously.
+        /// </summary>
+        /// <returns></returns>
+        internal async Task WriteNextAsync()
+        {
+            await RawWriterAsync();
         }
 
         #endregion

@@ -284,6 +284,41 @@ namespace SocketNetworking.Client
             }
         }
 
+        protected override async Task SendNextPacketInternalAsync()
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (NoPacketSending)
+            {
+                return;
+            }
+            if (_toSendPackets.IsEmpty)
+            {
+                return;
+            }
+            _toSendPackets.TryDequeue(out Packet packet);
+            PreparePacket(ref packet);
+            if (!InvokePacketSendRequest(packet))
+            {
+                return;
+            }
+            byte[] fullBytes = SerializePacket(packet);
+            try
+            {
+                await Stream.WriteAsync(fullBytes);
+                _sentBytes += (ulong)fullBytes.Length;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                InvokeConnectionError(networkErrorData);
+            }
+            InvokePacketSent(packet);
+        }
+
         private ulong _sentBytes = 0;
 
         public override ulong BytesSent => _sentBytes;
