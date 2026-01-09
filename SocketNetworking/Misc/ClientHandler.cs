@@ -72,7 +72,7 @@ namespace SocketNetworking.Misc
             Task.Run(async () => await HandleClient(client), _token);
         }
 
-        async Task HandleClient(NetworkClient client)
+        private async Task HandleClient(NetworkClient client)
         {
             while (!die)
             {
