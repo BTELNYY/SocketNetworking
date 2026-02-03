@@ -212,6 +212,18 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
+        /// Writes a <see cref="Guid"/> to the buffer.
+        /// </summary>
+        /// <param name="guid"></param>
+        public void WriteGuid(Guid guid)
+        {
+            lock (_lock)
+            {
+                Write(guid.ToByteArray());
+            }
+        }
+
+        /// <summary>
         /// Writes a <see cref="byte"/> to the buffer.
         /// </summary>
         /// <param name="data"></param>

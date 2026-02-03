@@ -279,6 +279,19 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
+        /// Reads a <see cref="Guid"/> from the buffer.
+        /// </summary>
+        /// <returns></returns>
+        public Guid ReadGuid()
+        {
+            lock (_lock)
+            {
+                byte[] result = Read(16);
+                return new Guid(result);
+            }
+        }
+
+        /// <summary>
         /// Reads a <see cref="byte"/> from the buffer and removes it.
         /// </summary>
         /// <returns></returns>

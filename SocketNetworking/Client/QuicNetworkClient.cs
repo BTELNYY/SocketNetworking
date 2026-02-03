@@ -67,7 +67,8 @@ namespace SocketNetworking.Client
 
         public override bool Connect(string hostname, ushort port)
         {
-            return Task.Run(() => {
+            return Task.Run(() =>
+            {
                 return ConnectAsync(hostname, port);
             }).Result;
         }
