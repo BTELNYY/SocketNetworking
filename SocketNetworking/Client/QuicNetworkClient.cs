@@ -145,7 +145,7 @@ namespace SocketNetworking.Client
                     },
                 }
             };
-            if (OnPreConnect.GetInvocationList().Length > 0)
+            if (OnPreConnect != null && OnPreConnect.GetInvocationList().Length > 0)
             {
                 ClientConnectionOptions = OnPreConnect(ClientConnectionOptions);
             }

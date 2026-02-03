@@ -24,5 +24,18 @@
         "Action": "Start"
       }
     ]
+  },
+  {
+    "Name": "QUIC Basic",
+    "Projects": [
+      {
+        "Path": "QuicServer\\QuicServer.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "QuicClient\\QuicClient.csproj",
+        "Action": "Start"
+      }
+    ]
   }
 ]
