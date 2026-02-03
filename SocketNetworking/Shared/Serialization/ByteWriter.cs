@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using SocketNetworking.Shared.Exceptions;
+using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
 {
@@ -208,6 +209,21 @@ namespace SocketNetworking.Shared.Serialization
                 {
                     throw new NetworkConversionException($"Wrote an invalid byte array! Expected: {expectedLength}, Actual: {_workingSetData.Length}");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="Packet"/> to the buffer.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="packet"></param>
+        public void WritePacket<T>(T packet) where T : Packet
+        {
+            lock (_lock)
+            {
+                byte[] packetData = packet.Serialize().Data;
+                WriteInt(packetData.Length);
+                Write(packetData);
             }
         }
 

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using SocketNetworking.Shared.Exceptions;
+using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
 {
@@ -275,6 +276,29 @@ namespace SocketNetworking.Shared.Serialization
                 ValueTuple<T, int> result = ((T, int))wrapper.DeserializeRaw(bytes);
                 //Remove(result.Item2);
                 return result.Item1;
+            }
+        }
+
+        /// <summary>
+        /// Reads a <see cref="Packet"/> from the buffer. Note that the <see cref="PacketHeader"/> <b>should be intact</b>, as it is read. If the read <see cref="PacketHeader.Type"/> does not match the <see cref="Packet.Type"/> of the passed in type <typeparamref name="T"/>, a <see cref="NetworkConversionException"/> is thrown.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="NetworkConversionException"></exception>
+        public T ReadPacket<T>() where T : Packet
+        {
+            lock (_lock)
+            {
+                byte[] headerBytes = Read(PacketHeader.HeaderLength);
+                PacketHeader header = PacketHeader.GetHeader(headerBytes);
+                byte[] fullPacket = headerBytes.FastConcat(Read(header.Size - PacketHeader.HeaderLength));
+                T obj = (T)Activator.CreateInstance(typeof(T));
+                if (header.Type != obj.Type)
+                {
+                    throw new NetworkConversionException($"Illegal packet type. Expected {obj.Type}, Got {header.Type}.");
+                }
+                obj.Deserialize(fullPacket);
+                return obj;
             }
         }
 

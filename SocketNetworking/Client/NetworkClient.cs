@@ -1539,7 +1539,7 @@ namespace SocketNetworking.Client
             if (packetDataBytes.Length > 1024 && !packet.Flags.HasFlag(PacketFlags.Compressed))
             {
                 packet.Flags |= PacketFlags.Compressed;
-                Log.Warning($"Forcing compression, the packet is larger than one kb! ({packetDataBytes.Length})");
+                //Log.Warning($"Forcing compression, the packet is larger than one kb! ({packetDataBytes.Length})");
                 return SerializePacket(packet);
             }
             if (packet.Flags.HasFlag(PacketFlags.Compressed))
