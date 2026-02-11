@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Security;
+using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Server;

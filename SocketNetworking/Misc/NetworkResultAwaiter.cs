@@ -1,4 +1,5 @@
-﻿using SocketNetworking.Shared;
+﻿using System.Threading;
+using SocketNetworking.Shared;
 using SocketNetworking.Shared.PacketSystem.Packets;
 
 namespace SocketNetworking.Misc
@@ -18,6 +19,13 @@ namespace SocketNetworking.Misc
         /// </summary>
         public NetworkInvokationResultPacket ResultPacket { get; private set; }
 
+        private SemaphoreSlim _semaphore;
+
+        public SemaphoreSlim Semaphore
+        {
+            get { return _semaphore; }
+        }
+
         /// <summary>
         /// Does the awaiter have a result?
         /// </summary>
@@ -29,10 +37,13 @@ namespace SocketNetworking.Misc
             }
         }
 
+        
+
         public NetworkResultAwaiter(int callBackID)
         {
             CallbackID = callBackID;
             NetworkManager.OnNetworkInvocationResult += NetworkInvocationResultArrived;
+            _semaphore = new SemaphoreSlim(1);
         }
 
         private void NetworkInvocationResultArrived(NetworkInvokationResultPacket obj)
@@ -42,6 +53,7 @@ namespace SocketNetworking.Misc
                 return;
             }
             ResultPacket = obj;
+            _semaphore.Release();
         }
 
         void Consume()
