@@ -1830,6 +1830,65 @@ namespace SocketNetworking.Shared
             }
         }
 
+        public async Task<T> NetworkInvokeAsync<T>(NetworkClient sender, Delegate target, object[] args, float msTimeOut = 5000)
+        {
+            if (args == null)
+            {
+                args = new object[0];
+            }
+            NetworkInvocationPacket packet = NetworkInvoke(sender, target, args, false);
+            MethodInfo method = GetNetworkObjectData(target.Target.GetType()).IndexToMethod[packet.MethodIndex];
+            if (method != null && method.ReturnType == typeof(void))
+            {
+                return default;
+            }
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            NetworkResultAwaiter networkResultAwaiter = new NetworkResultAwaiter(packet.CallbackID);
+            bool awaitResult = await networkResultAwaiter.Semaphore.WaitAsync(timeout: new TimeSpan(0, 0, 0, 0, milliseconds: (int)msTimeOut));
+            if (!awaitResult)
+            {
+                stopwatch.Stop();
+                Log.Error($"Unable to enter semaphore. Did I time out? Took {stopwatch.ElapsedMilliseconds}ms.");
+                return default;
+            }
+            while (!networkResultAwaiter.HasResult)
+            {
+                if (!sender.IsTransportConnected)
+                {
+                    stopwatch.Stop();
+                    Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} failed because the NetworkClient is not connected.");
+                    break;
+                }
+                if (stopwatch.ElapsedMilliseconds > msTimeOut)
+                {
+                    stopwatch.Stop();
+                    Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} timed out after {msTimeOut}ms of waiting.");
+                    break;
+                }
+            }
+            //Log.Debug($"NetworkInvokeOnClient on {methodName} successfully returned and took {stopwatch.ElapsedMilliseconds}ms");
+            NetworkInvokationResultPacket resultPacket = networkResultAwaiter.ResultPacket;
+            if (resultPacket == null)
+            {
+                Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} failed remotely! Error: null");
+                return default;
+            }
+            if (!resultPacket.Success)
+            {
+                Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} failed remotely! Error: " + resultPacket.ErrorMessage);
+                return default;
+            }
+            object result = ByteConvert.Deserialize(resultPacket.Result, out int read);
+            if (result == null)
+            {
+                return default;
+            }
+            else
+            {
+                return (T)result;
+            }
+        }
+
         public static void ImportAssembly(object value)
         {
             if (value is Assembly assembly)
