@@ -1712,6 +1712,14 @@ namespace SocketNetworking.Shared
             return new NetworkInvocationCallback<T>(packet.CallbackID);
         }
 
+        /// <summary>
+        /// Invoke a delegate
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="sender"></param>
+        /// <param name="delegate"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         public static NetworkInvocationCallback<T> NetworkInvoke<T>(NetworkClient sender, Delegate @delegate, params object[] args)
         {
             NetworkInvocationPacket packet = NetworkInvoke(sender, @delegate, args, false);
@@ -1727,7 +1735,6 @@ namespace SocketNetworking.Shared
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <param name="msTimeOut"></param>
-        /// <param name="priority"></param>
         /// <returns></returns>
         [Obsolete]
         public static T NetworkInvokeBlocking<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000)
