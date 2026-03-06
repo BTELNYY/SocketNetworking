@@ -11,6 +11,7 @@ using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Events;
+using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Server
 {
@@ -46,7 +47,7 @@ namespace SocketNetworking.Server
             }
             else if (Config.CertificatePath != "")
             {
-                X509Certificate cert = new X509Certificate(Config.CertificatePath);
+                X509Certificate cert = new X509Certificate(Config.CertificatePath, Config.CertificatePassword);
                 Config.Certificate = cert;
                 Log.Info("Loaded default certificate for: " + cert.Subject);
             }
@@ -84,7 +85,7 @@ namespace SocketNetworking.Server
                 DefaultStreamErrorCode = QuicNetworkClient.DefaultStreamClosedCode,
                 ServerAuthenticationOptions = this.ServerAuthenticationOptions
             };
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 _listener = await QuicListener.ListenAsync(new QuicListenerOptions()
                 {
@@ -106,8 +107,10 @@ namespace SocketNetworking.Server
                         {
                             Log.Info($"Connecting client {counter} from {connection.RemoteEndPoint.Address}:{connection.RemoteEndPoint.Port}");
                             QuicNetworkClient client = new QuicNetworkClient();
-                            client.InitRemoteClient(counter, null);
-                            client.SetupRemoteClient(connection);
+                            QuicStream stream = await connection.AcceptInboundStreamAsync();
+                            client.QuicTransport.Connection = connection;
+                            client.QuicTransport.Stream = stream;
+                            client.InitRemoteClient(counter, client.QuicTransport);
                             AddClient(client, counter);
                             ClientConnectRequest disconnect = AcceptClient(client);
                             if (!disconnect.Accepted)
@@ -128,6 +131,7 @@ namespace SocketNetworking.Server
                             }, client, Config.HandshakeTime);
                             callback.Start();
                             counter++;
+                            InvokeClientConnected(client);
                         });
                     }
                     catch (Exception ex)
@@ -135,7 +139,7 @@ namespace SocketNetworking.Server
                         Log.Error(ex.ToString());
                     }
                 }
-            });
+            }).Wait();
         }
     }
 }

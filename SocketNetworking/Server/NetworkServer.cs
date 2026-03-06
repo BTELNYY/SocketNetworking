@@ -329,7 +329,7 @@ namespace SocketNetworking.Server
                 ClientHandler handler = new ClientHandler();
                 handlers.Add(handler);
                 Log.Info("Start Thread ID: " + i);
-                handler.Start();
+                //handler.Start();
             }
             _serverThread = new Thread(ServerStartThread);
             ClientConnecting += (sender, req) =>

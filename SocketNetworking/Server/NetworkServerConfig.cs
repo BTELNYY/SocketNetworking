@@ -44,6 +44,11 @@ namespace SocketNetworking.Server
         public string CertificatePath { get; set; } = "";
 
         /// <summary>
+        /// The Certificate password.
+        /// </summary>
+        public string CertificatePassword { get; set; } = null;
+
+        /// <summary>
         /// The loaded certificate.
         /// </summary>
         public X509Certificate Certificate

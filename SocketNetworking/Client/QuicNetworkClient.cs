@@ -1,16 +1,14 @@
-﻿#if NET8_0_OR_GREATER
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Net;
-using System.Net.Quic;
-using System.Net.Security;
-using System.Net.Sockets;
 using System.Runtime.Versioning;
-using System.Text;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.PacketSystem;
+
+#if NET8_0_OR_GREATER
+using System.Net.Quic;
+using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
 {
@@ -20,13 +18,20 @@ namespace SocketNetworking.Client
     [SupportedOSPlatform("macOS")]
     public class QuicNetworkClient : NetworkClient
     {
+        public QuicNetworkClient() : base()
+        {
+            Transport = new QuicTransport(this);
+        }
+
+        public QuicTransport QuicTransport => Transport as QuicTransport;
+
         public const long DefaultErrorCode = 0x0A;
 
         public const long DefaultStreamClosedCode = 0x0B;
 
-        public QuicConnection Connection { get; private set; }
+        public QuicConnection Connection => QuicTransport.Connection;
 
-        public QuicStream Stream { get; private set; }
+        public QuicStream Stream => QuicTransport.Stream;
 
         //Technically, quic does support SSL. But not live switching to it.
         public override bool SupportsSSL => false;
@@ -51,19 +56,9 @@ namespace SocketNetworking.Client
             }
         }
 
-
-
         public override IPEndPoint ConnectedPeer => Connection.RemoteEndPoint;
 
         public override bool IsTransportConnected => IsConnected;
-
-        public void SetupRemoteClient(QuicConnection connection)
-        {
-            Connection = connection;
-            Task<QuicStream> tS = connection.AcceptInboundStreamAsync().AsTask();
-            tS.Wait();
-            Stream = tS.Result;
-        }
 
         public override bool Connect(string hostname, ushort port)
         {
@@ -82,6 +77,15 @@ namespace SocketNetworking.Client
         /// Called right before a connection is made in <see cref="ConnectAsync(string, ushort)"/>, used to allow the developer to modify the connection options before the connection is made.
         /// </summary>
         public event Func<QuicClientConnectionOptions, QuicClientConnectionOptions> OnPreConnect;
+
+        public QuicClientConnectionOptions InvokePreConnect(QuicClientConnectionOptions opts)
+        {
+            if (OnPreConnect != null && OnPreConnect.GetInvocationList().Length > 0)
+            {
+                return OnPreConnect(opts);
+            }
+            return opts;
+        }
 
         public async Task<bool> ConnectAsync(string hostname, ushort port)
         {
@@ -127,40 +131,13 @@ namespace SocketNetworking.Client
                 finalHostname = hostname;
             }
             Log.Info($"Connecting to {finalHostname}:{port}...");
-            ClientConnectionOptions = new QuicClientConnectionOptions()
+            Exception ex1 = await Transport.ConnectAsync(finalHostname, port);
+            if (ex1 != null)
             {
-                RemoteEndPoint = IPEndPoint.Parse(finalHostname + ":" + port),
-                DefaultCloseErrorCode = DefaultErrorCode,
-                DefaultStreamErrorCode = DefaultStreamClosedCode,
-                ClientAuthenticationOptions = new System.Net.Security.SslClientAuthenticationOptions()
-                {
-                    ApplicationProtocols =
-                    [
-                        new SslApplicationProtocol(ClientConfiguration.Protocol)
-                    ],
-                    TargetHost = hostname,
-                    RemoteCertificateValidationCallback = (sender, cert, chain, errors) =>
-                    {
-                        return true;
-                    },
-                }
-            };
-            if (OnPreConnect != null && OnPreConnect.GetInvocationList().Length > 0)
-            {
-                ClientConnectionOptions = OnPreConnect(ClientConnectionOptions);
-            }
-            try
-            {
-                QuicConnection connection = await QuicConnection.ConnectAsync(ClientConnectionOptions);
-                QuicStream stream = await connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional);
-                Connection = connection;
-                Stream = stream;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex.ToString());
+                Log.Error($"Failed to connect: {ex1}");
                 return false;
             }
+            StartClient();
             return true;
         }
 
@@ -172,7 +149,7 @@ namespace SocketNetworking.Client
         public override async Task DisconnectAsync(string message)
         {
             await base.DisconnectAsync(message);
-            await Connection.CloseAsync(0x0);
+            //await Connection.CloseAsync(0x0);
             return;
         }
 
@@ -183,10 +160,6 @@ namespace SocketNetworking.Client
                 return;
             }
             if (NoPacketSending)
-            {
-                return;
-            }
-            if (_toSendPackets.IsEmpty)
             {
                 return;
             }

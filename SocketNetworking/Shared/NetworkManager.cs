@@ -185,6 +185,15 @@ namespace SocketNetworking.Shared
         }
 
         /// <summary>
+        /// Imports the library to the library.
+        /// </summary>
+        [Obsolete("Method should not be used.")]
+        public static void ImportSelf()
+        {
+            ImportAssembly(Assembly.GetExecutingAssembly());
+        }
+
+        /// <summary>
         /// Imports the target assembly, caching: <see cref="ITypeWrapper{T}"/>s, any methods with <see cref="NetworkInvokable"/> (which are on a class with <see cref="INetworkObject"/> implemented) and any <see cref="CustomPacket"/>s  
         /// </summary>
         /// <param name="target"></param>
@@ -203,6 +212,23 @@ namespace SocketNetworking.Shared
                 PreCache.Add(data);
             }
             GetHashFromAssembly(target);
+        }
+
+        /// <summary>
+        /// Imports types from the given list. Does not import unsupported types.
+        /// </summary>
+        /// <param name="types"></param>
+        public static void ImportTypes(IEnumerable<Type> types)
+        {
+            foreach (Type t in types.Where(x => x.IsSubclassDeep(typeof(NetworkClient)) || x.GetInterfaces().Contains(typeof(INetworkObject)) || x.GetInterfaces().Contains(typeof(ITypeWrapper))).ToList())
+            {
+                NetworkObjectData data = GetNetworkObjectData(t);
+                if (data == null)
+                {
+                    continue;
+                }
+                PreCache.Add(data);
+            }
         }
 
         /// <summary>
@@ -890,14 +916,21 @@ namespace SocketNetworking.Shared
             Type baseType = t.BaseType;
             if (t.GetInterfaces().Contains(typeof(ITypeWrapper)))
             {
-                object obj = Activator.CreateInstance(t);
-                MethodInfo method = obj.GetType().GetMethod(nameof(ITypeWrapper.GetContainedType));
-                Type targetType = (Type)method.Invoke(obj, null);
-                if (!TypeToTypeWrapper.ContainsKey(targetType))
+                if (t.ContainsGenericParameters)
                 {
-                    TypeToTypeWrapper.Add(targetType, t);
+                    Log.Warning($"Type: {t.Name} cannot be imported as a Type Wrapper because it contains generic parameters. Implement a type which does not contain generics by making a subclass, or remove the generics.");
                 }
-                Log.Info($"Wrapper {obj.GetType().Name} maps to type {targetType.Name}");
+                else
+                {
+                    object obj = Activator.CreateInstance(t);
+                    MethodInfo method = obj.GetType().GetMethod(nameof(ITypeWrapper.GetContainedType));
+                    Type targetType = (Type)method.Invoke(obj, null);
+                    if (!TypeToTypeWrapper.ContainsKey(targetType))
+                    {
+                        TypeToTypeWrapper.Add(targetType, t);
+                    }
+                    Log.Info($"Wrapper {obj.GetType().Name} maps to type {targetType.Name}");
+                }
             }
             NetworkObjectData networkObjectCache = new NetworkObjectData();
             networkObjectCache.TargetObject = t;
@@ -929,7 +962,7 @@ namespace SocketNetworking.Shared
                             Type acceptedType = AcceptedMethodArguments[i];
                             if (!methodType.IsSubclassDeep(acceptedType))
                             {
-                                Log.Warning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArguments.Select(x => x.Name))}");
+                                Log.Warning($"Method {method.Name} doesn't accept the correct parameters, it has been ignored. Note that the correct parameters are: {string.Join(",", AcceptedMethodArguments.Select(x => x.Name))}");
                                 methodArgsFailed = true;
                             }
                         }

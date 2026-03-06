@@ -45,7 +45,7 @@ namespace SocketNetworking.Misc
             _tokenSource = new CancellationTokenSource();
             _token = _tokenSource.Token;
             _clients = new List<NetworkClient>();
-            foreach (var client in clients)
+            foreach (NetworkClient client in clients)
             {
                 AddClient(client);
             }

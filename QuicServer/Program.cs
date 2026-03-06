@@ -28,12 +28,14 @@ namespace QuicServer
                 NetworkServer.ServerInstance.StopServer();
             };
             NetworkManager.ImportAssembly(Utility.GetAssembly());
+            NetworkManager.ImportTypes([typeof(QuicNetworkClient)]);
             QuicNetworkServer server = new QuicNetworkServer();
             NetworkServer.ClientType = typeof(QuicNetworkClient);
             NetworkServer.Config.HandshakeTime = 10f;
             NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
             //speeeling
-            NetworkServer.Config.CertificatePath = "./example.crt";
+            NetworkServer.Config.CertificatePath = "./cert.pfx";
+            NetworkServer.Config.CertificatePassword = "Pa55w.rd";
             NetworkServer.ClientConnected += (x) =>
             {
                 Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());

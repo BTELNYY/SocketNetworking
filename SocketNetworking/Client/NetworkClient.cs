@@ -2031,7 +2031,7 @@ namespace SocketNetworking.Client
                 case PacketType.Encryption:
                     EncryptionPacket encryptionPacket = new EncryptionPacket();
                     encryptionPacket.Deserialize(data);
-                    ////Log.Info($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
+                    //Log.Info($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
                     switch (encryptionPacket.EncryptionFunction)
                     {
                         case EncryptionFunction.None:
@@ -2044,7 +2044,7 @@ namespace SocketNetworking.Client
                             };
                             Send(gotYourPublicKey);
                             EncryptionState = EncryptionState.AsymmetricalReady;
-                            ////Log.Info($"Got Asymmetrical Encryption Key, ID: {ClientID}");
+                            //Log.Info($"Got Asymmetrical Encryption Key, ID: {ClientID}");
                             EncryptionPacket sendSymKey = new EncryptionPacket
                             {
                                 EncryptionFunction = EncryptionFunction.SymmetricalKeySend,
@@ -2332,7 +2332,7 @@ namespace SocketNetworking.Client
                     EncryptionPacket encryptionPacket = new EncryptionPacket();
                     encryptionPacket.Deserialize(data);
                     EncryptionPacket encryptionReceive = new EncryptionPacket();
-                    ////Log.Info($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
+                    //Log.Info($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
                     switch (encryptionPacket.EncryptionFunction)
                     {
                         case EncryptionFunction.None:

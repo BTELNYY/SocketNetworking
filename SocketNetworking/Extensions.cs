@@ -345,7 +345,7 @@ namespace SocketNetworking
         public static FieldInfo[] GetAllFields(this Type type, BindingFlags bindingAttr)
         {
             List<FieldInfo> fields = new List<FieldInfo>();
-            while (type != typeof(object))
+            while (type != typeof(object) && type.BaseType != null)
             {
                 fields.AddRange(type.GetFields(bindingAttr));
                 type = type.BaseType;
@@ -609,7 +609,7 @@ namespace SocketNetworking
             {
                 return list;
             }
-            while (type != typeof(object))
+            while (type != typeof(object) && type.BaseType != null)
             {
                 MethodInfo[] methods = type.GetMethods(flags);
                 foreach (MethodInfo m in methods)

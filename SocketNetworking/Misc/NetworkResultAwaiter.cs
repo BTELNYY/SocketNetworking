@@ -37,7 +37,7 @@ namespace SocketNetworking.Misc
             }
         }
 
-        
+
 
         public NetworkResultAwaiter(int callBackID)
         {
