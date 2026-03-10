@@ -22,6 +22,7 @@ public class Program
         NetworkManager.ImportTypes([typeof(QuicNetworkClient)]);
         QuicNetworkClient client = new QuicNetworkClient();
         client.InitLocalClient();
+        client.QuicTransport.RemoteCertValidationCallback += QuicTransport_RemoteCertValidationCallback;
         client.ClientIdUpdated += () =>
         {
             Console.Title = Title.Replace("{id}", client.ClientID.ToString()).Replace("{ms}", client.Latency.ToString()).Replace("{rxb}", client.BytesReceived.ToString()).Replace("{txb}", client.BytesSent.ToString());
@@ -32,5 +33,16 @@ public class Program
         };
         client.Connect("127.0.0.1", 7777);
         await Task.Delay(-1);
+    }
+
+    //bypass SSL
+    //We do this because MsQuic does not like self signed certs, and because we know we are only ever connecting to localhost, we do not care. In real applications, this will not be a problem assuming your cert is signed by a trusted CA.
+    private static bool QuicTransport_RemoteCertValidationCallback(bool arg1, object arg2, System.Security.Cryptography.X509Certificates.X509Certificate arg3, System.Security.Cryptography.X509Certificates.X509Chain arg4, System.Net.Security.SslPolicyErrors arg5)
+    {
+        if (arg5 == System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors)
+        {
+            return true;
+        }
+        return false;
     }
 }

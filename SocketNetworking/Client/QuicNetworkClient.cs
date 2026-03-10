@@ -4,7 +4,6 @@ using System.Net;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
-using SocketNetworking.Shared.PacketSystem;
 
 #if NET8_0_OR_GREATER
 using System.Net.Quic;
@@ -20,7 +19,7 @@ namespace SocketNetworking.Client
     {
         public QuicNetworkClient() : base()
         {
-            Transport = new QuicTransport(this);
+            Transport = new QuicTransport();
         }
 
         public QuicTransport QuicTransport => Transport as QuicTransport;
@@ -48,7 +47,7 @@ namespace SocketNetworking.Client
                 {
                     return false;
                 }
-                return Stream.CanWrite && Stream.CanRead;
+                return QuicTransport.IsConnected;
             }
             set
             {
@@ -59,19 +58,6 @@ namespace SocketNetworking.Client
         public override IPEndPoint ConnectedPeer => Connection.RemoteEndPoint;
 
         public override bool IsTransportConnected => IsConnected;
-
-        public override bool Connect(string hostname, ushort port)
-        {
-            return Task.Run(() =>
-            {
-                return ConnectAsync(hostname, port);
-            }).Result;
-        }
-
-        /// <summary>
-        /// Client Connection options. This property will be changed on connection. See <see cref="OnPreConnect"/>,
-        /// </summary>
-        public QuicClientConnectionOptions ClientConnectionOptions { get; private set; } = new QuicClientConnectionOptions();
 
         /// <summary>
         /// Called right before a connection is made in <see cref="ConnectAsync(string, ushort)"/>, used to allow the developer to modify the connection options before the connection is made.
@@ -139,236 +125,6 @@ namespace SocketNetworking.Client
             }
             StartClient();
             return true;
-        }
-
-        public override void Disconnect(string message)
-        {
-            _ = DisconnectAsync(message);
-        }
-
-        public override async Task DisconnectAsync(string message)
-        {
-            await base.DisconnectAsync(message);
-            //await Connection.CloseAsync(0x0);
-            return;
-        }
-
-        public override void SendImmediate(Packet packet)
-        {
-            if (NoPacketHandling)
-            {
-                return;
-            }
-            if (NoPacketSending)
-            {
-                return;
-            }
-            lock (streamLock)
-            {
-                PreparePacket(ref packet);
-                if (!InvokePacketSendRequest(packet))
-                {
-                    return;
-                }
-                byte[] fullBytes = SerializePacket(packet);
-                try
-                {
-                    Stream.Write(fullBytes, 0, fullBytes.Length);
-                    _sentBytes += (ulong)fullBytes.Length;
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
-                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
-                    InvokeConnectionError(networkErrorData);
-                }
-                InvokePacketSent(packet);
-            }
-        }
-
-        public override async Task SendImmediateAsync(Packet packet)
-        {
-            if (NoPacketHandling)
-            {
-                return;
-            }
-            if (NoPacketSending)
-            {
-                return;
-            }
-            if (_toSendPackets.IsEmpty)
-            {
-                return;
-            }
-            PreparePacket(ref packet);
-            if (!InvokePacketSendRequest(packet))
-            {
-                return;
-            }
-            byte[] fullBytes = SerializePacket(packet);
-            try
-            {
-                await Stream.WriteAsync(fullBytes, 0, fullBytes.Length);
-                _sentBytes += (ulong)fullBytes.Length;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
-                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
-                InvokeConnectionError(networkErrorData);
-            }
-            InvokePacketSent(packet);
-        }
-
-        protected override void SendNextPacketInternal()
-        {
-            if (NoPacketHandling)
-            {
-                return;
-            }
-            if (NoPacketSending)
-            {
-                return;
-            }
-            if (_toSendPackets.IsEmpty)
-            {
-                return;
-            }
-            lock (streamLock)
-            {
-                _toSendPackets.TryDequeue(out Packet packet);
-                PreparePacket(ref packet);
-                if (!InvokePacketSendRequest(packet))
-                {
-                    return;
-                }
-                byte[] fullBytes = SerializePacket(packet);
-                try
-                {
-                    Stream.Write(fullBytes, 0, fullBytes.Length);
-                    _sentBytes += (ulong)fullBytes.Length;
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
-                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
-                    InvokeConnectionError(networkErrorData);
-                }
-                InvokePacketSent(packet);
-            }
-        }
-
-        protected override async Task SendNextPacketInternalAsync()
-        {
-            if (NoPacketHandling)
-            {
-                return;
-            }
-            if (NoPacketSending)
-            {
-                return;
-            }
-            if (_toSendPackets.IsEmpty)
-            {
-                return;
-            }
-            _toSendPackets.TryDequeue(out Packet packet);
-            PreparePacket(ref packet);
-            if (!InvokePacketSendRequest(packet))
-            {
-                return;
-            }
-            byte[] fullBytes = SerializePacket(packet);
-            try
-            {
-                await Stream.WriteAsync(fullBytes);
-                _sentBytes += (ulong)fullBytes.Length;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
-                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
-                InvokeConnectionError(networkErrorData);
-            }
-            InvokePacketSent(packet);
-        }
-
-        private ulong _sentBytes = 0;
-
-        public override ulong BytesSent => _sentBytes;
-
-        private ulong _recievedBytes = 0;
-
-        public override ulong BytesReceived => _recievedBytes;
-
-        private IAsyncResult _readResult;
-
-        protected override void RawReader()
-        {
-            if (NoPacketHandling)
-            {
-                return;
-            }
-            if (!IsTransportConnected)
-            {
-                StopClient();
-                return;
-            }
-            //Log.Debug("Do latency check!");
-            DoLatencyCheck();
-            if (!Transport.DataAvailable)
-            {
-                //Log.Debug("No data on transport!");
-                return;
-            }
-            if (_readResult != null)
-            {
-                return;
-            }
-            _readResult = Stream.BeginRead(_headerBuffer, 0, 4, ReadStream, null);
-        }
-
-        protected override async Task RawReaderAsync()
-        {
-            if (NoPacketHandling)
-            {
-                return;
-            }
-            if (!IsTransportConnected)
-            {
-                StopClient();
-                return;
-            }
-            //Log.Debug("Do latency check!");
-            DoLatencyCheck();
-            if (!Transport.DataAvailable)
-            {
-                //Log.Debug("No data on transport!");
-                return;
-            }
-            await Stream.ReadAsync(_headerBuffer, 0, 4);
-            int length = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(_headerBuffer, 0));
-            _buffer = new byte[length];
-            await Stream.ReadAsync(_buffer, 0, length);
-            byte[] fullPacket = _headerBuffer.FastConcat(_buffer);
-            _recievedBytes += (ulong)fullPacket.Length;
-            DeserializeRetry(fullPacket, Connection.RemoteEndPoint);
-        }
-
-        private byte[] _headerBuffer = new byte[4];
-
-        private byte[] _buffer;
-
-        private void ReadStream(IAsyncResult ar)
-        {
-            int length = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(_headerBuffer, 0));
-            _buffer = new byte[length];
-            Stream.Read(_buffer, 0, length);
-            byte[] fullPacket = _headerBuffer.FastConcat(_buffer);
-            _recievedBytes += (ulong)fullPacket.Length;
-            DeserializeRetry(fullPacket, Connection.RemoteEndPoint);
-            _readResult = null;
-            Stream.EndRead(ar);
         }
     }
 }

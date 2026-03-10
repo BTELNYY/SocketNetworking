@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using SocketNetworking.Client;
 using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Transports
@@ -15,6 +16,11 @@ namespace SocketNetworking.Shared.Transports
         {
             Buffer = new byte[BufferSize];
         }
+
+        /// <summary>
+        /// The <see cref="NetworkClient"/> which owns this <see cref="NetworkTransport"/>.
+        /// </summary>
+        public NetworkClient Client { get; set; }
 
         /// <summary>
         /// Size of the buffer

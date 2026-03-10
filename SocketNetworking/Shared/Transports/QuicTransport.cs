@@ -3,8 +3,10 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Runtime.Versioning;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using SocketNetworking.Client;
+
 
 #if NET8_0_OR_GREATER
 using System.Net.Quic;
@@ -17,11 +19,6 @@ namespace SocketNetworking.Shared.Transports
     [SupportedOSPlatform("macOS")]
     public class QuicTransport : NetworkTransport
     {
-        public QuicTransport(QuicNetworkClient client)
-        {
-            Client = client;
-        }
-
         public override bool DataAvailable => true;
 
         public override int DataAmountAvailable => 4;
@@ -34,7 +31,7 @@ namespace SocketNetworking.Shared.Transports
 
         public override int PeerPort => Peer.Port;
 
-        public override bool IsConnected => Stream.CanRead;
+        public override bool IsConnected => Stream.CanRead && Stream.CanWrite;
 
         public override Socket Socket => throw new InvalidOperationException("Quic Clients don't use sockets.");
 
@@ -42,7 +39,7 @@ namespace SocketNetworking.Shared.Transports
 
         public QuicStream Stream { get; set; }
 
-        public QuicNetworkClient Client { get; }
+        public QuicNetworkClient QuicClient => Client as QuicNetworkClient;
 
         public override void Close()
         {
@@ -63,6 +60,28 @@ namespace SocketNetworking.Shared.Transports
             return ConnectAsync(hostname, port).Result;
         }
 
+        public event Func<bool, object, X509Certificate, X509Chain, SslPolicyErrors, bool> RemoteCertValidationCallback;
+
+        protected bool RemoteCertificateValidationCallback(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors errors)
+        {
+            //TODO: Implement proper SSL cert checks.
+            bool result = false;
+            if (errors != SslPolicyErrors.None)
+            {
+                QuicClient.Log.Error($"SSL Policy Error! {errors}");
+                result = false;
+            }
+            else
+            {
+                result = true;
+            }
+            if (RemoteCertValidationCallback != null)
+            {
+                result = RemoteCertValidationCallback(result, sender, cert, chain, errors);
+            }
+            return result;
+        }
+
         public override async Task<Exception> ConnectAsync(string hostname, int port)
         {
             QuicClientConnectionOptions clientConnectionOptions = new QuicClientConnectionOptions()
@@ -74,16 +93,13 @@ namespace SocketNetworking.Shared.Transports
                 {
                     ApplicationProtocols =
                     [
-                        new SslApplicationProtocol(Client.ClientConfiguration.Protocol)
+                        new SslApplicationProtocol(QuicClient.ClientConfiguration.Protocol)
                     ],
                     TargetHost = hostname,
-                    RemoteCertificateValidationCallback = (sender, cert, chain, errors) =>
-                    {
-                        return true;
-                    },
+                    RemoteCertificateValidationCallback = RemoteCertificateValidationCallback
                 }
             };
-            clientConnectionOptions = Client.InvokePreConnect(clientConnectionOptions);
+            clientConnectionOptions = QuicClient.InvokePreConnect(clientConnectionOptions);
             try
             {
                 QuicConnection connection = await QuicConnection.ConnectAsync(clientConnectionOptions);
@@ -123,6 +139,10 @@ namespace SocketNetworking.Shared.Transports
 
         public override Exception Send(byte[] data, IPEndPoint destination)
         {
+            if (destination == Peer)
+            {
+                return Send(data);
+            }
             throw new InvalidOperationException("Can't send to arbitrary hosts.");
         }
 
@@ -133,7 +153,10 @@ namespace SocketNetworking.Shared.Transports
 
         public override async Task<Exception> SendAsync(byte[] data, IPEndPoint destination)
         {
-            await Task.Delay(0);
+            if (destination == Peer)
+            {
+                return await SendAsync(data);
+            }
             throw new InvalidOperationException("Can't send to arbitrary hosts.");
         }
 

@@ -830,33 +830,23 @@ namespace SocketNetworking.Client
         /// <param name="clientId">
         /// Given ClientID
         /// </param>
-        /// <param name="socket">
+        /// <param name="transport">
         /// The <see cref="NetworkTransport"/> object which handles data transport.
         /// </param>
-        public virtual void InitRemoteClient(int clientId, NetworkTransport socket)
+        public virtual void InitRemoteClient(int clientId, NetworkTransport transport)
         {
             _clientId = clientId;
-            //Log.Debug("Update ClientID");
             Log.Prefix = $"[Client {clientId}]";
-            Transport = socket;
-            //Log.Debug("Set Transport");
+            Transport = transport;
+            transport.Client = this;
             _clientLocation = ClientLocation.Remote;
             if (NetworkServer.Authenticator != null)
             {
-                //Log.Debug("Set auth provider.");
                 AuthenticationProvider = (AuthenticationProvider)Activator.CreateInstance(NetworkServer.Authenticator);
             }
-            //Log.Debug("OnRemoteClientConnected Subscribe");
             ClientConnected += OnRemoteClientConnected;
-            //Log.Debug("OnRemoteClientConnected Fire event");
             ClientConnected?.Invoke();
-            //Log.Debug("Client Connected invoke!");
             ReadyStateChanged += OnReadyStateChanged;
-            //Log.Debug("ReadyStateChanged subscribe!");
-            //_packetReaderThread = new Thread(PacketReaderThreadMethod);
-            //_packetReaderThread.Start();
-            //_packetSenderThread = new Thread(PacketSenderThreadMethod);
-            //_packetSenderThread.Start();
         }
 
         /// <summary>
@@ -869,6 +859,10 @@ namespace SocketNetworking.Client
                 throw new InvalidOperationException("Having several active clients is not allowed.");
             }
             _instance = this;
+            if (Transport != null)
+            {
+                Transport.Client = this;
+            }
             _clientLocation = ClientLocation.Local;
             ClientConnected += OnLocalClientConnected;
         }
@@ -915,6 +909,10 @@ namespace SocketNetworking.Client
                     else
                     {
                         finalHostname = entry.AddressList[0].ToString();
+                    }
+                    if (hostname == "localhost")
+                    {
+                        finalHostname = "localhost";
                     }
                 }
                 catch (Exception ex)
