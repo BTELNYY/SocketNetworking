@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net.Security;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.Transports;
@@ -54,11 +53,11 @@ namespace SocketNetworking.Client
         {
             get
             {
-                return TcpTransport.Client.NoDelay;
+                return TcpTransport.TcpSocketClient.NoDelay;
             }
             set
             {
-                TcpTransport.Client.NoDelay = value;
+                TcpTransport.TcpSocketClient.NoDelay = value;
             }
         }
 
@@ -67,72 +66,23 @@ namespace SocketNetworking.Client
         /// </summary>
         public bool AllowUntrustedRootCertificates { get; set; } = false;
 
-        /// <summary>
-        /// Called when SSL has finished its handshake and is now the standard transmission route.
-        /// </summary>
-        public event Action SSLConnected;
-
-        /// <summary>
-        /// Called when SSL has failed to authenticate.
-        /// </summary>
-        public event Action SSLFailure;
-
         protected override void ConfirmSSL()
         {
             Log.Success("SSL Succeeded.");
             TcpTransport.SetSSLState(true);
-            SSLConnected?.Invoke();
         }
 
         public bool ClientSSLUpgrade(string hostname)
         {
-            try
-            {
-                SslStream stream = new SslStream(TcpTransport.Stream, true, ClientVerifyCert);
-                stream.AuthenticateAsClient(hostname);
-                TcpTransport.SslStream = stream;
-            }
-            catch (AuthenticationException ex)
-            {
-                Log.Error("SSL Authentication failure! Error: " + ex.Message);
-                SSLFailure?.Invoke();
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("SSL General failure! Error: " + ex.ToString());
-                SSLFailure?.Invoke();
-                return false;
-            }
-            return true;
+            return TcpTransport.ClientSSLUpgrade(hostname);
         }
 
         public bool ServerSSLUpgrade(X509Certificate certificate)
         {
-            try
-            {
-                SslStream stream = new SslStream(TcpTransport.Stream, true, ServerVerifyCert);
-                stream.AuthenticateAsServer(certificate, false, SslProtocols.Tls12, true);
-                //stream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
-                TcpTransport.SslStream = stream;
-            }
-            catch (AuthenticationException ex)
-            {
-                Log.Error("SSL Authentication failure! Error: " + ex.Message);
-                SSLFailure?.Invoke();
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("SSL General failure! Error: " + ex.ToString());
-                SSLFailure?.Invoke();
-                return false;
-            }
-            TcpTransport.Certificate = certificate;
-            return true;
+            return TcpTransport.ServerSSLUpgrade(certificate);
         }
 
-        protected virtual bool ServerVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        public virtual bool ServerVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             if (sslPolicyErrors == SslPolicyErrors.None || sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateNotAvailable))
             {
@@ -142,7 +92,7 @@ namespace SocketNetworking.Client
             return false;
         }
 
-        protected virtual bool ClientVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        public virtual bool ClientVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             if (sslPolicyErrors == SslPolicyErrors.None)
             {
