@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using Basic.SharedData;
 using SocketNetworking;
@@ -30,8 +31,12 @@ namespace Basic.Server
             NetworkServer.ClientAvatar = typeof(NetworkObjectTest);
             NetworkServer.Config.HandshakeTime = 10f;
             NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
-            //speeeling
-            NetworkServer.Config.CertificatePath = "./example.crt";
+            //SSL configuration
+            if (File.Exists("./cert.pfx"))
+            {
+                NetworkServer.Config.CertificatePath = "./cert.pfx";
+                NetworkServer.Config.CertificatePassword = "Pa55w.rd";
+            }
             NetworkServer.ClientConnected += (x) =>
             {
                 Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());
