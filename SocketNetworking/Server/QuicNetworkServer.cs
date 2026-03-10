@@ -11,7 +11,6 @@ using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Events;
-using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Server
 {
@@ -105,33 +104,40 @@ namespace SocketNetworking.Server
                         QuicConnection connection = await _listener.AcceptConnectionAsync();
                         _ = Task.Run(async () =>
                         {
-                            Log.Info($"Connecting client {counter} from {connection.RemoteEndPoint.Address}:{connection.RemoteEndPoint.Port}");
-                            QuicNetworkClient client = new QuicNetworkClient();
-                            QuicStream stream = await connection.AcceptInboundStreamAsync();
-                            client.QuicTransport.Connection = connection;
-                            client.QuicTransport.Stream = stream;
-                            client.InitRemoteClient(counter, client.QuicTransport);
-                            AddClient(client, counter);
-                            ClientConnectRequest disconnect = AcceptClient(client);
-                            if (!disconnect.Accepted)
+                            try
                             {
-                                await client.DisconnectAsync(disconnect.Message);
-                                return;
-                            }
-                            CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
-                            {
-                                if (x == null)
+                                Log.Info($"Connecting client {counter} from {connection.RemoteEndPoint.Address}:{connection.RemoteEndPoint.Port}");
+                                QuicNetworkClient client = (QuicNetworkClient)Activator.CreateInstance(ClientType);
+                                QuicStream stream = await connection.AcceptInboundStreamAsync();
+                                client.QuicTransport.Connection = connection;
+                                client.QuicTransport.Stream = stream;
+                                client.InitRemoteClient(counter, client.QuicTransport);
+                                AddClient(client, counter);
+                                ClientConnectRequest disconnect = AcceptClient(client);
+                                if (!disconnect.Accepted)
                                 {
+                                    await client.DisconnectAsync(disconnect.Message);
                                     return;
                                 }
-                                if (x.CurrentConnectionState != ConnectionState.Connected)
+                                CallbackTimer<NetworkClient> callback = new CallbackTimer<NetworkClient>((x) =>
                                 {
-                                    x.Disconnect("Failed to handshake in time.");
-                                }
-                            }, client, Config.HandshakeTime);
-                            callback.Start();
-                            counter++;
-                            InvokeClientConnected(client);
+                                    if (x == null)
+                                    {
+                                        return;
+                                    }
+                                    if (x.CurrentConnectionState != ConnectionState.Connected)
+                                    {
+                                        x.Disconnect("Failed to handshake in time.");
+                                    }
+                                }, client, Config.HandshakeTime);
+                                callback.Start();
+                                counter++;
+                                InvokeClientConnected(client);
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error("Failed accepting client. Error: " + ex.ToString());
+                            }
                         });
                     }
                     catch (Exception ex)

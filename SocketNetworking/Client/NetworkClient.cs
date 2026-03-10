@@ -1083,8 +1083,6 @@ namespace SocketNetworking.Client
                 return;
             }
             Log.Info("Starting client!");
-            //Log.Debug("Threads Create")
-            //Aborting isn't technically needed but....
 #if NET48
             _packetReaderThread?.Abort();
             _packetSenderThread?.Abort();

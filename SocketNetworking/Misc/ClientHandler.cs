@@ -69,12 +69,13 @@ namespace SocketNetworking.Misc
             {
                 Clients.Add(client);
             }
-            Task.Run(async () => await HandleClient(client), _token);
+            Task.Run(async () => await HandleClientRead(client), _token);
+            Task.Run(async () => await HandleClientWrite(client), _token);
         }
 
-        private async Task HandleClient(NetworkClient client)
+        private async Task HandleClientRead(NetworkClient client)
         {
-            while (!die)
+            while (!die || _token.IsCancellationRequested)
             {
                 if (client.CurrentConnectionState == Shared.ConnectionState.Disconnected)
                 {
@@ -83,6 +84,21 @@ namespace SocketNetworking.Misc
                     break;
                 }
                 await client.ReadNextAsync();
+                //await client.WriteNextAsync();
+            }
+        }
+
+        private async Task HandleClientWrite(NetworkClient client)
+        {
+            while (!die || _token.IsCancellationRequested)
+            {
+                if (client.CurrentConnectionState == Shared.ConnectionState.Disconnected)
+                {
+                    RemoveClient(client);
+                    Log.Info($"Client {client.ClientID} removed, client is disconnected.");
+                    break;
+                }
+                //await client.ReadNextAsync();
                 await client.WriteNextAsync();
             }
         }

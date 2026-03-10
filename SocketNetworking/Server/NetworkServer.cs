@@ -396,8 +396,8 @@ namespace SocketNetworking.Server
                     _clients.Add(clientId, client);
                     ClientHandler handler = NextHandler();
                     handler.AddClient(client);
-                    Log.Debug($"Handler Client count: {handler.CurrentClientCount}");
-                    Log.Debug($"Added client. ID: {clientId}, Type: {client.GetType().FullName}");
+                    //Log.Debug($"Handler Client count: {handler.CurrentClientCount}");
+                    //Log.Debug($"Added client. ID: {clientId}, Type: {client.GetType().FullName}");
                 }
             }
         }

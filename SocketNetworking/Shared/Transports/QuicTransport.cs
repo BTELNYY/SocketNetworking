@@ -108,10 +108,10 @@ namespace SocketNetworking.Shared.Transports
             try
             {
                 byte[] _headerBuffer = new byte[sizeof(int)];
-                await Stream.ReadAsync(_headerBuffer, 0, sizeof(int));
+                await Stream.ReadExactlyAsync(_headerBuffer.AsMemory(0, sizeof(int)));
                 int length = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(_headerBuffer, 0));
                 byte[] _buffer = new byte[length];
-                await Stream.ReadAsync(_buffer, 0, length);
+                await Stream.ReadExactlyAsync(_buffer.AsMemory(0, length));
                 byte[] fullPacket = _headerBuffer.FastConcat(_buffer);
                 return (fullPacket, null, Peer);
             }
@@ -133,6 +133,7 @@ namespace SocketNetworking.Shared.Transports
 
         public override async Task<Exception> SendAsync(byte[] data, IPEndPoint destination)
         {
+            await Task.Delay(0);
             throw new InvalidOperationException("Can't send to arbitrary hosts.");
         }
 
