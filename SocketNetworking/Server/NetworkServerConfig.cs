@@ -39,7 +39,7 @@ namespace SocketNetworking.Server
         public bool UseServerPassword { get; set; } = false;
 
         /// <summary>
-        /// If not an empty string, will be used to prove server identity for <see cref="TcpNetworkClient"/> and <see cref="MixedNetworkClient"/> clients. This should be a path to the certificate.
+        /// If not an empty string, will be used to prove server identity for <see cref="TcpNetworkClient"/>, <see cref="MixedNetworkClient"/> and <see cref="QuicNetworkClient"/> clients. This should be a path to the certificate. <b><see cref="QuicNetworkClient"/>s REQUIRE a valid X509 certificate.</b>.
         /// </summary>
         public string CertificatePath { get; set; } = "";
 

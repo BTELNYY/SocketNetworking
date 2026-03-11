@@ -154,6 +154,11 @@ namespace SocketNetworking.Client
         /// </summary>
         public event Action ClientIdUpdated;
 
+        protected void InvokeClientIdUpdated()
+        {
+            ClientIdUpdated?.Invoke();
+        }
+
         /// <summary>
         /// Called when the <see cref="EncryptionState"/> has been set to <see cref="EncryptionState.SymmetricalReady"/> or higher.
         /// </summary>
@@ -251,11 +256,6 @@ namespace SocketNetworking.Client
         public long Latency => _latency;
 
         /// <summary>
-        /// Does this client support SSL? By default, only <see cref="TcpNetworkClient"/>s and <see cref="MixedNetworkClient"/>s support SSL.
-        /// </summary>
-        public virtual bool SupportsSSL { get; } = false;
-
-        /// <summary>
         /// Provides the <see cref="SocketNetworking.Log"/> instance for this client. The <see cref="Log.Prefix"/> is set to contain the client ID for logging purposes.
         /// </summary>
         public Log Log { get; }
@@ -281,7 +281,7 @@ namespace SocketNetworking.Client
         public static readonly HashSet<NetworkClient> Clients = new HashSet<NetworkClient>();
 
 
-        private int _clientId = 0;
+        protected int _clientId = 0;
 
         /// <summary>
         /// The clients Network Synced ID
@@ -786,21 +786,6 @@ namespace SocketNetworking.Client
                 }
             }, this, 10f);
             timer.Start();
-        }
-
-        protected virtual void ConfirmSSL()
-        {
-            throw new NotImplementedException();
-        }
-
-        protected virtual bool ClientTrySSLUpgrade()
-        {
-            throw new NotImplementedException();
-        }
-
-        protected virtual bool ServerTrySSLUpgrade()
-        {
-            throw new NotImplementedException();
         }
 
         #endregion
@@ -1898,32 +1883,6 @@ namespace SocketNetworking.Client
                         SendLog(ex.Message, LogSeverity.Error);
                     }
                     break;
-                case PacketType.SSLUpgrade:
-                    SSLUpgradePacket sslUpgradePacket = new SSLUpgradePacket();
-                    sslUpgradePacket.Deserialize(data);
-                    if (sslUpgradePacket.Result)
-                    {
-                        SSLUpgradePacket sslUpgradeResponse = new SSLUpgradePacket()
-                        {
-                            Continue = true,
-                        };
-                        SendImmediate(sslUpgradeResponse);
-                        ConfirmSSL();
-                        NoPacketSending = false;
-                        if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
-                        {
-                            ServerBeginEncryption();
-                        }
-                        else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
-                        {
-                            Ready = true;
-                        }
-                    }
-                    else
-                    {
-                        Disconnect("SSL Handshake failure");
-                    }
-                    break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
                     connectionUpdatePacket.Deserialize(data);
@@ -1972,27 +1931,15 @@ namespace SocketNetworking.Client
                     {
                         YourClientID = _clientId,
                         Configuration = NetworkServer.ServerConfiguration,
-                        UpgradeToSSL = NetworkServer.Config.Certificate != null && SupportsSSL,
                     };
                     SendImmediate(serverDataPacket);
-                    //ServerSyncPackets();
-                    if (serverDataPacket.UpgradeToSSL && SupportsSSL)
+                    if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
                     {
-                        NoPacketSending = true;
-                        SSLUpgradePacket upgradePacket = new SSLUpgradePacket();
-                        SendImmediate(upgradePacket);
-                        ServerTrySSLUpgrade();
+                        ServerBeginEncryption();
                     }
-                    else
+                    else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
                     {
-                        if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
-                        {
-                            ServerBeginEncryption();
-                        }
-                        else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
-                        {
-                            Ready = true;
-                        }
+                        Ready = true;
                     }
                     CurrentConnectionState = ConnectionState.Connected;
                     ClientIdUpdated?.Invoke();
@@ -2238,7 +2185,12 @@ namespace SocketNetworking.Client
                     _clientId = serverDataPacket.YourClientID;
                     Log.Prefix = $"[Client {_clientId}]";
                     Log.Info("New Client ID: " + _clientId.ToString());
-                    Log.Info("Server Supports SSL? " + serverDataPacket.UpgradeToSSL);
+                    string headerString = "";
+                    foreach (string key in serverDataPacket.Headers.Keys)
+                    {
+                        headerString += $"{key}: {serverDataPacket.Headers[key]}, ";
+                    }
+                    Log.Info("Headers: " + headerString);
                     if (serverDataPacket.Configuration.Protocol != ClientConfiguration.Protocol || serverDataPacket.Configuration.Version != ClientConfiguration.Version)
                     {
                         Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
@@ -2246,31 +2198,6 @@ namespace SocketNetworking.Client
                     }
                     Log.Info(serverDataPacket.Configuration.ToString());
                     ClientIdUpdated?.Invoke();
-                    break;
-                case PacketType.SSLUpgrade:
-                    SSLUpgradePacket ssLUpgradePacket = new SSLUpgradePacket();
-                    ssLUpgradePacket.Deserialize(data);
-                    if (ssLUpgradePacket.Continue)
-                    {
-                        ConfirmSSL();
-                        NoPacketSending = false;
-                        break;
-                    }
-                    else
-                    {
-                        NoPacketSending = true;
-                        bool attemptResult = ClientTrySSLUpgrade();
-                        SSLUpgradePacket upgradePacketResult = new SSLUpgradePacket()
-                        {
-                            Result = attemptResult,
-                        };
-                        if (!attemptResult)
-                        {
-                            NoPacketSending = false;
-                            Disconnect("SSL Handshake failure");
-                        }
-                        SendImmediate(upgradePacketResult);
-                    }
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();

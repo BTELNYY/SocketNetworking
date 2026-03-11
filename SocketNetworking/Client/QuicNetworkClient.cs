@@ -32,9 +32,6 @@ namespace SocketNetworking.Client
 
         public QuicStream Stream => QuicTransport.Stream;
 
-        //Technically, quic does support SSL. But not live switching to it.
-        public override bool SupportsSSL => false;
-
         public override bool IsConnected
         {
             get

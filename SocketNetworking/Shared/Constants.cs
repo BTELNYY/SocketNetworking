@@ -5,6 +5,16 @@ using SocketNetworking.Shared.NetworkObjects;
 namespace SocketNetworking.Shared
 {
 
+    public static class HeaderConstants
+    {
+        //Use simple 1 and 0 to save bytes.
+        public const string HEADER_TRUE = "1";
+
+        public const string HEADER_FALSE = "0";
+
+        public const string HEADER_SSL_SUPPORTED = "SSL_SUPPORTED";
+    }
+
     /// <summary>
     /// Determines the <see cref="OwnershipMode"/> of <see cref="INetworkObject"/>s. See <see cref="INetworkObject.OwnershipMode"/>. This determines if certain actions can be made, such as running Network Invoke methods or changing <see cref="SyncVars.INetworkSyncVar"/>s.
     /// </summary>
