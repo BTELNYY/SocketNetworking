@@ -196,7 +196,7 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
-                int length = ReadInt();
+                int length = ReadUShort();
                 if (length == 0)
                 {
                     //Log.GlobalDebug($"Read empty byte array.");

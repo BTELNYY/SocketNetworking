@@ -197,9 +197,37 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
+                if (data.Length > ushort.MaxValue)
+                {
+                    throw new NetworkConversionException("Byte array too long!");
+                }
                 int oldLength = _workingSetData.Length;
-                int expectedLength = sizeof(int) + data.Length + _workingSetData.Length;
-                WriteInt(data.Length);
+                int expectedLength = sizeof(ushort) + data.Length + _workingSetData.Length;
+                WriteUShort((ushort)data.Length);
+                if (data.Length == 0)
+                {
+                    return;
+                }
+                Write(data);
+                if (_workingSetData.Length != expectedLength)
+                {
+                    throw new NetworkConversionException($"Wrote an invalid byte array! Expected: {expectedLength}, Actual: {_workingSetData.Length}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Writes a byte array with maximum size of <see cref="long.MaxValue"/>.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <exception cref="NetworkConversionException"></exception>
+        public void WriteLongByteArray(byte[] data)
+        {
+            lock (_lock)
+            {
+                int oldLength = _workingSetData.Length;
+                int expectedLength = sizeof(long) + data.Length + _workingSetData.Length;
+                WriteLong(data.LongLength);
                 if (data.Length == 0)
                 {
                     return;
@@ -382,7 +410,7 @@ namespace SocketNetworking.Shared.Serialization
             {
                 byte[] bytes = Encoding.UTF32.GetBytes(data);
                 int oldLength = _workingSetData.Length;
-                int expectedLength = bytes.Length + 4;
+                int expectedLength = bytes.Length + sizeof(ushort);
                 WriteByteArray(bytes);
                 if (oldLength + expectedLength != _workingSetData.Length)
                 {

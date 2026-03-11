@@ -122,7 +122,7 @@ namespace SocketNetworking.Shared
     /// <summary>
     /// The current state of the handshake. Disconnect = Either not connected at all or just got disconnected. Handshake = Client-Server still agreeing on protocol and version. Connected = System connected.
     /// </summary>
-    public enum ConnectionState
+    public enum ConnectionState : byte
     {
         Disconnected,
         Handshake,
