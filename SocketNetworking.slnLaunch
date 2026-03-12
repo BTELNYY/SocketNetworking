@@ -29,11 +29,11 @@
     "Name": "QUIC Basic",
     "Projects": [
       {
-        "Path": "QuicServer\\QuicServer.csproj",
+        "Path": "SocketNetworking.Examples\\QUIC\\QuicServer\\QuicServer.csproj",
         "Action": "Start"
       },
       {
-        "Path": "QuicClient\\QuicClient.csproj",
+        "Path": "SocketNetworking.Examples\\QUIC\\QuicClient\\QuicClient.csproj",
         "Action": "Start"
       }
     ]

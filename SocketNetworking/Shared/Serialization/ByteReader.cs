@@ -115,6 +115,24 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
+        /// Removes a specific amount of <see langword="byte"/>s from the buffer.
+        /// </summary>
+        /// <param name="length"></param>
+        /// <exception cref="NetworkConversionException"></exception>
+        public void Remove(long length)
+        {
+            lock (_lock)
+            {
+                int oldLength = _workingSetData.Length;
+                _workingSetData = _workingSetData.RemoveFromStart(length);
+                if (oldLength - length != _workingSetData.Length)
+                {
+                    throw new NetworkConversionException($"Remove From Start failed. Expected: {oldLength - length}, Got: {_workingSetData.Length}.");
+                }
+            }
+        }
+
+        /// <summary>
         /// Reads XML by using <see cref="ReadString"/>. If Deserialization fails, <see langword="default"/> will be returned.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -174,6 +192,16 @@ namespace SocketNetworking.Shared.Serialization
             }
         }
 
+        public byte[] Read(long length)
+        {
+            lock (_lock)
+            {
+                byte[] data = _workingSetData.TakeLong(length).ToArray();
+                Remove(length);
+                return data;
+            }
+        }
+
         /// <summary>
         /// Does the same as <see cref="Read(int)"/>, but does not call <see cref="Remove(int)"/>.
         /// </summary>
@@ -212,6 +240,29 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
+        /// Reads a byte array with a size marker of <see langword="long"/>.
+        /// </summary>
+        /// <returns></returns>
+        public byte[] ReadLongByteArray()
+        {
+            lock (_lock)
+            {
+                long length = ReadLong();
+                if (length == 0)
+                {
+                    //Log.GlobalDebug($"Read empty byte array.");
+                    return new byte[0];
+                }
+                if (length > DataLength)
+                {
+                    //Log.GlobalWarning($"Read a byte array with a broken size. Read: {length}, Actual: {_workingSetData.Length}");
+                    length = Math.Min(length, DataLength);
+                }
+                return Read(length);
+            }
+        }
+
+        /// <summary>
         /// Reads a <see cref="IByteSerializable"/> from the buffer.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -222,14 +273,8 @@ namespace SocketNetworking.Shared.Serialization
             {
                 IByteSerializable serializable = (IByteSerializable)Activator.CreateInstance(typeof(T));
                 int length = ReadInt();
-                //Log.GlobalDebug($"Type: {serializable.GetType()}, Bytes: {length}");
                 byte[] read = Read(length);
                 int bytesUsed = serializable.Deserialize(read).ReadBytes;
-                //if (bytesUsed != length)
-                //{
-                //    Log.GlobalWarning($"Deserializing {typeof(T).Name} has resulted in less bytes used then the structure specified.");
-                //}
-                //Remove(bytesUsed);
                 return (T)serializable;
             }
         }
@@ -245,12 +290,8 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 byte[] bytes = ReadByteArray();
-                //Log.GlobalDebug(bytes.Length.ToString());
                 TypeWrapper<K> wrapper = (TypeWrapper<K>)Activator.CreateInstance(typeof(T));
-                //Log.GlobalDebug(wrapper.GetType().Name);
                 ValueTuple<K, int> result = wrapper.Deserialize(bytes);
-                //Log.GlobalDebug(result.Item2.ToString());
-                //Remove(result.Item2);
                 return result.Item1;
             }
         }
@@ -274,7 +315,6 @@ namespace SocketNetworking.Shared.Serialization
                 object typeWrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
                 ITypeWrapper wrapper = (ITypeWrapper)typeWrapper;
                 ValueTuple<T, int> result = ((T, int))wrapper.DeserializeRaw(bytes);
-                //Remove(result.Item2);
                 return result.Item1;
             }
         }

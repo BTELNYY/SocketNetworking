@@ -276,7 +276,6 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 Write(new byte[] { data });
-                //_workingSetData = _workingSetData.Append(data).ToArray();
             }
         }
 
