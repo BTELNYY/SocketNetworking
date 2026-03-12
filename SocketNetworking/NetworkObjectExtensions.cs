@@ -80,6 +80,11 @@ namespace SocketNetworking
             return false;
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the current location is not the server.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void ThrowIfNotServer(this INetworkObject obj)
         {
             if (NetworkManager.WhereAmI != ClientLocation.Remote)
@@ -88,6 +93,11 @@ namespace SocketNetworking
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the current location is not the client.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void ThrowIfNotClient(this INetworkObject obj)
         {
             if (NetworkManager.WhereAmI != ClientLocation.Local)
@@ -821,7 +831,11 @@ namespace SocketNetworking
                 switch (obj.ObjectVisibilityMode)
                 {
                     case ObjectVisibilityMode.ServerOnly:
-                        Log.GlobalWarning("You should not be changing the visibility of a Network object from server. Please spawn the object first.");
+                        ObjectManagePacket destroyPacket = new ObjectManagePacket(obj)
+                        {
+                            Action = ObjectManagePacket.ObjectManageAction.Destroy
+                        };
+                        NetworkServer.SendToAll(destroyPacket);
                         break;
                     case ObjectVisibilityMode.OwnerAndServer:
                         NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
@@ -896,7 +910,11 @@ namespace SocketNetworking
                 switch (obj.ObjectVisibilityMode)
                 {
                     case ObjectVisibilityMode.ServerOnly:
-                        Log.GlobalWarning("You should not be changing the visibility of a Network object from server. Please spawn the object first.");
+                        ObjectManagePacket destroyPacket = new ObjectManagePacket(obj)
+                        {
+                            Action = ObjectManagePacket.ObjectManageAction.Destroy
+                        };
+                        NetworkServer.SendToAll(destroyPacket);
                         break;
                     case ObjectVisibilityMode.OwnerAndServer:
                         NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
