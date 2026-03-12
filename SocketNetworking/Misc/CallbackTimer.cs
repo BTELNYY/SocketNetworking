@@ -61,22 +61,10 @@ namespace SocketNetworking.Misc
             {
                 return;
             }
-            _task = Task.Run(() =>
+            _task = Task.Run(async () =>
             {
                 TimeSpan span = TimeSpan.FromSeconds(_delay);
-                DateTime expires = DateTime.Now + span;
-                while (expires > DateTime.Now)
-                {
-                    if (_predicate != null && !_predicate(_data))
-                    {
-                        _token?.Cancel();
-                    }
-                    if (_checkFunc != null && !_checkFunc(_data))
-                    {
-                        _token?.Cancel();
-                    }
-                    _token?.Token.ThrowIfCancellationRequested();
-                }
+                await Task.Delay(span, _token.Token);
                 _callback?.Invoke(_data);
             }, _token.Token);
         }

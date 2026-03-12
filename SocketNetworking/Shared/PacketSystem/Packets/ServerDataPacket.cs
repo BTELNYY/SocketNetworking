@@ -1,4 +1,6 @@
-﻿using SocketNetworking.Shared.Messages;
+﻿using System.Collections.Generic;
+using SocketNetworking.Shared.Messages;
+using SocketNetworking.Shared.PacketSystem.TypeWrappers;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.Packets
@@ -11,14 +13,33 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public ProtocolConfiguration Configuration { get; set; } = new ProtocolConfiguration();
 
-        public bool UpgradeToSSL { get; set; } = false;
+        public Dictionary<string, string> Headers { get; private set; } = new Dictionary<string, string>();
+
+        public bool UpgradeToSSL
+        {
+            get
+            {
+                return Headers.ContainsKey(HeaderConstants.HEADER_SSL_SUPPORTED) ? Headers[HeaderConstants.HEADER_SSL_SUPPORTED] == HeaderConstants.HEADER_TRUE : false;
+            }
+            set
+            {
+                if (Headers.ContainsKey(HeaderConstants.HEADER_SSL_SUPPORTED))
+                {
+                    Headers[HeaderConstants.HEADER_SSL_SUPPORTED] = value ? HeaderConstants.HEADER_TRUE : HeaderConstants.HEADER_FALSE;
+                }
+                else
+                {
+                    Headers.Add(HeaderConstants.HEADER_SSL_SUPPORTED, value ? HeaderConstants.HEADER_TRUE : HeaderConstants.HEADER_FALSE);
+                }
+            }
+        }
 
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
             writer.WriteInt(YourClientID);
             writer.WritePacketSerialized<ProtocolConfiguration>(Configuration);
-            writer.WriteBool(UpgradeToSSL);
+            writer.WritePacketSerialized<SerializableDictionary<string, string>>(new SerializableDictionary<string, string>(Headers));
             return writer;
         }
 
@@ -27,7 +48,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             ByteReader reader = base.Deserialize(data);
             YourClientID = reader.ReadInt();
             Configuration = reader.ReadPacketSerialized<ProtocolConfiguration>();
-            UpgradeToSSL = reader.ReadBool();
+            Headers = reader.ReadPacketSerialized<SerializableDictionary<string, string>>().ContainedDict;
             return reader;
         }
     }

@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using SocketNetworking.Client;
 using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Transports
@@ -15,6 +16,11 @@ namespace SocketNetworking.Shared.Transports
         {
             Buffer = new byte[BufferSize];
         }
+
+        /// <summary>
+        /// The <see cref="NetworkClient"/> which owns this <see cref="NetworkTransport"/>.
+        /// </summary>
+        public NetworkClient Client { get; set; }
 
         /// <summary>
         /// Size of the buffer
@@ -87,6 +93,14 @@ namespace SocketNetworking.Shared.Transports
         public abstract Exception Connect(string hostname, int port);
 
         /// <summary>
+        /// Connects to a remote host (No DNS lookup is done)
+        /// </summary>
+        /// <param name="hostname"></param>
+        /// <param name="port"></param>
+        /// <returns></returns>
+        public abstract Task<Exception> ConnectAsync(string hostname, int port);
+
+        /// <summary>
         /// Send data to a specific host.
         /// </summary>
         /// <param name="data"></param>
@@ -134,5 +148,11 @@ namespace SocketNetworking.Shared.Transports
         /// Closes the transport.
         /// </summary>
         public abstract void Close();
+
+        /// <summary>
+        /// Closes the transport.
+        /// </summary>
+        /// <returns></returns>
+        public abstract Task CloseAsync();
     }
 }

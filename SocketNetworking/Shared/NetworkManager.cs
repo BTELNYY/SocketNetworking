@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Security;
+using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.Misc;
 using SocketNetworking.Server;
@@ -184,6 +185,15 @@ namespace SocketNetworking.Shared
         }
 
         /// <summary>
+        /// Imports the library to the library.
+        /// </summary>
+        [Obsolete("Method should not be used.")]
+        public static void ImportSelf()
+        {
+            ImportAssembly(Assembly.GetExecutingAssembly());
+        }
+
+        /// <summary>
         /// Imports the target assembly, caching: <see cref="ITypeWrapper{T}"/>s, any methods with <see cref="NetworkInvokable"/> (which are on a class with <see cref="INetworkObject"/> implemented) and any <see cref="CustomPacket"/>s  
         /// </summary>
         /// <param name="target"></param>
@@ -202,6 +212,23 @@ namespace SocketNetworking.Shared
                 PreCache.Add(data);
             }
             GetHashFromAssembly(target);
+        }
+
+        /// <summary>
+        /// Imports types from the given list. Does not import unsupported types.
+        /// </summary>
+        /// <param name="types"></param>
+        public static void ImportTypes(IEnumerable<Type> types)
+        {
+            foreach (Type t in types.Where(x => x.IsSubclassDeep(typeof(NetworkClient)) || x.GetInterfaces().Contains(typeof(INetworkObject)) || x.GetInterfaces().Contains(typeof(ITypeWrapper))).ToList())
+            {
+                NetworkObjectData data = GetNetworkObjectData(t);
+                if (data == null)
+                {
+                    continue;
+                }
+                PreCache.Add(data);
+            }
         }
 
         /// <summary>
@@ -889,21 +916,36 @@ namespace SocketNetworking.Shared
             Type baseType = t.BaseType;
             if (t.GetInterfaces().Contains(typeof(ITypeWrapper)))
             {
-                object obj = Activator.CreateInstance(t);
-                MethodInfo method = obj.GetType().GetMethod(nameof(ITypeWrapper.GetContainedType));
-                Type targetType = (Type)method.Invoke(obj, null);
-                if (!TypeToTypeWrapper.ContainsKey(targetType))
+                if (t.ContainsGenericParameters)
                 {
-                    TypeToTypeWrapper.Add(targetType, t);
+                    Log.Warning($"Type: {t.Name} cannot be imported as a Type Wrapper because it contains generic parameters. Implement a type which does not contain generics by making a subclass, or remove the generics.");
                 }
-                Log.Info($"Wrapper {obj.GetType().Name} maps to type {targetType.Name}");
+                else
+                {
+                    object obj = Activator.CreateInstance(t);
+                    MethodInfo method = obj.GetType().GetMethod(nameof(ITypeWrapper.GetContainedType));
+                    Type targetType = (Type)method.Invoke(obj, null);
+                    if (!TypeToTypeWrapper.ContainsKey(targetType))
+                    {
+                        TypeToTypeWrapper.Add(targetType, t);
+                    }
+                    Log.Info($"Wrapper {obj.GetType().Name} maps to type {targetType.Name}");
+                }
             }
             NetworkObjectData networkObjectCache = new NetworkObjectData();
             networkObjectCache.TargetObject = t;
-            networkObjectCache.Invocables = new List<(MethodInfo, NetworkInvokable)>();
+            networkObjectCache.Invocables = new Dictionary<MethodInfo, NetworkInvokable>();
+            networkObjectCache.MethodToIndex = new Dictionary<MethodInfo, int>();
+            networkObjectCache.IndexToMethod = new Dictionary<int, MethodInfo>();
+            int counter = 0;
             networkObjectCache.Listeners = new Dictionary<Type, List<PacketListenerData>>();
             networkObjectCache.SyncVars = new List<FieldInfo>();
-            foreach (MethodInfo method in t.GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+            List<MethodInfo> methods = t.GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).ToList();
+            methods.Sort((x, y) =>
+            {
+                return x.Name.CompareTo(y.Name);
+            });
+            foreach (MethodInfo method in methods)
             {
                 if (method.GetCustomAttribute<PacketListener>() != null)
                 {
@@ -920,7 +962,7 @@ namespace SocketNetworking.Shared
                             Type acceptedType = AcceptedMethodArguments[i];
                             if (!methodType.IsSubclassDeep(acceptedType))
                             {
-                                Log.Warning($"Method {method.Name} doesn't accept the correct paramters, it has been ignored. Note that the correct paramaters are: {string.Join(",", AcceptedMethodArguments.Select(x => x.Name))}");
+                                Log.Warning($"Method {method.Name} doesn't accept the correct parameters, it has been ignored. Note that the correct parameters are: {string.Join(",", AcceptedMethodArguments.Select(x => x.Name))}");
                                 methodArgsFailed = true;
                             }
                         }
@@ -946,15 +988,18 @@ namespace SocketNetworking.Shared
                         }
                     }
                 }
+
                 if (method.GetCustomAttribute<NetworkInvokable>() != null)
                 {
-                    ValueTuple<MethodInfo, NetworkInvokable> tuple = (method, method.GetCustomAttribute<NetworkInvokable>());
-                    if (networkObjectCache.Invocables.Contains(tuple))
+                    if (networkObjectCache.Invocables.ContainsKey(method))
                     {
                         Log.Warning($"Tried to cache duplicate! Type: {t.FullName}, Method: {method.Name}");
                         continue;
                     }
-                    networkObjectCache.Invocables.Add(tuple);
+                    networkObjectCache.Invocables.Add(method, method.GetCustomAttribute<NetworkInvokable>());
+                    networkObjectCache.MethodToIndex.Add(method, counter);
+                    networkObjectCache.IndexToMethod.Add(counter, method);
+                    counter++;
                 }
             }
             List<FieldInfo> syncVars = new List<FieldInfo>();
@@ -1294,7 +1339,7 @@ namespace SocketNetworking.Shared
             return null;
         }
 
-        internal static void NetworkInvoke(NetworkInvokationResultPacket packet, NetworkClient Receiver)
+        internal static void NetworkInvokeInternal(NetworkInvokationResultPacket packet, NetworkClient Receiver)
         {
             if (packet.IgnoreResult)
             {
@@ -1308,7 +1353,7 @@ namespace SocketNetworking.Shared
             OnNetworkInvocationResult?.Invoke(packet);
         }
 
-        internal static object NetworkInvoke(NetworkInvocationPacket packet, NetworkClient Receiver, bool localCall = false)
+        internal static object NetworkInvokeInternal(NetworkInvocationPacket packet, NetworkClient Receiver, bool localCall = false)
         {
             Type targetType = packet.TargetType ?? throw new NetworkInvocationException($"Cannot find type: '{packet.TargetType}'.", new NullReferenceException());
             object target = Receiver;
@@ -1338,8 +1383,18 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Unable to find the Object this packet is referencing.");
             }
             Type[] arguments = packet.Arguments.Select(x => x.Type).ToArray();
-            MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invocables.Select(x => x.Item1).ToArray();
-            MethodInfo method = GetNetworkInvokeMethod(methods, arguments, packet.MethodName) ?? throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
+            NetworkObjectData objData = GetNetworkObjectData(target.GetType());
+            MethodInfo[] methods = null;
+            MethodInfo method = null;
+            if (packet.MethodName != string.Empty)
+            {
+                methods = GetNetworkObjectData(target.GetType()).Invocables.Keys.ToArray();
+                method = GetNetworkInvokeMethod(methods, arguments, packet.MethodName) ?? throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
+            }
+            else
+            {
+                method = objData.IndexToMethod[packet.MethodIndex];
+            }
             NetworkInvokable invokable = method.GetCustomAttribute<NetworkInvokable>();
             if (!localCall)
             {
@@ -1376,7 +1431,7 @@ namespace SocketNetworking.Shared
                     {
                         if (!method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
                         {
-                            Log.Warning("Method marked secure on an object takes NetworkClient as its first argument, please replace this with NetworkHandle. Method: " + packet.MethodName);
+                            Log.Warning("Method marked secure on an object takes NetworkClient as its first argument, please replace this with NetworkHandle. Method: " + method.Name);
                         }
                     }
                 }
@@ -1418,7 +1473,7 @@ namespace SocketNetworking.Shared
                 {
                     pred = x => true;
                 }
-                NetworkServer.NetworkInvokeOnAll(target, packet.MethodName, pred, args.Skip(1).ToArray());
+                NetworkServer.NetworkInvokeOnAll(target, method.Name, pred, args.Skip(1).ToArray());
             }
             if (!localCall)
             {
@@ -1432,9 +1487,15 @@ namespace SocketNetworking.Shared
             return result;
         }
 
+        [Obsolete("Use delegate override.")]
         public static NetworkInvocationPacket NetworkInvoke(object target, NetworkClient sender, string methodName, bool ignoreResult = true, params object[] args)
         {
             return NetworkInvoke(target, sender, methodName, args, ignoreResult);
+        }
+
+        public static NetworkInvocationPacket NetworkInvoke(NetworkClient client, Delegate @delegate, bool ignoreResult = true, params object[] args)
+        {
+            return NetworkInvoke(client, @delegate, args, ignoreResult: ignoreResult);
         }
 
         /// <summary>
@@ -1454,6 +1515,7 @@ namespace SocketNetworking.Shared
         /// </param>
         /// <exception cref="NetworkInvocationException"></exception>
         /// <exception cref="SecurityException"></exception>
+        [Obsolete("Use delegate override.")]
         public static NetworkInvocationPacket NetworkInvoke(object target, NetworkClient sender, string methodName, object[] args, bool ignoreResult = true)
         {
             if (args == null)
@@ -1478,9 +1540,11 @@ namespace SocketNetworking.Shared
                 throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
             }
             Type[] arguments = args.Select(x => x.GetType()).ToArray();
-            MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invocables.Select(x => x.Item1).ToArray();
+            MethodInfo[] methods = GetNetworkObjectData(target.GetType()).Invocables.Keys.ToArray();
+            NetworkObjectData objData = GetNetworkObjectData(target.GetType());
             MethodInfo method = GetNetworkInvokeMethod(methods, arguments, methodName) ?? throw new NetworkInvocationException($"Cannot find method: '{methodName}' in type: {target.GetType().FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
             NetworkInvokable invokable = method.GetCustomAttribute<NetworkInvokable>();
+            int index = objData.MethodToIndex[method];
             if (invokable.Direction == NetworkDirection.Client && sender.CurrentClientLocation == ClientLocation.Remote)
             {
                 throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
@@ -1521,6 +1585,7 @@ namespace SocketNetworking.Shared
             NetworkInvocationPacket packet = new NetworkInvocationPacket();
             packet.NetworkIDTarget = targetID;
             packet.MethodName = methodName;
+            packet.MethodIndex = index;
             foreach (object arg in args)
             {
                 SerializedData data = ByteConvert.Serialize(arg);
@@ -1557,14 +1622,140 @@ namespace SocketNetworking.Shared
             }
             if (invokable.CallLocal)
             {
-                NetworkInvoke(packet, sender, true);
+                NetworkInvokeInternal(packet, sender, true);
             }
             return packet;
         }
 
+        public static NetworkInvocationPacket NetworkInvoke(NetworkClient sender, Delegate methodTarget, object[] args, bool ignoreResult = true)
+        {
+            if (args == null)
+            {
+                args = new object[0];
+            }
+            object target = methodTarget.Target;
+            if (target == null)
+            {
+                throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.", new ArgumentNullException("target"));
+            }
+            int targetID = 0;
+            if (target is INetworkObject networkObject)
+            {
+                targetID = networkObject.NetworkID;
+                if (!networkObject.Active)
+                {
+                    throw new InvalidOperationException("Cannot NetworkInvokeOnClient on inactive objects.");
+                }
+            }
+            else if (!(target is NetworkClient client))
+            {
+                throw new NetworkInvocationException($"Provided type is not allowed. Type: {target.GetType().FullName}", new ArgumentException("Can't cast to NetworkClient."));
+            }
+            Type[] arguments = args.Select(x => x.GetType()).ToArray();
+            NetworkObjectData objData = GetNetworkObjectData(target.GetType());
+            MethodInfo method = methodTarget.Method;
+            int index = objData.MethodToIndex[method];
+            NetworkInvokable invokable = method.GetCustomAttribute<NetworkInvokable>();
+            if (invokable.Direction == NetworkDirection.Client && sender.CurrentClientLocation == ClientLocation.Remote)
+            {
+                throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
+            }
+            if (invokable.Direction == NetworkDirection.Server && sender.CurrentClientLocation == ClientLocation.Local)
+            {
+                throw new SecurityException($"Attempted to invoke network method from incorrect direction. Method: {method.Name}");
+            }
+            if (invokable.SecureMode && WhereAmI != ClientLocation.Remote)
+            {
+                if (target is NetworkClient client && client.ClientID != sender.ClientID)
+                {
+                    throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                }
+                if (target is INetworkObject owned)
+                {
+                    if (owned.OwnershipMode == OwnershipMode.Client && owned.OwnerClientID != sender.ClientID && !owned.HasPrivilege(sender.ClientID))
+                    {
+                        throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    }
+                    else if (owned.OwnershipMode == OwnershipMode.Server && sender.CurrentClientLocation != ClientLocation.Remote)
+                    {
+                        throw new SecurityException("Attempted to invoke network method which the client does not own.");
+                    }
+                    else if (owned.OwnershipMode == OwnershipMode.Public)
+                    {
+                        //do nothing, everyone owns this object.
+                    }
+                }
+                if (!(target is INetworkObject) && !(target is NetworkClient))
+                {
+                    if (method.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)))
+                    {
+                        Log.Warning("Method marked secure takes a NetworkClient as the first argument, please replace this with NetworkHandle. Method: " + methodTarget.Method.Name);
+                    }
+                }
+            }
+            NetworkInvocationPacket packet = new NetworkInvocationPacket();
+            packet.NetworkIDTarget = targetID;
+            packet.MethodName = string.Empty;
+            packet.MethodIndex = index;
+            foreach (object arg in args)
+            {
+                SerializedData data = ByteConvert.Serialize(arg);
+                packet.Arguments.Add(data);
+            }
+            packet.TargetType = target.GetType();
+            int callbackID = NetworkInvocations.GetFirstEmptySlot();
+            NetworkInvocations.Add(callbackID);
+            packet.CallbackID = callbackID;
+            packet.IgnoreResult = ignoreResult;
+            if (invokable.Priority)
+            {
+                packet.Flags |= PacketFlags.Priority;
+            }
+            else
+            {
+                packet.Flags &= ~PacketFlags.Priority;
+            }
+            if (invokable.KeepOrdered)
+            {
+                packet.Flags |= PacketFlags.KeepInOrder;
+            }
+            else
+            {
+                packet.Flags &= ~PacketFlags.KeepInOrder;
+            }
+            if (ignoreResult && invokable.Broadcast && NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                NetworkServer.NetworkInvokeOnAll(target, method.Name, args);
+            }
+            else
+            {
+                sender.Send(packet);
+            }
+            if (invokable.CallLocal)
+            {
+                NetworkInvokeInternal(packet, sender, true);
+            }
+            return packet;
+        }
+
+        [Obsolete]
         public static NetworkInvocationCallback<T> NetworkInvoke<T>(object target, NetworkClient sender, string methodName, params object[] args)
         {
             NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, false);
+            return new NetworkInvocationCallback<T>(packet.CallbackID);
+        }
+
+        /// <summary>
+        /// Invoke a delegate
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="sender"></param>
+        /// <param name="delegate"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public static NetworkInvocationCallback<T> NetworkInvoke<T>(NetworkClient sender, Delegate @delegate, params object[] args)
+        {
+            NetworkInvocationPacket packet = NetworkInvoke(sender, @delegate, args, false);
             return new NetworkInvocationCallback<T>(packet.CallbackID);
         }
 
@@ -1577,8 +1768,8 @@ namespace SocketNetworking.Shared
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <param name="msTimeOut"></param>
-        /// <param name="priority"></param>
         /// <returns></returns>
+        [Obsolete]
         public static T NetworkInvokeBlocking<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000)
         {
             if (args == null)
@@ -1602,7 +1793,7 @@ namespace SocketNetworking.Shared
                 }
                 if (stopwatch.ElapsedMilliseconds > msTimeOut)
                 {
-                    Log.Error($"NetworkInvokeOnClient on method {methodName} timed out after {msTimeOut}ms of processing.");
+                    Log.Error($"NetworkInvokeOnClient on method {methodName} timed out after {msTimeOut}ms of waiting.");
                     break;
                 }
             }
@@ -1629,6 +1820,125 @@ namespace SocketNetworking.Shared
             }
         }
 
+        public static T NetworkInvokeBlocking<T>(NetworkClient sender, Delegate target, object[] args, float msTimeOut = 5000)
+        {
+            if (args == null)
+            {
+                args = new object[0];
+            }
+            NetworkInvocationPacket packet = NetworkInvoke(sender, target, args, false);
+            MethodInfo method = GetNetworkObjectData(target.Target.GetType()).IndexToMethod[packet.MethodIndex];
+            if (method != null && method.ReturnType == typeof(void))
+            {
+                return default;
+            }
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            NetworkResultAwaiter networkResultAwaiter = new NetworkResultAwaiter(packet.CallbackID);
+            while (!networkResultAwaiter.HasResult)
+            {
+                if (!sender.IsTransportConnected)
+                {
+                    Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} failed because the NetworkClient is not connected.");
+                    break;
+                }
+                if (stopwatch.ElapsedMilliseconds > msTimeOut)
+                {
+                    Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} timed out after {msTimeOut}ms of waiting.");
+                    break;
+                }
+            }
+            //Log.Debug($"NetworkInvokeOnClient on {methodName} successfully returned and took {stopwatch.ElapsedMilliseconds}ms");
+            NetworkInvokationResultPacket resultPacket = networkResultAwaiter.ResultPacket;
+            if (resultPacket == null)
+            {
+                Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} failed remotely! Error: null");
+                return default;
+            }
+            if (!resultPacket.Success)
+            {
+                Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} failed remotely! Error: " + resultPacket.ErrorMessage);
+                return default;
+            }
+            object result = ByteConvert.Deserialize(resultPacket.Result, out int read);
+            if (result == null)
+            {
+                return default;
+            }
+            else
+            {
+                return (T)result;
+            }
+        }
+
+        public async Task<T> NetworkInvokeAsync<T>(NetworkClient sender, Delegate target, object[] args, float msTimeOut = 5000)
+        {
+            if (args == null)
+            {
+                args = new object[0];
+            }
+            NetworkInvocationPacket packet = NetworkInvoke(sender, target, args, false);
+            MethodInfo method = GetNetworkObjectData(target.Target.GetType()).IndexToMethod[packet.MethodIndex];
+            if (method != null && method.ReturnType == typeof(void))
+            {
+                return default;
+            }
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            NetworkResultAwaiter networkResultAwaiter = new NetworkResultAwaiter(packet.CallbackID);
+            bool awaitResult = await networkResultAwaiter.Semaphore.WaitAsync(timeout: new TimeSpan(0, 0, 0, 0, milliseconds: (int)msTimeOut));
+            if (!awaitResult)
+            {
+                stopwatch.Stop();
+                Log.Error($"Unable to enter semaphore. Did I time out? Took {stopwatch.ElapsedMilliseconds}ms.");
+                return default;
+            }
+            while (!networkResultAwaiter.HasResult)
+            {
+                if (!sender.IsTransportConnected)
+                {
+                    stopwatch.Stop();
+                    Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} failed because the NetworkClient is not connected.");
+                    break;
+                }
+                if (stopwatch.ElapsedMilliseconds > msTimeOut)
+                {
+                    stopwatch.Stop();
+                    Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} timed out after {msTimeOut}ms of waiting.");
+                    break;
+                }
+            }
+            //Log.Debug($"NetworkInvokeOnClient on {methodName} successfully returned and took {stopwatch.ElapsedMilliseconds}ms");
+            NetworkInvokationResultPacket resultPacket = networkResultAwaiter.ResultPacket;
+            if (resultPacket == null)
+            {
+                Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} failed remotely! Error: null");
+                return default;
+            }
+            if (!resultPacket.Success)
+            {
+                Log.Error($"NetworkInvokeOnClient on method {target.Method.Name} failed remotely! Error: " + resultPacket.ErrorMessage);
+                return default;
+            }
+            object result = ByteConvert.Deserialize(resultPacket.Result, out int read);
+            if (result == null)
+            {
+                return default;
+            }
+            else
+            {
+                return (T)result;
+            }
+        }
+
+        public static void ImportAssembly(object value)
+        {
+            if (value is Assembly assembly)
+            {
+                ImportAssembly(assembly);
+                return;
+            }
+            ImportAssembly(value.GetType().Assembly);
+        }
+
         #endregion
     }
 
@@ -1653,7 +1963,11 @@ namespace SocketNetworking.Shared
 
         public List<FieldInfo> SyncVars;
 
-        public List<ValueTuple<MethodInfo, NetworkInvokable>> Invocables;
+        public Dictionary<MethodInfo, NetworkInvokable> Invocables;
+
+        public Dictionary<int, MethodInfo> IndexToMethod;
+
+        public Dictionary<MethodInfo, int> MethodToIndex;
 
         public Type TargetObject;
 
@@ -1664,7 +1978,7 @@ namespace SocketNetworking.Shared
             {
                 listenerResult += $"Type: {listener}, Methods: {string.Join(" | ", Listeners[listener].Select(x => x.ToString()))}";
             }
-            return $"Type: {TargetObject.FullName}, Packet Listeners: {listenerResult}, SyncVars: {string.Join(", ", SyncVars.Select(x => x.Name))}, Invokables: {string.Join(", ", Invocables.Select(x => x.Item1.Name))}";
+            return $"Type: {TargetObject.FullName}, Packet Listeners: {listenerResult}, SyncVars: {string.Join(", ", SyncVars.Select(x => x.Name))}, Invokables: {string.Join(", ", Invocables.Keys)}";
         }
     }
 

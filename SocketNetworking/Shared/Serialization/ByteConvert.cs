@@ -51,6 +51,8 @@ namespace SocketNetworking.Shared.Serialization
             typeof(float),
             typeof(double),
 
+            typeof(Guid),
+
             typeof(NetworkClient),
             typeof(INetworkObject),
             typeof(IByteSerializable),
@@ -145,6 +147,14 @@ namespace SocketNetworking.Shared.Serialization
                 dataType = typeof(int);
                 data = Convert.ChangeType(data, typeof(int));
                 sData.Type = data.GetType();
+                return sData;
+            }
+
+            if (dataType == typeof(Guid))
+            {
+                Guid value = (Guid)Convert.ChangeType(data, typeof(Guid));
+                writer.WriteGuid(value);
+                sData.Data = writer.Data;
                 return sData;
             }
 
@@ -340,82 +350,89 @@ namespace SocketNetworking.Shared.Serialization
                 return Convert.ChangeType(value, data.Type);
             }
 
+            if (data.Type == typeof(Guid))
+            {
+                Guid id = reader.ReadGuid();
+                read = reader.ReadBytes;
+                return id;
+            }
+
             if (data.Type == typeof(string))
             {
                 string str = reader.ReadString();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(str, data.Type);
+                return str;
             }
             if (data.Type == typeof(bool))
             {
                 bool value = reader.ReadBool();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
 
             if (data.Type == typeof(byte))
             {
                 byte value = reader.ReadByte();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
             if (data.Type == typeof(sbyte))
             {
                 sbyte value = reader.ReadSByte();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
 
             if (data.Type == typeof(short))
             {
                 short value = reader.ReadShort();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
             if (data.Type == typeof(ushort))
             {
                 ushort value = reader.ReadUShort();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
 
             if (data.Type == typeof(int))
             {
                 int value = reader.ReadInt();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
             if (data.Type == typeof(uint))
             {
                 uint value = reader.ReadUInt();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
 
             if (data.Type == typeof(long))
             {
                 long value = reader.ReadLong();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
             if (data.Type == typeof(ulong))
             {
                 ulong value = reader.ReadULong();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
 
             if (data.Type == typeof(float))
             {
                 float value = reader.ReadFloat();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
             if (data.Type == typeof(double))
             {
                 double value = reader.ReadDouble();
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return value;
             }
 
             if (data.Type.GetCustomAttribute<XmlRootAttribute>() != null)

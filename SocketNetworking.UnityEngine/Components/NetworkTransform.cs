@@ -1,4 +1,5 @@
-﻿using SocketNetworking.Client;
+﻿using System;
+using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.NetworkObjects;
@@ -66,7 +67,7 @@ namespace SocketNetworking.UnityEngine.Components
         /// </summary>
         public void ServerTeleport()
         {
-            NetworkInvoke(nameof(ClientTeleport));
+            NetworkInvoke((Action<NetworkHandle>)ClientTeleport);
         }
 
         [NetworkInvokable(Direction = NetworkDirection.Server, Broadcast = true)]
@@ -141,7 +142,7 @@ namespace SocketNetworking.UnityEngine.Components
         /// </summary>
         public void ServerSync()
         {
-            NetworkInvoke(nameof(ClientUpdatePositionsSafe), Identity.gameObject.transform.position, Identity.gameObject.transform.localPosition, Identity.gameObject.transform.rotation, Identity.gameObject.transform.localRotation, Identity.gameObject.transform.localScale);
+            NetworkInvoke((Action<NetworkHandle, Vector3, Vector3, Quaternion, Quaternion, Vector3>)ClientUpdatePositionsSafe, Identity.gameObject.transform.position, Identity.gameObject.transform.localPosition, Identity.gameObject.transform.rotation, Identity.gameObject.transform.localRotation, Identity.gameObject.transform.localScale);
             ServerTeleport();
         }
 
@@ -387,7 +388,7 @@ namespace SocketNetworking.UnityEngine.Components
                 return;
             }
             SerializableVector3 vector3 = new SerializableVector3(euler);
-            NetworkInvoke(nameof(GetNetworkRotation), new object[] { vector3, relativeTo });
+            NetworkInvoke((Action<SerializableVector3, Space>)(GetNetworkRotation), new object[] { vector3, relativeTo });
         }
 
         [NetworkInvokable(callLocal: true, broadcast: true)]
@@ -403,7 +404,7 @@ namespace SocketNetworking.UnityEngine.Components
                 return;
             }
             SerializableVector3 vector3 = new SerializableVector3(euler);
-            NetworkInvoke(nameof(GetNetworkRotation), new object[] { vector3, angle, relativeTo });
+            NetworkInvoke((Action<SerializableVector3, float, Space>)(GetNetworkRotation), new object[] { vector3, angle, relativeTo });
         }
 
         [NetworkInvokable(callLocal: true, broadcast: true)]
@@ -420,7 +421,7 @@ namespace SocketNetworking.UnityEngine.Components
             }
             SerializableVector3 vecPoint = new SerializableVector3(point);
             SerializableVector3 vecAxis = new SerializableVector3(axis);
-            NetworkInvoke(nameof(GetNetworkRotation), new object[] { vecPoint, vecAxis, angle });
+            NetworkInvoke((Action<SerializableVector3, SerializableVector3, float>)(GetNetworkRotation), vecPoint, vecAxis, angle);
         }
 
         [NetworkInvokable(callLocal: true, broadcast: true)]
@@ -435,7 +436,7 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 return;
             }
-            NetworkInvoke(nameof(GetNetworkTranslate), new object[] { new SerializableVector3(position), relativeTo });
+            NetworkInvoke((Action<SerializableVector3, Space>)(GetNetworkTranslate), new object[] { new SerializableVector3(position), relativeTo });
         }
 
         [NetworkInvokable(callLocal: true, broadcast: true)]
@@ -450,7 +451,7 @@ namespace SocketNetworking.UnityEngine.Components
             {
                 return;
             }
-            NetworkInvoke(nameof(GetNetworkLookAt), new object[] { new SerializableVector3(position) });
+            NetworkInvoke((Action<SerializableVector3>)(GetNetworkLookAt), new object[] { new SerializableVector3(position) });
         }
 
         [NetworkInvokable(callLocal: true, broadcast: true)]

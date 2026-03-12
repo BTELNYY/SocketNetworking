@@ -167,6 +167,26 @@ namespace SocketNetworking
             return array.Skip(amount).ToArray();
         }
 
+        /// <summary>
+        /// Removes a specific amount of elements from the start of the array. Note, this will create a copy of the given input array, therefore the return should NOT be ignored.
+        /// </summary>
+        /// <returns>
+        /// The modified array.
+        /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// If the amount of items is greater then the amount of elements in the array, this will be thrown.
+        /// </exception>
+        public static T[] RemoveFromStart<T>(this T[] array, long amount)
+        {
+            if (array.Length < amount)
+            {
+                throw new ArgumentOutOfRangeException("amount", $"Amount ({amount}) is out of range for specified array. ({array.Length})");
+            }
+            //T[] result = new T[array.Length - amount];
+            //Array.Copy(array, amount, result, 0, array.Length - amount);
+            return array.SkipLong(amount).ToArray();
+        }
+
 
         /// <summary>
         /// Basically prepends <paramref name="newData"/> to the <paramref name="array"/>.
@@ -345,7 +365,7 @@ namespace SocketNetworking
         public static FieldInfo[] GetAllFields(this Type type, BindingFlags bindingAttr)
         {
             List<FieldInfo> fields = new List<FieldInfo>();
-            while (type != typeof(object))
+            while (type != typeof(object) && type.BaseType != null)
             {
                 fields.AddRange(type.GetFields(bindingAttr));
                 type = type.BaseType;
@@ -609,7 +629,7 @@ namespace SocketNetworking
             {
                 return list;
             }
-            while (type != typeof(object))
+            while (type != typeof(object) && type.BaseType != null)
             {
                 MethodInfo[] methods = type.GetMethods(flags);
                 foreach (MethodInfo m in methods)

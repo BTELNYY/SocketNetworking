@@ -1,11 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using SocketNetworking.Client;
 
 namespace SocketNetworking.Misc
 {
     public class ClientHandler
     {
+        [Obsolete("Always is null as threading is no longer used.")]
         public Thread Thread { get; }
 
         public List<NetworkClient> Clients
@@ -28,10 +31,25 @@ namespace SocketNetworking.Misc
 
         private List<NetworkClient> _clients;
 
+        private CancellationToken _token;
+
+        private CancellationTokenSource _tokenSource;
+
+        private Log _log;
+
+        public Log Log => _log;
+
         public ClientHandler(IEnumerable<NetworkClient> clients)
         {
-            Thread = new Thread(Run);
-            _clients = new List<NetworkClient>(clients);
+            _log = new Log("[ClientHandler]");
+            _tokenSource = new CancellationTokenSource();
+            _token = _tokenSource.Token;
+            _clients = new List<NetworkClient>();
+            foreach (NetworkClient client in clients)
+            {
+                AddClient(client);
+            }
+            //_clients = new List<NetworkClient>(clients);
         }
 
         public int CurrentClientCount
@@ -51,6 +69,38 @@ namespace SocketNetworking.Misc
             {
                 Clients.Add(client);
             }
+            Task.Run(async () => await HandleClientRead(client), _token);
+            Task.Run(async () => await HandleClientWrite(client), _token);
+        }
+
+        private async Task HandleClientRead(NetworkClient client)
+        {
+            while (!die || _token.IsCancellationRequested)
+            {
+                if (client.CurrentConnectionState == Shared.ConnectionState.Disconnected)
+                {
+                    RemoveClient(client);
+                    Log.Info($"Client {client.ClientID} removed, client is disconnected.");
+                    break;
+                }
+                await client.ReadNextAsync();
+                //await client.WriteNextAsync();
+            }
+        }
+
+        private async Task HandleClientWrite(NetworkClient client)
+        {
+            while (!die || _token.IsCancellationRequested)
+            {
+                if (client.CurrentConnectionState == Shared.ConnectionState.Disconnected)
+                {
+                    RemoveClient(client);
+                    Log.Info($"Client {client.ClientID} removed, client is disconnected.");
+                    break;
+                }
+                //await client.ReadNextAsync();
+                await client.WriteNextAsync();
+            }
         }
 
         public void RemoveClient(NetworkClient client)
@@ -69,23 +119,33 @@ namespace SocketNetworking.Misc
             }
         }
 
+        public void ClearClients()
+        {
+            lock (_lock)
+            {
+                Clients.Clear();
+            }
+        }
+
         public ClientHandler() : this(new List<NetworkClient>()) { }
 
         bool die = false;
 
+        [Obsolete("Does nothing as clients will now use a Task system, the task is started when a client is added.")]
         public void Start()
         {
-            Thread.Start();
+            //Thread.Start();
         }
 
         public void Stop()
         {
+            _tokenSource.Cancel();
             die = true;
-            Thread.Abort();
         }
 
         object _lock = new object();
 
+        [Obsolete("Use Async tasks")]
         void Run()
         {
             while (true)
@@ -119,7 +179,7 @@ namespace SocketNetworking.Misc
 
         public override string ToString()
         {
-            return $"Clients: {CurrentClientCount}, Thread: {Thread}";
+            return $"Clients: {CurrentClientCount}";
         }
     }
 }

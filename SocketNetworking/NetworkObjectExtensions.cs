@@ -80,6 +80,11 @@ namespace SocketNetworking
             return false;
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the current location is not the server.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void ThrowIfNotServer(this INetworkObject obj)
         {
             if (NetworkManager.WhereAmI != ClientLocation.Remote)
@@ -88,6 +93,11 @@ namespace SocketNetworking
             }
         }
 
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> if the current location is not the client.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void ThrowIfNotClient(this INetworkObject obj)
         {
             if (NetworkManager.WhereAmI != ClientLocation.Local)
@@ -167,9 +177,19 @@ namespace SocketNetworking
         /// <param name="sender"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
+        [Obsolete]
         public static void NetworkInvoke(this INetworkObject @object, NetworkClient sender, string methodName, object[] args)
         {
             NetworkManager.NetworkInvoke(@object, sender, methodName, args);
+        }
+
+        public static void NetworkInvoke(this INetworkObject obj, NetworkClient sender, Delegate del, params object[] args)
+        {
+            if (!ReferenceEquals(obj, del.Target))
+            {
+                return;
+            }
+            NetworkManager.NetworkInvoke(sender, del, true, args);
         }
 
         /// <summary>
@@ -184,9 +204,19 @@ namespace SocketNetworking
         /// How long before the system should time out and fail?
         /// </param>
         /// <returns></returns>
+        [Obsolete]
         public static T NetworkInvoke<T>(this INetworkObject obj, NetworkClient sender, string methodName, object[] args, float timeOutMs = 5000f)
         {
             return NetworkManager.NetworkInvokeBlocking<T>(obj, sender, methodName, args, timeOutMs);
+        }
+
+        public static T NetworkInvoke<T>(this INetworkObject obj, NetworkClient sender, Delegate del, float timeOutMs = 5000f, params object[] args)
+        {
+            if (!ReferenceEquals(obj, del.Target))
+            {
+                return default;
+            }
+            return NetworkManager.NetworkInvokeBlocking<T>(sender, del, args, timeOutMs);
         }
 
         /// <summary>
@@ -195,9 +225,19 @@ namespace SocketNetworking
         /// <param name="obj"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
+        [Obsolete]
         public static void NetworkInvokeOnAll(this INetworkObject obj, string methodName, object[] args)
         {
             NetworkServer.NetworkInvokeOnAll(obj, methodName, args);
+        }
+
+        public static void NetworkInvokeOnAll(this INetworkObject obj, Delegate @delegate, params object[] args)
+        {
+            if (!ReferenceEquals(obj, @delegate.Target))
+            {
+                return;
+            }
+            NetworkServer.NetworkInvokeOnAll(@delegate, args);
         }
 
         /// <summary>
@@ -791,7 +831,11 @@ namespace SocketNetworking
                 switch (obj.ObjectVisibilityMode)
                 {
                     case ObjectVisibilityMode.ServerOnly:
-                        Log.GlobalWarning("You should not be changing the visibility of a Network object from server. Please spawn the object first.");
+                        ObjectManagePacket destroyPacket = new ObjectManagePacket(obj)
+                        {
+                            Action = ObjectManagePacket.ObjectManageAction.Destroy
+                        };
+                        NetworkServer.SendToAll(destroyPacket);
                         break;
                     case ObjectVisibilityMode.OwnerAndServer:
                         NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");
@@ -866,7 +910,11 @@ namespace SocketNetworking
                 switch (obj.ObjectVisibilityMode)
                 {
                     case ObjectVisibilityMode.ServerOnly:
-                        Log.GlobalWarning("You should not be changing the visibility of a Network object from server. Please spawn the object first.");
+                        ObjectManagePacket destroyPacket = new ObjectManagePacket(obj)
+                        {
+                            Action = ObjectManagePacket.ObjectManageAction.Destroy
+                        };
+                        NetworkServer.SendToAll(destroyPacket);
                         break;
                     case ObjectVisibilityMode.OwnerAndServer:
                         NetworkClient client = NetworkServer.Clients.FirstOrDefault(x => x.ClientID == obj.OwnerClientID) ?? throw new InvalidOperationException($"Can't find client with ID {obj.OwnerClientID}.");

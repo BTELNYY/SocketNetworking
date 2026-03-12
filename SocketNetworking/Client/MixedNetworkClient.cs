@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.PacketSystem;
@@ -153,6 +154,71 @@ namespace SocketNetworking.Client
             }
         }
 
+        protected override async Task SendNextPacketInternalAsync()
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (NoPacketSending)
+            {
+                return;
+            }
+            if (_toSendPackets.IsEmpty)
+            {
+                //Log.Debug("Nothing to send.");
+                return;
+            }
+            _toSendPackets.TryDequeue(out Packet packet);
+            PreparePacket(ref packet);
+            if (!InvokePacketSendRequest(packet))
+            {
+                Log.Debug("Packet send was rejected.");
+                return;
+            }
+            if (packet.Flags.HasFlag(PacketFlags.Priority))
+            {
+                packet.Destination = UdpTransport.Peer;
+            }
+            byte[] fullBytes = SerializePacket(packet);
+            if (fullBytes == null)
+            {
+                return;
+            }
+            try
+            {
+                Exception ex;
+                if (packet.Flags.HasFlag(PacketFlags.Priority))
+                {
+                    if (!UdpTransport.IsConnected)
+                    {
+                        throw new InvalidOperationException("Trying to send Priority packets when priority is not available.");
+                    }
+                    ex = await UdpTransport.SendAsync(fullBytes, packet.Destination);
+                }
+                else
+                {
+                    if (!TcpTransport.IsConnected)
+                    {
+                        throw new InvalidOperationException("Trying to send packets when transport is not connected!");
+                    }
+                    ex = await Transport.SendAsync(fullBytes, packet.Destination);
+                }
+                if (ex != null)
+                {
+                    throw ex;
+                }
+                //Log.Debug("Packet sent! " + packet.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                InvokeConnectionError(networkErrorData);
+            }
+            InvokePacketSent(packet);
+        }
+
         private List<OrderedPacketData> lastPackets = new List<OrderedPacketData>();
 
         protected override void HandlePacket(PacketHeader header, byte[] fullPacket)
@@ -250,6 +316,34 @@ namespace SocketNetworking.Client
             DeserializeRetry(packet.Item1, packet.Item3);
         }
 
+        protected override async Task RawReaderAsync()
+        {
+            base.RawReader();
+            if (_shuttingDown)
+            {
+                return;
+            }
+            if (!UdpTransport.IsConnected)
+            {
+                return;
+            }
+            if (!UdpTransport.DataAvailable)
+            {
+                return;
+            }
+            (byte[], Exception, IPEndPoint) packet = await UdpTransport.ReceiveAsync();
+            if (packet.Item2 != null)
+            {
+                Log.Error(packet.Item2.ToString());
+                return;
+            }
+            if (packet.Item1.Length == 0)
+            {
+                return;
+            }
+            DeserializeRetry(packet.Item1, packet.Item3);
+        }
+
         bool _udpConnected = false;
 
         public override void InitRemoteClient(int clientId, NetworkTransport socket)
@@ -272,7 +366,7 @@ namespace SocketNetworking.Client
 
         private void ServerSendUDPInfo(int passKey)
         {
-            NetworkInvokeOnClient(nameof(ClientReceiveUDPInfo), new object[] { passKey });
+            NetworkInvokeOnClient((Action<int>)(ClientReceiveUDPInfo), passKey);
         }
 
         [NetworkInvokable(NetworkDirection.Server)]

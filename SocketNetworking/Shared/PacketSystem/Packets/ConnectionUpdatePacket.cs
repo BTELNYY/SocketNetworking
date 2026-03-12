@@ -14,7 +14,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         {
             ByteReader reader = base.Deserialize(data);
             Reason = reader.ReadString();
-            State = (ConnectionState)reader.ReadInt();
+            State = (ConnectionState)reader.ReadByte();
             return reader;
         }
 
@@ -22,7 +22,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         {
             ByteWriter writer = base.Serialize();
             writer.WriteString(Reason);
-            writer.WriteInt((int)State);
+            writer.WriteByte((byte)State);
             return writer;
         }
     }

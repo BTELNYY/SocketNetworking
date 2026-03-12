@@ -24,5 +24,18 @@
         "Action": "Start"
       }
     ]
+  },
+  {
+    "Name": "QUIC Basic",
+    "Projects": [
+      {
+        "Path": "SocketNetworking.Examples\\QUIC\\QuicServer\\QuicServer.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "SocketNetworking.Examples\\QUIC\\QuicClient\\QuicClient.csproj",
+        "Action": "Start"
+      }
+    ]
   }
 ]

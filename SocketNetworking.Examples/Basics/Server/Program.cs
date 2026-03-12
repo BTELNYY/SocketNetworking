@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using Basic.SharedData;
 using SocketNetworking;
@@ -11,7 +12,6 @@ namespace Basic.Server
 {
     public class Program
     {
-
         static readonly string Title = "Clients: {count}";
 
         public static void Main(string[] args)
@@ -31,8 +31,12 @@ namespace Basic.Server
             NetworkServer.ClientAvatar = typeof(NetworkObjectTest);
             NetworkServer.Config.HandshakeTime = 10f;
             NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
-            //speeeling
-            NetworkServer.Config.CertificatePath = "./example.crt";
+            //SSL configuration
+            if (File.Exists("./cert.pfx"))
+            {
+                NetworkServer.Config.CertificatePath = "./cert.pfx";
+                NetworkServer.Config.CertificatePassword = "Pa55w.rd";
+            }
             NetworkServer.ClientConnected += (x) =>
             {
                 Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());
@@ -59,7 +63,7 @@ namespace Basic.Server
                 {
                     if (c is TestClient client && c.Ready)
                     {
-                        //client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
+                        client.NetworkInvokeSomeMethod((float)r.NextDouble(), r.Next());
                         ExampleCustomPacket packet = new ExampleCustomPacket
                         {
                             Data = "test"

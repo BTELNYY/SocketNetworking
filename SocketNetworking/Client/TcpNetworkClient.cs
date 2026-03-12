@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Net.Security;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using SocketNetworking.Server;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.PacketSystem;
+using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
@@ -17,7 +19,7 @@ namespace SocketNetworking.Client
             Transport = new TcpTransport();
         }
 
-        public override bool SupportsSSL => true;
+        public bool SupportsSSL => true;
 
         public override NetworkTransport Transport
         {
@@ -54,11 +56,11 @@ namespace SocketNetworking.Client
         {
             get
             {
-                return TcpTransport.Client.NoDelay;
+                return TcpTransport.TcpSocketClient.NoDelay;
             }
             set
             {
-                TcpTransport.Client.NoDelay = value;
+                TcpTransport.TcpSocketClient.NoDelay = value;
             }
         }
 
@@ -67,72 +69,23 @@ namespace SocketNetworking.Client
         /// </summary>
         public bool AllowUntrustedRootCertificates { get; set; } = false;
 
-        /// <summary>
-        /// Called when SSL has finished its handshake and is now the standard transmission route.
-        /// </summary>
-        public event Action SSLConnected;
-
-        /// <summary>
-        /// Called when SSL has failed to authenticate.
-        /// </summary>
-        public event Action SSLFailure;
-
-        protected override void ConfirmSSL()
+        protected void ConfirmSSL()
         {
             Log.Success("SSL Succeeded.");
             TcpTransport.SetSSLState(true);
-            SSLConnected?.Invoke();
         }
 
         public bool ClientSSLUpgrade(string hostname)
         {
-            try
-            {
-                SslStream stream = new SslStream(TcpTransport.Stream, true, ClientVerifyCert);
-                stream.AuthenticateAsClient(hostname);
-                TcpTransport.SslStream = stream;
-            }
-            catch (AuthenticationException ex)
-            {
-                Log.Error("SSL Authentication failure! Error: " + ex.Message);
-                SSLFailure?.Invoke();
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("SSL General failure! Error: " + ex.ToString());
-                SSLFailure?.Invoke();
-                return false;
-            }
-            return true;
+            return TcpTransport.ClientSSLUpgrade(hostname);
         }
 
         public bool ServerSSLUpgrade(X509Certificate certificate)
         {
-            try
-            {
-                SslStream stream = new SslStream(TcpTransport.Stream, true, ServerVerifyCert);
-                stream.AuthenticateAsServer(certificate, false, SslProtocols.Default, true);
-                //stream.AuthenticateAsServer(NetworkServer.Config.Certificate, false, true);
-                TcpTransport.SslStream = stream;
-            }
-            catch (AuthenticationException ex)
-            {
-                Log.Error("SSL Authentication failure! Error: " + ex.Message);
-                SSLFailure?.Invoke();
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("SSL General failure! Error: " + ex.ToString());
-                SSLFailure?.Invoke();
-                return false;
-            }
-            TcpTransport.Certificate = certificate;
-            return true;
+            return TcpTransport.ServerSSLUpgrade(certificate);
         }
 
-        protected virtual bool ServerVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        public virtual bool ServerVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             if (sslPolicyErrors == SslPolicyErrors.None || sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateNotAvailable))
             {
@@ -142,7 +95,7 @@ namespace SocketNetworking.Client
             return false;
         }
 
-        protected virtual bool ClientVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        public virtual bool ClientVerifyCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             if (sslPolicyErrors == SslPolicyErrors.None)
             {
@@ -173,7 +126,7 @@ namespace SocketNetworking.Client
             return false;
         }
 
-        protected override bool ClientTrySSLUpgrade()
+        protected bool ClientTrySSLUpgrade()
         {
             Log.Info($"Trying to upgrade this TCP/IP connection to SSL...");
             bool result = ClientSSLUpgrade(ConnectedHostname);
@@ -184,7 +137,7 @@ namespace SocketNetworking.Client
             return result;
         }
 
-        protected override bool ServerTrySSLUpgrade()
+        protected bool ServerTrySSLUpgrade()
         {
             Log.Info($"Trying to upgrade this TCP/IP connection to SSL on Client {ClientID}...");
             bool result = ServerSSLUpgrade(NetworkServer.Config.Certificate);
@@ -193,6 +146,120 @@ namespace SocketNetworking.Client
                 Log.Info($"SSL Failure, disconnecting client...");
             }
             return result;
+        }
+
+
+        protected override void HandleLocalClient(PacketHeader header, byte[] data)
+        {
+            switch (header.Type)
+            {
+                case PacketType.SSLUpgrade:
+                    SSLUpgradePacket ssLUpgradePacket = new SSLUpgradePacket();
+                    ssLUpgradePacket.Deserialize(data);
+                    if (ssLUpgradePacket.Continue)
+                    {
+                        ConfirmSSL();
+                        NoPacketSending = false;
+                        break;
+                    }
+                    else
+                    {
+                        NoPacketSending = true;
+                        bool attemptResult = ClientTrySSLUpgrade();
+                        SSLUpgradePacket upgradePacketResult = new SSLUpgradePacket()
+                        {
+                            Result = attemptResult,
+                        };
+                        if (!attemptResult)
+                        {
+                            NoPacketSending = false;
+                            Disconnect("SSL Handshake failure");
+                        }
+                        SendImmediate(upgradePacketResult);
+                    }
+                    return;
+                default:
+                    base.HandleLocalClient(header, data);
+                    break;
+            }
+        }
+
+        protected override void HandleRemoteClient(PacketHeader header, byte[] data)
+        {
+            switch (header.Type)
+            {
+                case PacketType.ClientData:
+                    ClientDataPacket clientDataPacket = new ClientDataPacket();
+                    clientDataPacket.Deserialize(data);
+                    if (clientDataPacket.Configuration.Protocol != NetworkServer.ServerConfiguration.Protocol)
+                    {
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Protocol} Got: {clientDataPacket.Configuration.Protocol}");
+                        break;
+                    }
+                    if (clientDataPacket.Configuration.Version != NetworkServer.ServerConfiguration.Version)
+                    {
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
+                        break;
+                    }
+                    ServerDataPacket serverDataPacket = new ServerDataPacket
+                    {
+                        YourClientID = _clientId,
+                        Configuration = NetworkServer.ServerConfiguration,
+                        UpgradeToSSL = NetworkServer.Config.Certificate != null && SupportsSSL,
+                    };
+                    SendImmediate(serverDataPacket);
+                    //ServerSyncPackets();
+                    if (serverDataPacket.UpgradeToSSL && SupportsSSL)
+                    {
+                        NoPacketSending = true;
+                        SSLUpgradePacket upgradePacket = new SSLUpgradePacket();
+                        SendImmediate(upgradePacket);
+                        ServerTrySSLUpgrade();
+                    }
+                    else
+                    {
+                        if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
+                        {
+                            ServerBeginEncryption();
+                        }
+                        else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
+                        {
+                            Ready = true;
+                        }
+                    }
+                    CurrentConnectionState = ConnectionState.Connected;
+                    InvokeClientIdUpdated();
+                    return;
+                case PacketType.SSLUpgrade:
+                    SSLUpgradePacket sslUpgradePacket = new SSLUpgradePacket();
+                    sslUpgradePacket.Deserialize(data);
+                    if (sslUpgradePacket.Result)
+                    {
+                        SSLUpgradePacket sslUpgradeResponse = new SSLUpgradePacket()
+                        {
+                            Continue = true,
+                        };
+                        SendImmediate(sslUpgradeResponse);
+                        ConfirmSSL();
+                        NoPacketSending = false;
+                        if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
+                        {
+                            ServerBeginEncryption();
+                        }
+                        else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
+                        {
+                            Ready = true;
+                        }
+                    }
+                    else
+                    {
+                        Disconnect("SSL Handshake failure");
+                    }
+                    return;
+                default:
+                    base.HandleRemoteClient(header, data);
+                    break;
+            }
         }
     }
 }

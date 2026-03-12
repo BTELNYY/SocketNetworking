@@ -43,6 +43,9 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Initializes the NetworkClient, sets up logging, the <see cref="NetworkEncryption"/> manager as as well as the <see cref="NetworkStreams"/> support.
+        /// </summary>
         protected NetworkClient() : base()
         {
             Log = new Log()
@@ -151,6 +154,11 @@ namespace SocketNetworking.Client
         /// </summary>
         public event Action ClientIdUpdated;
 
+        protected void InvokeClientIdUpdated()
+        {
+            ClientIdUpdated?.Invoke();
+        }
+
         /// <summary>
         /// Called when the <see cref="EncryptionState"/> has been set to <see cref="EncryptionState.SymmetricalReady"/> or higher.
         /// </summary>
@@ -248,11 +256,6 @@ namespace SocketNetworking.Client
         public long Latency => _latency;
 
         /// <summary>
-        /// Does this client support SSL? By default, only <see cref="TcpNetworkClient"/>s and <see cref="MixedNetworkClient"/>s support SSL.
-        /// </summary>
-        public virtual bool SupportsSSL { get; } = false;
-
-        /// <summary>
         /// Provides the <see cref="SocketNetworking.Log"/> instance for this client. The <see cref="Log.Prefix"/> is set to contain the client ID for logging purposes.
         /// </summary>
         public Log Log { get; }
@@ -278,7 +281,7 @@ namespace SocketNetworking.Client
         public static readonly HashSet<NetworkClient> Clients = new HashSet<NetworkClient>();
 
 
-        private int _clientId = 0;
+        protected int _clientId = 0;
 
         /// <summary>
         /// The clients Network Synced ID
@@ -354,11 +357,11 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Returns the Address to which the socket is connected too, In the format IP:Port
         /// </summary>
-        public string ConnectedIPAndPort
+        public virtual string ConnectedIPAndPort
         {
             get
             {
-                IPEndPoint remoteIpEndPoint = Transport.Peer;
+                IPEndPoint remoteIpEndPoint = ConnectedPeer;
                 return $"{remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}";
             }
         }
@@ -366,11 +369,11 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Returns the connection IP
         /// </summary>
-        public string ConnectedHostname
+        public virtual string ConnectedHostname
         {
             get
             {
-                IPEndPoint remoteIpEndPoint = Transport.Peer;
+                IPEndPoint remoteIpEndPoint = ConnectedPeer;
                 return $"{remoteIpEndPoint.Address}";
             }
         }
@@ -378,12 +381,20 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Returns the connection port
         /// </summary>
-        public int ConnectedPort
+        public virtual int ConnectedPort
         {
             get
             {
-                IPEndPoint remoteIpEndPoint = Transport.Peer;
+                IPEndPoint remoteIpEndPoint = ConnectedPeer;
                 return remoteIpEndPoint.Port;
+            }
+        }
+
+        public virtual IPEndPoint ConnectedPeer
+        {
+            get
+            {
+                return Transport.Peer;
             }
         }
 
@@ -493,7 +504,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// <see cref="bool"/> which determines if the client has connected to a server
         /// </summary>
-        public bool IsTransportConnected
+        public virtual bool IsTransportConnected
         {
             get
             {
@@ -512,7 +523,7 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Determines if the client is connected to anything.
         /// </summary>
-        public bool IsConnected
+        public virtual bool IsConnected
         {
             get
             {
@@ -777,21 +788,6 @@ namespace SocketNetworking.Client
             timer.Start();
         }
 
-        protected virtual void ConfirmSSL()
-        {
-            throw new NotImplementedException();
-        }
-
-        protected virtual bool ClientTrySSLUpgrade()
-        {
-            throw new NotImplementedException();
-        }
-
-        protected virtual bool ServerTrySSLUpgrade()
-        {
-            throw new NotImplementedException();
-        }
-
         #endregion
 
         #region Init
@@ -819,33 +815,23 @@ namespace SocketNetworking.Client
         /// <param name="clientId">
         /// Given ClientID
         /// </param>
-        /// <param name="socket">
+        /// <param name="transport">
         /// The <see cref="NetworkTransport"/> object which handles data transport.
         /// </param>
-        public virtual void InitRemoteClient(int clientId, NetworkTransport socket)
+        public virtual void InitRemoteClient(int clientId, NetworkTransport transport)
         {
             _clientId = clientId;
-            //Log.Debug("Update ClientID");
             Log.Prefix = $"[Client {clientId}]";
-            Transport = socket;
-            //Log.Debug("Set Transport");
+            Transport = transport;
+            transport.Client = this;
             _clientLocation = ClientLocation.Remote;
             if (NetworkServer.Authenticator != null)
             {
-                //Log.Debug("Set auth provider.");
                 AuthenticationProvider = (AuthenticationProvider)Activator.CreateInstance(NetworkServer.Authenticator);
             }
-            //Log.Debug("OnRemoteClientConnected Subscribe");
             ClientConnected += OnRemoteClientConnected;
-            //Log.Debug("OnRemoteClientConnected Fire event");
             ClientConnected?.Invoke();
-            //Log.Debug("Client Connected invoke!");
             ReadyStateChanged += OnReadyStateChanged;
-            //Log.Debug("ReadyStateChanged subscribe!");
-            //_packetReaderThread = new Thread(PacketReaderThreadMethod);
-            //_packetReaderThread.Start();
-            //_packetSenderThread = new Thread(PacketSenderThreadMethod);
-            //_packetSenderThread.Start();
         }
 
         /// <summary>
@@ -858,6 +844,10 @@ namespace SocketNetworking.Client
                 throw new InvalidOperationException("Having several active clients is not allowed.");
             }
             _instance = this;
+            if (Transport != null)
+            {
+                Transport.Client = this;
+            }
             _clientLocation = ClientLocation.Local;
             ClientConnected += OnLocalClientConnected;
         }
@@ -878,7 +868,7 @@ namespace SocketNetworking.Client
         /// <returns>
         /// A <see cref="bool"/> indicating connection success. Note this only returns the status of the socket connection, not of the full connection action. E.g. you can still fail to connect if the server refuses to accept the client.
         /// </returns>
-        public bool Connect(string hostname, ushort port)
+        public virtual bool Connect(string hostname, ushort port)
         {
             if (CurrentClientLocation == ClientLocation.Remote)
             {
@@ -904,6 +894,10 @@ namespace SocketNetworking.Client
                     else
                     {
                         finalHostname = entry.AddressList[0].ToString();
+                    }
+                    if (hostname == "localhost")
+                    {
+                        finalHostname = "localhost";
                     }
                 }
                 catch (Exception ex)
@@ -934,6 +928,34 @@ namespace SocketNetworking.Client
             }
             StartClient();
             return true;
+        }
+
+        public virtual async Task DisconnectAsync(string message)
+        {
+            ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket
+            {
+                State = ConnectionState.Disconnected,
+                Reason = message
+            };
+            await SendImmediateAsync(connectionUpdatePacket);
+            _connectionState = ConnectionState.Disconnected;
+            NetworkErrorData errorData = new NetworkErrorData("Disconnected. Reason: " + connectionUpdatePacket.Reason, false);
+            ConnectionError?.Invoke(errorData);
+            ClientDisconnected?.Invoke();
+            if (CurrentClientLocation == ClientLocation.Remote)
+            {
+                Log.Info($"Disconnecting Client {ClientID} for " + message);
+            }
+            if (CurrentClientLocation == ClientLocation.Local)
+            {
+                Log.Info("Disconnecting from server. Reason: " + message);
+            }
+            StopClient();
+        }
+
+        public virtual async Task DisconnectAsync()
+        {
+            await DisconnectAsync("Disconnected");
         }
 
         /// <summary>
@@ -1006,6 +1028,9 @@ namespace SocketNetworking.Client
             GC.Collect();
         }
 
+        /// <summary>
+        /// Called in <see cref="StopClient"/> when the client is stopping, and is a local client.
+        /// </summary>
         protected virtual void OnLocalStopClient()
         {
             NetworkManager.SendDisconnectedPulse(this);
@@ -1017,12 +1042,18 @@ namespace SocketNetworking.Client
             _packetSenderThread = null;
         }
 
+        /// <summary>
+        /// Called in <see cref="StopClient"/> when the client is stopping, and is a remote client.
+        /// </summary>
         protected virtual void OnRemoteStopClient()
         {
             NetworkServer.RemoveClient(this);
         }
 
-        void StartClient()
+        /// <summary>
+        /// Called internally to start the client. Does not connect to anything, just prepares the system to work.
+        /// </summary>
+        protected virtual void StartClient()
         {
             if (CurrentClientLocation == ClientLocation.Remote)
             {
@@ -1035,8 +1066,6 @@ namespace SocketNetworking.Client
                 return;
             }
             Log.Info("Starting client!");
-            //Log.Debug("Threads Create")
-            //Aborting isn't technically needed but....
 #if NET48
             _packetReaderThread?.Abort();
             _packetSenderThread?.Abort();
@@ -1112,6 +1141,43 @@ namespace SocketNetworking.Client
         }
 
         /// <summary>
+        /// Sends the <paramref name="packet"/> immediately. Async
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
+        public virtual async Task SendImmediateAsync(Packet packet)
+        {
+            if (NoPacketHandling)
+            {
+                //Log.Debug("No packet handling!");
+                return;
+            }
+            if (!Transport.IsConnected)
+            {
+                //Log.Debug("Transport not connected?");
+                return;
+            }
+            PreparePacket(ref packet);
+            byte[] fullBytes = SerializePacket(packet);
+            try
+            {
+                //Log.Debug($"Send to {packet.Destination}");
+                Exception ex = await Transport.SendAsync(fullBytes, packet.Destination);
+                if (ex != null)
+                {
+                    throw ex;
+                }
+                //Log.Debug("Sent!");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet immediate! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                ConnectionError?.Invoke(networkErrorData);
+            }
+        }
+
+        /// <summary>
         /// Queues a <see cref="Packet"/> to be sent through the <see cref="Transport"/>.
         /// If <see cref="IsTransportConnected"/> is false, this method will return early, not sending anything.
         /// </summary>
@@ -1126,7 +1192,6 @@ namespace SocketNetworking.Client
             }
             else
             {
-                //Log.Debug("Enqueue packet");
                 _toSendPackets.Enqueue(packet);
                 if (ManualPacketSend)
                 {
@@ -1181,9 +1246,20 @@ namespace SocketNetworking.Client
         /// <param name="target"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
+        [Obsolete]
         public void NetworkInvoke(object target, string methodName, params object[] args)
         {
             NetworkManager.NetworkInvoke(target, this, methodName, args);
+        }
+
+        /// <summary>
+        /// Peforms an Rpc on the current client given the <paramref name="target"/> and <paramref name="args"/>. Return type is ignored.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="args"></param>
+        public void NetworkInvokeOnClient(Delegate target, params object[] args)
+        {
+            NetworkManager.NetworkInvoke(this, target, true, args);
         }
 
         /// <summary>
@@ -1191,6 +1267,7 @@ namespace SocketNetworking.Client
         /// </summary>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
+        [Obsolete]
         public void NetworkInvokeOnClient(string methodName, params object[] args)
         {
             NetworkManager.NetworkInvoke(this, this, methodName, args);
@@ -1217,9 +1294,16 @@ namespace SocketNetworking.Client
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
         /// <returns></returns>
+        [Obsolete]
         public T NetworkInvokeBlocking<T>(object obj, string methodName, float maxTimeMs = 5000, params object[] args)
         {
             return NetworkManager.NetworkInvokeBlocking<T>(obj, this, methodName, args, maxTimeMs);
+        }
+
+
+        public T NetworkInvokeBlocking<T>(Delegate target, float maxTimeMs = 5000, params object[] args)
+        {
+            return NetworkManager.NetworkInvokeBlocking<T>(this, target, args, maxTimeMs);
         }
 
         /// <summary>
@@ -1229,9 +1313,15 @@ namespace SocketNetworking.Client
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <returns></returns>
+        [Obsolete]
         public NetworkInvocationCallback<T> NetworkInvokeBlockingCallback<T>(string methodName, params object[] args)
         {
             return NetworkManager.NetworkInvoke<T>(this, this, methodName, args);
+        }
+
+        public NetworkInvocationCallback<T> NetworkInvokeBlockingCallback<T>(Delegate @delegate, params object[] args)
+        {
+            return NetworkManager.NetworkInvoke<T>(this, @delegate, args);
         }
 
         #endregion
@@ -1272,6 +1362,9 @@ namespace SocketNetworking.Client
 
         protected ConcurrentQueue<Packet> _toSendPackets = new ConcurrentQueue<Packet>();
 
+        /// <summary>
+        /// Actually performs the sending of the next packet.
+        /// </summary>
         protected virtual void SendNextPacketInternal()
         {
             if (NoPacketHandling)
@@ -1314,6 +1407,47 @@ namespace SocketNetworking.Client
                 }
                 InvokePacketSent(packet);
             }
+        }
+
+        protected virtual async Task SendNextPacketInternalAsync()
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (NoPacketSending)
+            {
+                return;
+            }
+            if (_toSendPackets.IsEmpty)
+            {
+                return;
+            }
+            _toSendPackets.TryDequeue(out Packet packet);
+            PreparePacket(ref packet);
+            if (!InvokePacketSendRequest(packet))
+            {
+                return;
+            }
+            byte[] fullBytes = SerializePacket(packet);
+            try
+            {
+                //Log.Debug($"Sending packet: {packet.ToString()}");
+                //bytesSent += (ulong)fullBytes.Length;
+                Exception ex = await Transport.SendAsync(fullBytes, packet.Destination);
+                if (ex != null)
+                {
+                    throw ex;
+                }
+                //Log.Debug("Packet sent!");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                ConnectionError?.Invoke(networkErrorData);
+            }
+            InvokePacketSent(packet);
         }
 
         /// <summary>
@@ -1386,7 +1520,7 @@ namespace SocketNetworking.Client
             if (packetDataBytes.Length > 1024 && !packet.Flags.HasFlag(PacketFlags.Compressed))
             {
                 packet.Flags |= PacketFlags.Compressed;
-                Log.Warning($"Forcing compression, the packet is larger than one kb! ({packetDataBytes.Length})");
+                //Log.Warning($"Forcing compression, the packet is larger than one kb! ({packetDataBytes.Length})");
                 return SerializePacket(packet);
             }
             if (packet.Flags.HasFlag(PacketFlags.Compressed))
@@ -1473,6 +1607,19 @@ namespace SocketNetworking.Client
             SendNextPacketInternal();
         }
 
+        private async Task RawWriterAsync()
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (_manualPacketSend)
+            {
+                return;
+            }
+            await SendNextPacketInternalAsync();
+        }
+
         #endregion
 
         #region Receiving
@@ -1512,6 +1659,34 @@ namespace SocketNetworking.Client
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
+            //bytesReceived += (ulong)packet.Item1.Length;
+            if (packet.Item1 == null)
+            {
+                Log.Warning("Transport received a null byte array.");
+                return;
+            }
+            DeserializeRetry(packet.Item1, packet.Item3);
+        }
+
+        protected virtual async Task RawReaderAsync()
+        {
+            if (NoPacketHandling)
+            {
+                return;
+            }
+            if (!IsTransportConnected)
+            {
+                StopClient();
+                return;
+            }
+            //Log.Debug("Do latency check!");
+            DoLatencyCheck();
+            if (!Transport.DataAvailable)
+            {
+                //Log.Debug("No data on transport!");
+                return;
+            }
+            (byte[], Exception, IPEndPoint) packet = await Transport.ReceiveAsync();
             //bytesReceived += (ulong)packet.Item1.Length;
             if (packet.Item1 == null)
             {
@@ -1708,32 +1883,6 @@ namespace SocketNetworking.Client
                         SendLog(ex.Message, LogSeverity.Error);
                     }
                     break;
-                case PacketType.SSLUpgrade:
-                    SSLUpgradePacket sslUpgradePacket = new SSLUpgradePacket();
-                    sslUpgradePacket.Deserialize(data);
-                    if (sslUpgradePacket.Result)
-                    {
-                        SSLUpgradePacket sslUpgradeResponse = new SSLUpgradePacket()
-                        {
-                            Continue = true,
-                        };
-                        SendImmediate(sslUpgradeResponse);
-                        ConfirmSSL();
-                        NoPacketSending = false;
-                        if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
-                        {
-                            ServerBeginEncryption();
-                        }
-                        else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
-                        {
-                            Ready = true;
-                        }
-                    }
-                    else
-                    {
-                        Disconnect("SSL Handshake failure");
-                    }
-                    break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
                     connectionUpdatePacket.Deserialize(data);
@@ -1782,27 +1931,15 @@ namespace SocketNetworking.Client
                     {
                         YourClientID = _clientId,
                         Configuration = NetworkServer.ServerConfiguration,
-                        UpgradeToSSL = NetworkServer.Config.Certificate != null && SupportsSSL,
                     };
                     SendImmediate(serverDataPacket);
-                    //ServerSyncPackets();
-                    if (serverDataPacket.UpgradeToSSL && SupportsSSL)
+                    if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
                     {
-                        NoPacketSending = true;
-                        SSLUpgradePacket upgradePacket = new SSLUpgradePacket();
-                        SendImmediate(upgradePacket);
-                        ServerTrySSLUpgrade();
+                        ServerBeginEncryption();
                     }
-                    else
+                    else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
                     {
-                        if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
-                        {
-                            ServerBeginEncryption();
-                        }
-                        else if (NetworkServer.Config.DefaultReady && NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
-                        {
-                            Ready = true;
-                        }
+                        Ready = true;
                     }
                     CurrentConnectionState = ConnectionState.Connected;
                     ClientIdUpdated?.Invoke();
@@ -1812,15 +1949,15 @@ namespace SocketNetworking.Client
                     networkInvocationPacket.Deserialize(data);
                     try
                     {
-                        NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                        NetworkManager.NetworkInvokeInternal(networkInvocationPacket, this);
                     }
                     catch (Exception ex)
                     {
-                        Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
+                        Log.Warning($"Network Invocation Failed! Method Index: {networkInvocationPacket.MethodIndex}, Error: {ex}");
                         NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket
                         {
                             Success = false,
-                            ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message,
+                            ErrorMessage = $"Method: {networkInvocationPacket.MethodIndex} Message: " + ex.Message,
                             Result = SerializedData.NullData,
                             CallbackID = networkInvocationPacket.CallbackID,
                             IgnoreResult = false
@@ -1832,12 +1969,12 @@ namespace SocketNetworking.Client
                     NetworkInvokationResultPacket networkInvocationResultPacket = new NetworkInvokationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
                     //Log.Debug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
-                    NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
+                    NetworkManager.NetworkInvokeInternal(networkInvocationResultPacket, this);
                     break;
                 case PacketType.Encryption:
                     EncryptionPacket encryptionPacket = new EncryptionPacket();
                     encryptionPacket.Deserialize(data);
-                    ////Log.Info($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
+                    //Log.Info($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
                     switch (encryptionPacket.EncryptionFunction)
                     {
                         case EncryptionFunction.None:
@@ -1850,7 +1987,7 @@ namespace SocketNetworking.Client
                             };
                             Send(gotYourPublicKey);
                             EncryptionState = EncryptionState.AsymmetricalReady;
-                            ////Log.Info($"Got Asymmetrical Encryption Key, ID: {ClientID}");
+                            //Log.Info($"Got Asymmetrical Encryption Key, ID: {ClientID}");
                             EncryptionPacket sendSymKey = new EncryptionPacket
                             {
                                 EncryptionFunction = EncryptionFunction.SymmetricalKeySend,
@@ -2048,7 +2185,12 @@ namespace SocketNetworking.Client
                     _clientId = serverDataPacket.YourClientID;
                     Log.Prefix = $"[Client {_clientId}]";
                     Log.Info("New Client ID: " + _clientId.ToString());
-                    Log.Info("Server Supports SSL? " + serverDataPacket.UpgradeToSSL);
+                    string headerString = "";
+                    foreach (string key in serverDataPacket.Headers.Keys)
+                    {
+                        headerString += $"{key}: {serverDataPacket.Headers[key]}, ";
+                    }
+                    Log.Info("Headers: " + headerString);
                     if (serverDataPacket.Configuration.Protocol != ClientConfiguration.Protocol || serverDataPacket.Configuration.Version != ClientConfiguration.Version)
                     {
                         Disconnect($"Server protocol mismatch. Expected: {ClientConfiguration} Got: {serverDataPacket.Configuration}");
@@ -2056,31 +2198,6 @@ namespace SocketNetworking.Client
                     }
                     Log.Info(serverDataPacket.Configuration.ToString());
                     ClientIdUpdated?.Invoke();
-                    break;
-                case PacketType.SSLUpgrade:
-                    SSLUpgradePacket ssLUpgradePacket = new SSLUpgradePacket();
-                    ssLUpgradePacket.Deserialize(data);
-                    if (ssLUpgradePacket.Continue)
-                    {
-                        ConfirmSSL();
-                        NoPacketSending = false;
-                        break;
-                    }
-                    else
-                    {
-                        NoPacketSending = true;
-                        bool attemptResult = ClientTrySSLUpgrade();
-                        SSLUpgradePacket upgradePacketResult = new SSLUpgradePacket()
-                        {
-                            Result = attemptResult,
-                        };
-                        if (!attemptResult)
-                        {
-                            NoPacketSending = false;
-                            Disconnect("SSL Handshake failure");
-                        }
-                        SendImmediate(upgradePacketResult);
-                    }
                     break;
                 case PacketType.ConnectionStateUpdate:
                     ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket();
@@ -2112,15 +2229,15 @@ namespace SocketNetworking.Client
                     //Log.Debug($"Network Invocation: ObjectID: {networkInvocationPacket.NetworkObjectTarget}, Method: {networkInvocationPacket.MethodName}, Arguments Count: {networkInvocationPacket.Arguments.Count}");
                     try
                     {
-                        NetworkManager.NetworkInvoke(networkInvocationPacket, this);
+                        NetworkManager.NetworkInvokeInternal(networkInvocationPacket, this);
                     }
                     catch (Exception ex)
                     {
-                        Log.Warning($"Network Invocation Failed! Method {networkInvocationPacket.MethodName}, Error: {ex}");
+                        Log.Warning($"Network Invocation Failed! Method Index:  {networkInvocationPacket.MethodIndex}, Error: {ex}");
                         NetworkInvokationResultPacket errorPacket = new NetworkInvokationResultPacket
                         {
                             Success = false,
-                            ErrorMessage = $"Method: {networkInvocationPacket.MethodName} Message: " + ex.Message,
+                            ErrorMessage = $"Method: {networkInvocationPacket.MethodIndex} Message: " + ex.Message,
                             Result = SerializedData.NullData,
                             CallbackID = networkInvocationPacket.CallbackID,
                             IgnoreResult = false
@@ -2132,13 +2249,13 @@ namespace SocketNetworking.Client
                     NetworkInvokationResultPacket networkInvocationResultPacket = new NetworkInvokationResultPacket();
                     networkInvocationResultPacket.Deserialize(data);
                     //Log.Debug($"NetworkInvocationResult: CallbackID: {networkInvocationResultPacket.CallbackID}, Success?: {networkInvocationResultPacket.Success}, Error Message: {networkInvocationResultPacket.ErrorMessage}");
-                    NetworkManager.NetworkInvoke(networkInvocationResultPacket, this);
+                    NetworkManager.NetworkInvokeInternal(networkInvocationResultPacket, this);
                     break;
                 case PacketType.Encryption:
                     EncryptionPacket encryptionPacket = new EncryptionPacket();
                     encryptionPacket.Deserialize(data);
                     EncryptionPacket encryptionReceive = new EncryptionPacket();
-                    ////Log.Info($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
+                    //Log.Info($"Encryption request! Function {encryptionPacket.EncryptionFunction}");
                     switch (encryptionPacket.EncryptionFunction)
                     {
                         case EncryptionFunction.None:
@@ -2232,10 +2349,15 @@ namespace SocketNetworking.Client
         /// <summary>
         /// Reads the next packet and handles it. (Non-blocking)
         /// </summary>
-        internal void ReadNext()
+        public void ReadNext()
         {
             RawReader();
             //Log.Debug("Reader ran");
+        }
+
+        public async Task ReadNextAsync()
+        {
+            await RawReaderAsync();
         }
 
         /// <summary>
@@ -2247,6 +2369,15 @@ namespace SocketNetworking.Client
             //Log.Debug("Writer ran");
         }
 
+        /// <summary>
+        /// Writes the next packet asynchronously.
+        /// </summary>
+        /// <returns></returns>
+        internal async Task WriteNextAsync()
+        {
+            await RawWriterAsync();
+        }
+
         #endregion
 
         #region Keep Alive / Latency
@@ -2256,6 +2387,9 @@ namespace SocketNetworking.Client
 
         DateTime _lastSent = DateTime.UtcNow;
 
+        /// <summary>
+        /// Performs the latency check.
+        /// </summary>
         protected virtual void DoLatencyCheck()
         {
             if (DateTime.UtcNow - _lastSent >= TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive))
@@ -2264,6 +2398,10 @@ namespace SocketNetworking.Client
             }
         }
 
+        /// <summary>
+        /// Updates the current latency.
+        /// </summary>
+        /// <param name="packet"></param>
         protected virtual void DoLatency(KeepAlivePacket packet)
         {
             _latency = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - packet.SendTime;
@@ -2354,7 +2492,7 @@ namespace SocketNetworking.Client
         /// <param name="severity"></param>
         public void SendLog(string message, LogSeverity severity)
         {
-            NetworkInvokeOnClient(nameof(GetError), new object[] { message, (int)severity });
+            NetworkInvokeOnClient((Action<NetworkHandle, string, int>)(GetError), new object[] { message, (int)severity });
         }
 
         [NetworkInvokable(NetworkDirection.Any)]
@@ -2423,7 +2561,7 @@ namespace SocketNetworking.Client
                     {
                         return x.SpawnPriority - y.SpawnPriority;
                     });
-                    NetworkInvokeOnClient(nameof(OnSyncBegin), new object[] { objects.Count });
+                    NetworkInvokeOnClient((Action<NetworkHandle, int>)(OnSyncBegin), new object[] { objects.Count });
                     foreach (INetworkObject @object in objects)
                     {
                         @object.NetworkSpawn(this);
@@ -2447,7 +2585,7 @@ namespace SocketNetworking.Client
             {
                 return x.SpawnPriority - y.SpawnPriority;
             });
-            NetworkInvokeOnClient(nameof(OnSyncBegin), new object[] { objects.Count });
+            NetworkInvokeOnClient((Action<NetworkHandle, int>)(OnSyncBegin), new object[] { objects.Count });
             foreach (INetworkObject @object in objects)
             {
                 @object.NetworkSpawn(this);
@@ -2475,7 +2613,7 @@ namespace SocketNetworking.Client
                 avatar.ObjectVisibilityMode = ObjectVisibilityMode.Everyone;
             }
             avatar.NetworkSpawn();
-            NetworkInvokeOnClient(nameof(GetClientAvatar), avatar.NetworkID);
+            NetworkInvokeOnClient((Action<NetworkHandle, int>)GetClientAvatar, avatar.NetworkID);
             Log.Info($"Avatar Specify: {avatar.NetworkID}");
             _avatar = avatar;
         }
@@ -2496,12 +2634,18 @@ namespace SocketNetworking.Client
         #endregion
     }
 
+    /// <summary>
+    /// Represents a partially proccessed packet.
+    /// </summary>
     public struct ReadPacketInfo
     {
         public PacketHeader Header;
         public byte[] Data;
     }
 
+    /// <summary>
+    /// Represents error data.
+    /// </summary>
     public struct NetworkErrorData
     {
         public string Error { get; private set; }

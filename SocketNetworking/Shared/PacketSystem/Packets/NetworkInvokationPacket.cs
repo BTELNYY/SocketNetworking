@@ -11,7 +11,10 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public Type TargetType { get; set; }
 
+        [Obsolete]
         public string MethodName { get; set; } = string.Empty;
+
+        public int MethodIndex { get; set; } = 0;
 
         public int CallbackID { get; set; } = 0;
 
@@ -24,6 +27,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             ByteWriter writer = base.Serialize();
             writer.WriteWrapper<SerializableType, Type>(new SerializableType(TargetType));
             writer.WriteString(MethodName);
+            writer.WriteInt(MethodIndex);
             writer.WriteInt(CallbackID);
             writer.WriteBool(IgnoreResult);
             SerializableList<SerializedData> list = new SerializableList<SerializedData>();
@@ -38,6 +42,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
             ByteReader reader = base.Deserialize(data);
             TargetType = reader.ReadWrapper<SerializableType, Type>();
             MethodName = reader.ReadString();
+            MethodIndex = reader.ReadInt();
             CallbackID = reader.ReadInt();
             IgnoreResult = reader.ReadBool();
             Arguments = reader.ReadPacketSerialized<SerializableList<SerializedData>>().ContainedList;

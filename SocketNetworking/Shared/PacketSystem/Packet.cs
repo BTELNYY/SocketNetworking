@@ -96,7 +96,7 @@ namespace SocketNetworking.Shared.PacketSystem
         /// This method will validate the packet and modify it as needed. For example, it will change flags if need be, or the content if it isn't properly defined.
         /// </summary>
         /// <returns>
-        /// true if the validation suceeds, false otherwise.
+        /// true if the validation succeeds, false otherwise.
         /// </returns>
         public virtual bool ValidatePacket()
         {
@@ -156,10 +156,22 @@ namespace SocketNetworking.Shared.PacketSystem
     /// </summary>
     public struct PacketHeader
     {
+        /// <summary>
+        /// Maximum size of the header (in bytes).
+        /// </summary>
         public const int HeaderLength = 7;
 
+        /// <summary>
+        /// Packet Size, including the initial 4 byte size value. (of this header).
+        /// </summary>
         public int Size;
+        /// <summary>
+        /// Packet Type
+        /// </summary>
         public PacketType Type;
+        /// <summary>
+        /// Packet Flags
+        /// </summary>
         public PacketFlags Flags;
 
 

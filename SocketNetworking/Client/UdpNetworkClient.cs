@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Threading.Tasks;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
@@ -116,6 +117,26 @@ namespace SocketNetworking.Client
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
+            if (packet.Item1 == null)
+            {
+                Log.Warning("Transport Received a null byte array.");
+                return;
+            }
+            DeserializeRetry(packet.Item1, packet.Item3);
+        }
+
+        protected override async Task RawReaderAsync()
+        {
+            if (!IsTransportConnected)
+            {
+                StopClient();
+                return;
+            }
+            if (!UdpTransport.DataAvailable)
+            {
+                return;
+            }
+            (byte[], Exception, IPEndPoint) packet = await Transport.ReceiveAsync();
             if (packet.Item1 == null)
             {
                 Log.Warning("Transport Received a null byte array.");

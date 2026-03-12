@@ -299,7 +299,7 @@ namespace SocketNetworking.Server
             }
         }
 
-        protected readonly bool _isShuttingDown = false;
+        protected bool _isShuttingDown = false;
 
         private static readonly Dictionary<int, NetworkClient> _clients = new Dictionary<int, NetworkClient>();
 
@@ -329,7 +329,7 @@ namespace SocketNetworking.Server
                 ClientHandler handler = new ClientHandler();
                 handlers.Add(handler);
                 Log.Info("Start Thread ID: " + i);
-                handler.Start();
+                //handler.Start();
             }
             _serverThread = new Thread(ServerStartThread);
             ClientConnecting += (sender, req) =>
@@ -396,8 +396,8 @@ namespace SocketNetworking.Server
                     _clients.Add(clientId, client);
                     ClientHandler handler = NextHandler();
                     handler.AddClient(client);
-                    Log.Debug($"Handler Client count: {handler.CurrentClientCount}");
-                    Log.Debug($"Added client. ID: {clientId}, Type: {client.GetType().FullName}");
+                    //Log.Debug($"Handler Client count: {handler.CurrentClientCount}");
+                    //Log.Debug($"Added client. ID: {clientId}, Type: {client.GetType().FullName}");
                 }
             }
         }
@@ -486,13 +486,20 @@ namespace SocketNetworking.Server
                 return;
             }
             ShouldAcceptConnections = false;
+            _isShuttingDown = true;
             List<NetworkClient> _clients = Clients;
             foreach (NetworkClient client in _clients)
             {
                 client.Disconnect("Server shutting down");
             }
+            foreach (ClientHandler handler in handlers)
+            {
+                handler.ClearClients();
+            }
             _clients.Clear();
+#if NET48
             _serverThread.Abort();
+#endif
             ServerStopped?.Invoke();
         }
 
@@ -670,6 +677,7 @@ namespace SocketNetworking.Server
         /// <param name="args"></param>
         /// <param name="readyOnly"></param>
         /// <exception cref="InvalidOperationException"></exception>
+        [Obsolete]
         public static void NetworkInvokeOnAll(object obj, string methodName, object[] args, bool readyOnly = false)
         {
             if (!Active)
@@ -691,6 +699,27 @@ namespace SocketNetworking.Server
             }
         }
 
+        public static void NetworkInvokeOnAll(Delegate target, object[] args, bool readyOnly = false)
+        {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
+            List<NetworkClient> clients = _clients.Values.ToList();
+            if (target.Target is INetworkObject netObj)
+            {
+                clients = clients.Where(x => netObj.CheckVisibility(x)).ToList();
+            }
+            if (readyOnly)
+            {
+                clients = clients.Where(x => x.Ready).ToList();
+            }
+            foreach (NetworkClient client in clients)
+            {
+                client.NetworkInvokeOnClient(target, args);
+            }
+        }
+
         /// <summary>
         /// Runs <see cref="NetworkClient.NetworkInvoke(object, string, object[])"/> on all clients.
         /// </summary>
@@ -698,6 +727,7 @@ namespace SocketNetworking.Server
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <exception cref="InvalidOperationException"></exception>
+        [Obsolete]
         public static void NetworkInvokeOnAll(object obj, string methodName, params object[] args)
         {
             if (!Active)
@@ -725,6 +755,7 @@ namespace SocketNetworking.Server
         /// <param name="filter"></param>
         /// <param name="priority"></param>
         /// <exception cref="InvalidOperationException"></exception>
+        [Obsolete]
         public static void NetworkInvokeOnAll(object obj, string methodName, Predicate<NetworkClient> filter, params object[] args)
         {
             if (!Active)
@@ -743,6 +774,25 @@ namespace SocketNetworking.Server
             }
         }
 
+        public static void NetworkInvokeOnAll(Delegate target, Predicate<NetworkClient> filter, params object[] args)
+        {
+            if (!Active)
+            {
+                throw new InvalidOperationException("Server method called when server is not active!");
+            }
+            List<NetworkClient> clients = _clients.Values.ToList();
+            if (target.Target is INetworkObject netObj)
+            {
+                clients = clients.Where(x => netObj.CheckVisibility(x)).ToList();
+            }
+            clients = clients.Where(x => filter(x)).ToList();
+            foreach (NetworkClient client in clients)
+            {
+                client.NetworkInvokeOnClient(target, args);
+            }
+        }
+
+        [Obsolete]
         public static void NetworkInvokeOnAll(string methodName, object[] args, Predicate<NetworkClient> filter)
         {
             if (!Active)
@@ -757,6 +807,7 @@ namespace SocketNetworking.Server
             }
         }
 
+        [Obsolete]
         public static void NetworkInvokeOnAll(string methodName, object[] args)
         {
             NetworkInvokeOnAll(methodName, args, x => true);

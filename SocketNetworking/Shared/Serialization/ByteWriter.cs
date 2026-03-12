@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using SocketNetworking.Shared.Exceptions;
+using SocketNetworking.Shared.PacketSystem;
 
 namespace SocketNetworking.Shared.Serialization
 {
@@ -196,9 +197,13 @@ namespace SocketNetworking.Shared.Serialization
         {
             lock (_lock)
             {
+                if (data.Length > ushort.MaxValue)
+                {
+                    throw new NetworkConversionException("Byte array too long!");
+                }
                 int oldLength = _workingSetData.Length;
-                int expectedLength = sizeof(int) + data.Length + _workingSetData.Length;
-                WriteInt(data.Length);
+                int expectedLength = sizeof(ushort) + data.Length + _workingSetData.Length;
+                WriteUShort((ushort)data.Length);
                 if (data.Length == 0)
                 {
                     return;
@@ -212,6 +217,57 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
+        /// Writes a byte array with maximum size of <see cref="long.MaxValue"/>.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <exception cref="NetworkConversionException"></exception>
+        public void WriteLongByteArray(byte[] data)
+        {
+            lock (_lock)
+            {
+                int oldLength = _workingSetData.Length;
+                int expectedLength = sizeof(long) + data.Length + _workingSetData.Length;
+                WriteLong(data.LongLength);
+                if (data.Length == 0)
+                {
+                    return;
+                }
+                Write(data);
+                if (_workingSetData.Length != expectedLength)
+                {
+                    throw new NetworkConversionException($"Wrote an invalid byte array! Expected: {expectedLength}, Actual: {_workingSetData.Length}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="Packet"/> to the buffer.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="packet"></param>
+        public void WritePacket<T>(T packet) where T : Packet
+        {
+            lock (_lock)
+            {
+                byte[] packetData = packet.Serialize().Data;
+                WriteInt(packetData.Length);
+                Write(packetData);
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="Guid"/> to the buffer.
+        /// </summary>
+        /// <param name="guid"></param>
+        public void WriteGuid(Guid guid)
+        {
+            lock (_lock)
+            {
+                Write(guid.ToByteArray());
+            }
+        }
+
+        /// <summary>
         /// Writes a <see cref="byte"/> to the buffer.
         /// </summary>
         /// <param name="data"></param>
@@ -220,7 +276,6 @@ namespace SocketNetworking.Shared.Serialization
             lock (_lock)
             {
                 Write(new byte[] { data });
-                //_workingSetData = _workingSetData.Append(data).ToArray();
             }
         }
 
@@ -354,7 +409,7 @@ namespace SocketNetworking.Shared.Serialization
             {
                 byte[] bytes = Encoding.UTF32.GetBytes(data);
                 int oldLength = _workingSetData.Length;
-                int expectedLength = bytes.Length + 4;
+                int expectedLength = bytes.Length + sizeof(ushort);
                 WriteByteArray(bytes);
                 if (oldLength + expectedLength != _workingSetData.Length)
                 {
