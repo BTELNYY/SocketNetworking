@@ -232,7 +232,7 @@ namespace SocketNetworking.Shared
         }
 
         /// <summary>
-        /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your netowrk objects.
+        /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your network objects.
         /// </summary>
         /// <param name="assembly">
         /// The <see cref="Assembly"/> which to scan.

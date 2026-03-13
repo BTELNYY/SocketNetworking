@@ -2492,7 +2492,7 @@ namespace SocketNetworking.Client
         /// <param name="severity"></param>
         public void SendLog(string message, LogSeverity severity)
         {
-            NetworkInvokeOnClient((Action<NetworkHandle, string, int>)(GetError), new object[] { message, (int)severity });
+            NetworkInvokeOnClient((Action<NetworkHandle, string, int>)GetError, new object[] { message, (int)severity });
         }
 
         [NetworkInvokable(NetworkDirection.Any)]
@@ -2561,7 +2561,7 @@ namespace SocketNetworking.Client
                     {
                         return x.SpawnPriority - y.SpawnPriority;
                     });
-                    NetworkInvokeOnClient((Action<NetworkHandle, int>)(OnSyncBegin), new object[] { objects.Count });
+                    NetworkInvokeOnClient((Action<NetworkHandle, int>)OnSyncBegin, new object[] { objects.Count });
                     foreach (INetworkObject @object in objects)
                     {
                         @object.NetworkSpawn(this);
@@ -2585,7 +2585,7 @@ namespace SocketNetworking.Client
             {
                 return x.SpawnPriority - y.SpawnPriority;
             });
-            NetworkInvokeOnClient((Action<NetworkHandle, int>)(OnSyncBegin), new object[] { objects.Count });
+            NetworkInvokeOnClient((Action<NetworkHandle, int>)OnSyncBegin, new object[] { objects.Count });
             foreach (INetworkObject @object in objects)
             {
                 @object.NetworkSpawn(this);

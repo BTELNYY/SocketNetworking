@@ -37,5 +37,18 @@
         "Action": "Start"
       }
     ]
+  },
+  {
+    "Name": "Werewolf",
+    "Projects": [
+      {
+        "Path": "SocketNetworking.Examples\\Werewolf\\Werewolf.Server\\Werewolf.Server.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "SocketNetworking.Examples\\Werewolf\\Werewolf.Client\\Werewolf.Client.csproj",
+        "Action": "Start"
+      }
+    ]
   }
 ]
