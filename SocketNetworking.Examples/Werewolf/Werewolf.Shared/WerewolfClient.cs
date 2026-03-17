@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
-using SocketNetworking.Shared.Attributes;.
+using SocketNetworking.Shared.Attributes;
 
 namespace Werewolf.Shared
 {
