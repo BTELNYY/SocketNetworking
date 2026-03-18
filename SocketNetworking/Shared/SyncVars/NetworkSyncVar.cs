@@ -260,7 +260,7 @@ namespace SocketNetworking.Shared.SyncVars
             this.value = value is T t ? t : default;
             if (!(value is T))
             {
-                Log.GlobalWarning($"Value is not {typeof(T).Name}! It is: {value.GetType().Name}");
+                Log.GlobalWarning($"Value is not {typeof(T).Name}! It is: {value?.GetType().Name}");
             }
             if (who != null)
             {

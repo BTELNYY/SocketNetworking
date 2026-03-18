@@ -207,6 +207,7 @@ namespace SocketNetworking.Client
                         Configuration = NetworkServer.ServerConfiguration,
                         UpgradeToSSL = NetworkServer.Config.Certificate != null && SupportsSSL,
                     };
+                    RemoteAddHeaders(serverDataPacket);
                     SendImmediate(serverDataPacket);
                     //ServerSyncPackets();
                     if (serverDataPacket.UpgradeToSSL && SupportsSSL)

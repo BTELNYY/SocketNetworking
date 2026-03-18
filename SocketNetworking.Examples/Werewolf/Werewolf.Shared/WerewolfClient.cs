@@ -7,6 +7,7 @@ using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.PacketSystem.Packets;
 
 namespace Werewolf.Shared
 {
@@ -20,13 +21,36 @@ namespace Werewolf.Shared
             }
         }
 
+        public override void InitLocalClient()
+        {
+            base.InitLocalClient();
+            AvatarChanged += WerewolfClient_AvatarChanged;
+        }
+
+        private void WerewolfClient_AvatarChanged(SocketNetworking.Shared.NetworkObjects.INetworkAvatar obj)
+        {
+            if (CurrentClientLocation != ClientLocation.Local)
+            {
+                return;
+            }
+            NetworkInvokeOnClient((Action<NetworkHandle, string>)SetName, ClientName);
+        }
+
+        [NetworkInvokable(Direction = NetworkDirection.Client)]
+        private void SetName(NetworkHandle handle, string name)
+        {
+            PlayerAvatar.Name = name;
+        }
+
+        public string ClientName = string.Empty;
+
         public void SendMessage(ChatMessage message)
         {
-            NetworkInvokeOnClient((Action<NetworkHandle, ChatMessage>)RecieveMessage, message);
+            NetworkInvokeOnClient((Action<NetworkHandle, ChatMessage>)ReceiveMessage, message);
         }
 
         [NetworkInvokable(Direction = NetworkDirection.Any)]
-        private void RecieveMessage(NetworkHandle handle, ChatMessage message)
+        private void ReceiveMessage(NetworkHandle handle, ChatMessage message)
         {
 
         }

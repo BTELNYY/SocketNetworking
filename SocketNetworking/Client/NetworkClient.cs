@@ -74,8 +74,14 @@ namespace SocketNetworking.Client
 
         #region Per Client (Non-Static) Events
 
+        /// <summary>
+        /// Called when the <see cref="INetworkAvatar"/> has changed.
+        /// </summary>
         public event Action<INetworkAvatar> AvatarChanged;
 
+        /// <summary>
+        /// Called when the latency has changed.
+        /// </summary>
         public event Action<long> LatencyChanged;
 
         protected void InvokeLatencyChanged(long value)
@@ -184,6 +190,16 @@ namespace SocketNetworking.Client
         protected void InvokePacketSent(Packet packet)
         {
             PacketSent?.Invoke(packet);
+        }
+
+        protected virtual void LocalAddHeaders(ClientDataPacket packet)
+        {
+
+        }
+
+        protected virtual void RemoteAddHeaders(ServerDataPacket packet)
+        {
+
         }
 
         #endregion
@@ -1338,6 +1354,7 @@ namespace SocketNetworking.Client
             {
                 Configuration = ClientConfiguration
             };
+            LocalAddHeaders(dataPacket);
             //Log.Debug(dataPacket.ToString());
             Send(dataPacket);
         }
@@ -1932,6 +1949,7 @@ namespace SocketNetworking.Client
                         YourClientID = _clientId,
                         Configuration = NetworkServer.ServerConfiguration,
                     };
+                    RemoteAddHeaders(serverDataPacket);
                     SendImmediate(serverDataPacket);
                     if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
                     {

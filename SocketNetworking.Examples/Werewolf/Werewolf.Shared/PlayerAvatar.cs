@@ -22,7 +22,7 @@ namespace Werewolf.Shared
         public override void OnBeforeRegister()
         {
             base.OnBeforeRegister();
-            _name = new NetworkSyncVar<string>(this, SocketNetworking.Shared.OwnershipMode.Server);
+            _name = new NetworkSyncVar<string>(this, SocketNetworking.Shared.OwnershipMode.Server, "");
         }
     }
 }
