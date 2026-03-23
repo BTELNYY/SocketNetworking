@@ -59,6 +59,17 @@ namespace SocketNetworking.Misc.Console
             }
         }
 
+        public static void Write(string message, ConsoleColor color)
+        {
+            lock (locker)
+            {
+                ConsoleColor oldColor = System.Console.ForegroundColor;
+                System.Console.ForegroundColor = color;
+                Write(message);
+                System.Console.ForegroundColor = oldColor;
+            }
+        }
+
         public static string ReadLine(string cursor = "> ")
         {
             char[] cursorArray = cursor.ToCharArray();

@@ -38,52 +38,5 @@ namespace Werewolf.Shared
         }
 
         public string ClientName = string.Empty;
-
-        public void SendMessage(ChatMessage message)
-        {
-            NetworkInvokeOnClient((Action<NetworkHandle, ChatMessage>)ReceiveMessage, message);
-        }
-
-        [NetworkInvokable(Direction = NetworkDirection.Any)]
-        private void ReceiveMessage(NetworkHandle handle, ChatMessage message)
-        {
-
-        }
-    }
-
-    public struct ChatMessage : IByteSerializable
-    {
-        public string Message { get; set; }
-
-        public string Name { get; set; }
-
-        public Team TargetChannel { get; set; }
-
-        public int ClientID { get; set; }
-
-        public ByteReader Deserialize(byte[] data)
-        {
-            ByteReader reader = new ByteReader(data);
-            Message = reader.ReadString();
-            Name = reader.ReadString();
-            TargetChannel = (Team)reader.ReadByte();
-            ClientID = reader.ReadInt();
-            return reader;
-        }
-
-        public int GetLength()
-        {
-            return (int)Serialize().Length;
-        }
-
-        public ByteWriter Serialize()
-        {
-            ByteWriter writer = new ByteWriter();
-            writer.WriteString(Message);
-            writer.WriteString(Name);
-            writer.WriteByte((byte)TargetChannel);
-            writer.WriteInt(ClientID);
-            return writer;
-        }
     }
 }

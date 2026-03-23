@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
@@ -142,12 +143,9 @@ namespace SocketNetworking.Shared.Serialization
 
             if (dataType.IsEnum)
             {
-                Enum lastEnum = (Enum)data.LastEnum();
-                int value = (int)(object)lastEnum;
-                dataType = typeof(int);
-                data = Convert.ChangeType(data, typeof(int));
+                dataType = Enum.GetUnderlyingType(data.GetType());
                 sData.Type = data.GetType();
-                return sData;
+                data = Convert.ChangeType(data, dataType);
             }
 
             if (dataType == typeof(Guid))
@@ -262,6 +260,17 @@ namespace SocketNetworking.Shared.Serialization
             return output;
         }
 
+        public static object DeserializeRaw(Type type, byte[] data)
+        {
+            SerializedData sData = new SerializedData()
+            {
+                Data = data,
+                Type = type
+            };
+            object output = Deserialize(sData, out _);
+            return output;
+        }
+
         /// <summary>
         /// Deserializes Data from a <see cref="SerializedData"/> parameter. <paramref name="read"/> is the amount of bytes read.
         /// </summary>
@@ -345,9 +354,10 @@ namespace SocketNetworking.Shared.Serialization
 
             if (data.Type.IsEnum)
             {
-                int value = reader.ReadInt();
+                Type t = data.Type.GetEnumUnderlyingType();
+                object value = DeserializeRaw(t, data.Data);
                 read = reader.ReadBytes;
-                return Convert.ChangeType(value, data.Type);
+                return Enum.Parse(data.Type, value.ToString());
             }
 
             if (data.Type == typeof(Guid))
