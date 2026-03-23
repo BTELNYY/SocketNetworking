@@ -1,4 +1,6 @@
-﻿using SocketNetworking.Shared.NetworkObjects;
+﻿using SocketNetworking;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.SyncVars;
 
 namespace Werewolf.Shared
@@ -22,7 +24,14 @@ namespace Werewolf.Shared
         public override void OnBeforeRegister()
         {
             base.OnBeforeRegister();
-            _name = new NetworkSyncVar<string>(this, SocketNetworking.Shared.OwnershipMode.Server, "");
+            _name = new NetworkSyncVar<string>(this, "", nameof(_name), SocketNetworking.Shared.OwnershipMode.Server);
+            _name.Changed += (x) =>
+            {
+                if (NetworkManager.WhereAmI == ClientLocation.Local)
+                {
+                    Log.GlobalInfo($"Your name was updated to: " + x);
+                }
+            };
         }
     }
 }

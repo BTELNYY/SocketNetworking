@@ -34,6 +34,7 @@ namespace Werewolf.Client
             }
             Port = ushort.Parse(portStr);
             WerewolfClient client = new WerewolfClient();
+            client.ClientConfiguration = new SocketNetworking.Shared.Messages.ProtocolConfiguration("Werewolf", "1.0.0");
             client.ClientName = Name;
             client.InitLocalClient();
             client.Connect(IP, Port);

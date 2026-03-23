@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SocketNetworking.Client;
 using SocketNetworking.Shared;
-using SocketNetworking.Shared.Serialization;
 using SocketNetworking.Shared.Attributes;
-using SocketNetworking.Shared.PacketSystem.Packets;
+using SocketNetworking.Shared.Serialization;
 
 namespace Werewolf.Shared
 {

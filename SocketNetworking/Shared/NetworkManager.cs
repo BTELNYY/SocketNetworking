@@ -201,7 +201,7 @@ namespace SocketNetworking.Shared
         {
             ImportCustomPackets(target);
             List<Type> applicableTypes = target.GetTypes().Where(x => x.IsSubclassDeep(typeof(NetworkClient)) || x.GetInterfaces().Contains(typeof(INetworkObject)) || x.GetInterfaces().Contains(typeof(ITypeWrapper))).ToList();
-            Log.Info($"Importing Assembly! Name: {target.GetName().Name}, Valid Types: {applicableTypes.Count}");
+            Log.Debug($"Importing Assembly! Name: {target.GetName().Name}, Valid Types: {applicableTypes.Count}");
             foreach (Type t in applicableTypes)
             {
                 NetworkObjectData data = GetNetworkObjectData(t);
@@ -275,7 +275,7 @@ namespace SocketNetworking.Shared
                         throw new CustomPacketCollisionException(packet.CustomPacketID, AdditionalPacketTypes[packet.CustomPacketID], packet.GetType());
                     }
                 }
-                Log.Info($"Adding custom packet with ID {packet.CustomPacketID} and name {packet.GetType().Name}");
+                Log.Debug($"Adding custom packet with ID {packet.CustomPacketID} and name {packet.GetType().Name}");
                 AdditionalPacketTypes.Add(packet.CustomPacketID, packet.GetType());
             }
         }
@@ -298,7 +298,7 @@ namespace SocketNetworking.Shared
                 if (customPacketId == -1)
                 {
                     customPacketId = GetAutoPacketID(packet);
-                    Log.Info($"Packet {packet.GetType().Name} has a custom packet ID of -1. Assuming automatic ID assignment. You better PRAY this works the same on the peers. New ID: {customPacketId}");
+                    Log.Debug($"Packet {packet.GetType().Name} has a custom packet ID of -1. Assuming automatic ID assignment. You better PRAY this works the same on the peers. New ID: {customPacketId}");
                 }
                 if (AdditionalPacketTypes.ContainsKey(customPacketId))
                 {
@@ -312,7 +312,7 @@ namespace SocketNetworking.Shared
                         throw new CustomPacketCollisionException(customPacketId, AdditionalPacketTypes[customPacketId], type);
                     }
                 }
-                Log.Info($"Adding custom packet with ID {customPacketId} and name {type.Name}");
+                Log.Debug($"Adding custom packet with ID {customPacketId} and name {type.Name}");
                 AdditionalPacketTypes.Add(customPacketId, type);
             }
         }
@@ -417,7 +417,7 @@ namespace SocketNetworking.Shared
                 TargetType = type
             };
             NetworkObjectSpawners.Add(spawnerStruct);
-            Log.Info($"Registered spawner {spawnerStruct}");
+            Log.Debug($"Registered spawner {spawnerStruct}");
             return true;
         }
 
@@ -509,24 +509,24 @@ namespace SocketNetworking.Shared
                     }
                 }
 
-                Log.Info($"Spawning a new instance of {objType}");
+                Log.Debug($"Spawning a new instance of {objType}");
                 NetworkObjectSpawner objSpawner = GetBestSpawner(objType);
                 INetworkObject netObj;
                 if (objSpawner == null)
                 {
-                    Log.Info($"No spawner found for type {objType}, using Activator.");
+                    Log.Debug($"No spawner found for type {objType}, using Activator.");
                     netObj = (INetworkObject)Activator.CreateInstance(objType);
                 }
                 else
                 {
-                    Log.Info($"Best spawner select for type {objType}.");
+                    Log.Debug($"Best spawner select for type {objType}.");
                     netObj = (INetworkObject)objSpawner.Spawner.Invoke(packet, handle);
                 }
                 if (netObj == null)
                 {
                     throw new NullReferenceException($"Failed to spawn {objType.FullName}");
                 }
-                Log.Info($"Object created: {netObj}");
+                Log.Debug($"Object created: {netObj}");
                 netObj.NetworkID = packet.NewNetworkID;
                 netObj.OwnerClientID = packet.OwnerID;
                 netObj.OwnershipMode = packet.OwnershipMode;
@@ -912,7 +912,7 @@ namespace SocketNetworking.Shared
             {
                 return PreCache.FirstOrDefault(x => x.TargetObject == t);
             }
-            Log.Info($"Type {t.Name} has never been seen before, registering.");
+            Log.Debug($"Type {t.Name} has never been seen before, registering.");
             Type baseType = t.BaseType;
             if (t.GetInterfaces().Contains(typeof(ITypeWrapper)))
             {
@@ -929,7 +929,7 @@ namespace SocketNetworking.Shared
                     {
                         TypeToTypeWrapper.Add(targetType, t);
                     }
-                    Log.Info($"Wrapper {obj.GetType().Name} maps to type {targetType.Name}");
+                    Log.Debug($"Wrapper {obj.GetType().Name} maps to type {targetType.Name}");
                 }
             }
             NetworkObjectData networkObjectCache = new NetworkObjectData();
@@ -1013,7 +1013,7 @@ namespace SocketNetworking.Shared
                 syncVars.Add(field);
             }
             networkObjectCache.SyncVars = syncVars;
-            Log.Info($"Type {t.Name} has the following network object information: {networkObjectCache.ToString()}");
+            Log.Debug($"Type {t.Name} has the following network object information: {networkObjectCache.ToString()}");
             return networkObjectCache;
         }
 

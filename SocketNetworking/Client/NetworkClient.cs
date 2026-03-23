@@ -1934,20 +1934,20 @@ namespace SocketNetworking.Client
                 case PacketType.ClientData:
                     ClientDataPacket clientDataPacket = new ClientDataPacket();
                     clientDataPacket.Deserialize(data);
-                    if (clientDataPacket.Configuration.Protocol != NetworkServer.ServerConfiguration.Protocol)
+                    if (clientDataPacket.Configuration.Protocol != NetworkServer.ProtocolConfiguration.Protocol)
                     {
-                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Protocol} Got: {clientDataPacket.Configuration.Protocol}");
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ProtocolConfiguration.Protocol} Got: {clientDataPacket.Configuration.Protocol}");
                         break;
                     }
-                    if (clientDataPacket.Configuration.Version != NetworkServer.ServerConfiguration.Version)
+                    if (clientDataPacket.Configuration.Version != NetworkServer.ProtocolConfiguration.Version)
                     {
-                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ProtocolConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
                         break;
                     }
                     ServerDataPacket serverDataPacket = new ServerDataPacket
                     {
                         YourClientID = _clientId,
-                        Configuration = NetworkServer.ServerConfiguration,
+                        Configuration = NetworkServer.ProtocolConfiguration,
                     };
                     RemoteAddHeaders(serverDataPacket);
                     SendImmediate(serverDataPacket);
@@ -2623,7 +2623,7 @@ namespace SocketNetworking.Client
         /// <param name="avatar"></param>
         public void ServerSpecifyAvatar(INetworkAvatar avatar)
         {
-            NetworkManager.AddNetworkObject(avatar);
+            //NetworkManager.AddNetworkObject(avatar);
             avatar.OwnerClientID = ClientID;
             avatar.OwnershipMode = OwnershipMode.Client;
             if (avatar.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)

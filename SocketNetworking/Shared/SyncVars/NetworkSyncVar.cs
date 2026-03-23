@@ -209,6 +209,12 @@ namespace SocketNetworking.Shared.SyncVars
             Name = name;
         }
 
+        public NetworkSyncVar(INetworkObject ownerObject, T value, string name, OwnershipMode mode) : this(ownerObject, value)
+        {
+            Name = name;
+            _mode = mode;
+        }
+
         public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner)
         {
             OwnerObject = ownerObject;

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using SocketNetworking;
+﻿using SocketNetworking;
 using SocketNetworking.Server;
 using Werewolf.Shared;
 
@@ -18,6 +16,7 @@ namespace Werewolf.Server
             NetworkServer.ClientAvatar = typeof(PlayerAvatar);
             NetworkServer.Config.HandshakeTime = 5f;
             NetworkServer.Config.EncryptionMode = ServerEncryptionMode.Required;
+            NetworkServer.ProtocolConfiguration = new SocketNetworking.Shared.Messages.ProtocolConfiguration("Werewolf", "1.0.0");
             server.StartServer();
             while (true)
             {

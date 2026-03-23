@@ -62,7 +62,7 @@ namespace SocketNetworking.Server
             }
             ServerAuthenticationOptions = new SslServerAuthenticationOptions
             {
-                ApplicationProtocols = [new SslApplicationProtocol(ServerConfiguration.Protocol)],
+                ApplicationProtocols = [new SslApplicationProtocol(ProtocolConfiguration.Protocol)],
                 ServerCertificate = Config.Certificate,
                 RemoteCertificateValidationCallback = (sender, cert, chain, errors) =>
                 {
@@ -89,7 +89,7 @@ namespace SocketNetworking.Server
                 _listener = await QuicListener.ListenAsync(new QuicListenerOptions()
                 {
                     ListenEndPoint = IPEndPoint.Parse($"{Config.BindIP}:{Config.Port}"),
-                    ApplicationProtocols = new List<System.Net.Security.SslApplicationProtocol>() { new SslApplicationProtocol(ServerConfiguration.Protocol) },
+                    ApplicationProtocols = new List<System.Net.Security.SslApplicationProtocol>() { new SslApplicationProtocol(ProtocolConfiguration.Protocol) },
                     ConnectionOptionsCallback = async (con, info, token) =>
                     {
                         return ConnectionOptions;
