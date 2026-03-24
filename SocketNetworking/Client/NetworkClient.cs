@@ -946,6 +946,68 @@ namespace SocketNetworking.Client
             return true;
         }
 
+        public virtual async Task<bool> ConnectAsync(string hostname, ushort port)
+        {
+            if (CurrentClientLocation == ClientLocation.Remote)
+            {
+                Log.Error("Cannot connect to other servers from remote.");
+                return false;
+            }
+            if (IsTransportConnected)
+            {
+                Log.Error("Can't connect: Already connected to a server.");
+                return false;
+            }
+            string finalHostname;
+            if (!IPAddress.TryParse(hostname, out IPAddress ip))
+            {
+                try
+                {
+                    IPHostEntry entry = Dns.GetHostEntry(hostname);
+                    if (entry.AddressList.Count() == 0)
+                    {
+                        Log.Error($"Can't find host {hostname}");
+                        return false;
+                    }
+                    else
+                    {
+                        finalHostname = entry.AddressList[0].ToString();
+                    }
+                    if (hostname == "localhost")
+                    {
+                        finalHostname = "localhost";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("DNS Resolution failed. " + ex.ToString());
+                    return false;
+                }
+            }
+            else
+            {
+                finalHostname = hostname;
+            }
+            Log.Info($"Connecting to {finalHostname}:{port}...");
+            try
+            {
+                Exception ex = await Transport.ConnectAsync(finalHostname, port);
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
+            catch (Exception ex)
+            {
+                NetworkErrorData networkErrorData = new NetworkErrorData("Connection Failed: " + ex.ToString(), false);
+                ConnectionError?.Invoke(networkErrorData);
+                Log.Error($"Failed to connect: \n {ex}");
+                return false;
+            }
+            StartClient();
+            return true;
+        }
+
         public virtual async Task DisconnectAsync(string message)
         {
             ConnectionUpdatePacket connectionUpdatePacket = new ConnectionUpdatePacket

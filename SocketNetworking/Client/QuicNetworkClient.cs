@@ -70,7 +70,7 @@ namespace SocketNetworking.Client
             return opts;
         }
 
-        public async Task<bool> ConnectAsync(string hostname, ushort port)
+        public override async Task<bool> ConnectAsync(string hostname, ushort port)
         {
             if (CurrentClientLocation == ClientLocation.Remote)
             {

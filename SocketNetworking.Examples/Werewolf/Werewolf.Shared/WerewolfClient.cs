@@ -1,13 +1,13 @@
-﻿using System;
-using SocketNetworking.Client;
+﻿using SocketNetworking.Client;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
-using SocketNetworking.Shared.Serialization;
 
 namespace Werewolf.Shared
 {
     public class WerewolfClient : TcpNetworkClient
     {
+        public const int MAX_NAME_LENGTH = 32;
+
         public PlayerAvatar PlayerAvatar
         {
             get
@@ -28,12 +28,22 @@ namespace Werewolf.Shared
             {
                 return;
             }
-            NetworkInvokeOnClient((Action<NetworkHandle, string>)SetName, ClientName);
+            NetworkInvokeOnClient(SetName, ClientName);
         }
 
         [NetworkInvokable(Direction = NetworkDirection.Client)]
         private void SetName(NetworkHandle handle, string name)
         {
+            if (string.IsNullOrEmpty(name) || string.IsNullOrWhiteSpace(name))
+            {
+                Disconnect("Name cannot be null, empty, or whitespace.");
+                return;
+            }
+            if (name.Length > MAX_NAME_LENGTH)
+            {
+                Disconnect($"Name is too long. Maximum {MAX_NAME_LENGTH} characters.");
+                return;
+            }
             PlayerAvatar.Name = name;
         }
 

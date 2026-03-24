@@ -1,5 +1,6 @@
 ﻿using System;
 using SocketNetworking;
+using SocketNetworking.Misc.Console;
 
 namespace Werewolf.Shared
 {
@@ -26,14 +27,7 @@ namespace Werewolf.Shared
                     color = ConsoleColor.Green;
                     break;
             }
-            WriteLineColor(data.Message, color);
-        }
-
-        public static void WriteLineColor(string msg, ConsoleColor color)
-        {
-            Console.ForegroundColor = color;
-            Console.WriteLine(msg);
-            Console.ResetColor();
+            FancyConsole.WriteLine(data.Message, color);
         }
     }
 }

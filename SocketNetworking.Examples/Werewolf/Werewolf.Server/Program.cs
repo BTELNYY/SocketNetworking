@@ -1,5 +1,4 @@
-﻿using System.Net.Mail;
-using SocketNetworking;
+﻿using SocketNetworking;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using Werewolf.Shared;
