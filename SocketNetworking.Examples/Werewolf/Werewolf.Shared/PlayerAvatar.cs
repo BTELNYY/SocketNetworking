@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Linq;
 using SocketNetworking;
+using SocketNetworking.Client;
 using SocketNetworking.Misc.Console;
+using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.NetworkObjects;
@@ -21,6 +24,20 @@ namespace Werewolf.Shared
             set
             {
                 _name.Value = value;
+            }
+        }
+
+        private NetworkSyncVar<int> _vote;
+
+        public int Vote
+        {
+            get
+            {
+                return _vote.Value;
+            }
+            set
+            {
+                _vote.Value = value;
             }
         }
 
@@ -84,6 +101,8 @@ namespace Werewolf.Shared
 
         public event Action<Team> TeamChanged;
 
+        private bool _joinSent = false;
+
         public override void OnBeforeRegister()
         {
             base.OnBeforeRegister();
@@ -94,8 +113,21 @@ namespace Werewolf.Shared
                 {
                     NameChanged?.Invoke(x);
                 }
+                else if (x != "")
+                {
+                    if (!_joinSent)
+                    {
+                        _joinSent = true;
+                        GameManager.Instance.ServerSendBroadcast($"{FancyConsole.SpecialMarker}e{(OwnerAvatar as PlayerAvatar).Name} joined.");
+                    }
+                    else
+                    {
+                        GameManager.Instance.ServerSendBroadcast($"{FancyConsole.SpecialMarker}e{(OwnerAvatar as PlayerAvatar).Name} changed their name.");
+                    }
+                }
             };
             _team = new NetworkSyncVar<Team>(this, Team.Spectators, nameof(_team), OwnershipMode.Server);
+            _team.VisibilityMode = ObjectVisibilityMode.OwnerAndServer;
             _team.Changed += (x) =>
             {
                 if (NetworkManager.WhereAmI == ClientLocation.Local)
@@ -103,6 +135,14 @@ namespace Werewolf.Shared
                     TeamChanged?.Invoke(x);
                 }
             };
+            _vote = new NetworkSyncVar<int>(this, 0, nameof(_vote), OwnershipMode.Client);
+        }
+
+        public override void OnOwnerDisconnected(NetworkClient client)
+        {
+            base.OnOwnerDisconnected(client);
+            PlayerAvatar avatar = client.Avatar as PlayerAvatar;
+            GameManager.Instance.ServerSendBroadcast($"{FancyConsole.SpecialMarker}e{(avatar).Name} left.");
         }
 
         public void ClientSendMessage(string message)
@@ -111,11 +151,87 @@ namespace Werewolf.Shared
             NetworkInvoke(ServerReceiveMessage, message);
         }
 
+        private void HandleCommand(NetworkHandle handle, string command)
+        {
+            string[] parts = command.Split(" ").ToArray();
+            //simple command system.
+            switch (parts[0])
+            {
+                case "help":
+                    ServerSendMessage("[Server] Help:\n\t- /vote <playerId>: Vote for someone to be executed, or eaten.\n\t- /list: lists all players.\n\t- /help: Print this menu.");
+                    break;
+                case "vote":
+                    if (parts.Length < 2)
+                    {
+                        ServerSendMessage($"{FancyConsole.BuildColor(ConsoleColor.Red)}[Server]: Not enough arguments!{FancyConsole.BuildColor(ConsoleColor.White)}");
+                        return;
+                    }
+                    if (GameManager.Instance.Cycle != DayNightCycle.Day || GameManager.Instance.Cycle != DayNightCycle.Night)
+                    {
+                        ServerSendMessage($"{FancyConsole.BuildColor(ConsoleColor.Red)}[Server]: You can't do that.{FancyConsole.BuildColor(ConsoleColor.White)}");
+                        return;
+                    }
+                    if (Team == Team.Spectators)
+                    {
+                        ServerSendMessage($"{FancyConsole.BuildColor(ConsoleColor.Red)}[Server]: Dead men tell no tales.{FancyConsole.BuildColor(ConsoleColor.White)}");
+                        return;
+                    }
+                    if (Team != Team.Werewolves && GameManager.Instance.Cycle == DayNightCycle.Night)
+                    {
+                        ServerSendMessage($"{FancyConsole.BuildColor(ConsoleColor.Red)}[Server]: You are sleeping.{FancyConsole.BuildColor(ConsoleColor.White)}");
+                        return;
+                    }
+                    if (!int.TryParse(parts[1], out int value))
+                    {
+                        ServerSendMessage($"{FancyConsole.BuildColor(ConsoleColor.Red)}[Server]: Bad client ID. Hint: Its the number beside their chat messages, use /list if you need a list..{FancyConsole.BuildColor(ConsoleColor.White)}");
+                        return;
+                    }
+                    WerewolfClient target = (WerewolfClient)NetworkServer.GetClient(value);
+                    if (target == null)
+                    {
+                        ServerSendMessage($"{FancyConsole.BuildColor(ConsoleColor.Red)}[Server]: Bad client ID. Hint: Its the number beside their chat messages, use /list if you need a list..{FancyConsole.BuildColor(ConsoleColor.White)}");
+                        return;
+                    }
+                    Vote = value;
+                    ServerSendMessage($"[Server] Voted for {target.PlayerAvatar.Name}.");
+                    break;
+                case "list":
+                    string computed = "";
+                    switch (Team)
+                    {
+                        case Team.Spectators:
+                            foreach (PlayerAvatar avatar in NetworkServer.Clients.Cast<WerewolfClient>().Select(x => x.PlayerAvatar))
+                            {
+                                computed += $"Name: {FancyConsole.SpecialMarker}{GameManager.GetTeamColor(avatar.Team)}{avatar.Name}{FancyConsole.BuildColor(ConsoleColor.White)}, ID: {avatar.OwnerClientID}\n";
+                            }
+                            ServerSendMessage(computed);
+                            break;
+                        default:
+                            foreach (PlayerAvatar avatar in NetworkServer.Clients.Cast<WerewolfClient>().Select(x => x.PlayerAvatar))
+                            {
+                                computed += $"Name: {avatar.Name}, ID: {avatar.OwnerClientID}\n";
+                            }
+                            ServerSendMessage(computed);
+                            break;
+                    }
+                    break;
+            }
+        }
+
         [NetworkInvokable(Direction = NetworkDirection.Client)]
         private void ServerReceiveMessage(NetworkHandle handle, string message)
         {
             this.ThrowIfNotServer();
+            if (string.IsNullOrEmpty(message))
+            {
+                return;
+            }
             string cleanMessage = FancyConsole.StripColor(message);
+            if (cleanMessage.StartsWith("/"))
+            {
+                HandleCommand(handle, cleanMessage.Substring(1));
+                return;
+            }
             if (_team.Value == Team.Spectators)
             {
                 GameManager.Instance.ServerSendMessageToAll(this, cleanMessage, Team.Spectators);

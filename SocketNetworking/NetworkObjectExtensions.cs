@@ -392,7 +392,7 @@ namespace SocketNetworking
                         INetworkObject innerObj = var.ValueRaw as INetworkObject;
                         innerObj.NetworkSpawn(spawner);
                     }
-                    var.Sync();
+                    var.SyncTo(spawner);
                 }
                 catch (SecurityException)
                 {

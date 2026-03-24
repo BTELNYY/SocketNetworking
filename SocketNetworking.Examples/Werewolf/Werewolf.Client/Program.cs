@@ -16,7 +16,8 @@ namespace Werewolf.Client
 
         static void Main(string[] args)
         {
-            Log.Levels = Log.FULL_LOG;
+            //Log.Levels = Log.FULL_LOG;
+            Log.Levels = Log.NO_LOG;
             Log.OnLog += ExampleLogger.HandleNetworkLog;
             Utility.ImportHelper();
             Console.WriteLine("What is your name?");

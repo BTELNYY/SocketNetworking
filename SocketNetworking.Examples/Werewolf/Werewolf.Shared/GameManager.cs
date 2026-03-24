@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using SocketNetworking;
+using SocketNetworking.Client;
 using SocketNetworking.Misc;
+using SocketNetworking.Misc.Console;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.SyncVars;
@@ -12,6 +14,11 @@ namespace Werewolf.Shared
     public class GameManager : NetworkObjectBase
     {
         public static GameManager Instance { get; private set; }
+
+        //So WerewolfRatio / MinimumPlayers
+        public static int MinimumPlayers = 5;
+
+        public static int WerewolfRatio = 1;
 
         private NetworkSyncVar<DayNightCycle> _cycle;
 
@@ -59,16 +66,28 @@ namespace Werewolf.Shared
         public void ServerStartRound()
         {
             this.ThrowIfNotServer();
+            if (NetworkServer.Clients.Where(x => x.Ready).Count() < MinimumPlayers)
+            {
+                Log.GlobalInfo("Not enough players to start.");
+                return;
+            }
             _cycle.Value = DayNightCycle.Dawn;
             _nights.Value = 0;
             foreach (PlayerAvatar avatar in NetworkServer.Clients.Cast<WerewolfClient>().Select(x => x.PlayerAvatar))
             {
                 avatar.ServerSetTeam(Team.Villagers);
             }
+            Random random = new Random();
+            List<PlayerAvatar> werewolves = NetworkServer.Clients.Cast<WerewolfClient>().Select(x => x.PlayerAvatar).OrderBy(x => random.Next()).Take((WerewolfRatio / MinimumPlayers) * NetworkServer.Clients.Count).ToList();
+            foreach (PlayerAvatar werewolf in werewolves)
+            {
+                werewolf.ServerSetTeam(Team.Werewolves);
+            }
             CallbackTimer<GameManager> callback = new CallbackTimer<GameManager>((manager) =>
             {
-                manager.Advance();
+                manager.RunLogic();
             }, this, CycleTime[Cycle]);
+            callback.Start();
         }
 
         public Dictionary<DayNightCycle, int> CycleTime = new Dictionary<DayNightCycle, int>()
@@ -84,6 +103,19 @@ namespace Werewolf.Shared
         /// </summary>
         public void Advance()
         {
+            CallbackTimer<GameManager> callback = new CallbackTimer<GameManager>((a) =>
+            {
+                a.RunLogic();
+            }, this, CycleTime[Cycle]);
+            callback.Start();
+        }
+
+        private void RunLogic()
+        {
+            foreach (PlayerAvatar p in NetworkServer.Clients.Cast<WerewolfClient>().Select(x => x.PlayerAvatar))
+            {
+                p.Vote = -1;
+            }
             switch (Cycle)
             {
                 case DayNightCycle.Dawn:
@@ -105,24 +137,132 @@ namespace Werewolf.Shared
             }
         }
 
+        public override void OnReady(NetworkClient client, bool isReady)
+        {
+            base.OnReady(client, isReady);
+            if (isReady)
+            {
+                if (NetworkServer.Clients.Where(x => x.Ready).Count() >= MinimumPlayers)
+                {
+                    ServerSendBroadcast("Round starting in 30 seconds.");
+                    CallbackTimer<GameManager> timer = new CallbackTimer<GameManager>(x =>
+                    {
+                        x.ServerStartRound();
+                    }, this, 30f);
+                }
+                else
+                {
+                    ServerSendBroadcast($"Not enough players to start ({NetworkServer.Clients.Count(x => x.Ready)}/{MinimumPlayers})");
+                }
+            }
+        }
+
         private void OnDayBegin()
         {
-
+            ServerSendBroadcast("It is now day again.");
+            ServerSendBroadcast($"You have {CycleTime[Cycle]} seconds, vote someone to be executed using /vote!");
+            Advance();
         }
 
         private void OnDuskBegin()
         {
-
+            int deadVillager = GetLivingVotes();
+            ServerSendBroadcast("Darkness falls upon the village, it is dusk.");
+            if (deadVillager == -1)
+            {
+                ServerSendBroadcast("Nobody is executed.");
+            }
+            else
+            {
+                PlayerAvatar avatar = NetworkServer.GetClient(deadVillager)?.Avatar as PlayerAvatar;
+                if (avatar == null)
+                {
+                    ServerSendBroadcast("Nobody is executed.");
+                }
+                else
+                {
+                    ServerSendBroadcast($"{avatar.Name} is hung by their neck. They were a {FancyConsole.SpecialMarker}{GetTeamColor(avatar.Team)}{avatar.Team}{FancyConsole.BuildColor(ConsoleColor.White)}");
+                    avatar.ServerKill("Executed.");
+                }
+            }
+            Advance();
         }
 
         private void OnNightBegin()
         {
-
+            ServerSendBroadcast("The night has begun, are you sure you are safe?");
+            ServerSendBroadcastToTeam($"{FancyConsole.SpecialMarker}{GetTeamColor(Team.Werewolves)}Werewolves, {FancyConsole.SpecialMarker}fnight has fallen. Use /vote <playerId> to vote for who to kill.", Team.Werewolves);
+            Advance();
         }
 
         private void OnDawnBegin()
         {
+            int deadVillager = GetWerewolfVotes();
+            ServerSendBroadcast("The sun rises in the east, creeping over the trees and waking you.");
+            if (deadVillager == -1)
+            {
+                ServerSendBroadcast("You find nobody dead.");
+            }
+            else
+            {
+                PlayerAvatar avatar = NetworkServer.GetClient(deadVillager)?.Avatar as PlayerAvatar;
+                if (avatar == null)
+                {
+                    ServerSendBroadcast("You find nobody dead.");
+                }
+                else
+                {
+                    avatar.ServerKill("Eaten by werewolves.");
+                    ServerSendBroadcast($"You find {avatar.Name} dead.");
+                }
+            }
+            Advance();
+        }
 
+        private int GetLivingVotes()
+        {
+            int currentWinner = -1;
+            Dictionary<int, int> idsToVotes = new Dictionary<int, int>();
+            foreach (PlayerAvatar avatar in NetworkServer.Clients.Cast<WerewolfClient>().Select(x => x.PlayerAvatar).Where(x => x.Team != Team.Spectators))
+            {
+                if (idsToVotes.ContainsKey(avatar.Vote))
+                {
+                    idsToVotes[avatar.Vote]++;
+                }
+                else
+                {
+                    idsToVotes.Add(avatar.Vote, 1);
+                }
+            }
+            List<KeyValuePair<int, int>> sorted = (from entry in idsToVotes orderby entry.Value ascending select entry).ToList();
+            if (sorted[0].Value == sorted[1].Value)
+            {
+                return -1;
+            }
+            return sorted[0].Key;
+        }
+
+        private int GetWerewolfVotes()
+        {
+            int currentWinner = -1;
+            Dictionary<int, int> idsToVotes = new Dictionary<int, int>();
+            foreach (PlayerAvatar avatar in NetworkServer.Clients.Cast<WerewolfClient>().Select(x => x.PlayerAvatar).Where(x => x.Team == Team.Werewolves))
+            {
+                if (idsToVotes.ContainsKey(avatar.Vote))
+                {
+                    idsToVotes[avatar.Vote]++;
+                }
+                else
+                {
+                    idsToVotes.Add(avatar.Vote, 1);
+                }
+            }
+            List<KeyValuePair<int, int>> sorted = (from entry in idsToVotes orderby entry.Value ascending select entry).ToList();
+            if (sorted[0].Value == sorted[1].Value)
+            {
+                return -1;
+            }
+            return sorted[0].Key;
         }
 
         public event Action DayNightCycleUpdated;
@@ -144,7 +284,8 @@ namespace Werewolf.Shared
 
         public void ServerSendMessageToAll(PlayerAvatar avatar, string message, Team to = Team.Everyone)
         {
-            message = $"<{avatar.Name} ({OwnerClient.ClientID})>: {message}";
+            this.ThrowIfNotServer();
+            message = $"<{avatar.Name} ({avatar.OwnerClient.ClientID})>: {message}";
             if (to == Team.Everyone)
             {
                 NetworkServer.NetworkInvokeOnAll(avatar.ClientReceiveMessage, (x => true), message);
@@ -156,6 +297,14 @@ namespace Werewolf.Shared
         public void ServerSendBroadcast(string message)
         {
             foreach (PlayerAvatar avatar in NetworkServer.Clients.Cast<WerewolfClient>().Select(x => x.PlayerAvatar))
+            {
+                avatar.ServerSendMessage($"[Server]: {message}");
+            }
+        }
+
+        public void ServerSendBroadcastToTeam(string message, Team to)
+        {
+            foreach (PlayerAvatar avatar in NetworkServer.Clients.Cast<WerewolfClient>().Select(x => x.PlayerAvatar).Where(x => x.Team == to))
             {
                 avatar.ServerSendMessage($"[Server]: {message}");
             }

@@ -30,6 +30,12 @@ namespace SocketNetworking.Misc.Console
             ['f'] = ConsoleColor.White,
         };
 
+        public static string BuildColor(ConsoleColor color)
+        {
+            char result = ColorArray.First(x => x.Value == color).Key;
+            return $"{SpecialMarker}{result}";
+        }
+
         public static char SpecialMarker = '&';
 
         static object locker = new object();
@@ -84,7 +90,7 @@ namespace SocketNetworking.Misc.Console
                     System.Console.ForegroundColor = ColorArray[str.First()];
                     Write(str.Remove(0, 1));
                     System.Console.ForegroundColor = color;
-                    return;
+                    continue;
                 }
                 Write(str);
             }
