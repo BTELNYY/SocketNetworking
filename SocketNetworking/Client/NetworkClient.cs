@@ -262,9 +262,9 @@ namespace SocketNetworking.Client
         public bool AutoSync { get; set; } = true;
 
         /// <summary>
-        /// Maximum amount of milliseconds before a <see cref="KeepAlivePacket"/> is sent. By default, a <see cref="KeepAlivePacket"/> is sent every 1000ms, this is the standard for ping measurements.
+        /// Maximum amount of milliseconds before a <see cref="KeepAlivePacket"/> is sent. By default, a <see cref="KeepAlivePacket"/> is sent every 5000ms, this is the standard for ping measurements.
         /// </summary>
-        public double MaxMSBeforeKeepAlive { get; set; } = 1000;
+        public double MaxMSBeforeKeepAlive { get; set; } = 5000;
 
         /// <summary>
         /// The calculated latency. Use <see cref="CheckLatency"/> to forcibly update this. You should see <see cref="MaxMSBeforeKeepAlive"/>.
@@ -1679,6 +1679,10 @@ namespace SocketNetworking.Client
             {
                 return;
             }
+            if (NoPacketSending)
+            {
+                return;
+            }
             if (_manualPacketSend)
             {
                 return;
@@ -1689,6 +1693,10 @@ namespace SocketNetworking.Client
         private async Task RawWriterAsync()
         {
             if (NoPacketHandling)
+            {
+                return;
+            }
+            if (NoPacketSending)
             {
                 return;
             }
@@ -1731,7 +1739,7 @@ namespace SocketNetworking.Client
                 return;
             }
             //Log.Debug("Do latency check!");
-            DoLatencyCheck();
+            //DoLatencyCheck();
             if (!Transport.DataAvailable)
             {
                 //Log.Debug("No data on transport!");
@@ -1759,7 +1767,7 @@ namespace SocketNetworking.Client
                 return;
             }
             //Log.Debug("Do latency check!");
-            DoLatencyCheck();
+            //DoLatencyCheck();
             if (!Transport.DataAvailable)
             {
                 //Log.Debug("No data on transport!");
@@ -2462,14 +2470,49 @@ namespace SocketNetworking.Client
 
         #region Keep Alive / Latency
 
+        private Task _latencyChecker;
+
+        public void StartLatencyChecker()
+        {
+            if (_latencyChecker != null)
+            {
+                return;
+            }
+            _latencyChecker = Task.Run(async () =>
+            {
+#if NET8_0_OR_GREATER
+                PeriodicTimer timer = new PeriodicTimer(TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive));
+                while (!_shuttingDown && await timer.WaitForNextTickAsync())
+                {
+                    CheckLatency();
+                }
+                timer.Dispose();
+#else
+                Timer timer = new Timer((state) =>
+                {
+                    NetworkClient cl = state as NetworkClient;
+                    if (cl._shuttingDown)
+                    {
+                        return;
+                    }
+                    cl.CheckLatency();
+                }, this, TimeSpan.Zero, TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive));
+                ClientStopped += () =>
+                {
+                    timer.Dispose();
+                };
+#endif
+            });
+        }
 
         long _latency = 0;
 
         DateTime _lastSent = DateTime.UtcNow;
 
         /// <summary>
-        /// Performs the latency check.
+        /// Performs the latency check. Obselete, see <see cref="StartLatencyChecker"/>
         /// </summary>
+        [Obsolete("This is handled automatically.")]
         protected virtual void DoLatencyCheck()
         {
             if (DateTime.UtcNow - _lastSent >= TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive))
@@ -2498,7 +2541,7 @@ namespace SocketNetworking.Client
             _lastSent = DateTime.UtcNow;
         }
 
-        #endregion
+#endregion
 
         #region Misc
 
@@ -2595,6 +2638,7 @@ namespace SocketNetworking.Client
             {
                 ServerAutoSpecifyAvatar();
             }
+            StartLatencyChecker();
         }
 
         /// <summary>

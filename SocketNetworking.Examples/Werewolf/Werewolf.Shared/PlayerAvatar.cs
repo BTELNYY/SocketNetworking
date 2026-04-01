@@ -55,6 +55,20 @@ namespace Werewolf.Shared
             }
         }
 
+        private NetworkSyncVar<Team> _originalTeam;
+
+        public Team OriginalTeam
+        {
+            get
+            {
+                return _originalTeam.Value;
+            }
+            set
+            {
+                _originalTeam.Value = value;
+            }
+        }
+
         public void ServerSetTeam(Team team)
         {
             this.ThrowIfNotServer();
@@ -69,6 +83,7 @@ namespace Werewolf.Shared
         public void ServerKill(string reason)
         {
             this.ThrowIfNotServer();
+            _originalTeam.Value = _team.Value;
             ServerSetTeam(Team.Spectators);
             NetworkInvoke(ClientOnKilled, reason);
         }
@@ -136,6 +151,7 @@ namespace Werewolf.Shared
                 }
             };
             _vote = new NetworkSyncVar<int>(this, 0, nameof(_vote), OwnershipMode.Client);
+            _originalTeam = new NetworkSyncVar<Team>(this, Team.Spectators, nameof(_originalTeam), OwnershipMode.Server);
         }
 
         public override void OnOwnerDisconnected(NetworkClient client)
