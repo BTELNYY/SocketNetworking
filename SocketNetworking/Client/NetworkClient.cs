@@ -1361,7 +1361,9 @@ namespace SocketNetworking.Client
         /// <returns></returns>
         public T NetworkInvokeBlockingOnClient<T>(string methodName, float maxTimeMs = 5000, params object[] args)
         {
+#pragma warning disable CS0612 // Type or member is obsolete
             return NetworkManager.NetworkInvokeBlocking<T>(this, this, methodName, args, maxTimeMs);
+#pragma warning restore CS0612 // Type or member is obsolete
         }
 
         /// <summary>
@@ -2478,6 +2480,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
             _latencyChecker = Task.Run(async () =>
             {
 #if NET8_0_OR_GREATER
@@ -2503,6 +2506,7 @@ namespace SocketNetworking.Client
                 };
 #endif
             });
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         }
 
         long _latency = 0;

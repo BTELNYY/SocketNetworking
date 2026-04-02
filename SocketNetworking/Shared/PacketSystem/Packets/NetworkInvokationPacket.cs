@@ -22,6 +22,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public List<SerializedData> Arguments { get; set; } = new List<SerializedData>();
 
+#pragma warning disable CS0612 // Type or member is obsolete
         public override ByteWriter Serialize()
         {
             ByteWriter writer = base.Serialize();
@@ -53,5 +54,6 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         {
             return base.ToString() + $"TargetType: {TargetType}, MethodName: {MethodName}, CallbackID: {CallbackID}, IgnoreResult: {IgnoreResult}, Arguments: ({string.Join(" / ", Arguments)}";
         }
+#pragma warning restore CS0612 // Type or member is obsolete
     }
 }

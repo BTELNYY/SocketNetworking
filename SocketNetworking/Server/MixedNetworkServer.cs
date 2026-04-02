@@ -196,7 +196,7 @@ namespace SocketNetworking.Server
                             continue;
                         }
                         client.UdpTransport = new UdpTransport();
-                        client.UdpTransport.Client = udpClient;
+                        client.UdpTransport.UdpClient = udpClient;
                         client.UdpTransport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
                         lock (ClientLock)
                         {

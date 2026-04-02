@@ -86,6 +86,7 @@ namespace SocketNetworking.Server
             };
             Task.Run(async () =>
             {
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
                 _listener = await QuicListener.ListenAsync(new QuicListenerOptions()
                 {
                     ListenEndPoint = IPEndPoint.Parse($"{Config.BindIP}:{Config.Port}"),
@@ -95,6 +96,7 @@ namespace SocketNetworking.Server
                         return ConnectionOptions;
                     }
                 });
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
                 Log.Info($"Started listening on {_listener.LocalEndPoint.Address}:{_listener.LocalEndPoint.Port}");
                 int counter = 0;
                 while (!_isShuttingDown)

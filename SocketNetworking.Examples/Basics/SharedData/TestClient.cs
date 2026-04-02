@@ -19,7 +19,9 @@ namespace Basic.SharedData
         public void NetworkInvokeSomeMethod(float someFloat, int someInt)
         {
             Log.Debug($"{someFloat}, {someInt}");
+#pragma warning disable CS0612 // Type or member is obsolete
             TestResult result = NetworkInvokeBlocking<TestResult>(this, "SomeNetworkMethod", maxTimeMs: 5000f, someFloat, someInt, new ValueTuple<int, int>(1, 3));
+#pragma warning restore CS0612 // Type or member is obsolete
             Log.Debug(result.ToString());
         }
 

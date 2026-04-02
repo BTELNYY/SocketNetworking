@@ -53,7 +53,7 @@ namespace SocketNetworking.Server
                     Log.GlobalInfo($"Connecting client {counter} from {remoteIpEndPoint.Address}:{remoteIpEndPoint.Port}");
                     NetworkClient client = (NetworkClient)Activator.CreateInstance(ClientType);
                     UdpTransport transport = new UdpTransport();
-                    transport.Client = udpClient;
+                    transport.UdpClient = udpClient;
                     transport.SetupForServerUse(remoteIpEndPoint, MyEndPoint);
                     client.InitRemoteClient(counter, transport);
                     AddClient(client, counter);

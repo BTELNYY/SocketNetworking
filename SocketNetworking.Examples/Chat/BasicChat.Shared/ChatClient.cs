@@ -72,12 +72,13 @@ namespace BasicChat.Shared
             msg.Content = message;
             msg.Sender = Avatar.NetworkID;
             msg.Target = 0;
-            NetworkInvoke(this, nameof(ServerGetMessage), msg);
+            NetworkInvokeOnClient((Action<NetworkHandle, Message>)ServerGetMessage, msg);
+            //NetworkInvoke(this, nameof(ServerGetMessage), msg);
         }
 
         public void ServerSendMessage(Message message)
         {
-            NetworkInvoke(this, nameof(ClientGetMessage), message);
+            NetworkInvokeOnClient((Action<NetworkHandle, Message>)ClientGetMessage, message);
         }
 
         [NetworkInvokable(NetworkDirection.Client)]
@@ -97,7 +98,8 @@ namespace BasicChat.Shared
             MessageReceived?.Invoke(handle, message);
             if (message.Target == 0)
             {
-                NetworkServer.NetworkInvokeOnAll(this, nameof(ClientGetMessage), new object[] { message });
+                NetworkServer.NetworkInvokeOnAll((Action<NetworkHandle, Message>)ClientGetMessage, new object[] { message });
+                //NetworkServer.NetworkInvokeOnAll(this, nameof(ClientGetMessage), new object[] { message });
             }
             else
             {
@@ -111,7 +113,8 @@ namespace BasicChat.Shared
                 {
                     return;
                 }
-                owner.NetworkInvoke(this, nameof(ClientGetMessage), message);
+                owner.NetworkInvokeOnClient((Action<NetworkHandle, Message>)ClientGetMessage, message);
+                //owner.NetworkInvoke(this, nameof(ClientGetMessage), message);
             }
         }
 
