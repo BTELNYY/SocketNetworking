@@ -140,12 +140,10 @@ namespace SocketNetworking
         /// <returns></returns>
         public static string GetHashSHA1(this byte[] data)
         {
-#pragma warning disable SYSLIB0021 // Type or member is obsolete
             using (SHA1CryptoServiceProvider sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider())
             {
                 return string.Concat(sha1.ComputeHash(data).Select(x => x.ToString("X2")));
             }
-#pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
 

@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using SocketNetworking.Misc;
 using SocketNetworking.Server;
@@ -698,7 +698,7 @@ namespace SocketNetworking.Client
         {
             get
             {
-                return _toReadPackets.Count;
+                return _toReadPackets.Reader.Count;
             }
         }
 
@@ -709,7 +709,7 @@ namespace SocketNetworking.Client
         {
             get
             {
-                return _toSendPackets.Count;
+                return _toSendPackets.Reader.Count;
             }
         }
 
@@ -1158,8 +1158,8 @@ namespace SocketNetworking.Client
             _packetSenderThread.Start();
             //Log.Debug("Threads Start Done");
             //Log.Debug("Create Queues");
-            _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
-            _toSendPackets = new ConcurrentQueue<Packet>();
+            _toReadPackets = Channel.CreateUnbounded<ReadPacketInfo>();
+            _toSendPackets = Channel.CreateUnbounded<Packet>();
             //Log.Debug("Done Create Queues");
             ClientConnected?.Invoke();
             Clients.Add(this);
@@ -1270,7 +1270,7 @@ namespace SocketNetworking.Client
             }
             else
             {
-                _toSendPackets.Enqueue(packet);
+                _toSendPackets.Writer.WriteAsync(packet).AsTask().Wait();
                 if (ManualPacketSend)
                 {
                     PacketReadyToSend?.Invoke(packet);
@@ -1441,7 +1441,7 @@ namespace SocketNetworking.Client
 
         protected object streamLock = new object();
 
-        protected ConcurrentQueue<Packet> _toSendPackets = new ConcurrentQueue<Packet>();
+        protected Channel<Packet> _toSendPackets = Channel.CreateUnbounded<Packet>();
 
         /// <summary>
         /// Actually performs the sending of the next packet.
@@ -1456,38 +1456,35 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if (_toSendPackets.IsEmpty)
+            if (_toSendPackets.Reader.Count == 0)
             {
                 return;
             }
-            lock (streamLock)
+            Packet packet = _toSendPackets.Reader.ReadAsync().Result;
+            PreparePacket(ref packet);
+            if (!InvokePacketSendRequest(packet))
             {
-                _toSendPackets.TryDequeue(out Packet packet);
-                PreparePacket(ref packet);
-                if (!InvokePacketSendRequest(packet))
-                {
-                    return;
-                }
-                byte[] fullBytes = SerializePacket(packet);
-                try
-                {
-                    //Log.Debug($"Sending packet: {packet.ToString()}");
-                    //bytesSent += (ulong)fullBytes.Length;
-                    Exception ex = Transport.Send(fullBytes, packet.Destination);
-                    if (ex != null)
-                    {
-                        throw ex;
-                    }
-                    //Log.Debug("Packet sent!");
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
-                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
-                    ConnectionError?.Invoke(networkErrorData);
-                }
-                InvokePacketSent(packet);
+                return;
             }
+            byte[] fullBytes = SerializePacket(packet);
+            try
+            {
+                //Log.Debug($"Sending packet: {packet.ToString()}");
+                //bytesSent += (ulong)fullBytes.Length;
+                Exception ex = Transport.Send(fullBytes, packet.Destination);
+                if (ex != null)
+                {
+                    throw ex;
+                }
+                //Log.Debug("Packet sent!");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                ConnectionError?.Invoke(networkErrorData);
+            }
+            InvokePacketSent(packet);
         }
 
         protected virtual async Task SendNextPacketInternalAsync()
@@ -1500,11 +1497,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if (_toSendPackets.IsEmpty)
-            {
-                return;
-            }
-            _toSendPackets.TryDequeue(out Packet packet);
+            Packet packet = await _toSendPackets.Reader.ReadAsync();
             PreparePacket(ref packet);
             if (!InvokePacketSendRequest(packet))
             {
@@ -1713,7 +1706,7 @@ namespace SocketNetworking.Client
 
         #region Receiving
 
-        protected ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
+        protected Channel<ReadPacketInfo> _toReadPackets = Channel.CreateUnbounded<ReadPacketInfo>();
 
         /// <summary>
         /// Method handling all <see cref="NetworkTransport"/> reading IO.
@@ -1740,11 +1733,8 @@ namespace SocketNetworking.Client
                 StopClient();
                 return;
             }
-            //Log.Debug("Do latency check!");
-            //DoLatencyCheck();
             if (!Transport.DataAvailable)
             {
-                //Log.Debug("No data on transport!");
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
@@ -1768,13 +1758,11 @@ namespace SocketNetworking.Client
                 StopClient();
                 return;
             }
-            //Log.Debug("Do latency check!");
-            //DoLatencyCheck();
-            if (!Transport.DataAvailable)
-            {
-                //Log.Debug("No data on transport!");
-                return;
-            }
+            //Its more efficient to allow the async system to just wait for data instead of returning early if no data exists.
+            //if (!Transport.DataAvailable)
+            //{
+            //return;
+            //}
             (byte[], Exception, IPEndPoint) packet = await Transport.ReceiveAsync();
             //bytesReceived += (ulong)packet.Item1.Length;
             if (packet.Item1 == null)
@@ -1866,7 +1854,7 @@ namespace SocketNetworking.Client
                     Header = header,
                     Data = fullPacket
                 };
-                _toReadPackets.Enqueue(packetInfo);
+                _toReadPackets.Writer.WriteAsync(packetInfo).AsTask().Wait();
                 PacketReadyToHandle?.Invoke(packetInfo.Header, packetInfo.Data);
             }
             else
@@ -2426,7 +2414,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if (_toReadPackets.TryDequeue(out ReadPacketInfo result))
+            if (_toReadPackets.Reader.TryRead(out ReadPacketInfo result))
             {
                 HandlePacket(result.Header, result.Data);
             }
@@ -2480,7 +2468,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+
             _latencyChecker = Task.Run(async () =>
             {
 #if NET8_0_OR_GREATER
@@ -2506,7 +2494,6 @@ namespace SocketNetworking.Client
                 };
 #endif
             });
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         }
 
         long _latency = 0;
@@ -2545,7 +2532,7 @@ namespace SocketNetworking.Client
             _lastSent = DateTime.UtcNow;
         }
 
-#endregion
+        #endregion
 
         #region Misc
 

@@ -61,15 +61,20 @@ namespace SocketNetworking.Server
                     {
                         break;
                     }
-                    if (!serverSocket.Pending())
-                    {
-                        continue;
-                    }
+                    //if (!serverSocket.Pending())
+                    //{
+                    //    continue;
+                    //}
                     if (!ShouldAcceptConnections)
                     {
                         continue;
                     }
                     TcpClient socket = await serverSocket.AcceptTcpClientAsync();
+                    if (!ShouldAcceptConnections)
+                    {
+                        socket.Close();
+                        continue;
+                    }
                     _ = Task.Run(async () =>
                     {
                         TcpTransport tcpTransport = new TcpTransport(socket);

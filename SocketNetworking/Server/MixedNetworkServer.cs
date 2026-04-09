@@ -86,15 +86,14 @@ namespace SocketNetworking.Server
                 }
                 if (!ShouldAcceptConnections)
                 {
-                    //Log.Debug("Not accepting connections.");
-                    continue;
-                }
-                if (!serverSocket.Pending())
-                {
-                    //Log.Debug("Nobody Connecting!");
                     continue;
                 }
                 TcpClient socket = serverSocket.AcceptTcpClient();
+                if (!ShouldAcceptConnections)
+                {
+                    socket.Close();
+                    continue;
+                }
                 if (Clients.Count >= Config.MaximumClients)
                 {
                     //Do not accept.

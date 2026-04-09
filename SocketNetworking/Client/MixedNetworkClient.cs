@@ -96,62 +96,59 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if (_toSendPackets.IsEmpty)
+            if (_toSendPackets.Reader.Count == 0)
             {
                 //Log.Debug("Nothing to send.");
                 return;
             }
-            lock (streamLock)
+            Packet packet = _toSendPackets.Reader.ReadAsync().Result;
+            PreparePacket(ref packet);
+            if (!InvokePacketSendRequest(packet))
             {
-                _toSendPackets.TryDequeue(out Packet packet);
-                PreparePacket(ref packet);
-                if (!InvokePacketSendRequest(packet))
-                {
-                    Log.Debug("Packet send was rejected.");
-                    return;
-                }
+                Log.Debug("Packet send was rejected.");
+                return;
+            }
+            if (packet.Flags.HasFlag(PacketFlags.Priority))
+            {
+                packet.Destination = UdpTransport.Peer;
+            }
+            byte[] fullBytes = SerializePacket(packet);
+            if (fullBytes == null)
+            {
+                return;
+            }
+            try
+            {
+                Exception ex;
                 if (packet.Flags.HasFlag(PacketFlags.Priority))
                 {
-                    packet.Destination = UdpTransport.Peer;
-                }
-                byte[] fullBytes = SerializePacket(packet);
-                if (fullBytes == null)
-                {
-                    return;
-                }
-                try
-                {
-                    Exception ex;
-                    if (packet.Flags.HasFlag(PacketFlags.Priority))
+                    if (!UdpTransport.IsConnected)
                     {
-                        if (!UdpTransport.IsConnected)
-                        {
-                            throw new InvalidOperationException("Trying to send Priority packets when priority is not available.");
-                        }
-                        ex = UdpTransport.Send(fullBytes, packet.Destination);
+                        throw new InvalidOperationException("Trying to send Priority packets when priority is not available.");
                     }
-                    else
-                    {
-                        if (!TcpTransport.IsConnected)
-                        {
-                            throw new InvalidOperationException("Trying to send packets when transport is not connected!");
-                        }
-                        ex = Transport.Send(fullBytes, packet.Destination);
-                    }
-                    if (ex != null)
-                    {
-                        throw ex;
-                    }
-                    //Log.Debug("Packet sent! " + packet.ToString());
+                    ex = UdpTransport.Send(fullBytes, packet.Destination);
                 }
-                catch (Exception ex)
+                else
                 {
-                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
-                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
-                    InvokeConnectionError(networkErrorData);
+                    if (!TcpTransport.IsConnected)
+                    {
+                        throw new InvalidOperationException("Trying to send packets when transport is not connected!");
+                    }
+                    ex = Transport.Send(fullBytes, packet.Destination);
                 }
-                InvokePacketSent(packet);
+                if (ex != null)
+                {
+                    throw ex;
+                }
+                //Log.Debug("Packet sent! " + packet.ToString());
             }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                InvokeConnectionError(networkErrorData);
+            }
+            InvokePacketSent(packet);
         }
 
         protected override async Task SendNextPacketInternalAsync()
@@ -164,12 +161,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if (_toSendPackets.IsEmpty)
-            {
-                //Log.Debug("Nothing to send.");
-                return;
-            }
-            _toSendPackets.TryDequeue(out Packet packet);
+            Packet packet = await _toSendPackets.Reader.ReadAsync();
             PreparePacket(ref packet);
             if (!InvokePacketSendRequest(packet))
             {

@@ -103,7 +103,16 @@ namespace SocketNetworking.Server
                 {
                     try
                     {
+                        if (!ShouldAcceptConnections)
+                        {
+                            continue;
+                        }
                         QuicConnection connection = await _listener.AcceptConnectionAsync();
+                        if (!ShouldAcceptConnections)
+                        {
+                            await connection.CloseAsync(QuicNetworkClient.DefaultErrorCode);
+                            continue;
+                        }
                         _ = Task.Run(async () =>
                         {
                             try
