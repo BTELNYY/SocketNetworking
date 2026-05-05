@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Resources;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -235,6 +237,16 @@ namespace SocketNetworking.Client
 
         #region Properties
 
+
+        /// <summary>
+        /// Represents the stream to which all send packets will be written to.
+        /// </summary>
+        public Stream PacketOutMirror { get; set; }
+
+        /// <summary>
+        /// Represents the stream to which all received packets will be written to.
+        /// </summary>
+        public Stream PacketInMirror { get; set; }
 
         /// <summary>
         /// Represents the amount of <see cref="byte"/>s sent by the current <see cref="NetworkClient"/>.
@@ -1164,6 +1176,70 @@ namespace SocketNetworking.Client
             ClientConnected?.Invoke();
             Clients.Add(this);
             //Log.Debug("Client started");
+        }
+
+        #endregion
+
+        #region Packet Mirroring
+        
+        /// <summary>
+        /// Writes given <paramref name="bytes"/> to the <see cref="PacketOutMirror"/> stream (checks if the stream is open, writable, etc etc)
+        /// </summary>
+        /// <param name="bytes"></param>
+        protected void MirrorSend(byte[] bytes)
+        {
+            if (PacketInMirror == null) return;
+            if (!PacketInMirror.CanWrite)
+            {
+                Log.Error("Can't write to out packet mirror.");
+                return;
+            }
+            PacketInMirror?.Write(bytes, 0, bytes.Length);
+        }
+
+        /// <summary>
+        /// Writes given <paramref name="bytes"/> to the <see cref="PacketOutMirror"/> stream (checks if the stream is open, writable, etc etc)
+        /// </summary>
+        /// <param name="bytes"></param>
+        protected async Task MirrorSendAsync(byte[] bytes)
+        {
+            if (PacketInMirror == null) return;
+            if (!PacketInMirror.CanWrite)
+            {
+                Log.Error("Can't write to out packet mirror.");
+                return;
+            }
+            await PacketInMirror?.WriteAsync(bytes, 0, bytes.Length);
+        }
+
+        /// <summary>
+        /// Writes given <paramref name="bytes"/> to the <see cref="PacketInMirror"/> stream (checks if the stream is open, writable, etc etc)
+        /// </summary>
+        /// <param name="bytes"></param>
+        protected void MirrorRead(byte[] bytes)
+        {
+            if (PacketOutMirror == null) return;
+            if (!PacketOutMirror.CanWrite)
+            {
+                Log.Error("Can't write to in packet mirror.");
+                return;
+            }
+            PacketOutMirror?.Write(bytes, 0, bytes.Length);
+        }
+
+        /// <summary>
+        /// Writes given <paramref name="bytes"/> to the <see cref="PacketInMirror"/> stream (checks if the stream is open, writable, etc etc)
+        /// </summary>
+        /// <param name="bytes"></param>
+        protected async Task MirrorReadAsync(byte[] bytes)
+        {
+            if (PacketOutMirror == null) return;
+            if (!PacketOutMirror.CanWrite)
+            {
+                Log.Error("Can't write to in packet mirror.");
+                return;
+            }
+            await PacketOutMirror?.WriteAsync(bytes, 0, bytes.Length);
         }
 
         #endregion
