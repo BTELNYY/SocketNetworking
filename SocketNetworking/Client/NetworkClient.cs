@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Resources;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -1181,7 +1180,7 @@ namespace SocketNetworking.Client
         #endregion
 
         #region Packet Mirroring
-        
+
         /// <summary>
         /// Writes given <paramref name="bytes"/> to the <see cref="PacketOutMirror"/> stream (checks if the stream is open, writable, etc etc)
         /// </summary>
@@ -1280,6 +1279,7 @@ namespace SocketNetworking.Client
             {
                 //Log.Debug($"Send to {packet.Destination}");
                 Exception ex = Transport.Send(fullBytes, packet.Destination);
+                MirrorSend(fullBytes);
                 if (ex != null)
                 {
                     throw ex;
@@ -1317,6 +1317,7 @@ namespace SocketNetworking.Client
             {
                 //Log.Debug($"Send to {packet.Destination}");
                 Exception ex = await Transport.SendAsync(fullBytes, packet.Destination);
+                await MirrorSendAsync(fullBytes);
                 if (ex != null)
                 {
                     throw ex;
@@ -1548,6 +1549,7 @@ namespace SocketNetworking.Client
                 //Log.Debug($"Sending packet: {packet.ToString()}");
                 //bytesSent += (ulong)fullBytes.Length;
                 Exception ex = Transport.Send(fullBytes, packet.Destination);
+                MirrorSend(fullBytes);
                 if (ex != null)
                 {
                     throw ex;
@@ -1585,6 +1587,7 @@ namespace SocketNetworking.Client
                 //Log.Debug($"Sending packet: {packet.ToString()}");
                 //bytesSent += (ulong)fullBytes.Length;
                 Exception ex = await Transport.SendAsync(fullBytes, packet.Destination);
+                await MirrorSendAsync(fullBytes);
                 if (ex != null)
                 {
                     throw ex;
@@ -1820,6 +1823,7 @@ namespace SocketNetworking.Client
                 Log.Warning("Transport received a null byte array.");
                 return;
             }
+            MirrorRead(packet.Item1);
             DeserializeRetry(packet.Item1, packet.Item3);
         }
 
@@ -1846,6 +1850,7 @@ namespace SocketNetworking.Client
                 Log.Warning("Transport received a null byte array.");
                 return;
             }
+            await MirrorReadAsync(packet.Item1);
             DeserializeRetry(packet.Item1, packet.Item3);
         }
 

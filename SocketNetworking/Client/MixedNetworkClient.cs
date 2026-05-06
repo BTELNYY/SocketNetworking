@@ -127,6 +127,7 @@ namespace SocketNetworking.Client
                         throw new InvalidOperationException("Trying to send Priority packets when priority is not available.");
                     }
                     ex = UdpTransport.Send(fullBytes, packet.Destination);
+                    MirrorSend(fullBytes);
                 }
                 else
                 {
@@ -135,6 +136,7 @@ namespace SocketNetworking.Client
                         throw new InvalidOperationException("Trying to send packets when transport is not connected!");
                     }
                     ex = Transport.Send(fullBytes, packet.Destination);
+                    MirrorSend(fullBytes);
                 }
                 if (ex != null)
                 {
@@ -187,6 +189,7 @@ namespace SocketNetworking.Client
                         throw new InvalidOperationException("Trying to send Priority packets when priority is not available.");
                     }
                     ex = await UdpTransport.SendAsync(fullBytes, packet.Destination);
+                    await MirrorSendAsync(fullBytes);
                 }
                 else
                 {
@@ -195,6 +198,7 @@ namespace SocketNetworking.Client
                         throw new InvalidOperationException("Trying to send packets when transport is not connected!");
                     }
                     ex = await Transport.SendAsync(fullBytes, packet.Destination);
+                    await MirrorSendAsync(fullBytes);
                 }
                 if (ex != null)
                 {
@@ -296,6 +300,7 @@ namespace SocketNetworking.Client
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = UdpTransport.Receive();
+            MirrorRead(packet.Item1);
             if (packet.Item2 != null)
             {
                 Log.Error(packet.Item2.ToString());
@@ -324,6 +329,7 @@ namespace SocketNetworking.Client
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = await UdpTransport.ReceiveAsync();
+            await MirrorReadAsync(packet.Item1);
             if (packet.Item2 != null)
             {
                 Log.Error(packet.Item2.ToString());

@@ -117,6 +117,7 @@ namespace SocketNetworking.Client
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
+            MirrorRead(packet.Item1);
             if (packet.Item1 == null)
             {
                 Log.Warning("Transport Received a null byte array.");
@@ -137,6 +138,7 @@ namespace SocketNetworking.Client
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = await Transport.ReceiveAsync();
+            await MirrorReadAsync(packet.Item1);
             if (packet.Item1 == null)
             {
                 Log.Warning("Transport Received a null byte array.");
