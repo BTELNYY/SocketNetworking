@@ -1379,12 +1379,12 @@ namespace SocketNetworking.Shared
             NetworkObjectData objData = GetNetworkObjectData(target.GetType());
             MethodInfo[] methods = null;
             MethodInfo method = null;
-#pragma warning disable CS0612 // Type or member is obsolete
+#pragma warning disable CS0618 // Type or member is obsolete
             if (packet.MethodName != string.Empty)
             {
                 methods = GetNetworkObjectData(target.GetType()).Invocables.Keys.ToArray();
                 method = GetNetworkInvokeMethod(methods, arguments, packet.MethodName) ?? throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
-#pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning restore CS0618 // Type or member is obsolete
             }
             else
             {
@@ -1696,7 +1696,9 @@ namespace SocketNetworking.Shared
             }
             NetworkInvocationPacket packet = new NetworkInvocationPacket();
             packet.NetworkIDTarget = targetID;
+#pragma warning disable CS0618 // Type or member is obsolete
             packet.MethodName = string.Empty;
+#pragma warning restore CS0618 // Type or member is obsolete
             packet.MethodIndex = index;
             foreach (object arg in args)
             {
