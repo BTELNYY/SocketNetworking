@@ -770,11 +770,11 @@ namespace SocketNetworking.Client
         /// </returns>
         public bool ClientRequestEncryption()
         {
-            return NetworkInvokeBlockingOnClient<bool>(nameof(ServerGetEncryptionRequest));
+            return NetworkInvokeBlockingOnClient<bool>((Func<NetworkHandle, bool>)ServerGetEncryptionRequest);
         }
 
         [NetworkInvokable(NetworkDirection.Client)]
-        private bool ServerGetEncryptionRequest()
+        private bool ServerGetEncryptionRequest(NetworkHandle handle)
         {
             if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
             {
@@ -913,7 +913,7 @@ namespace SocketNetworking.Client
                 try
                 {
                     IPHostEntry entry = Dns.GetHostEntry(hostname);
-                    if (entry.AddressList.Count() == 0)
+                    if (entry.AddressList.Length == 0)
                     {
                         Log.Error($"Can't find host {hostname}");
                         return false;
@@ -975,7 +975,7 @@ namespace SocketNetworking.Client
                 try
                 {
                     IPHostEntry entry = Dns.GetHostEntry(hostname);
-                    if (entry.AddressList.Count() == 0)
+                    if (entry.AddressList.Length == 0)
                     {
                         Log.Error($"Can't find host {hostname}");
                         return false;
@@ -1401,7 +1401,7 @@ namespace SocketNetworking.Client
         /// <param name="target"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
-        [Obsolete]
+        [Obsolete("Use the delegate overload instead of the method name by string.")]
         public void NetworkInvoke(object target, string methodName, params object[] args)
         {
             NetworkManager.NetworkInvoke(target, this, methodName, args);
@@ -1422,7 +1422,7 @@ namespace SocketNetworking.Client
         /// </summary>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
-        [Obsolete]
+        [Obsolete("Prefer delegate overload over method name string.")]
         public void NetworkInvokeOnClient(string methodName, params object[] args)
         {
             NetworkManager.NetworkInvoke(this, this, methodName, args);
@@ -1436,11 +1436,23 @@ namespace SocketNetworking.Client
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
         /// <returns></returns>
+        [Obsolete("Prefer delegate method over method name string.")]
         public T NetworkInvokeBlockingOnClient<T>(string methodName, float maxTimeMs = 5000, params object[] args)
         {
-#pragma warning disable CS0612 // Type or member is obsolete
             return NetworkManager.NetworkInvokeBlocking<T>(this, this, methodName, args, maxTimeMs);
-#pragma warning restore CS0612 // Type or member is obsolete
+        }
+
+        /// <summary>
+        /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value. This will try to find the method on the current <see cref="NetworkClient"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <param name="maxTimeMs"></param>
+        /// <returns></returns>
+        public T NetworkInvokeBlockingOnClient<T>(Delegate @delegate, float maxTimeMs = 5000, params object[] args)
+        {
+            return NetworkManager.NetworkInvokeBlocking<T>(this, @delegate, args, maxTimeMs);
         }
 
         /// <summary>
@@ -1451,7 +1463,7 @@ namespace SocketNetworking.Client
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("Prefer delegate over method name string.")]
         public T NetworkInvokeBlocking<T>(object obj, string methodName, float maxTimeMs = 5000, params object[] args)
         {
             return NetworkManager.NetworkInvokeBlocking<T>(obj, this, methodName, args, maxTimeMs);
@@ -1470,7 +1482,7 @@ namespace SocketNetworking.Client
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("Prefer delegate overload over method name string.")]
         public NetworkInvocationCallback<T> NetworkInvokeBlockingCallback<T>(string methodName, params object[] args)
         {
             return NetworkManager.NetworkInvoke<T>(this, this, methodName, args);
@@ -1537,7 +1549,12 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            Packet packet = _toSendPackets.Reader.ReadAsync().Result;
+            bool read = _toSendPackets.Reader.TryRead(out Packet packet);
+            if (!read)
+            {
+                Log.Warning("Failed to TryRead packet from send queue. (Why are you not using the async API?)");
+                return;
+            }
             PreparePacket(ref packet);
             if (!InvokePacketSendRequest(packet))
             {
@@ -2220,11 +2237,7 @@ namespace SocketNetworking.Client
                                 Log.Error("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
                                 continue;
                             }
-                            if (homelessPackets.Contains(t))
-                            {
-                                homelessPackets.Remove(t);
-                            }
-                            else
+                            if (!homelessPackets.Remove(t))
                             {
                                 homelessPackets.Add(NetworkManager.AdditionalPacketTypes[i]);
                             }
@@ -2582,7 +2595,7 @@ namespace SocketNetworking.Client
         DateTime _lastSent = DateTime.UtcNow;
 
         /// <summary>
-        /// Performs the latency check. Obselete, see <see cref="StartLatencyChecker"/>
+        /// Performs the latency check. Obsolete, see <see cref="StartLatencyChecker"/>
         /// </summary>
         [Obsolete("This is handled automatically.")]
         protected virtual void DoLatencyCheck()

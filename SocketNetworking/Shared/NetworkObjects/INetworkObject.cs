@@ -22,7 +22,7 @@ namespace SocketNetworking.Shared.NetworkObjects
         int SpawnPriority { get; }
 
         /// <summary>
-        /// The <see cref="NetworkClient.ClientID"/> of the current owner. This must not be a live property, Do NOT use the setter to update it networkside. Use <see cref="NetworkObjectExtensions.NetworkSetOwner(INetworkObject, int)"/> to set this network wide.
+        /// The <see cref="NetworkClient.ClientID"/> of the current owner. This must not be a live property, Do NOT use the setter to update it network side. Use <see cref="NetworkObjectExtensions.NetworkSetOwner(INetworkObject, int)"/> to set this network wide.
         /// </summary>
         int OwnerClientID { get; set; }
 
@@ -48,7 +48,7 @@ namespace SocketNetworking.Shared.NetworkObjects
         ObjectVisibilityMode ObjectVisibilityMode { get; set; }
 
         /// <summary>
-        /// The network ID of the object. This should be the same on the client and server. This must not be a live property, Do NOT use the setter to update it networkside.
+        /// The network ID of the object. This should be the same on the client and server. This must not be a live property, Do NOT use the setter to update it network side.
         /// </summary>
         int NetworkID { get; set; }
 
@@ -81,7 +81,7 @@ namespace SocketNetworking.Shared.NetworkObjects
         void RemovePrivilege(int clientId);
 
         /// <summary>
-        /// Called on the object spanwer when the peer has finished spawning it.
+        /// Called on the object spawner when the peer has finished spawning it.
         /// </summary>
         void OnNetworkSpawned(NetworkClient spawner);
 

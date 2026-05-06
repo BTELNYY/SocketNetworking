@@ -243,7 +243,7 @@ namespace Werewolf.Shared
                 return;
             }
             string cleanMessage = FancyConsole.StripColor(message);
-            if (cleanMessage.StartsWith("/"))
+            if (cleanMessage.StartsWith('/'))
             {
                 HandleCommand(handle, cleanMessage.Substring(1));
                 return;

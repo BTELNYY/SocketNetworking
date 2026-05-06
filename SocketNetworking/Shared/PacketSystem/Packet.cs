@@ -24,6 +24,11 @@ namespace SocketNetworking.Shared.PacketSystem
 
         private static readonly int _maxPacketSize = ushort.MaxValue;
 
+        /// <summary>
+        /// Will serialize the given <paramref name="value"/> with <see cref="ByteConvert.Serialize(object)"/>.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public static byte[] SerializeSupportedType(object value)
         {
             return ByteConvert.Serialize(value).Data;
