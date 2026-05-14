@@ -280,18 +280,18 @@ namespace SocketNetworking.Shared.Serialization
         }
 
         /// <summary>
-        /// Reads a <see cref="TypeWrapper{T}"/> from the buffer. <typeparamref name="K"/> is the final type that this method returns, and <typeparamref name="T"/> is the <see cref="TypeWrapper{T}"/> which has a generic argument of <typeparamref name="K"/>. The <see cref="TypeWrapper{T}"/> does not need to be registered in <see cref="NetworkManager.TypeToTypeWrapper"/>. if it is, you can use <see cref="ReadWrapper{T}()"/>.
+        /// Reads a <see cref="TypeWrapper{T}"/> from the buffer. <typeparamref name="TFinal"/> is the final type that this method returns, and <typeparamref name="TWrapper"/> is the <see cref="TypeWrapper{T}"/> which has a generic argument of <typeparamref name="TFinal"/>. The <see cref="TypeWrapper{T}"/> does not need to be registered in <see cref="NetworkManager.TypeToTypeWrapper"/>. if it is, you can use <see cref="ReadWrapper{T}()"/>.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <typeparam name="K"></typeparam>
+        /// <typeparam name="TWrapper"></typeparam>
+        /// <typeparam name="TFinal"></typeparam>
         /// <returns></returns>
-        public K ReadWrapper<T, K>() where T : TypeWrapper<K>
+        public TFinal ReadWrapper<TWrapper, TFinal>() where TWrapper : TypeWrapper<TFinal>
         {
             lock (_lock)
             {
                 byte[] bytes = ReadByteArray();
-                TypeWrapper<K> wrapper = (TypeWrapper<K>)Activator.CreateInstance(typeof(T));
-                ValueTuple<K, int> result = wrapper.Deserialize(bytes);
+                TypeWrapper<TFinal> wrapper = (TypeWrapper<TFinal>)Activator.CreateInstance(typeof(TWrapper));
+                ValueTuple<TFinal, int> result = wrapper.Deserialize(bytes);
                 return result.Item1;
             }
         }
@@ -299,14 +299,14 @@ namespace SocketNetworking.Shared.Serialization
         /// <summary>
         /// Reads a <see cref="TypeWrapper{T}"/> that has been registered in <see cref="NetworkManager.TypeToTypeWrapper"/>.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TFinal"></typeparam>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public T ReadWrapper<T>()
+        public TFinal ReadWrapper<TFinal>()
         {
             lock (_lock)
             {
-                Type type = typeof(T);
+                Type type = typeof(TFinal);
                 if (!NetworkManager.TypeToTypeWrapper.ContainsKey(type))
                 {
                     throw new InvalidOperationException("No type wrapper for type: " + type.FullName);
@@ -314,7 +314,7 @@ namespace SocketNetworking.Shared.Serialization
                 byte[] bytes = ReadByteArray();
                 object typeWrapper = Activator.CreateInstance(NetworkManager.TypeToTypeWrapper[type]);
                 ITypeWrapper wrapper = (ITypeWrapper)typeWrapper;
-                ValueTuple<T, int> result = ((T, int))wrapper.DeserializeRaw(bytes);
+                ValueTuple<TFinal, int> result = ((TFinal, int))wrapper.DeserializeRaw(bytes);
                 return result.Item1;
             }
         }

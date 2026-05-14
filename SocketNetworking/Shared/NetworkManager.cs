@@ -345,6 +345,24 @@ namespace SocketNetworking.Shared
         private static readonly List<NetworkObjectData> PreCache = new List<NetworkObjectData>();
 
         /// <summary>
+        /// Tries to find a <see cref="INetworkObject"/> given a type <paramref name="filter"/>. If <paramref name="filter"/> is <see langword="null"/>, will find the first object with that <paramref name="id"/> of any <see cref="Type"/>.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="filter"></param>
+        /// <returns></returns>
+        public static (INetworkObject, NetworkObjectData) FindNetworkObject(int id, Type filter)
+        {
+            if (filter == null)
+            {
+                return GetNetworkObjectByID(id);
+            }
+            else
+            {
+                return GetNetworkObjectsByID(id).Where(x => x.Item1.GetType() == filter).FirstOrDefault();
+            }
+        }
+
+        /// <summary>
         /// Attempts to find a <see cref="INetworkObject"/> by <see cref="INetworkObject.NetworkID"/>. Will return the first one found.
         /// </summary>
         /// <param name="id"></param>
