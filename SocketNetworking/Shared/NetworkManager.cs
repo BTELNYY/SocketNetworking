@@ -209,7 +209,7 @@ namespace SocketNetworking.Shared
                 {
                     continue;
                 }
-                PreCache.Add(data);
+                _preCache.Add(data);
             }
             GetHashFromAssembly(target);
         }
@@ -227,7 +227,7 @@ namespace SocketNetworking.Shared
                 {
                     continue;
                 }
-                PreCache.Add(data);
+                _preCache.Add(data);
             }
         }
 
@@ -340,12 +340,12 @@ namespace SocketNetworking.Shared
 
         #region Network Objects
 
-        private static readonly ConcurrentDictionary<INetworkObject, NetworkObjectData> NetworkObjects = new ConcurrentDictionary<INetworkObject, NetworkObjectData>();
+        private static readonly ConcurrentDictionary<INetworkObject, NetworkObjectData> _networkObjects = new ConcurrentDictionary<INetworkObject, NetworkObjectData>();
 
-        private static readonly List<NetworkObjectData> PreCache = new List<NetworkObjectData>();
+        private static readonly List<NetworkObjectData> _preCache = new List<NetworkObjectData>();
 
         /// <summary>
-        /// Tries to find a <see cref="INetworkObject"/> given a type <paramref name="filter"/>. If <paramref name="filter"/> is <see langword="null"/>, will find the first object with that <paramref name="id"/> of any <see cref="Type"/>.
+        /// Tries to find a <see cref="INetworkObject"/> given a type <paramref name="filter"/>. If <paramref name="filter"/> is <see langword="null"/>, will find the first object with that <paramref name="id"/> of any <see cref="Type"/>. If not found, will return a <see langword="default"/> tuple. (Aka a tuple where element 1 and 2 are both <see langword="null"/>).
         /// </summary>
         /// <param name="id"></param>
         /// <param name="filter"></param>
@@ -369,10 +369,10 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public static (INetworkObject, NetworkObjectData) GetNetworkObjectByID(int id)
         {
-            INetworkObject obj = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == id);
+            INetworkObject obj = _networkObjects.Keys.FirstOrDefault(x => x.NetworkID == id);
             if (obj != null)
             {
-                return (obj, NetworkObjects[obj]);
+                return (obj, _networkObjects[obj]);
             }
             return (null, null);
         }
@@ -384,27 +384,27 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public static List<(INetworkObject, NetworkObjectData)> GetNetworkObjectsByID(int id)
         {
-            return NetworkObjects.Where(x => x.Key.NetworkID == id).Select(x => (x.Key, x.Value)).ToList();
+            return _networkObjects.Where(x => x.Key.NetworkID == id).Select(x => (x.Key, x.Value)).ToList();
         }
 
         /// <summary>
-        /// Prints all <see cref="INetworkObject"/>s from <see cref="NetworkObjects"/> using <see cref="Log.Info(string)"/>.
+        /// Prints all <see cref="INetworkObject"/>s from <see cref="_networkObjects"/> using <see cref="Log.Info(string)"/>.
         /// </summary>
         public static void PrintNetworkObjects()
         {
             Log.Info($"PRINT NETWORK OBJECTS!!!");
-            List<INetworkObject> objs = NetworkObjects.Keys.ToList();
+            List<INetworkObject> objs = _networkObjects.Keys.ToList();
             objs.Sort((x, y) =>
             {
                 return x.NetworkID - y.NetworkID;
             });
             foreach (INetworkObject networkObject in objs)
             {
-                Log.Info($"Object: {networkObject}, Data: {NetworkObjects[networkObject]}");
+                Log.Info($"Object: {networkObject}, Data: {_networkObjects[networkObject]}");
             }
         }
 
-        private static readonly List<NetworkObjectSpawner> NetworkObjectSpawners = new List<NetworkObjectSpawner>();
+        private static readonly List<NetworkObjectSpawner> _networkObjectSpawners = new List<NetworkObjectSpawner>();
 
         /// <summary>
         /// Allows for spawning of an <see cref="INetworkObject"/> controlled via external code. Note that <see cref="ObjectManagePacket"/> will be null if the <see cref="INetworkObject"/> type is the same as <see cref="NetworkServer.ClientAvatar"/>.
@@ -412,18 +412,18 @@ namespace SocketNetworking.Shared
         /// <param name="packet"></param>
         /// <param name="handle"></param>
         /// <returns></returns>
-        public delegate INetworkSpawnable NetworkObjectSpawnerDelegate(ObjectManagePacket packet, NetworkHandle handle);
+        public delegate INetworkSpawnable NetworkSpawnerDelegate(ObjectManagePacket packet, NetworkHandle handle);
 
         /// <summary>
-        /// Registers a <see cref="NetworkObjectSpawnerDelegate"/> to a specific <see cref="Type"/>. Duplicates are not allowed. Returns a <see cref="bool"/> representing success.
+        /// Registers a <see cref="NetworkSpawnerDelegate"/> to a specific <see cref="Type"/>. Duplicates are not allowed. Returns a <see cref="bool"/> representing success.
         /// </summary>
         /// <param name="type"></param>
         /// <param name="spawner"></param>
         /// <param name="allowSubclasses"></param>
         /// <returns></returns>
-        public static bool RegisterSpawner(Type type, NetworkObjectSpawnerDelegate spawner, bool allowSubclasses)
+        public static bool RegisterSpawner(Type type, NetworkSpawnerDelegate spawner, bool allowSubclasses)
         {
-            if (NetworkObjectSpawners.Any(x => x.TargetType == type))
+            if (_networkObjectSpawners.Any(x => x.TargetType == type))
             {
                 Log.Error("Can't register that spawner: The type is already registered.");
                 return false;
@@ -434,31 +434,31 @@ namespace SocketNetworking.Shared
                 AllowSubclasses = allowSubclasses,
                 TargetType = type
             };
-            NetworkObjectSpawners.Add(spawnerStruct);
+            _networkObjectSpawners.Add(spawnerStruct);
             Log.Debug($"Registered spawner {spawnerStruct}");
             return true;
         }
 
         /// <summary>
-        /// Unregisters a <see cref="NetworkObjectSpawnerDelegate"/> from a <see cref="Type"/>.
+        /// Unregisters a <see cref="NetworkSpawnerDelegate"/> from a <see cref="Type"/>.
         /// </summary>
         /// <param name="type"></param>
         /// <param name="spawnerDelegate"></param>
         /// <returns></returns>
-        public static bool UnregisterSpawner(Type type, NetworkObjectSpawnerDelegate spawnerDelegate)
+        public static bool UnregisterSpawner(Type type, NetworkSpawnerDelegate spawnerDelegate)
         {
-            NetworkObjectSpawner spawner = NetworkObjectSpawners.FirstOrDefault(x => x.TargetType == type && x.Spawner == spawnerDelegate);
+            NetworkObjectSpawner spawner = _networkObjectSpawners.FirstOrDefault(x => x.TargetType == type && x.Spawner == spawnerDelegate);
             if (spawner == default(NetworkObjectSpawner))
             {
                 Log.Error("Can't unregister that spawner: Not Found");
                 return false;
             }
-            NetworkObjectSpawners.Remove(spawner);
+            _networkObjectSpawners.Remove(spawner);
             return true;
         }
 
         /// <summary>
-        /// Attempts to find the best possible <see cref="NetworkObjectSpawnerDelegate"/> for a <see cref="Type"/>. This is done by trying to find the class that is the most closest to it within the inheritance hierarchy. If <see cref="NetworkObjectSpawner.AllowSubclasses"/> is <see langword="false"/>, this method will attempt to find the spawner that matches exactly. Returns <see langword="null"/> if no spawner is found.
+        /// Attempts to find the best possible <see cref="NetworkSpawnerDelegate"/> for a <see cref="Type"/>. This is done by trying to find the class that is the most closest to it within the inheritance hierarchy. If <see cref="NetworkObjectSpawner.AllowSubclasses"/> is <see langword="false"/>, this method will attempt to find the spawner that matches exactly. Returns <see langword="null"/> if no spawner is found.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
@@ -466,7 +466,7 @@ namespace SocketNetworking.Shared
         {
             NetworkObjectSpawner objSpawner = null;
             int bestApproxObj = int.MaxValue;
-            foreach (NetworkObjectSpawner possibleSpawner in NetworkObjectSpawners)
+            foreach (NetworkObjectSpawner possibleSpawner in _networkObjectSpawners)
             {
                 if (possibleSpawner.AllowSubclasses)
                 {
@@ -566,7 +566,7 @@ namespace SocketNetworking.Shared
                 return;
             }
 
-            foreach (INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget))
+            foreach (INetworkObject @object in _networkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget))
             {
                 //Security
                 if (packet.Action != ObjectManagePacket.ObjectManageAction.Create && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy && packet.Action != ObjectManagePacket.ObjectManageAction.AlreadyExists)
@@ -672,7 +672,7 @@ namespace SocketNetworking.Shared
 
         public static void SendModifiedPulse(NetworkClient client, INetworkObject modifiedObject)
         {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys)
+            foreach (INetworkObject networkObject in _networkObjects.Keys)
             {
                 networkObject.OnModified(modifiedObject, client);
             }
@@ -680,7 +680,7 @@ namespace SocketNetworking.Shared
 
         public static void SendCreatedPulse(NetworkClient client, INetworkObject createdObject)
         {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys)
+            foreach (INetworkObject networkObject in _networkObjects.Keys)
             {
                 networkObject.OnCreated(createdObject, client);
             }
@@ -688,7 +688,7 @@ namespace SocketNetworking.Shared
 
         public static void SendDestroyedPulse(NetworkClient client, INetworkObject destroyedObject)
         {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys)
+            foreach (INetworkObject networkObject in _networkObjects.Keys)
             {
                 networkObject.OnDestroyed(destroyedObject, client);
             }
@@ -696,7 +696,7 @@ namespace SocketNetworking.Shared
 
         public static void SendReadyPulse(NetworkClient sender, bool isReady)
         {
-            foreach (INetworkObject @object in NetworkObjects.Keys)
+            foreach (INetworkObject @object in _networkObjects.Keys)
             {
                 @object.OnReady(sender, isReady);
             }
@@ -704,7 +704,7 @@ namespace SocketNetworking.Shared
 
         public static void SendAddedPulse(INetworkObject addedObject)
         {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys.Where(x => x.NetworkID == addedObject.NetworkID))
+            foreach (INetworkObject networkObject in _networkObjects.Keys.Where(x => x.NetworkID == addedObject.NetworkID))
             {
                 networkObject.OnAdded(addedObject);
             }
@@ -712,7 +712,7 @@ namespace SocketNetworking.Shared
 
         public static void SendRemovedPulse(INetworkObject removedObject)
         {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys.Where(x => x.NetworkID == removedObject.NetworkID))
+            foreach (INetworkObject networkObject in _networkObjects.Keys.Where(x => x.NetworkID == removedObject.NetworkID))
             {
                 networkObject.OnRemoved(removedObject);
             }
@@ -720,7 +720,7 @@ namespace SocketNetworking.Shared
 
         public static void SendDisconnectedPulse(NetworkClient networkClient)
         {
-            foreach (INetworkObject @object in NetworkObjects.Keys)
+            foreach (INetworkObject @object in _networkObjects.Keys)
             {
                 @object.OnDisconnected(networkClient);
                 if (@object.OwnerClientID == networkClient.ClientID)
@@ -732,7 +732,7 @@ namespace SocketNetworking.Shared
 
         public static void SendConnectedPulse(NetworkClient client)
         {
-            foreach (INetworkObject @object in NetworkObjects.Keys)
+            foreach (INetworkObject @object in _networkObjects.Keys)
             {
                 @object.OnConnected(client);
             }
@@ -748,7 +748,7 @@ namespace SocketNetworking.Shared
         /// </returns>
         public static int GetNextNetworkObjectID()
         {
-            List<int> ids = NetworkObjects.Keys.Select(x => x.NetworkID).ToList();
+            List<int> ids = _networkObjects.Keys.Select(x => x.NetworkID).ToList();
             if (ids.Count == 0)
             {
                 return 1;
@@ -770,7 +770,7 @@ namespace SocketNetworking.Shared
         /// </returns>
         public static bool IsRegistered(INetworkObject networkObject)
         {
-            return NetworkObjects.ContainsKey(networkObject);
+            return _networkObjects.ContainsKey(networkObject);
         }
 
         /// <summary>
@@ -779,7 +779,7 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public static List<INetworkObject> GetNetworkObjects()
         {
-            return NetworkObjects.Keys.ToList();
+            return _networkObjects.Keys.ToList();
         }
 
         /// <summary>
@@ -797,7 +797,7 @@ namespace SocketNetworking.Shared
             {
                 networkObject.EnsureNetworkIDIsGiven();
             }
-            if (NetworkObjects.ContainsKey(networkObject))
+            if (_networkObjects.ContainsKey(networkObject))
             {
                 Log.Error("Tried to add network object that already exists.");
                 return false;
@@ -806,7 +806,7 @@ namespace SocketNetworking.Shared
             {
                 networkObject.OnBeforeRegister();
                 NetworkObjectData data = GetNetworkObjectData(networkObject);
-                bool added = NetworkObjects.TryAdd(networkObject, data);
+                bool added = _networkObjects.TryAdd(networkObject, data);
                 if (added)
                 {
                     SendAddedPulse(networkObject);
@@ -844,7 +844,7 @@ namespace SocketNetworking.Shared
                 Log.Error($"Network Object {networkObject.GetType().Name} was ignored because NetworkID 0 is reserved. Please choose another ID.");
                 return false;
             }
-            if (!NetworkObjects.ContainsKey(networkObject))
+            if (!_networkObjects.ContainsKey(networkObject))
             {
                 Log.Warning("Tried to modify network object that does not exist.");
                 return false;
@@ -852,7 +852,7 @@ namespace SocketNetworking.Shared
             else
             {
                 NetworkObjectData data = GetNetworkObjectData(networkObject);
-                NetworkObjects[networkObject] = data;
+                _networkObjects[networkObject] = data;
                 return true;
             }
         }
@@ -868,30 +868,16 @@ namespace SocketNetworking.Shared
         /// </returns>
         public static bool RemoveNetworkObject(INetworkObject networkObject)
         {
-            //Redundant, we don't care what ID the object is, we just want it gone.
-            //if (networkObject.NetworkID == 0)
-            //{
-            //    Log.Error($"Network Object {networkObject.GetType().Name} was ignored because NetworkID 0 is reserved. Please choose another ID.");
-            //    return false;
-            //}
-            if (!NetworkObjects.ContainsKey(networkObject))
+            bool removed = _networkObjects.TryRemove(networkObject, out NetworkObjectData value);
+            if (removed)
             {
-                Log.Warning("Tried to remove NetworkObject that doesn't exist.");
-                return false;
+                SendRemovedPulse(networkObject);
             }
             else
             {
-                bool removed = NetworkObjects.TryRemove(networkObject, out NetworkObjectData value);
-                if (removed)
-                {
-                    SendRemovedPulse(networkObject);
-                }
-                else
-                {
-                    Log.Error($"Failed to remove {networkObject}!");
-                }
-                return removed;
+                Log.Error($"Failed to remove {networkObject}! Does it exist?");
             }
+            return removed;
         }
 
         /// <summary>
@@ -901,13 +887,14 @@ namespace SocketNetworking.Shared
         /// <returns>
         /// How many objects are removed.
         /// </returns>
+        [Obsolete("This method does the same thing unless you have duplicate IDs.")]
         public static int RemoveAllNetworkObjectsByID(int id)
         {
             if (id == 0)
             {
                 Log.Warning("Trying to remove all objects with NetID 0, are you sure you know what you are doing?");
             }
-            List<INetworkObject> networkObjects = NetworkObjects.Keys.Where(x => x.NetworkID == id).ToList();
+            List<INetworkObject> networkObjects = _networkObjects.Keys.Where(x => x.NetworkID == id).ToList();
             int removed = 0;
             foreach (INetworkObject netObj in networkObjects)
             {
@@ -926,9 +913,9 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public static NetworkObjectData GetNetworkObjectData(Type t)
         {
-            if (PreCache.Any(x => x.TargetObject == t) || TypeToTypeWrapper.ContainsValue(t))
+            if (_preCache.Any(x => x.TargetObject == t) || TypeToTypeWrapper.ContainsValue(t))
             {
-                return PreCache.FirstOrDefault(x => x.TargetObject == t);
+                return _preCache.FirstOrDefault(x => x.TargetObject == t);
             }
             Log.Debug($"Type {t.Name} has never been seen before, registering.");
             Type baseType = t.BaseType;
@@ -1148,7 +1135,7 @@ namespace SocketNetworking.Shared
                 }
                 return;
             }
-            List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == cPacket.NetworkIDTarget && x.Active).ToList();
+            List<INetworkObject> objects = _networkObjects.Keys.Where(x => x.NetworkID == cPacket.NetworkIDTarget && x.Active).ToList();
             if (objects.Count == 0)
             {
                 Log.Warning($"Target NetworkID revealed no active objects registered! ID: {cPacket.NetworkIDTarget}");
@@ -1158,16 +1145,16 @@ namespace SocketNetworking.Shared
             //The other way I could do this is by making a nested dictionary hell hole, but I don't want to do that.
             foreach (INetworkObject netObj in objects)
             {
-                if (!NetworkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count == 1)
+                if (!_networkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count == 1)
                 {
                     Log.Warning($"Can't find any listeners for packet type: {packetType.Name} in object type: {netObj.GetType().Name}, it is also the only object for this NetworkID that is enabled.");
                     return;
                 }
-                else if (!NetworkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count > 1)
+                else if (!_networkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count > 1)
                 {
                     continue;
                 }
-                List<PacketListenerData> packetListeners = NetworkObjects[netObj].Listeners[packetType];
+                List<PacketListenerData> packetListeners = _networkObjects[netObj].Listeners[packetType];
                 //Log.Debug($"Packet listeners for type {netObj.GetType().Name}: {packetListeners.Count}");
                 foreach (PacketListenerData packetListener in packetListeners)
                 {
@@ -1200,10 +1187,10 @@ namespace SocketNetworking.Shared
             List<SyncVarData> publicReplicated = new List<SyncVarData>();
             foreach (SyncVarData data in packet.Data)
             {
-                List<INetworkObject> objs = NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget).ToList();
+                List<INetworkObject> objs = _networkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget).ToList();
                 foreach (INetworkObject obj in objs)
                 {
-                    NetworkObjectData networkObjectData = NetworkObjects[obj];
+                    NetworkObjectData networkObjectData = _networkObjects[obj];
                     FieldInfo field = networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar);
                     if (field == default)
                     {
@@ -1251,7 +1238,7 @@ namespace SocketNetworking.Shared
                         }
                     }
                 }
-                foreach (INetworkObject obj in NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget))
+                foreach (INetworkObject obj in _networkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget))
                 {
                     obj.OnSyncVarsChanged();
                 }
@@ -1371,7 +1358,7 @@ namespace SocketNetworking.Shared
             List<object> targets = new List<object>();
             if (packet.NetworkIDTarget != 0)
             {
-                List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget && x.GetType() == targetType).ToList();
+                List<INetworkObject> netObjs = _networkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget && x.GetType() == targetType).ToList();
                 if (netObjs.Count != 0)
                 {
                     target = netObjs[0];
@@ -1974,9 +1961,12 @@ namespace SocketNetworking.Shared
     }
 
 
+    /// <summary>
+    /// Defines information object a custom <see cref="INetworkObject"/> spawner.
+    /// </summary>
     public class NetworkObjectSpawner
     {
-        public NetworkManager.NetworkObjectSpawnerDelegate Spawner;
+        public NetworkManager.NetworkSpawnerDelegate Spawner;
 
         public bool AllowSubclasses;
 
@@ -1988,6 +1978,9 @@ namespace SocketNetworking.Shared
         }
     }
 
+    /// <summary>
+    /// Cache of all information captured via reflection.
+    /// </summary>
     public class NetworkObjectData
     {
         public Dictionary<Type, List<PacketListenerData>> Listeners;

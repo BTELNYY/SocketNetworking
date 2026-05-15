@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System;
 using SocketNetworking.Client;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.PacketSystem.Packets;
@@ -12,12 +13,12 @@ namespace SocketNetworking.Shared.NetworkObjects
     public interface INetworkObject : INetworkSpawnable
     {
         /// <summary>
-        /// List of <see cref="INetworkObject"/>s which are required to be spawned before this object. Note that you can most likely cause stack overflows if you are not careful.
+        /// List of <see cref="INetworkObject"/>s which are required to be spawned before this object. Note that you can most likely cause stack overflows if you are not careful. <see cref="SpawnPriority"/> is ignored if an object with a lower priority is listed, and this object is spawned. For this reason, it is recommended to not put objects here unless you actually need them, or wait for your objects to spawn using <see cref="OnAdded"/>, and checking if thats the object you want.
         /// </summary>
         List<INetworkObject> RequiredObjects { get; }
 
         /// <summary>
-        /// Used when sorting <see cref="INetworkObject"/>s for spawning.
+        /// Used when sorting <see cref="INetworkObject"/>s for spawning. The lowest number will go first, where the highest number will go last. Note that <see cref="RequiredObjects"/> will ignore this and simply spawn whatever this object requires.
         /// </summary>
         int SpawnPriority { get; }
 
@@ -38,22 +39,22 @@ namespace SocketNetworking.Shared.NetworkObjects
 
 
         /// <summary>
-        /// What should the library do if the owner of the object disconnects from the server?
+        /// What should the library do if the owner of the object disconnects from the server? It is recommended to override <see cref="OnOwnerDisconnected(NetworkClient)"/> and destroy the object if its no longer needed.
         /// </summary>
         OwnershipMode FallBackIfOwnerDisconnects { get; }
 
         /// <summary>
-        /// Determines the object visibility. This must not be a live property, Do NOT use the setter to update it networkside.
+        /// Determines the object visibility. Use <see cref="NetworkObjectExtensions.NetworkSetVisibility(INetworkObject, ObjectVisibilityMode)"/> to change this objects <see cref="ObjectVisibilityMode"/>.
         /// </summary>
         ObjectVisibilityMode ObjectVisibilityMode { get; set; }
 
         /// <summary>
-        /// The network ID of the object. This should be the same on the client and server. This must not be a live property, Do NOT use the setter to update it network side.
+        /// The network ID of the object. This should be the same on the client and server. This must not be a live property, Do NOT use the setter to update it network side. Technically this means you can have <see cref="int.MaxValue"/> - 1 unique objects (which each can have different types allowing for effectively infinite classes being assigned to the same object as long as they are unique), but if you run out of IDs, you are doing something wrong. It is technically possible to change this with <see cref="NetworkObjectExtensions.NetworkSetID(INetworkObject, int)"/>. This is however not recommended due to the possibility of peers losing track of this object if they missed the packet, or had to reconnect and did not invalidate state.
         /// </summary>
         int NetworkID { get; set; }
 
         /// <summary>
-        /// If this is false, the object is never updated. This includes <see cref="INetworkSyncVar"/> fields, <see cref="PacketListener>"/> and <see cref="NetworkInvokable"/> methods.
+        /// If this is false, the object is never updated. This includes <see cref="INetworkSyncVar"/> fields, <see cref="PacketListener>"/> and <see cref="NetworkInvokable"/> methods. Use <see cref="NetworkObjectExtensions.NetworkSetActive(INetworkObject, bool)"/> to update this property. Note that even if the object's <see cref="Active"/> state is <see langword="false"/>, it can still be updated back to <see langword="true"/>.
         /// </summary>
         bool Active { get; set; }
 

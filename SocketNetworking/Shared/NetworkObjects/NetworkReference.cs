@@ -38,6 +38,7 @@ namespace SocketNetworking.Shared.NetworkObjects
             ByteReader reader = new ByteReader(data);
             int objId = reader.ReadInt();
             Type type = reader.ReadWrapper<SerializableType, Type>();
+            //No if -1 check here, because in theory the ID might actually just be -1. Only the value 0 is restricted.
             (INetworkObject, NetworkObjectData) obj = NetworkManager.FindNetworkObject(objId, type);
             if (obj != default)
             {
