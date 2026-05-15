@@ -5,15 +5,21 @@ using SocketNetworking.Shared.Serialization;
 namespace SocketNetworking.Shared.NetworkObjects
 {
     /// <summary>
-    /// Represents a safe way to transmit a reference to a <see cref="INetworkObject"/> between servers and clients.
+    /// Represents a safe way to transmit a reference to a <see cref="INetworkObject"/> between servers and clients. <see langword="null"/> references are not allowed, as the <see cref="NetworkReference{T}"/> must always store a valid reference up on creation. <see cref="Value"/> being a valid reference is not guaranteed, as it may be not spawned or not visible to the server or client. You should always check with <see cref="IsValid"/>. If the reference is not valid, <see cref="Value"/> will return <see langword="default"/>.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class NetworkReference<T> : IByteSerializable where T : INetworkObject
     {
         private T _value = default;
 
+        /// <summary>
+        /// You must always specify a valid <see cref="INetworkObject"/> to be held in a reference. Null reference generation is not allowed as references are immutable.
+        /// </summary>
+        /// <param name="value"></param>
         public NetworkReference(T value)
         {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value.NetworkID == 0) throw new ArgumentException("Given INetworkObject has a NetworkID of 0.", nameof(value));
             _value = value;
         }
 
