@@ -1,9 +1,10 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using SocketNetworking.Misc;
 using SocketNetworking.Server;
@@ -74,8 +75,14 @@ namespace SocketNetworking.Client
 
         #region Per Client (Non-Static) Events
 
+        /// <summary>
+        /// Called when the <see cref="INetworkAvatar"/> has changed.
+        /// </summary>
         public event Action<INetworkAvatar> AvatarChanged;
 
+        /// <summary>
+        /// Called when the latency has changed.
+        /// </summary>
         public event Action<long> LatencyChanged;
 
         protected void InvokeLatencyChanged(long value)
@@ -186,6 +193,16 @@ namespace SocketNetworking.Client
             PacketSent?.Invoke(packet);
         }
 
+        protected virtual void LocalAddHeaders(ClientDataPacket packet)
+        {
+
+        }
+
+        protected virtual void RemoteAddHeaders(ServerDataPacket packet)
+        {
+
+        }
+
         #endregion
 
         #region Static Events
@@ -221,6 +238,16 @@ namespace SocketNetworking.Client
 
 
         /// <summary>
+        /// Represents the stream to which all send packets will be written to.
+        /// </summary>
+        public Stream PacketOutMirror { get; set; }
+
+        /// <summary>
+        /// Represents the stream to which all received packets will be written to.
+        /// </summary>
+        public Stream PacketInMirror { get; set; }
+
+        /// <summary>
         /// Represents the amount of <see cref="byte"/>s sent by the current <see cref="NetworkClient"/>.
         /// </summary>
         public virtual ulong BytesSent => Transport.SentBytes;
@@ -246,9 +273,9 @@ namespace SocketNetworking.Client
         public bool AutoSync { get; set; } = true;
 
         /// <summary>
-        /// Maximum amount of milliseconds before a <see cref="KeepAlivePacket"/> is sent. By default, a <see cref="KeepAlivePacket"/> is sent every 1000ms, this is the standard for ping measurements.
+        /// Maximum amount of milliseconds before a <see cref="KeepAlivePacket"/> is sent. By default, a <see cref="KeepAlivePacket"/> is sent every 5000ms, this is the standard for ping measurements.
         /// </summary>
-        public double MaxMSBeforeKeepAlive { get; set; } = 1000;
+        public double MaxMSBeforeKeepAlive { get; set; } = 5000;
 
         /// <summary>
         /// The calculated latency. Use <see cref="CheckLatency"/> to forcibly update this. You should see <see cref="MaxMSBeforeKeepAlive"/>.
@@ -682,7 +709,7 @@ namespace SocketNetworking.Client
         {
             get
             {
-                return _toReadPackets.Count;
+                return _toReadPackets.Reader.Count;
             }
         }
 
@@ -693,7 +720,7 @@ namespace SocketNetworking.Client
         {
             get
             {
-                return _toSendPackets.Count;
+                return _toSendPackets.Reader.Count;
             }
         }
 
@@ -743,11 +770,11 @@ namespace SocketNetworking.Client
         /// </returns>
         public bool ClientRequestEncryption()
         {
-            return NetworkInvokeBlockingOnClient<bool>(nameof(ServerGetEncryptionRequest));
+            return NetworkInvokeBlockingOnClient<bool>((Func<NetworkHandle, bool>)ServerGetEncryptionRequest);
         }
 
         [NetworkInvokable(NetworkDirection.Client)]
-        private bool ServerGetEncryptionRequest()
+        private bool ServerGetEncryptionRequest(NetworkHandle handle)
         {
             if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Disabled)
             {
@@ -886,7 +913,7 @@ namespace SocketNetworking.Client
                 try
                 {
                     IPHostEntry entry = Dns.GetHostEntry(hostname);
-                    if (entry.AddressList.Count() == 0)
+                    if (entry.AddressList.Length == 0)
                     {
                         Log.Error($"Can't find host {hostname}");
                         return false;
@@ -914,6 +941,68 @@ namespace SocketNetworking.Client
             try
             {
                 Exception ex = Transport.Connect(finalHostname, port);
+                if (ex != null)
+                {
+                    throw ex;
+                }
+            }
+            catch (Exception ex)
+            {
+                NetworkErrorData networkErrorData = new NetworkErrorData("Connection Failed: " + ex.ToString(), false);
+                ConnectionError?.Invoke(networkErrorData);
+                Log.Error($"Failed to connect: \n {ex}");
+                return false;
+            }
+            StartClient();
+            return true;
+        }
+
+        public virtual async Task<bool> ConnectAsync(string hostname, ushort port)
+        {
+            if (CurrentClientLocation == ClientLocation.Remote)
+            {
+                Log.Error("Cannot connect to other servers from remote.");
+                return false;
+            }
+            if (IsTransportConnected)
+            {
+                Log.Error("Can't connect: Already connected to a server.");
+                return false;
+            }
+            string finalHostname;
+            if (!IPAddress.TryParse(hostname, out IPAddress ip))
+            {
+                try
+                {
+                    IPHostEntry entry = Dns.GetHostEntry(hostname);
+                    if (entry.AddressList.Length == 0)
+                    {
+                        Log.Error($"Can't find host {hostname}");
+                        return false;
+                    }
+                    else
+                    {
+                        finalHostname = entry.AddressList[0].ToString();
+                    }
+                    if (hostname == "localhost")
+                    {
+                        finalHostname = "localhost";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("DNS Resolution failed. " + ex.ToString());
+                    return false;
+                }
+            }
+            else
+            {
+                finalHostname = hostname;
+            }
+            Log.Info($"Connecting to {finalHostname}:{port}...");
+            try
+            {
+                Exception ex = await Transport.ConnectAsync(finalHostname, port);
                 if (ex != null)
                 {
                     throw ex;
@@ -1080,12 +1169,76 @@ namespace SocketNetworking.Client
             _packetSenderThread.Start();
             //Log.Debug("Threads Start Done");
             //Log.Debug("Create Queues");
-            _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
-            _toSendPackets = new ConcurrentQueue<Packet>();
+            _toReadPackets = Channel.CreateUnbounded<ReadPacketInfo>();
+            _toSendPackets = Channel.CreateUnbounded<Packet>();
             //Log.Debug("Done Create Queues");
             ClientConnected?.Invoke();
             Clients.Add(this);
             //Log.Debug("Client started");
+        }
+
+        #endregion
+
+        #region Packet Mirroring
+
+        /// <summary>
+        /// Writes given <paramref name="bytes"/> to the <see cref="PacketOutMirror"/> stream (checks if the stream is open, writable, etc etc)
+        /// </summary>
+        /// <param name="bytes"></param>
+        protected void MirrorSend(byte[] bytes)
+        {
+            if (PacketInMirror == null) return;
+            if (!PacketInMirror.CanWrite)
+            {
+                Log.Error("Can't write to out packet mirror.");
+                return;
+            }
+            PacketInMirror?.Write(bytes, 0, bytes.Length);
+        }
+
+        /// <summary>
+        /// Writes given <paramref name="bytes"/> to the <see cref="PacketOutMirror"/> stream (checks if the stream is open, writable, etc etc)
+        /// </summary>
+        /// <param name="bytes"></param>
+        protected async Task MirrorSendAsync(byte[] bytes)
+        {
+            if (PacketInMirror == null) return;
+            if (!PacketInMirror.CanWrite)
+            {
+                Log.Error("Can't write to out packet mirror.");
+                return;
+            }
+            await PacketInMirror?.WriteAsync(bytes, 0, bytes.Length);
+        }
+
+        /// <summary>
+        /// Writes given <paramref name="bytes"/> to the <see cref="PacketInMirror"/> stream (checks if the stream is open, writable, etc etc)
+        /// </summary>
+        /// <param name="bytes"></param>
+        protected void MirrorRead(byte[] bytes)
+        {
+            if (PacketOutMirror == null) return;
+            if (!PacketOutMirror.CanWrite)
+            {
+                Log.Error("Can't write to in packet mirror.");
+                return;
+            }
+            PacketOutMirror?.Write(bytes, 0, bytes.Length);
+        }
+
+        /// <summary>
+        /// Writes given <paramref name="bytes"/> to the <see cref="PacketInMirror"/> stream (checks if the stream is open, writable, etc etc)
+        /// </summary>
+        /// <param name="bytes"></param>
+        protected async Task MirrorReadAsync(byte[] bytes)
+        {
+            if (PacketOutMirror == null) return;
+            if (!PacketOutMirror.CanWrite)
+            {
+                Log.Error("Can't write to in packet mirror.");
+                return;
+            }
+            await PacketOutMirror?.WriteAsync(bytes, 0, bytes.Length);
         }
 
         #endregion
@@ -1126,6 +1279,7 @@ namespace SocketNetworking.Client
             {
                 //Log.Debug($"Send to {packet.Destination}");
                 Exception ex = Transport.Send(fullBytes, packet.Destination);
+                MirrorSend(fullBytes);
                 if (ex != null)
                 {
                     throw ex;
@@ -1163,6 +1317,7 @@ namespace SocketNetworking.Client
             {
                 //Log.Debug($"Send to {packet.Destination}");
                 Exception ex = await Transport.SendAsync(fullBytes, packet.Destination);
+                await MirrorSendAsync(fullBytes);
                 if (ex != null)
                 {
                     throw ex;
@@ -1192,7 +1347,7 @@ namespace SocketNetworking.Client
             }
             else
             {
-                _toSendPackets.Enqueue(packet);
+                _toSendPackets.Writer.WriteAsync(packet).AsTask().Wait();
                 if (ManualPacketSend)
                 {
                     PacketReadyToSend?.Invoke(packet);
@@ -1246,7 +1401,7 @@ namespace SocketNetworking.Client
         /// <param name="target"></param>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
-        [Obsolete]
+        [Obsolete("Use the delegate overload instead of the method name by string.")]
         public void NetworkInvoke(object target, string methodName, params object[] args)
         {
             NetworkManager.NetworkInvoke(target, this, methodName, args);
@@ -1267,7 +1422,7 @@ namespace SocketNetworking.Client
         /// </summary>
         /// <param name="methodName"></param>
         /// <param name="args"></param>
-        [Obsolete]
+        [Obsolete("Prefer delegate overload over method name string.")]
         public void NetworkInvokeOnClient(string methodName, params object[] args)
         {
             NetworkManager.NetworkInvoke(this, this, methodName, args);
@@ -1281,9 +1436,23 @@ namespace SocketNetworking.Client
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
         /// <returns></returns>
+        [Obsolete("Prefer delegate method over method name string.")]
         public T NetworkInvokeBlockingOnClient<T>(string methodName, float maxTimeMs = 5000, params object[] args)
         {
             return NetworkManager.NetworkInvokeBlocking<T>(this, this, methodName, args, maxTimeMs);
+        }
+
+        /// <summary>
+        /// Preforms a blocking Network Invocation (Like an RPC) and attempts to return you a value. This will try to find the method on the current <see cref="NetworkClient"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <param name="maxTimeMs"></param>
+        /// <returns></returns>
+        public T NetworkInvokeBlockingOnClient<T>(Delegate @delegate, float maxTimeMs = 5000, params object[] args)
+        {
+            return NetworkManager.NetworkInvokeBlocking<T>(this, @delegate, args, maxTimeMs);
         }
 
         /// <summary>
@@ -1294,7 +1463,7 @@ namespace SocketNetworking.Client
         /// <param name="args"></param>
         /// <param name="maxTimeMs"></param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("Prefer delegate over method name string.")]
         public T NetworkInvokeBlocking<T>(object obj, string methodName, float maxTimeMs = 5000, params object[] args)
         {
             return NetworkManager.NetworkInvokeBlocking<T>(obj, this, methodName, args, maxTimeMs);
@@ -1313,7 +1482,7 @@ namespace SocketNetworking.Client
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("Prefer delegate overload over method name string.")]
         public NetworkInvocationCallback<T> NetworkInvokeBlockingCallback<T>(string methodName, params object[] args)
         {
             return NetworkManager.NetworkInvoke<T>(this, this, methodName, args);
@@ -1338,6 +1507,7 @@ namespace SocketNetworking.Client
             {
                 Configuration = ClientConfiguration
             };
+            LocalAddHeaders(dataPacket);
             //Log.Debug(dataPacket.ToString());
             Send(dataPacket);
         }
@@ -1360,7 +1530,7 @@ namespace SocketNetworking.Client
 
         protected object streamLock = new object();
 
-        protected ConcurrentQueue<Packet> _toSendPackets = new ConcurrentQueue<Packet>();
+        protected Channel<Packet> _toSendPackets = Channel.CreateUnbounded<Packet>();
 
         /// <summary>
         /// Actually performs the sending of the next packet.
@@ -1375,38 +1545,41 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if (_toSendPackets.IsEmpty)
+            if (_toSendPackets.Reader.Count == 0)
             {
                 return;
             }
-            lock (streamLock)
+            bool read = _toSendPackets.Reader.TryRead(out Packet packet);
+            if (!read)
             {
-                _toSendPackets.TryDequeue(out Packet packet);
-                PreparePacket(ref packet);
-                if (!InvokePacketSendRequest(packet))
-                {
-                    return;
-                }
-                byte[] fullBytes = SerializePacket(packet);
-                try
-                {
-                    //Log.Debug($"Sending packet: {packet.ToString()}");
-                    //bytesSent += (ulong)fullBytes.Length;
-                    Exception ex = Transport.Send(fullBytes, packet.Destination);
-                    if (ex != null)
-                    {
-                        throw ex;
-                    }
-                    //Log.Debug("Packet sent!");
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Failed to send packet! Error:\n" + ex.ToString());
-                    NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
-                    ConnectionError?.Invoke(networkErrorData);
-                }
-                InvokePacketSent(packet);
+                Log.Warning("Failed to TryRead packet from send queue. (Why are you not using the async API?)");
+                return;
             }
+            PreparePacket(ref packet);
+            if (!InvokePacketSendRequest(packet))
+            {
+                return;
+            }
+            byte[] fullBytes = SerializePacket(packet);
+            try
+            {
+                //Log.Debug($"Sending packet: {packet.ToString()}");
+                //bytesSent += (ulong)fullBytes.Length;
+                Exception ex = Transport.Send(fullBytes, packet.Destination);
+                MirrorSend(fullBytes);
+                if (ex != null)
+                {
+                    throw ex;
+                }
+                //Log.Debug("Packet sent!");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to send packet! Error:\n" + ex.ToString());
+                NetworkErrorData networkErrorData = new NetworkErrorData("Failed to send packet: " + ex.ToString(), true);
+                ConnectionError?.Invoke(networkErrorData);
+            }
+            InvokePacketSent(packet);
         }
 
         protected virtual async Task SendNextPacketInternalAsync()
@@ -1419,11 +1592,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if (_toSendPackets.IsEmpty)
-            {
-                return;
-            }
-            _toSendPackets.TryDequeue(out Packet packet);
+            Packet packet = await _toSendPackets.Reader.ReadAsync();
             PreparePacket(ref packet);
             if (!InvokePacketSendRequest(packet))
             {
@@ -1435,6 +1604,7 @@ namespace SocketNetworking.Client
                 //Log.Debug($"Sending packet: {packet.ToString()}");
                 //bytesSent += (ulong)fullBytes.Length;
                 Exception ex = await Transport.SendAsync(fullBytes, packet.Destination);
+                await MirrorSendAsync(fullBytes);
                 if (ex != null)
                 {
                     throw ex;
@@ -1600,6 +1770,10 @@ namespace SocketNetworking.Client
             {
                 return;
             }
+            if (NoPacketSending)
+            {
+                return;
+            }
             if (_manualPacketSend)
             {
                 return;
@@ -1610,6 +1784,10 @@ namespace SocketNetworking.Client
         private async Task RawWriterAsync()
         {
             if (NoPacketHandling)
+            {
+                return;
+            }
+            if (NoPacketSending)
             {
                 return;
             }
@@ -1624,7 +1802,7 @@ namespace SocketNetworking.Client
 
         #region Receiving
 
-        protected ConcurrentQueue<ReadPacketInfo> _toReadPackets = new ConcurrentQueue<ReadPacketInfo>();
+        protected Channel<ReadPacketInfo> _toReadPackets = Channel.CreateUnbounded<ReadPacketInfo>();
 
         /// <summary>
         /// Method handling all <see cref="NetworkTransport"/> reading IO.
@@ -1651,11 +1829,8 @@ namespace SocketNetworking.Client
                 StopClient();
                 return;
             }
-            //Log.Debug("Do latency check!");
-            DoLatencyCheck();
             if (!Transport.DataAvailable)
             {
-                //Log.Debug("No data on transport!");
                 return;
             }
             (byte[], Exception, IPEndPoint) packet = Transport.Receive();
@@ -1665,6 +1840,7 @@ namespace SocketNetworking.Client
                 Log.Warning("Transport received a null byte array.");
                 return;
             }
+            MirrorRead(packet.Item1);
             DeserializeRetry(packet.Item1, packet.Item3);
         }
 
@@ -1679,13 +1855,11 @@ namespace SocketNetworking.Client
                 StopClient();
                 return;
             }
-            //Log.Debug("Do latency check!");
-            DoLatencyCheck();
-            if (!Transport.DataAvailable)
-            {
-                //Log.Debug("No data on transport!");
-                return;
-            }
+            //Its more efficient to allow the async system to just wait for data instead of returning early if no data exists.
+            //if (!Transport.DataAvailable)
+            //{
+            //return;
+            //}
             (byte[], Exception, IPEndPoint) packet = await Transport.ReceiveAsync();
             //bytesReceived += (ulong)packet.Item1.Length;
             if (packet.Item1 == null)
@@ -1693,6 +1867,7 @@ namespace SocketNetworking.Client
                 Log.Warning("Transport received a null byte array.");
                 return;
             }
+            await MirrorReadAsync(packet.Item1);
             DeserializeRetry(packet.Item1, packet.Item3);
         }
 
@@ -1777,7 +1952,7 @@ namespace SocketNetworking.Client
                     Header = header,
                     Data = fullPacket
                 };
-                _toReadPackets.Enqueue(packetInfo);
+                _toReadPackets.Writer.WriteAsync(packetInfo).AsTask().Wait();
                 PacketReadyToHandle?.Invoke(packetInfo.Header, packetInfo.Data);
             }
             else
@@ -1917,21 +2092,22 @@ namespace SocketNetworking.Client
                 case PacketType.ClientData:
                     ClientDataPacket clientDataPacket = new ClientDataPacket();
                     clientDataPacket.Deserialize(data);
-                    if (clientDataPacket.Configuration.Protocol != NetworkServer.ServerConfiguration.Protocol)
+                    if (clientDataPacket.Configuration.Protocol != NetworkServer.ProtocolConfiguration.Protocol)
                     {
-                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Protocol} Got: {clientDataPacket.Configuration.Protocol}");
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ProtocolConfiguration.Protocol} Got: {clientDataPacket.Configuration.Protocol}");
                         break;
                     }
-                    if (clientDataPacket.Configuration.Version != NetworkServer.ServerConfiguration.Version)
+                    if (clientDataPacket.Configuration.Version != NetworkServer.ProtocolConfiguration.Version)
                     {
-                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ServerConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
+                        Disconnect($"Server protocol mismatch. Expected: {NetworkServer.ProtocolConfiguration.Version} Got: {clientDataPacket.Configuration.Version}");
                         break;
                     }
                     ServerDataPacket serverDataPacket = new ServerDataPacket
                     {
                         YourClientID = _clientId,
-                        Configuration = NetworkServer.ServerConfiguration,
+                        Configuration = NetworkServer.ProtocolConfiguration,
                     };
+                    RemoteAddHeaders(serverDataPacket);
                     SendImmediate(serverDataPacket);
                     if (NetworkServer.Config.EncryptionMode == ServerEncryptionMode.Required)
                     {
@@ -2061,11 +2237,7 @@ namespace SocketNetworking.Client
                                 Log.Error("Tried to overwrite non-dynamic packet. Type: " + t.FullName);
                                 continue;
                             }
-                            if (homelessPackets.Contains(t))
-                            {
-                                homelessPackets.Remove(t);
-                            }
-                            else
+                            if (!homelessPackets.Remove(t))
                             {
                                 homelessPackets.Add(NetworkManager.AdditionalPacketTypes[i]);
                             }
@@ -2336,7 +2508,7 @@ namespace SocketNetworking.Client
             {
                 return;
             }
-            if (_toReadPackets.TryDequeue(out ReadPacketInfo result))
+            if (_toReadPackets.Reader.TryRead(out ReadPacketInfo result))
             {
                 HandlePacket(result.Header, result.Data);
             }
@@ -2382,14 +2554,50 @@ namespace SocketNetworking.Client
 
         #region Keep Alive / Latency
 
+        private Task _latencyChecker;
+
+        public void StartLatencyChecker()
+        {
+            if (_latencyChecker != null)
+            {
+                return;
+            }
+
+            _latencyChecker = Task.Run(async () =>
+            {
+#if NET8_0_OR_GREATER
+                PeriodicTimer timer = new PeriodicTimer(TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive));
+                while (!_shuttingDown && await timer.WaitForNextTickAsync())
+                {
+                    CheckLatency();
+                }
+                timer.Dispose();
+#else
+                Timer timer = new Timer((state) =>
+                {
+                    NetworkClient cl = state as NetworkClient;
+                    if (cl._shuttingDown)
+                    {
+                        return;
+                    }
+                    cl.CheckLatency();
+                }, this, TimeSpan.Zero, TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive));
+                ClientStopped += () =>
+                {
+                    timer.Dispose();
+                };
+#endif
+            });
+        }
 
         long _latency = 0;
 
         DateTime _lastSent = DateTime.UtcNow;
 
         /// <summary>
-        /// Performs the latency check.
+        /// Performs the latency check. Obsolete, see <see cref="StartLatencyChecker"/>
         /// </summary>
+        [Obsolete("This is handled automatically.")]
         protected virtual void DoLatencyCheck()
         {
             if (DateTime.UtcNow - _lastSent >= TimeSpan.FromMilliseconds(MaxMSBeforeKeepAlive))
@@ -2492,7 +2700,7 @@ namespace SocketNetworking.Client
         /// <param name="severity"></param>
         public void SendLog(string message, LogSeverity severity)
         {
-            NetworkInvokeOnClient((Action<NetworkHandle, string, int>)(GetError), new object[] { message, (int)severity });
+            NetworkInvokeOnClient((Action<NetworkHandle, string, int>)GetError, new object[] { message, (int)severity });
         }
 
         [NetworkInvokable(NetworkDirection.Any)]
@@ -2515,6 +2723,7 @@ namespace SocketNetworking.Client
             {
                 ServerAutoSpecifyAvatar();
             }
+            StartLatencyChecker();
         }
 
         /// <summary>
@@ -2561,7 +2770,7 @@ namespace SocketNetworking.Client
                     {
                         return x.SpawnPriority - y.SpawnPriority;
                     });
-                    NetworkInvokeOnClient((Action<NetworkHandle, int>)(OnSyncBegin), new object[] { objects.Count });
+                    NetworkInvokeOnClient((Action<NetworkHandle, int>)OnSyncBegin, new object[] { objects.Count });
                     foreach (INetworkObject @object in objects)
                     {
                         @object.NetworkSpawn(this);
@@ -2585,7 +2794,7 @@ namespace SocketNetworking.Client
             {
                 return x.SpawnPriority - y.SpawnPriority;
             });
-            NetworkInvokeOnClient((Action<NetworkHandle, int>)(OnSyncBegin), new object[] { objects.Count });
+            NetworkInvokeOnClient((Action<NetworkHandle, int>)OnSyncBegin, new object[] { objects.Count });
             foreach (INetworkObject @object in objects)
             {
                 @object.NetworkSpawn(this);
@@ -2605,7 +2814,7 @@ namespace SocketNetworking.Client
         /// <param name="avatar"></param>
         public void ServerSpecifyAvatar(INetworkAvatar avatar)
         {
-            NetworkManager.AddNetworkObject(avatar);
+            //NetworkManager.AddNetworkObject(avatar);
             avatar.OwnerClientID = ClientID;
             avatar.OwnershipMode = OwnershipMode.Client;
             if (avatar.ObjectVisibilityMode == ObjectVisibilityMode.ServerOnly)

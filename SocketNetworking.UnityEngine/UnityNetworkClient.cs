@@ -39,7 +39,9 @@ namespace SocketNetworking.UnityEngine
         }
 
 
+#pragma warning disable IDE0044 // Add readonly modifier
         private GameObject _clientObject;
+#pragma warning restore IDE0044 // Add readonly modifier
 
         public GameObject ClientObject
         {

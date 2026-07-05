@@ -161,9 +161,9 @@ namespace SocketNetworking.Server
         protected static ProtocolConfiguration _serverConfig = new ProtocolConfiguration();
 
         /// <summary>
-        /// The current server <see cref="ProtocolConfiguration"/>. This value cannot be changed if <see cref="HasServerStarted"/> is <see langword="true"/>.
+        /// The current server <see cref="Shared.Messages.ProtocolConfiguration"/>. This value cannot be changed if <see cref="HasServerStarted"/> is <see langword="true"/>.
         /// </summary>
-        public static ProtocolConfiguration ServerConfiguration
+        public static ProtocolConfiguration ProtocolConfiguration
         {
             get
             {

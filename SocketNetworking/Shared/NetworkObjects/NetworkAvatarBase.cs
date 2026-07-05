@@ -29,11 +29,11 @@ namespace SocketNetworking.Shared.NetworkObjects
         public override void OnBeforeRegister()
         {
             base.OnBeforeRegister();
-            _pubKey = new NetworkSyncVar<string>(this, OwnershipMode.Client);
-            _ping = new NetworkSyncVar<long>(this, OwnershipMode.Server, 0);
+            _pubKey = new NetworkSyncVar<string>(this, string.Empty, nameof(_pubKey), OwnershipMode.Client);
+            _ping = new NetworkSyncVar<long>(this, 0, nameof(_ping), OwnershipMode.Server);
             _pubKey.Changed += (x) =>
             {
-                if (x != null)
+                if (!string.IsNullOrEmpty(x) && !string.IsNullOrWhiteSpace(x))
                 {
                     _provider.FromXmlString(x);
                 }
@@ -123,9 +123,11 @@ namespace SocketNetworking.Shared.NetworkObjects
 
         public void SendPrivate(byte[] data)
         {
-            ClientToClientPacket packet = new ClientToClientPacket();
-            packet.NetworkIDTarget = NetworkID;
-            packet.Data = Encrypt(data);
+            ClientToClientPacket packet = new ClientToClientPacket
+            {
+                NetworkIDTarget = NetworkID,
+                Data = Encrypt(data)
+            };
             NetworkClient.LocalClient.Send(packet);
         }
     }

@@ -82,9 +82,9 @@ namespace SocketNetworking.Shared
             else
             {
                 int newId = AdditionalPacketTypes.Keys.GetFirstEmptySlot();
-                if (AdditionalPacketTypes.ContainsKey(newId) && AdditionalPacketTypes[newId] == packet.GetType())
+                if (AdditionalPacketTypes.TryGetValue(newId, out Type value) && value == packet.GetType())
                 {
-                    throw new CustomPacketCollisionException(newId, packet.GetType(), AdditionalPacketTypes[newId].GetType());
+                    throw new CustomPacketCollisionException(newId, packet.GetType(), value.GetType());
                 }
                 _packetCache.Add(packet.GetType(), newId);
                 _dynamicAllocatedPackets.Add(packet.GetType());
@@ -102,11 +102,11 @@ namespace SocketNetworking.Shared
             {
                 if (NetworkServer.Active)
                 {
-                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Count() == 0)
+                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Any())
                     {
                         return ClientLocation.Remote;
                     }
-                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Count() != 0)
+                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Any())
                     {
                         Log.Error("Both server and several local clients are active, can't determine network location.");
                         return ClientLocation.Unknown;
@@ -126,7 +126,7 @@ namespace SocketNetworking.Shared
                             x.StopClient();
                         }
                     }
-                    if (NetworkClient.Clients.Any())
+                    if (NetworkClient.Clients.Count != 0)
                     {
                         return ClientLocation.Local;
                     }
@@ -167,9 +167,9 @@ namespace SocketNetworking.Shared
 
         internal static Assembly GetAssemblyFromHash(ulong hash)
         {
-            if (assemblyNames.ContainsKey(hash))
+            if (assemblyNames.TryGetValue(hash, out Assembly value))
             {
-                return assemblyNames[hash];
+                return value;
             }
             return null;
         }
@@ -201,7 +201,7 @@ namespace SocketNetworking.Shared
         {
             ImportCustomPackets(target);
             List<Type> applicableTypes = target.GetTypes().Where(x => x.IsSubclassDeep(typeof(NetworkClient)) || x.GetInterfaces().Contains(typeof(INetworkObject)) || x.GetInterfaces().Contains(typeof(ITypeWrapper))).ToList();
-            Log.Info($"Importing Assembly! Name: {target.GetName().Name}, Valid Types: {applicableTypes.Count}");
+            Log.Debug($"Importing Assembly! Name: {target.GetName().Name}, Valid Types: {applicableTypes.Count}");
             foreach (Type t in applicableTypes)
             {
                 NetworkObjectData data = GetNetworkObjectData(t);
@@ -209,7 +209,7 @@ namespace SocketNetworking.Shared
                 {
                     continue;
                 }
-                PreCache.Add(data);
+                _preCache.Add(data);
             }
             GetHashFromAssembly(target);
         }
@@ -227,12 +227,12 @@ namespace SocketNetworking.Shared
                 {
                     continue;
                 }
-                PreCache.Add(data);
+                _preCache.Add(data);
             }
         }
 
         /// <summary>
-        /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your netowrk objects.
+        /// Scans the provided assembly for all types with the <see cref="PacketDefinition"/> Attribute, then loads them into a dictionary so that the library can call methods on your network objects.
         /// </summary>
         /// <param name="assembly">
         /// The <see cref="Assembly"/> which to scan.
@@ -275,7 +275,7 @@ namespace SocketNetworking.Shared
                         throw new CustomPacketCollisionException(packet.CustomPacketID, AdditionalPacketTypes[packet.CustomPacketID], packet.GetType());
                     }
                 }
-                Log.Info($"Adding custom packet with ID {packet.CustomPacketID} and name {packet.GetType().Name}");
+                Log.Debug($"Adding custom packet with ID {packet.CustomPacketID} and name {packet.GetType().Name}");
                 AdditionalPacketTypes.Add(packet.CustomPacketID, packet.GetType());
             }
         }
@@ -298,7 +298,7 @@ namespace SocketNetworking.Shared
                 if (customPacketId == -1)
                 {
                     customPacketId = GetAutoPacketID(packet);
-                    Log.Info($"Packet {packet.GetType().Name} has a custom packet ID of -1. Assuming automatic ID assignment. You better PRAY this works the same on the peers. New ID: {customPacketId}");
+                    Log.Debug($"Packet {packet.GetType().Name} has a custom packet ID of -1. Assuming automatic ID assignment. You better PRAY this works the same on the peers. New ID: {customPacketId}");
                 }
                 if (AdditionalPacketTypes.ContainsKey(customPacketId))
                 {
@@ -312,7 +312,7 @@ namespace SocketNetworking.Shared
                         throw new CustomPacketCollisionException(customPacketId, AdditionalPacketTypes[customPacketId], type);
                     }
                 }
-                Log.Info($"Adding custom packet with ID {customPacketId} and name {type.Name}");
+                Log.Debug($"Adding custom packet with ID {customPacketId} and name {type.Name}");
                 AdditionalPacketTypes.Add(customPacketId, type);
             }
         }
@@ -328,9 +328,9 @@ namespace SocketNetworking.Shared
         /// </returns>
         public static Type GetCustomPacketByID(int id)
         {
-            if (AdditionalPacketTypes.ContainsKey(id))
+            if (AdditionalPacketTypes.TryGetValue(id, out Type value))
             {
-                return AdditionalPacketTypes[id];
+                return value;
             }
             else
             {
@@ -340,9 +340,27 @@ namespace SocketNetworking.Shared
 
         #region Network Objects
 
-        private static readonly ConcurrentDictionary<INetworkObject, NetworkObjectData> NetworkObjects = new ConcurrentDictionary<INetworkObject, NetworkObjectData>();
+        private static readonly ConcurrentDictionary<INetworkObject, NetworkObjectData> _networkObjects = new ConcurrentDictionary<INetworkObject, NetworkObjectData>();
 
-        private static readonly List<NetworkObjectData> PreCache = new List<NetworkObjectData>();
+        private static readonly List<NetworkObjectData> _preCache = new List<NetworkObjectData>();
+
+        /// <summary>
+        /// Tries to find a <see cref="INetworkObject"/> given a type <paramref name="filter"/>. If <paramref name="filter"/> is <see langword="null"/>, will find the first object with that <paramref name="id"/> of any <see cref="Type"/>. If not found, will return a <see langword="default"/> tuple. (Aka a tuple where element 1 and 2 are both <see langword="null"/>).
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="filter"></param>
+        /// <returns></returns>
+        public static (INetworkObject, NetworkObjectData) FindNetworkObject(int id, Type filter)
+        {
+            if (filter == null)
+            {
+                return GetNetworkObjectByID(id);
+            }
+            else
+            {
+                return GetNetworkObjectsByID(id).Where(x => x.Item1.GetType() == filter).FirstOrDefault();
+            }
+        }
 
         /// <summary>
         /// Attempts to find a <see cref="INetworkObject"/> by <see cref="INetworkObject.NetworkID"/>. Will return the first one found.
@@ -351,10 +369,10 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public static (INetworkObject, NetworkObjectData) GetNetworkObjectByID(int id)
         {
-            INetworkObject obj = NetworkObjects.Keys.FirstOrDefault(x => x.NetworkID == id);
+            INetworkObject obj = _networkObjects.Keys.FirstOrDefault(x => x.NetworkID == id);
             if (obj != null)
             {
-                return (obj, NetworkObjects[obj]);
+                return (obj, _networkObjects[obj]);
             }
             return (null, null);
         }
@@ -366,27 +384,27 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public static List<(INetworkObject, NetworkObjectData)> GetNetworkObjectsByID(int id)
         {
-            return NetworkObjects.Where(x => x.Key.NetworkID == id).Select(x => (x.Key, x.Value)).ToList();
+            return _networkObjects.Where(x => x.Key.NetworkID == id).Select(x => (x.Key, x.Value)).ToList();
         }
 
         /// <summary>
-        /// Prints all <see cref="INetworkObject"/>s from <see cref="NetworkObjects"/> using <see cref="Log.Info(string)"/>.
+        /// Prints all <see cref="INetworkObject"/>s from <see cref="_networkObjects"/> using <see cref="Log.Info(string)"/>.
         /// </summary>
         public static void PrintNetworkObjects()
         {
             Log.Info($"PRINT NETWORK OBJECTS!!!");
-            List<INetworkObject> objs = NetworkObjects.Keys.ToList();
+            List<INetworkObject> objs = _networkObjects.Keys.ToList();
             objs.Sort((x, y) =>
             {
                 return x.NetworkID - y.NetworkID;
             });
             foreach (INetworkObject networkObject in objs)
             {
-                Log.Info($"Object: {networkObject}, Data: {NetworkObjects[networkObject]}");
+                Log.Info($"Object: {networkObject}, Data: {_networkObjects[networkObject]}");
             }
         }
 
-        private static readonly List<NetworkObjectSpawner> NetworkObjectSpawners = new List<NetworkObjectSpawner>();
+        private static readonly List<NetworkObjectSpawner> _networkObjectSpawners = new List<NetworkObjectSpawner>();
 
         /// <summary>
         /// Allows for spawning of an <see cref="INetworkObject"/> controlled via external code. Note that <see cref="ObjectManagePacket"/> will be null if the <see cref="INetworkObject"/> type is the same as <see cref="NetworkServer.ClientAvatar"/>.
@@ -394,18 +412,18 @@ namespace SocketNetworking.Shared
         /// <param name="packet"></param>
         /// <param name="handle"></param>
         /// <returns></returns>
-        public delegate INetworkSpawnable NetworkObjectSpawnerDelegate(ObjectManagePacket packet, NetworkHandle handle);
+        public delegate INetworkSpawnable NetworkSpawnerDelegate(ObjectManagePacket packet, NetworkHandle handle);
 
         /// <summary>
-        /// Registers a <see cref="NetworkObjectSpawnerDelegate"/> to a specific <see cref="Type"/>. Duplicates are not allowed. Returns a <see cref="bool"/> representing success.
+        /// Registers a <see cref="NetworkSpawnerDelegate"/> to a specific <see cref="Type"/>. Duplicates are not allowed. Returns a <see cref="bool"/> representing success.
         /// </summary>
         /// <param name="type"></param>
         /// <param name="spawner"></param>
         /// <param name="allowSubclasses"></param>
         /// <returns></returns>
-        public static bool RegisterSpawner(Type type, NetworkObjectSpawnerDelegate spawner, bool allowSubclasses)
+        public static bool RegisterSpawner(Type type, NetworkSpawnerDelegate spawner, bool allowSubclasses)
         {
-            if (NetworkObjectSpawners.Any(x => x.TargetType == type))
+            if (_networkObjectSpawners.Any(x => x.TargetType == type))
             {
                 Log.Error("Can't register that spawner: The type is already registered.");
                 return false;
@@ -416,31 +434,31 @@ namespace SocketNetworking.Shared
                 AllowSubclasses = allowSubclasses,
                 TargetType = type
             };
-            NetworkObjectSpawners.Add(spawnerStruct);
-            Log.Info($"Registered spawner {spawnerStruct}");
+            _networkObjectSpawners.Add(spawnerStruct);
+            Log.Debug($"Registered spawner {spawnerStruct}");
             return true;
         }
 
         /// <summary>
-        /// Unregisters a <see cref="NetworkObjectSpawnerDelegate"/> from a <see cref="Type"/>.
+        /// Unregisters a <see cref="NetworkSpawnerDelegate"/> from a <see cref="Type"/>.
         /// </summary>
         /// <param name="type"></param>
         /// <param name="spawnerDelegate"></param>
         /// <returns></returns>
-        public static bool UnregisterSpawner(Type type, NetworkObjectSpawnerDelegate spawnerDelegate)
+        public static bool UnregisterSpawner(Type type, NetworkSpawnerDelegate spawnerDelegate)
         {
-            NetworkObjectSpawner spawner = NetworkObjectSpawners.FirstOrDefault(x => x.TargetType == type && x.Spawner == spawnerDelegate);
+            NetworkObjectSpawner spawner = _networkObjectSpawners.FirstOrDefault(x => x.TargetType == type && x.Spawner == spawnerDelegate);
             if (spawner == default(NetworkObjectSpawner))
             {
                 Log.Error("Can't unregister that spawner: Not Found");
                 return false;
             }
-            NetworkObjectSpawners.Remove(spawner);
+            _networkObjectSpawners.Remove(spawner);
             return true;
         }
 
         /// <summary>
-        /// Attempts to find the best possible <see cref="NetworkObjectSpawnerDelegate"/> for a <see cref="Type"/>. This is done by trying to find the class that is the most closest to it within the inheritence hiearchy. If <see cref="NetworkObjectSpawner.AllowSubclasses"/> is <see langword="false"/>, this method will attempt to find the spawner that matches exactly. Returns <see langword="null"/> if no spawner is found.
+        /// Attempts to find the best possible <see cref="NetworkSpawnerDelegate"/> for a <see cref="Type"/>. This is done by trying to find the class that is the most closest to it within the inheritance hierarchy. If <see cref="NetworkObjectSpawner.AllowSubclasses"/> is <see langword="false"/>, this method will attempt to find the spawner that matches exactly. Returns <see langword="null"/> if no spawner is found.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
@@ -448,7 +466,7 @@ namespace SocketNetworking.Shared
         {
             NetworkObjectSpawner objSpawner = null;
             int bestApproxObj = int.MaxValue;
-            foreach (NetworkObjectSpawner possibleSpawner in NetworkObjectSpawners)
+            foreach (NetworkObjectSpawner possibleSpawner in _networkObjectSpawners)
             {
                 if (possibleSpawner.AllowSubclasses)
                 {
@@ -509,24 +527,24 @@ namespace SocketNetworking.Shared
                     }
                 }
 
-                Log.Info($"Spawning a new instance of {objType}");
+                Log.Debug($"Spawning a new instance of {objType}");
                 NetworkObjectSpawner objSpawner = GetBestSpawner(objType);
                 INetworkObject netObj;
                 if (objSpawner == null)
                 {
-                    Log.Info($"No spawner found for type {objType}, using Activator.");
+                    Log.Debug($"No spawner found for type {objType}, using Activator.");
                     netObj = (INetworkObject)Activator.CreateInstance(objType);
                 }
                 else
                 {
-                    Log.Info($"Best spawner select for type {objType}.");
+                    Log.Debug($"Best spawner select for type {objType}.");
                     netObj = (INetworkObject)objSpawner.Spawner.Invoke(packet, handle);
                 }
                 if (netObj == null)
                 {
                     throw new NullReferenceException($"Failed to spawn {objType.FullName}");
                 }
-                Log.Info($"Object created: {netObj}");
+                Log.Debug($"Object created: {netObj}");
                 netObj.NetworkID = packet.NewNetworkID;
                 netObj.OwnerClientID = packet.OwnerID;
                 netObj.OwnershipMode = packet.OwnershipMode;
@@ -548,7 +566,7 @@ namespace SocketNetworking.Shared
                 return;
             }
 
-            foreach (INetworkObject @object in NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget))
+            foreach (INetworkObject @object in _networkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget))
             {
                 //Security
                 if (packet.Action != ObjectManagePacket.ObjectManageAction.Create && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmCreate && packet.Action != ObjectManagePacket.ObjectManageAction.ConfirmDestroy && packet.Action != ObjectManagePacket.ObjectManageAction.AlreadyExists)
@@ -654,7 +672,7 @@ namespace SocketNetworking.Shared
 
         public static void SendModifiedPulse(NetworkClient client, INetworkObject modifiedObject)
         {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys)
+            foreach (INetworkObject networkObject in _networkObjects.Keys)
             {
                 networkObject.OnModified(modifiedObject, client);
             }
@@ -662,7 +680,7 @@ namespace SocketNetworking.Shared
 
         public static void SendCreatedPulse(NetworkClient client, INetworkObject createdObject)
         {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys)
+            foreach (INetworkObject networkObject in _networkObjects.Keys)
             {
                 networkObject.OnCreated(createdObject, client);
             }
@@ -670,7 +688,7 @@ namespace SocketNetworking.Shared
 
         public static void SendDestroyedPulse(NetworkClient client, INetworkObject destroyedObject)
         {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys)
+            foreach (INetworkObject networkObject in _networkObjects.Keys)
             {
                 networkObject.OnDestroyed(destroyedObject, client);
             }
@@ -678,7 +696,7 @@ namespace SocketNetworking.Shared
 
         public static void SendReadyPulse(NetworkClient sender, bool isReady)
         {
-            foreach (INetworkObject @object in NetworkObjects.Keys)
+            foreach (INetworkObject @object in _networkObjects.Keys)
             {
                 @object.OnReady(sender, isReady);
             }
@@ -686,7 +704,7 @@ namespace SocketNetworking.Shared
 
         public static void SendAddedPulse(INetworkObject addedObject)
         {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys.Where(x => x.NetworkID == addedObject.NetworkID))
+            foreach (INetworkObject networkObject in _networkObjects.Keys.Where(x => x.NetworkID == addedObject.NetworkID))
             {
                 networkObject.OnAdded(addedObject);
             }
@@ -694,7 +712,7 @@ namespace SocketNetworking.Shared
 
         public static void SendRemovedPulse(INetworkObject removedObject)
         {
-            foreach (INetworkObject networkObject in NetworkObjects.Keys.Where(x => x.NetworkID == removedObject.NetworkID))
+            foreach (INetworkObject networkObject in _networkObjects.Keys.Where(x => x.NetworkID == removedObject.NetworkID))
             {
                 networkObject.OnRemoved(removedObject);
             }
@@ -702,7 +720,7 @@ namespace SocketNetworking.Shared
 
         public static void SendDisconnectedPulse(NetworkClient networkClient)
         {
-            foreach (INetworkObject @object in NetworkObjects.Keys)
+            foreach (INetworkObject @object in _networkObjects.Keys)
             {
                 @object.OnDisconnected(networkClient);
                 if (@object.OwnerClientID == networkClient.ClientID)
@@ -714,7 +732,7 @@ namespace SocketNetworking.Shared
 
         public static void SendConnectedPulse(NetworkClient client)
         {
-            foreach (INetworkObject @object in NetworkObjects.Keys)
+            foreach (INetworkObject @object in _networkObjects.Keys)
             {
                 @object.OnConnected(client);
             }
@@ -730,7 +748,7 @@ namespace SocketNetworking.Shared
         /// </returns>
         public static int GetNextNetworkObjectID()
         {
-            List<int> ids = NetworkObjects.Keys.Select(x => x.NetworkID).ToList();
+            List<int> ids = _networkObjects.Keys.Select(x => x.NetworkID).ToList();
             if (ids.Count == 0)
             {
                 return 1;
@@ -752,7 +770,7 @@ namespace SocketNetworking.Shared
         /// </returns>
         public static bool IsRegistered(INetworkObject networkObject)
         {
-            return NetworkObjects.ContainsKey(networkObject);
+            return _networkObjects.ContainsKey(networkObject);
         }
 
         /// <summary>
@@ -761,7 +779,7 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public static List<INetworkObject> GetNetworkObjects()
         {
-            return NetworkObjects.Keys.ToList();
+            return _networkObjects.Keys.ToList();
         }
 
         /// <summary>
@@ -779,16 +797,16 @@ namespace SocketNetworking.Shared
             {
                 networkObject.EnsureNetworkIDIsGiven();
             }
-            if (NetworkObjects.ContainsKey(networkObject))
+            if (_networkObjects.ContainsKey(networkObject))
             {
-                Log.Warning("Tried to add network object that already exists.");
+                Log.Error("Tried to add network object that already exists.");
                 return false;
             }
             else
             {
                 networkObject.OnBeforeRegister();
                 NetworkObjectData data = GetNetworkObjectData(networkObject);
-                bool added = NetworkObjects.TryAdd(networkObject, data);
+                bool added = _networkObjects.TryAdd(networkObject, data);
                 if (added)
                 {
                     SendAddedPulse(networkObject);
@@ -826,7 +844,7 @@ namespace SocketNetworking.Shared
                 Log.Error($"Network Object {networkObject.GetType().Name} was ignored because NetworkID 0 is reserved. Please choose another ID.");
                 return false;
             }
-            if (!NetworkObjects.ContainsKey(networkObject))
+            if (!_networkObjects.ContainsKey(networkObject))
             {
                 Log.Warning("Tried to modify network object that does not exist.");
                 return false;
@@ -834,7 +852,7 @@ namespace SocketNetworking.Shared
             else
             {
                 NetworkObjectData data = GetNetworkObjectData(networkObject);
-                NetworkObjects[networkObject] = data;
+                _networkObjects[networkObject] = data;
                 return true;
             }
         }
@@ -850,30 +868,16 @@ namespace SocketNetworking.Shared
         /// </returns>
         public static bool RemoveNetworkObject(INetworkObject networkObject)
         {
-            //Redundant, we don't care what ID the object is, we just want it gone.
-            //if (networkObject.NetworkID == 0)
-            //{
-            //    Log.Error($"Network Object {networkObject.GetType().Name} was ignored because NetworkID 0 is reserved. Please choose another ID.");
-            //    return false;
-            //}
-            if (!NetworkObjects.ContainsKey(networkObject))
+            bool removed = _networkObjects.TryRemove(networkObject, out NetworkObjectData value);
+            if (removed)
             {
-                Log.Warning("Tried to remove NetworkObject that doesn't exist.");
-                return false;
+                SendRemovedPulse(networkObject);
             }
             else
             {
-                bool removed = NetworkObjects.TryRemove(networkObject, out NetworkObjectData value);
-                if (removed)
-                {
-                    SendRemovedPulse(networkObject);
-                }
-                else
-                {
-                    Log.Error($"Failed to remove {networkObject}!");
-                }
-                return removed;
+                Log.Error($"Failed to remove {networkObject}! Does it exist?");
             }
+            return removed;
         }
 
         /// <summary>
@@ -883,13 +887,14 @@ namespace SocketNetworking.Shared
         /// <returns>
         /// How many objects are removed.
         /// </returns>
+        [Obsolete("This method does the same thing unless you have duplicate IDs.")]
         public static int RemoveAllNetworkObjectsByID(int id)
         {
             if (id == 0)
             {
                 Log.Warning("Trying to remove all objects with NetID 0, are you sure you know what you are doing?");
             }
-            List<INetworkObject> networkObjects = NetworkObjects.Keys.Where(x => x.NetworkID == id).ToList();
+            List<INetworkObject> networkObjects = _networkObjects.Keys.Where(x => x.NetworkID == id).ToList();
             int removed = 0;
             foreach (INetworkObject netObj in networkObjects)
             {
@@ -908,11 +913,11 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public static NetworkObjectData GetNetworkObjectData(Type t)
         {
-            if (PreCache.Any(x => x.TargetObject == t) || TypeToTypeWrapper.ContainsValue(t))
+            if (_preCache.Any(x => x.TargetObject == t) || TypeToTypeWrapper.ContainsValue(t))
             {
-                return PreCache.FirstOrDefault(x => x.TargetObject == t);
+                return _preCache.FirstOrDefault(x => x.TargetObject == t);
             }
-            Log.Info($"Type {t.Name} has never been seen before, registering.");
+            Log.Debug($"Type {t.Name} has never been seen before, registering.");
             Type baseType = t.BaseType;
             if (t.GetInterfaces().Contains(typeof(ITypeWrapper)))
             {
@@ -929,7 +934,7 @@ namespace SocketNetworking.Shared
                     {
                         TypeToTypeWrapper.Add(targetType, t);
                     }
-                    Log.Info($"Wrapper {obj.GetType().Name} maps to type {targetType.Name}");
+                    Log.Debug($"Wrapper {obj.GetType().Name} maps to type {targetType.Name}");
                 }
             }
             NetworkObjectData networkObjectCache = new NetworkObjectData();
@@ -1013,7 +1018,7 @@ namespace SocketNetworking.Shared
                 syncVars.Add(field);
             }
             networkObjectCache.SyncVars = syncVars;
-            Log.Info($"Type {t.Name} has the following network object information: {networkObjectCache.ToString()}");
+            Log.Debug($"Type {t.Name} has the following network object information: {networkObjectCache}");
             return networkObjectCache;
         }
 
@@ -1079,14 +1084,13 @@ namespace SocketNetworking.Shared
             }
             CustomPacket cPacket = new CustomPacket();
             cPacket.Deserialize(data);
-            if (!AdditionalPacketTypes.ContainsKey(cPacket.CustomPacketID))
+            if (!AdditionalPacketTypes.TryGetValue(cPacket.CustomPacketID, out Type packetType))
             {
                 Log.Error("Unknown Custom packet. ID: " + cPacket.CustomPacketID);
                 return;
             }
-            Type packetType = AdditionalPacketTypes[cPacket.CustomPacketID];
             //Log.Debug(packetType.Name);
-            Packet packet = (Packet)Activator.CreateInstance(AdditionalPacketTypes[cPacket.CustomPacketID]);
+            Packet packet = (Packet)Activator.CreateInstance(packetType);
             ByteReader reader = packet.Deserialize(data);
             //if (reader.ReadBytes < header.Size)
             //{
@@ -1109,54 +1113,48 @@ namespace SocketNetworking.Shared
                     Type listenerType = listener.DefinedType;
                     if (packetType != listenerType)
                     {
-                        //Log.Debug("Type dont match!");
                         continue;
                     }
                     object[] allParams = { changedPacket, runningClient, handle };
                     object[] methodArgs = method.MatchParameters(allParams.ToList()).ToArray();
-                    //Log.Debug("Checking packet direction");
-                    //Log.Debug("Direction of client: " + clientLocation + " Listener direction: " + packetDirection);
                     if (packetDirection == NetworkDirection.Any)
                     {
-                        //Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, methodArgs);
                         continue;
                     }
                     if (packetDirection == NetworkDirection.Client && clientLocation == ClientLocation.Remote)
                     {
-                        //Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, methodArgs);
                         continue;
                     }
                     if (packetDirection == NetworkDirection.Server && clientLocation == ClientLocation.Local)
                     {
-                        //Log.Debug("Invoking " + method.Name);
                         method.Invoke(runningClient, methodArgs);
                         continue;
                     }
                 }
                 return;
             }
-            List<INetworkObject> objects = NetworkObjects.Keys.Where(x => x.NetworkID == cPacket.NetworkIDTarget && x.Active).ToList();
+            List<INetworkObject> objects = _networkObjects.Keys.Where(x => x.NetworkID == cPacket.NetworkIDTarget && x.Active).ToList();
             if (objects.Count == 0)
             {
                 Log.Warning($"Target NetworkID revealed no active objects registered! ID: {cPacket.NetworkIDTarget}");
                 return;
             }
-            //This may look not very effecient, but you arent checking EVERY possible object, only the ones which match the TargetID.
-            //The other way I could do this is by making a nested dictionary hell hole, but I dont want to do that.
+            //This may look not very efficient, but you aren't checking EVERY possible object, only the ones which match the TargetID.
+            //The other way I could do this is by making a nested dictionary hell hole, but I don't want to do that.
             foreach (INetworkObject netObj in objects)
             {
-                if (!NetworkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count == 1)
+                if (!_networkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count == 1)
                 {
                     Log.Warning($"Can't find any listeners for packet type: {packetType.Name} in object type: {netObj.GetType().Name}, it is also the only object for this NetworkID that is enabled.");
                     return;
                 }
-                else if (!NetworkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count > 1)
+                else if (!_networkObjects[netObj].Listeners.ContainsKey(packetType) && objects.Count > 1)
                 {
                     continue;
                 }
-                List<PacketListenerData> packetListeners = NetworkObjects[netObj].Listeners[packetType];
+                List<PacketListenerData> packetListeners = _networkObjects[netObj].Listeners[packetType];
                 //Log.Debug($"Packet listeners for type {netObj.GetType().Name}: {packetListeners.Count}");
                 foreach (PacketListenerData packetListener in packetListeners)
                 {
@@ -1189,10 +1187,10 @@ namespace SocketNetworking.Shared
             List<SyncVarData> publicReplicated = new List<SyncVarData>();
             foreach (SyncVarData data in packet.Data)
             {
-                List<INetworkObject> objs = NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget).ToList();
+                List<INetworkObject> objs = _networkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget).ToList();
                 foreach (INetworkObject obj in objs)
                 {
-                    NetworkObjectData networkObjectData = NetworkObjects[obj];
+                    NetworkObjectData networkObjectData = _networkObjects[obj];
                     FieldInfo field = networkObjectData.SyncVars.FirstOrDefault(x => x.Name == data.TargetVar);
                     if (field == default)
                     {
@@ -1240,7 +1238,7 @@ namespace SocketNetworking.Shared
                         }
                     }
                 }
-                foreach (INetworkObject obj in NetworkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget))
+                foreach (INetworkObject obj in _networkObjects.Keys.Where(x => x.NetworkID == data.NetworkIDTarget))
                 {
                     obj.OnSyncVarsChanged();
                 }
@@ -1273,7 +1271,7 @@ namespace SocketNetworking.Shared
         /// <returns></returns>
         public static bool IsReady(int callBack, out NetworkInvokationResultPacket packet)
         {
-            if (Results.Where(x => x.CallbackID == callBack).Count() == 0)
+            if (Results.Where(x => x.CallbackID == callBack).Any())
             {
                 packet = null;
                 return false;
@@ -1311,11 +1309,11 @@ namespace SocketNetworking.Shared
                     continue;
                 }
                 List<string> methodArgs = curMethod.GetParameters().Select(y => y.ParameterType.FullName).ToList();
-                if (!methodArgs.Any() && expectedArgs.Any())
+                if (methodArgs.Count == 0 && expectedArgs.Length != 0)
                 {
                     continue;
                 }
-                if (expectedArgs.Any())
+                if (expectedArgs.Length != 0)
                 {
                     if (curMethod.GetParameters()[0].ParameterType.IsSubclassDeep(typeof(NetworkClient)) && !arguments[0].IsSubclassDeep(typeof(NetworkClient)))
                     {
@@ -1339,7 +1337,7 @@ namespace SocketNetworking.Shared
             return null;
         }
 
-        internal static void NetworkInvokeInternal(NetworkInvokationResultPacket packet, NetworkClient Receiver)
+        internal static void NetworkInvokeInternal(NetworkInvokationResultPacket packet, NetworkClient receiver)
         {
             if (packet.IgnoreResult)
             {
@@ -1360,7 +1358,7 @@ namespace SocketNetworking.Shared
             List<object> targets = new List<object>();
             if (packet.NetworkIDTarget != 0)
             {
-                List<INetworkObject> netObjs = NetworkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget && x.GetType() == targetType).ToList();
+                List<INetworkObject> netObjs = _networkObjects.Keys.Where(x => x.NetworkID == packet.NetworkIDTarget && x.GetType() == targetType).ToList();
                 if (netObjs.Count != 0)
                 {
                     target = netObjs[0];
@@ -1376,7 +1374,7 @@ namespace SocketNetworking.Shared
             }
             if (targets.Count == 0)
             {
-                throw new NetworkInvocationException("Unable to find any networkobjects with ID: " + packet.NetworkIDTarget);
+                throw new NetworkInvocationException($"Unable to find any {nameof(INetworkObject)}s with ID: " + packet.NetworkIDTarget);
             }
             if (target == null)
             {
@@ -1386,10 +1384,12 @@ namespace SocketNetworking.Shared
             NetworkObjectData objData = GetNetworkObjectData(target.GetType());
             MethodInfo[] methods = null;
             MethodInfo method = null;
+#pragma warning disable CS0618 // Type or member is obsolete
             if (packet.MethodName != string.Empty)
             {
                 methods = GetNetworkObjectData(target.GetType()).Invocables.Keys.ToArray();
                 method = GetNetworkInvokeMethod(methods, arguments, packet.MethodName) ?? throw new NetworkInvocationException($"Cannot find method: '{packet.MethodName}' in type: {targetType.FullName}, Methods: {string.Join("\n", methods.Select(x => x.ToString()))}", new NullReferenceException());
+#pragma warning restore CS0618 // Type or member is obsolete
             }
             else
             {
@@ -1473,7 +1473,17 @@ namespace SocketNetworking.Shared
                 {
                     pred = x => true;
                 }
-                NetworkServer.NetworkInvokeOnAll(target, method.Name, pred, args.Skip(1).ToArray());
+                Delegate @delegate = Delegate.CreateDelegate(targetType, method);
+                if (@delegate == null)
+                {
+#pragma warning disable CS0612 // Type or member is obsolete
+                    NetworkServer.NetworkInvokeOnAll(target, method.Name, pred, args.Skip(1));
+#pragma warning restore CS0612 // Type or member is obsolete
+                }
+                else
+                {
+                    NetworkServer.NetworkInvokeOnAll(@delegate, pred, args.Skip(1));
+                }
             }
             if (!localCall)
             {
@@ -1520,11 +1530,11 @@ namespace SocketNetworking.Shared
         {
             if (args == null)
             {
-                args = new object[0];
+                args = Array.Empty<object>();
             }
             if (target == null)
             {
-                throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.", new ArgumentNullException("target"));
+                throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.", new ArgumentNullException(nameof(target)));
             }
             int targetID = 0;
             if (target is INetworkObject networkObject)
@@ -1631,13 +1641,9 @@ namespace SocketNetworking.Shared
         {
             if (args == null)
             {
-                args = new object[0];
+                args = Array.Empty<object>();
             }
-            object target = methodTarget.Target;
-            if (target == null)
-            {
-                throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.", new ArgumentNullException("target"));
-            }
+            object target = methodTarget.Target ?? throw new NetworkInvocationException($"Unable to find the NetworkObject this packet is referencing.", new ArgumentNullException(nameof(methodTarget)));
             int targetID = 0;
             if (target is INetworkObject networkObject)
             {
@@ -1695,7 +1701,9 @@ namespace SocketNetworking.Shared
             }
             NetworkInvocationPacket packet = new NetworkInvocationPacket();
             packet.NetworkIDTarget = targetID;
+#pragma warning disable CS0618 // Type or member is obsolete
             packet.MethodName = string.Empty;
+#pragma warning restore CS0618 // Type or member is obsolete
             packet.MethodIndex = index;
             foreach (object arg in args)
             {
@@ -1725,7 +1733,17 @@ namespace SocketNetworking.Shared
             }
             if (ignoreResult && invokable.Broadcast && NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                NetworkServer.NetworkInvokeOnAll(target, method.Name, args);
+                Delegate @delegate = Delegate.CreateDelegate(target.GetType(), method);
+                if (@delegate == null)
+                {
+#pragma warning disable CS0612 // Type or member is obsolete
+                    NetworkServer.NetworkInvokeOnAll(target, method.Name, args);
+#pragma warning restore CS0612 // Type or member is obsolete
+                }
+                else
+                {
+                    NetworkServer.NetworkInvokeOnAll(@delegate, args);
+                }
             }
             else
             {
@@ -1738,7 +1756,7 @@ namespace SocketNetworking.Shared
             return packet;
         }
 
-        [Obsolete]
+        [Obsolete("Prefer delegate overload over method name string.")]
         public static NetworkInvocationCallback<T> NetworkInvoke<T>(object target, NetworkClient sender, string methodName, params object[] args)
         {
             NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, false);
@@ -1769,12 +1787,12 @@ namespace SocketNetworking.Shared
         /// <param name="args"></param>
         /// <param name="msTimeOut"></param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("Prefer delegate overload over method name string.")]
         public static T NetworkInvokeBlocking<T>(object target, NetworkClient sender, string methodName, object[] args, float msTimeOut = 5000)
         {
             if (args == null)
             {
-                args = new object[0];
+                args = Array.Empty<object>();
             }
             NetworkInvocationPacket packet = NetworkInvoke(target, sender, methodName, args, false);
             MethodInfo method = target.GetType().GetMethodsDeep(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault(x => x.Name == methodName);
@@ -1824,7 +1842,7 @@ namespace SocketNetworking.Shared
         {
             if (args == null)
             {
-                args = new object[0];
+                args = Array.Empty<object>();
             }
             NetworkInvocationPacket packet = NetworkInvoke(sender, target, args, false);
             MethodInfo method = GetNetworkObjectData(target.Target.GetType()).IndexToMethod[packet.MethodIndex];
@@ -1870,11 +1888,11 @@ namespace SocketNetworking.Shared
             }
         }
 
-        public async Task<T> NetworkInvokeAsync<T>(NetworkClient sender, Delegate target, object[] args, float msTimeOut = 5000)
+        public static async Task<T> NetworkInvokeAsync<T>(NetworkClient sender, Delegate target, object[] args, float msTimeOut = 5000)
         {
             if (args == null)
             {
-                args = new object[0];
+                args = Array.Empty<object>();
             }
             NetworkInvocationPacket packet = NetworkInvoke(sender, target, args, false);
             MethodInfo method = GetNetworkObjectData(target.Target.GetType()).IndexToMethod[packet.MethodIndex];
@@ -1943,9 +1961,12 @@ namespace SocketNetworking.Shared
     }
 
 
+    /// <summary>
+    /// Defines information object a custom <see cref="INetworkObject"/> spawner.
+    /// </summary>
     public class NetworkObjectSpawner
     {
-        public NetworkManager.NetworkObjectSpawnerDelegate Spawner;
+        public NetworkManager.NetworkSpawnerDelegate Spawner;
 
         public bool AllowSubclasses;
 
@@ -1957,6 +1978,9 @@ namespace SocketNetworking.Shared
         }
     }
 
+    /// <summary>
+    /// Cache of all information captured via reflection.
+    /// </summary>
     public class NetworkObjectData
     {
         public Dictionary<Type, List<PacketListenerData>> Listeners;

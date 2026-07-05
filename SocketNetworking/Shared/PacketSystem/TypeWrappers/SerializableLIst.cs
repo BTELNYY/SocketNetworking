@@ -16,7 +16,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
         {
             if (typeof(T) == typeof(object))
             {
-                if (values.Count() != 0)
+                if (values.Any())
                 {
                     TType = values.ElementAt(0).GetType();
                 }
@@ -31,7 +31,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
             }
             if (!ByteConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IByteSerializable)) && !NetworkManager.TypeToTypeWrapper.ContainsKey(TType))
             {
-                throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", "values");
+                throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", nameof(values));
             }
             _internalList = values.ToList();
         }
@@ -41,7 +41,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
             TType = typeof(T);
             if (!ByteConvert.SupportedTypes.Contains(TType) && !TType.GetInterfaces().Contains(typeof(IByteSerializable)) && !NetworkManager.TypeToTypeWrapper.ContainsKey(TType))
             {
-                throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.", "values");
+                throw new ArgumentException($"Array type ({TType.FullName}) is not supported, use one of the supported types instead.");
             }
             _internalList = new List<T>();
         }
@@ -111,7 +111,7 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
             writer.WriteInt(_internalList.Count);
             foreach (T element in _internalList)
             {
-                //Dont need to worry about type safety as we check in constructor
+                //Don't need to worry about type safety as we check in constructor
                 byte[] finalBytes = ByteConvert.Serialize(element).Data;
                 int dataLength = finalBytes.Length;
                 writer.WriteInt(dataLength);

@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using SocketNetworking.Shared.Serialization;
 
 namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
 {
     /// <summary>
-    /// A Generic dictionary class.
+    /// A Generic dictionary class that can be serialized using <see cref="IByteSerializable"/>.
     /// </summary>
     /// <typeparam name="TKey">
     /// Any key. Must be a member of <see cref="Packet.SupportedTypes"/>.
@@ -113,17 +112,15 @@ namespace SocketNetworking.Shared.PacketSystem.TypeWrappers
             {
                 values1.Add(new KeyValuePair<TKey, TValue>(keys[i], values[i]));
             }
-            array = array.Concat(values1).ToArray();
+            Array.Copy(values1.ToArray(), array, values1.Count);
         }
 
         public ByteReader Deserialize(byte[] data)
         {
-            int removeAmount = 0;
             ByteReader reader = new ByteReader(data);
             reader.ReadInt();
             keys = reader.ReadPacketSerialized<SerializableList<TKey>>();
             values = reader.ReadPacketSerialized<SerializableList<TValue>>();
-            removeAmount += reader.ReadBytes;
             return reader;
         }
 

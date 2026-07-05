@@ -11,7 +11,7 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
 
         public Type TargetType { get; set; }
 
-        [Obsolete]
+        [Obsolete("Use delegate overloads when sending packets.")]
         public string MethodName { get; set; } = string.Empty;
 
         public int MethodIndex { get; set; } = 0;
@@ -26,7 +26,9 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         {
             ByteWriter writer = base.Serialize();
             writer.WriteWrapper<SerializableType, Type>(new SerializableType(TargetType));
+#pragma warning disable CS0618 // Type or member is obsolete
             writer.WriteString(MethodName);
+#pragma warning restore CS0618 // Type or member is obsolete
             writer.WriteInt(MethodIndex);
             writer.WriteInt(CallbackID);
             writer.WriteBool(IgnoreResult);
@@ -41,7 +43,9 @@ namespace SocketNetworking.Shared.PacketSystem.Packets
         {
             ByteReader reader = base.Deserialize(data);
             TargetType = reader.ReadWrapper<SerializableType, Type>();
+#pragma warning disable CS0618 // Type or member is obsolete
             MethodName = reader.ReadString();
+#pragma warning restore CS0618 // Type or member is obsolete
             MethodIndex = reader.ReadInt();
             CallbackID = reader.ReadInt();
             IgnoreResult = reader.ReadBool();

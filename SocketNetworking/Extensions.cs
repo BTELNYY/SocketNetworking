@@ -138,6 +138,7 @@ namespace SocketNetworking
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
+        [Obsolete("This method will be removed soon.")]
         public static string GetHashSHA1(this byte[] data)
         {
             using (SHA1CryptoServiceProvider sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider())

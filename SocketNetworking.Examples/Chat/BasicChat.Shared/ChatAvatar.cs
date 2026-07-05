@@ -69,7 +69,7 @@ namespace BasicChat.Shared
 
         public void ClientSetName(string name)
         {
-            NetworkClient.LocalClient.NetworkInvoke(this, nameof(ServerGetNameChangeRequest), new object[] { name });
+            NetworkInvoke((Action<NetworkHandle, string>)ServerGetNameChangeRequest, name);
         }
 
         [NetworkInvokable(NetworkDirection.Client)]

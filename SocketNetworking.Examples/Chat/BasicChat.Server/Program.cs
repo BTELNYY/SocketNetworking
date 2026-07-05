@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using BasicChat.Shared;
 using SocketNetworking;
 using SocketNetworking.Server;
@@ -11,7 +12,7 @@ namespace BasicChat.Server
     {
         static string Title = "Clients: {count}";
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Log.OnLog += Logger.HandleNetworkLog;
             Log.Levels = Log.FULL_LOG;
@@ -42,6 +43,7 @@ namespace BasicChat.Server
                 Console.Title = Title.Replace("{count}", NetworkServer.Clients.Count.ToString());
             };
             server.StartServer();
+            await Task.Delay(-1);
         }
     }
 }

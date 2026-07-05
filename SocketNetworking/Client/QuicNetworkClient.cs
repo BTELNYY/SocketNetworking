@@ -1,12 +1,11 @@
-﻿using System;
+﻿#if NET8_0_OR_GREATER
+using System;
 using System.Linq;
 using System.Net;
+using System.Net.Quic;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using SocketNetworking.Shared;
-
-#if NET8_0_OR_GREATER
-using System.Net.Quic;
 using SocketNetworking.Shared.Transports;
 
 namespace SocketNetworking.Client
@@ -70,7 +69,7 @@ namespace SocketNetworking.Client
             return opts;
         }
 
-        public async Task<bool> ConnectAsync(string hostname, ushort port)
+        public override async Task<bool> ConnectAsync(string hostname, ushort port)
         {
             if (CurrentClientLocation == ClientLocation.Remote)
             {

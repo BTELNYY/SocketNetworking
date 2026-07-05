@@ -20,7 +20,7 @@ namespace SocketNetworking.Shared.Transports
                 }
                 if (_hasConnected)
                 {
-                    return Client.Client.RemoteEndPoint as IPEndPoint;
+                    return UdpClient.Client.RemoteEndPoint as IPEndPoint;
                 }
                 return _peer;
             }
@@ -28,7 +28,7 @@ namespace SocketNetworking.Shared.Transports
 
         private IPEndPoint _peer = new IPEndPoint(IPAddress.Any, 0);
 
-        public override IPEndPoint LocalEndPoint => Client.Client.LocalEndPoint as IPEndPoint;
+        public override IPEndPoint LocalEndPoint => UdpClient.Client.LocalEndPoint as IPEndPoint;
 
         public override IPAddress PeerAddress => Peer.Address;
 
@@ -52,15 +52,15 @@ namespace SocketNetworking.Shared.Transports
                 }
                 if (_hasConnected)
                 {
-                    if (Client == null)
+                    if (UdpClient == null)
                     {
                         return false;
                     }
-                    if (Client.Client == null)
+                    if (UdpClient.Client == null)
                     {
                         return false;
                     }
-                    return Client.Client.Connected;
+                    return UdpClient.Client.Connected;
                 }
                 return false;
             }
@@ -107,7 +107,7 @@ namespace SocketNetworking.Shared.Transports
                 }
                 else
                 {
-                    return Client.Available > 0;
+                    return UdpClient.Available > 0;
                 }
             }
         }
@@ -122,7 +122,7 @@ namespace SocketNetworking.Shared.Transports
                 }
                 else
                 {
-                    return Client.Available;
+                    return UdpClient.Available;
                 }
             }
         }
@@ -139,17 +139,17 @@ namespace SocketNetworking.Shared.Transports
         {
             get
             {
-                return Client.EnableBroadcast;
+                return UdpClient.EnableBroadcast;
             }
             set
             {
-                Client.EnableBroadcast = value;
+                UdpClient.EnableBroadcast = value;
             }
         }
 
-        public override Socket Socket => Client.Client;
+        public override Socket Socket => UdpClient.Client;
 
-        public UdpClient Client { get; set; } = new UdpClient();
+        public UdpClient UdpClient { get; set; } = new UdpClient();
 
         private List<IPAddress> _multiCastGroups = new List<IPAddress>();
 
@@ -163,7 +163,7 @@ namespace SocketNetworking.Shared.Transports
                 return;
             }
             _multiCastGroups.Add(multicastGroup);
-            Client.JoinMulticastGroup(multicastGroup);
+            UdpClient.JoinMulticastGroup(multicastGroup);
         }
 
         public void DropMulticastGroup(IPAddress multicastGroup)
@@ -174,7 +174,7 @@ namespace SocketNetworking.Shared.Transports
                 return;
             }
             _multiCastGroups.Remove(multicastGroup);
-            Client.DropMulticastGroup(multicastGroup);
+            UdpClient.DropMulticastGroup(multicastGroup);
         }
 
         public bool InMulticastGroup(IPAddress multicastGroup)
@@ -186,20 +186,20 @@ namespace SocketNetworking.Shared.Transports
         {
             if (_isServerMode)
             {
-                Client = null;
+                UdpClient = null;
                 _serverIsConnected = false;
                 return;
             }
-            Client?.Close();
-            Client?.Dispose();
-            Client = null;
+            UdpClient?.Close();
+            UdpClient?.Dispose();
+            UdpClient = null;
         }
 
         public override Exception Connect(string hostname, int port)
         {
             try
             {
-                Client.Connect(hostname, port);
+                UdpClient.Connect(hostname, port);
                 _hasConnected = true;
                 _peer = new IPEndPoint(IPAddress.Parse(hostname), port);
                 return null;
@@ -233,13 +233,13 @@ namespace SocketNetworking.Shared.Transports
                     {
                         peer = BroadcastEndpoint;
                         //Log.GlobalDebug("Waiting for BroadcastEndpoint");
-                        read = Client.Receive(ref peer);
+                        read = UdpClient.Receive(ref peer);
                     }
                     else
                     {
                         peer = Peer;
                         //Log.GlobalDebug($"Waiting for RemoteEndPoint. EndPoint: ${peer.Address}:{peer.Port}");
-                        read = Client.Receive(ref peer);
+                        read = UdpClient.Receive(ref peer);
                     }
                     //Log.GlobalDebug(read.Length.ToString() + " ClientMode");
                     ReceivedBytes += (ulong)read.Length;
@@ -266,11 +266,11 @@ namespace SocketNetworking.Shared.Transports
                 int sent;
                 if (IsServerMode)
                 {
-                    sent = Client.Send(data, data.Length, _emulatedPeer);
+                    sent = UdpClient.Send(data, data.Length, _emulatedPeer);
                 }
                 else
                 {
-                    sent = Client.Send(data, data.Length, _peer);
+                    sent = UdpClient.Send(data, data.Length, _peer);
                 }
                 SentBytes += (ulong)sent;
                 //Log.GlobalDebug("Bytes Sent: " + sent);
@@ -286,7 +286,7 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
-                Client.Send(data, data.Length);
+                UdpClient.Send(data, data.Length);
                 SentBytes += (ulong)data.Length;
                 return null;
             }
@@ -300,7 +300,7 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
-                Client.Send(data, data.Length, BroadcastEndpoint);
+                UdpClient.Send(data, data.Length, BroadcastEndpoint);
                 SentBytes += (ulong)data.Length;
                 return null;
             }
@@ -323,11 +323,11 @@ namespace SocketNetworking.Shared.Transports
                 int sent;
                 if (IsServerMode)
                 {
-                    sent = await Client.SendAsync(data, data.Length, _emulatedPeer);
+                    sent = await UdpClient.SendAsync(data, data.Length, _emulatedPeer);
                 }
                 else
                 {
-                    sent = await Client.SendAsync(data, data.Length, _peer);
+                    sent = await UdpClient.SendAsync(data, data.Length, _peer);
                 }
                 SentBytes += (ulong)sent;
                 //Log.GlobalDebug("Bytes Sent: " + sent);
@@ -343,7 +343,7 @@ namespace SocketNetworking.Shared.Transports
         {
             try
             {
-                int sent = await Client.SendAsync(data, data.Length);
+                int sent = await UdpClient.SendAsync(data, data.Length);
                 SentBytes += (ulong)sent;
                 return null;
             }
@@ -377,7 +377,7 @@ namespace SocketNetworking.Shared.Transports
                     {
                         peer = BroadcastEndpoint;
                         //Log.GlobalDebug("Waiting for BroadcastEndpoint");
-                        result = await Client.ReceiveAsync();
+                        result = await UdpClient.ReceiveAsync();
                         read = result.Buffer;
                         peer = result.RemoteEndPoint;
                     }
@@ -385,7 +385,7 @@ namespace SocketNetworking.Shared.Transports
                     {
                         peer = Peer;
                         //Log.GlobalDebug($"Waiting for RemoteEndPoint. EndPoint: ${peer.Address}:{peer.Port}");
-                        result = await Client.ReceiveAsync();
+                        result = await UdpClient.ReceiveAsync();
                         read = result.Buffer;
                         peer = result.RemoteEndPoint;
                     }

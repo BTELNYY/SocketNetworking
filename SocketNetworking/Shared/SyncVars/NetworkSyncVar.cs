@@ -39,6 +39,30 @@ namespace SocketNetworking.Shared.SyncVars
 
         public INetworkObject OwnerObject { get; set; }
 
+        private ObjectVisibilityMode _visibilityMode;
+
+        private bool _overrideVisMode = false;
+
+        /// <summary>
+        /// Determines the <see cref="ObjectVisibilityMode"/> of the <see cref="NetworkSyncVar{T}"/>. If not set, will use the <see cref="INetworkObject.ObjectVisibilityMode"/> of <see cref="OwnerObject"/>.
+        /// </summary>
+        public ObjectVisibilityMode VisibilityMode
+        {
+            get
+            {
+                if (_overrideVisMode)
+                {
+                    return _visibilityMode;
+                }
+                return OwnerObject.ObjectVisibilityMode;
+            }
+            set
+            {
+                _overrideVisMode = true;
+                _visibilityMode = value;
+            }
+        }
+
         /// <summary>
         /// Sets who is allowed to set the value of this Sync var.
         /// </summary>
@@ -67,6 +91,17 @@ namespace SocketNetworking.Shared.SyncVars
             get
             {
                 return _valueSetBefore;
+            }
+        }
+
+        /// <summary>
+        /// Determines if the current <see cref="NetworkSyncVar{T}"/> has anything to do with the local <see cref="INetworkAvatar"/>. Since <see cref="Changed"/> is called when any instance is changed, this means you cannot know if its about you or not.
+        /// </summary>
+        public bool AppliesToLocalAvatar
+        {
+            get
+            {
+                return NetworkClient.LocalClient.Avatar.NetworkID == OwnerObject.NetworkID;
             }
         }
 
@@ -148,7 +183,7 @@ namespace SocketNetworking.Shared.SyncVars
             {
                 if (OwnershipMode == OwnershipMode.Client)
                 {
-                    if (OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.OwnerAndServer)
+                    if (VisibilityMode == ObjectVisibilityMode.OwnerAndServer)
                     {
                         NetworkClient owner = NetworkServer.GetClient(OwnerObject.OwnerClientID);
                         if (owner == null)
@@ -157,7 +192,7 @@ namespace SocketNetworking.Shared.SyncVars
                         }
                         owner.Send(packet);
                     }
-                    else if (OwnerObject.ObjectVisibilityMode == ObjectVisibilityMode.Everyone)
+                    else if (VisibilityMode == ObjectVisibilityMode.Everyone)
                     {
                         NetworkServer.SendToAll(packet, x => OwnerObject.CheckVisibility(x));
                     }
@@ -207,6 +242,12 @@ namespace SocketNetworking.Shared.SyncVars
         public NetworkSyncVar(INetworkObject ownerObject, T value, string name) : this(ownerObject, value)
         {
             Name = name;
+        }
+
+        public NetworkSyncVar(INetworkObject ownerObject, T value, string name, OwnershipMode mode) : this(ownerObject, value)
+        {
+            Name = name;
+            _mode = mode;
         }
 
         public NetworkSyncVar(INetworkObject ownerObject, OwnershipMode syncOwner)
@@ -260,7 +301,7 @@ namespace SocketNetworking.Shared.SyncVars
             this.value = value is T t ? t : default;
             if (!(value is T))
             {
-                Log.GlobalWarning($"Value is not {typeof(T).Name}! It is: {value.GetType().Name}");
+                Log.GlobalWarning($"Value is not {typeof(T).Name}! It is: {value?.GetType().Name}");
             }
             if (who != null)
             {
@@ -322,6 +363,14 @@ namespace SocketNetworking.Shared.SyncVars
             {
                 return;
             }
+            if (VisibilityMode == ObjectVisibilityMode.ServerOnly)
+            {
+                return;
+            }
+            if (who.ClientID != OwnerObject.OwnerClientID)
+            {
+                return;
+            }
             SyncVarUpdatePacket packet = GetPacket();
             who.Send(packet);
         }
@@ -329,6 +378,14 @@ namespace SocketNetworking.Shared.SyncVars
         public virtual void SyncTo(NetworkClient who, SyncVarUpdatePacket packet)
         {
             if (!OwnerObject.CheckVisibility(who))
+            {
+                return;
+            }
+            if (VisibilityMode == ObjectVisibilityMode.ServerOnly)
+            {
+                return;
+            }
+            if (who.ClientID != OwnerObject.OwnerClientID)
             {
                 return;
             }

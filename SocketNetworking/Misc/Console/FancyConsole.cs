@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace SocketNetworking.Misc.Console
 {
@@ -9,6 +10,34 @@ namespace SocketNetworking.Misc.Console
     /// </summary>
     public static class FancyConsole
     {
+        private static Dictionary<char, ConsoleColor> ColorArray = new Dictionary<char, ConsoleColor>()
+        {
+            ['0'] = ConsoleColor.Black,
+            ['1'] = ConsoleColor.DarkBlue,
+            ['2'] = ConsoleColor.DarkGreen,
+            ['3'] = ConsoleColor.DarkCyan,
+            ['4'] = ConsoleColor.DarkRed,
+            ['5'] = ConsoleColor.DarkMagenta,
+            ['6'] = ConsoleColor.DarkYellow,
+            ['7'] = ConsoleColor.Gray,
+            ['8'] = ConsoleColor.DarkGray,
+            ['9'] = ConsoleColor.Blue,
+            ['a'] = ConsoleColor.Green,
+            ['b'] = ConsoleColor.Cyan,
+            ['c'] = ConsoleColor.Red,
+            ['d'] = ConsoleColor.Magenta,
+            ['e'] = ConsoleColor.Yellow,
+            ['f'] = ConsoleColor.White,
+        };
+
+        public static string BuildColor(ConsoleColor color)
+        {
+            char result = ColorArray.First(x => x.Value == color).Key;
+            return $"{SpecialMarker}{result}";
+        }
+
+        public static char SpecialMarker = '&';
+
         static object locker = new object();
         static List<char> buffer = new List<char>();
 
@@ -20,6 +49,52 @@ namespace SocketNetworking.Misc.Console
         {
             oldIn = System.Console.In;
             oldOut = System.Console.Out;
+        }
+
+        public static string StripColor(string message)
+        {
+            string result = string.Empty;
+            char[] chars = message.ToCharArray();
+            bool lastCharSpecial = false;
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (chars[i] == SpecialMarker)
+                {
+                    lastCharSpecial = true;
+                    continue;
+                }
+                if (lastCharSpecial)
+                {
+                    lastCharSpecial = false;
+                    continue;
+                }
+                result += chars[i];
+            }
+            return result;
+        }
+
+        public static void WriteLineAutoColor(string message)
+        {
+            WriteAutoColor(message);
+            Write("\n");
+        }
+
+        public static void WriteAutoColor(string message)
+        {
+            ConsoleColor color = System.Console.ForegroundColor;
+            string[] strs = message.Split(SpecialMarker);
+            foreach (string str in strs)
+            {
+                if (ColorArray.ContainsKey(str.First()))
+                {
+                    System.Console.ForegroundColor = ColorArray[str.First()];
+                    Write(str.Remove(0, 1));
+                    System.Console.ForegroundColor = color;
+                    continue;
+                }
+                Write(str);
+            }
+            System.Console.ForegroundColor = color;
         }
 
         public static void WriteLine(string message, ConsoleColor color)
@@ -38,9 +113,11 @@ namespace SocketNetworking.Misc.Console
             lock (locker)
             {
                 oldOut.Write(new string('\b', buffer.Count));
+                oldOut.Write(new string(' ', buffer.Count));
+                oldOut.Write(new string('\b', buffer.Count));
                 string msg = $"{message}";
                 int excess = buffer.Count - msg.Length;
-                if (excess > 0) msg += new string(' ', excess);
+                //if (excess > 0) msg += new string(' ', excess);
                 oldOut.WriteLine(msg);
                 oldOut.Write(new string(buffer.ToArray()));
             }
@@ -51,11 +128,24 @@ namespace SocketNetworking.Misc.Console
             lock (locker)
             {
                 oldOut.Write(new string('\b', buffer.Count));
+                oldOut.Write(new string(' ', buffer.Count));
+                oldOut.Write(new string('\b', buffer.Count));
                 string msg = $"{message}";
                 int excess = buffer.Count - msg.Length;
-                if (excess > 0) msg += new string(' ', excess);
+                //if (excess > 0) msg += new string(' ', excess);
                 oldOut.Write(msg);
-                oldOut.Write("\n" + new string(buffer.ToArray()));
+                oldOut.Write(new string(buffer.ToArray()));
+            }
+        }
+
+        public static void Write(string message, ConsoleColor color)
+        {
+            lock (locker)
+            {
+                ConsoleColor oldColor = System.Console.ForegroundColor;
+                System.Console.ForegroundColor = color;
+                Write(message);
+                System.Console.ForegroundColor = oldColor;
             }
         }
 

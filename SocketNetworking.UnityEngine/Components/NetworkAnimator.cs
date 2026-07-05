@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
@@ -134,12 +135,12 @@ namespace SocketNetworking.UnityEngine.Components
 
         public void NetworkPlay(string name, int layer = -1, float normalizedTime = float.NegativeInfinity)
         {
-            NetworkInvoke(nameof(GetPlayData), new object[] { Animator.StringToHash(name), layer, normalizedTime });
+            NetworkInvoke((Action<NetworkHandle, int, int, float>)GetPlayData, Animator.StringToHash(name), layer, normalizedTime);
         }
 
         public void NetworkPlay(int hash, int layer = -1, float normalizedTime = float.NegativeInfinity)
         {
-            NetworkInvoke(nameof(GetPlayData), new object[] { hash, layer, normalizedTime });
+            NetworkInvoke((Action<NetworkHandle, int, int, float>)GetPlayData, Animator.StringToHash(name), layer, normalizedTime);
         }
 
 
