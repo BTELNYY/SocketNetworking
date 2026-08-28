@@ -8,13 +8,21 @@ namespace Basic.SharedData
     public class NetworkObjectTest : NetworkAvatarBase
     {
         //Some fun examples
-        public NetworkSyncVar<string> Name = new NetworkSyncVar<string>("test");
+        public NetworkSyncVar<string> Name;
 
-        public NetworkSyncVar<bool> IsAlive = new NetworkSyncVar<bool>(true);
+        public NetworkSyncVar<bool> IsAlive;
 
-        public NetworkSyncVar<float> HP = new NetworkSyncVar<float>(100f);
+        public NetworkSyncVar<float> HP;
 
-        public NetworkSyncVar<float> Armor = new NetworkSyncVar<float>(100f);
+        public NetworkSyncVar<float> Armor;
+
+        public override void OnBeforeRegister()
+        {
+            Name = new NetworkSyncVar<string>(this, "test", nameof(Name));
+            IsAlive = new NetworkSyncVar<bool>(this, true, nameof(IsAlive));
+            HP = new NetworkSyncVar<float>(this, 100f, nameof(HP));
+            Armor = new NetworkSyncVar<float>(this, 100f, nameof(Armor));
+        }
 
         public override void OnNetworkSpawned(NetworkClient spawner)
         {

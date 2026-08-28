@@ -19,7 +19,7 @@ namespace Basic.SharedData
         public void NetworkInvokeSomeMethod(float someFloat, int someInt)
         {
             Log.Debug($"{someFloat}, {someInt}");
-            TestResult result = NetworkInvokeBlocking<TestResult>(this, "SomeNetworkMethod", maxTimeMs: 5000f, someFloat, someInt, new ValueTuple<int, int>(1, 3));
+            TestResult result = NetworkInvokeBlocking<TestResult>((Func<NetworkHandle, float, int, ValueTuple<int, int>, TestResult>)SomeNetworkMethod, maxTimeMs: 5000f, someFloat, someInt, new ValueTuple<int, int>(1, 3));
             Log.Debug(result.ToString());
         }
 
