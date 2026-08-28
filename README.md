@@ -3,9 +3,25 @@
 
  The main parts you'll be using are Tcp/Udp/MixedNetworkClient, Tcp/Udp/MixedNetworkServer, INetworkObject, CustomPacket, and NetworkManager.
 
+# Warning! Changes Ahead!
+ * Large scale refactors will be imminent, as some sections of code should be refactored. **I would appreciate help with this!**
+## Refactor Targets
+ * Custom Packet System: System is complex, and should be simplified with a more expressive rather than reflection based approach.
+ * Network Synced Streams: Should be removed and turned into opening additional connections for connection based protocols.
+ * Network Objects: Less cluttered, and less useless methods.
+ * Documentation: More examples, more code comments.
+ * Tests: More tests, more testable code.
+## Planned Features
+ * Network Messages: Replacement for Custom Packets. Send messages and have conversations between objects which are strongly referenced and do not rely on reflection.
+ * Error Handling: Exceptions should be thrown when required, no "return and throw" or "nested try catch"
+ * Performance tools
+
 ## Install Requirements
- * .NET Framework 4.8
- * Visual Studio 2022
+ * .NET Framework 4.8, .NET 8.0 or .NET standard 2.0
+   * Unity Specific libraries require .NET 4.8 and do not support the latest versions of unity.
+   * QUIC Support requires .NET 8.0 on Windows 11, or later versions of Linux.
+ * Visual Studio 2022/2026
+   * Or any other coding environment capable of compiling .NET projects.
 
 ## Import directions
  * Create a git submodule for this project within your project files.
@@ -16,11 +32,18 @@
 
 ## Understanding the design
  * This is a complicated library, and you should understand how its meant to be used! The library is designed for Server/Client communication, so you should understand how to treat both sides of the connection. (Tip: If you are ever lost, `NetworkManager.WhereAmI` can help you!)
- * Servers are authoritive by default, meaning they have all the permission in the library. You can delegate permission to clients via various methods for the various functions in the library.
+ * Servers are authoritative by default, meaning they have all the permission in the library. You can delegate permission to clients via various methods for the various functions in the library.
  * The `NetworkClient` class is only known to the local client, and the server (which knows all of them). So on the server, you can find any client you want.
- * Packets are sent and recieved on seperate threads. On the local client, one thread is used to send packets, and another to recieve and handle them. This creates an issue if your application does not support multithreading! The fix is simple, use the `NetworkClient.ManualPacketHandle` property. this will prevent the Client recieve thread from handling the packet for you, it will simply queue it. On the server, a thread pool is used, a single thread handles reading and writing (recieving and sending) packets for multiple clients. You can always increase the amount of threads you use, however this will result in the program eating resources.
+ * Packets are sent and received on separate threads. On the local client, one thread is used to send packets, and another to receive and handle them. This creates an issue if your application does not support multi-threading! The fix is simple, use the `NetworkClient.ManualPacketHandle` property. this will prevent the Client receive thread from handling the packet for you, it will simply queue it. On the server, a thread pool is used, a single thread handles reading and writing (receiving and sending) packets for multiple clients. You can always increase the amount of threads you use, however this will result in the program eating resources.
 
 ## Features
+
+### Specific Protocols
+* TCP/IP Only (`TcpNetworkClient`)
+* TCP/IP with a secondary UDP stream for priority information (`MixedNetworkClient`)
+* QUIC (`QuickNetworkClient`)
+  * Requires .NET 8.0
+  * Can only be used on Windows 11 or modern Linux. 
 
 ### Security
 
@@ -102,8 +125,8 @@
 #### A TypeWrapper
 ![image](https://github.com/user-attachments/assets/306c98d2-9eb6-4e1e-8ae6-9000178ae979)
 
-#### A IPacketSerializable type
-![image](https://github.com/user-attachments/assets/c347f805-d5f3-40ab-be94-32a96e70636f)
+#### A IByteSerializable type
+<img width="495" height="601" alt="image" src="https://github.com/user-attachments/assets/9daaf524-f5e0-4447-8c43-84470abab056" />
 
 ### Making Custom Packets
  * Usually, the `NetworkInvoke()` method within the network client can be used for Network objects, but if you want to, you can create custom packets. 
@@ -152,7 +175,9 @@
  * `NetworkSyncVar`s have their own permission setting, the `NetworkSyncVar<>.OwnershipMode`. This can differ from the `NetworkObject.OwnershipMode` to allow for publicly changing values.
 
 #### A NetworkSyncVar being created and set.
-![image](https://github.com/user-attachments/assets/65218d0f-d166-4846-9c06-2252df134fac)
+<img width="706" height="490" alt="image" src="https://github.com/user-attachments/assets/02502bcd-81aa-4286-a980-1d3779661156" />
+
+>Although you do not have to instantiate sync vars in that specific method, you may want to as you can specify a default value and avoid a log message. 
 
 #### PacketListener
  * A Packet Listener is a method which allows the capture of packets addressed to the `INetworkObject` or `NetworkClient` its on.
@@ -162,3 +187,9 @@
 #### A PacketListener
 ![image](https://github.com/user-attachments/assets/9ae43a66-cb65-4c04-9b76-50ca7e195d39)
 
+>A newer API for sending specific message to NetworkObjects will be implemented.
+
+#### A Packet being sent
+<img width="764" height="221" alt="image" src="https://github.com/user-attachments/assets/61c810f5-b396-45e4-9f30-cef1e5413d76" />
+
+>It is recommended that you utilize NetworkInvoke over sending packets.
