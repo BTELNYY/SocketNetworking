@@ -102,11 +102,11 @@ namespace SocketNetworking.Shared
             {
                 if (NetworkServer.Active)
                 {
-                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Any())
+                    if (NetworkServer.Clients.Any(x => x.CurrentClientLocation == ClientLocation.Remote))
                     {
                         return ClientLocation.Remote;
                     }
-                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Any())
+                    if (NetworkServer.Clients.Any(x => x.CurrentClientLocation == ClientLocation.Local))
                     {
                         Log.Error("Both server and several local clients are active, can't determine network location.");
                         return ClientLocation.Unknown;
