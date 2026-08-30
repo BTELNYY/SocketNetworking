@@ -1,5 +1,7 @@
 ﻿using SocketNetworking;
 using SocketNetworking.Client;
+using SocketNetworking.Shared;
+using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.SyncVars;
 
@@ -24,6 +26,17 @@ namespace Basic.SharedData
             Armor = new NetworkSyncVar<float>(this, 100f, nameof(Armor));
         }
 
+        public override void OnAfterRegister()
+        {
+            base.OnAfterRegister();
+            this.Listen<int>(OnIntRecieved);
+        }
+
+        private void OnIntRecieved(INetworkMessage message)
+        {
+            Log.GlobalInfo(message.DataObject.ToString());
+        }
+
         public override void OnNetworkSpawned(NetworkClient spawner)
         {
             base.OnNetworkSpawned(spawner);
@@ -32,6 +45,8 @@ namespace Basic.SharedData
             IsAlive.Value = false;
             HP.Value = 0f;
             Armor.Value = 0f;
+            Log.GlobalInfo(NetworkManager.WhereAmI.ToString());
+            this.SendMessage(1984);
         }
 
         public override void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)

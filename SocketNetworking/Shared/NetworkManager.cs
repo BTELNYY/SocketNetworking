@@ -105,11 +105,11 @@ namespace SocketNetworking.Shared
             {
                 if (NetworkServer.Active)
                 {
-                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Any())
+                    if (NetworkServer.Clients.Any(x => x.CurrentClientLocation == ClientLocation.Remote))
                     {
                         return ClientLocation.Remote;
                     }
-                    if (NetworkClient.Clients.Where(x => x.CurrentClientLocation == ClientLocation.Local).Any())
+                    if (NetworkServer.Clients.Any(x => x.CurrentClientLocation == ClientLocation.Local))
                     {
                         Log.Error("Both server and several local clients are active, can't determine network location.");
                         return ClientLocation.Unknown;
@@ -412,10 +412,6 @@ namespace SocketNetworking.Shared
             {
                 throw new ArgumentException($"{nameof(obj)} is not the same as {nameof(func)}s target.");
             }
-            if (func.GetType().GetGenericArguments()[0].GetGenericArguments()[0].GetType() != typeof(T))
-            {
-                throw new ArgumentException("Invalid type!");
-            }
             bool result = _networkObjects.TryGetValue(obj, out NetworkObjectData value);
             if (!result)
             {
@@ -442,10 +438,6 @@ namespace SocketNetworking.Shared
             if (!ReferenceEquals(obj, func.Target))
             {
                 throw new ArgumentException($"{nameof(obj)} is not the same as {nameof(func)}s target.");
-            }
-            if (func.GetType().GetGenericArguments()[0].GetGenericArguments()[0].GetType() != typeof(T))
-            {
-                throw new ArgumentException("Invalid type!");
             }
             bool result = _networkObjects.TryGetValue(obj, out NetworkObjectData value);
             if (!result)
@@ -1067,6 +1059,7 @@ namespace SocketNetworking.Shared
             networkObjectCache.Invocables = new Dictionary<MethodInfo, NetworkInvokable>();
             networkObjectCache.MethodToIndex = new Dictionary<MethodInfo, int>();
             networkObjectCache.IndexToMethod = new Dictionary<int, MethodInfo>();
+            networkObjectCache.MessageListeners = new Dictionary<Type, List<Action<INetworkMessage>>>();
             int counter = 0;
             networkObjectCache.Listeners = new Dictionary<Type, List<PacketListenerData>>();
             networkObjectCache.SyncVars = new List<FieldInfo>();

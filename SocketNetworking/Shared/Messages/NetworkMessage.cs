@@ -5,6 +5,8 @@ namespace SocketNetworking.Shared.Messages
 {
     public class NetworkMessage<T> : INetworkMessage<T>
     {
+        public NetworkMessage() { }
+
         public NetworkMessage(INetworkObject source, INetworkObject destination, bool senderIsAuthority, T data)
         {
             Source = source;

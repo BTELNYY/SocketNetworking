@@ -30,7 +30,11 @@ namespace SocketNetworking
             }
             else if (NetworkManager.WhereAmI == ClientLocation.Remote)
             {
-                client = NetworkServer.GetClient(destination.OwnerClientID) ?? throw new InvalidOperationException($"Unable to find a network client with ID {destination.OwnerClientID}");
+                client = destination.GetOwner();
+            }
+            else
+            {
+                throw new InvalidOperationException("Unknown location!");
             }
             if (client == null)
             {
