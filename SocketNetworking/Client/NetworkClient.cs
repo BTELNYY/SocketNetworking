@@ -2203,6 +2203,11 @@ namespace SocketNetworking.Client
                             break;
                     }
                     break;
+                case PacketType.Message:
+                    MessagePacket messagePacket = new MessagePacket();
+                    messagePacket.Deserialize(data);
+                    NetworkManager.OnMessageRecieved(new NetworkHandle(this), messagePacket);
+                    break;
                 default:
                     Log.Error($"Packet is not handled! Info: Type: {header.Type}");
                     Disconnect("Client Sent an Unknown packet with PacketID " + header.Type.ToString());
@@ -2479,6 +2484,11 @@ namespace SocketNetworking.Client
                             Log.Error($"Invalid Encryption function: {encryptionPacket.EncryptionFunction}");
                             break;
                     }
+                    break;
+                case PacketType.Message:
+                    MessagePacket messagePacket = new MessagePacket();
+                    messagePacket.Deserialize(data);
+                    NetworkManager.OnMessageRecieved(new NetworkHandle(this), messagePacket);
                     break;
                 default:
                     Log.Error($"Packet is not handled! Type: {header.Type}");

@@ -57,6 +57,7 @@ namespace SocketNetworking.Shared
         ClientToClient,
         Authentication,
         Custom,
+        Message,
     }
 
     /// <summary>

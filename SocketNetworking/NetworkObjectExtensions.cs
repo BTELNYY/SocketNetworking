@@ -7,6 +7,7 @@ using SocketNetworking.Client;
 using SocketNetworking.Server;
 using SocketNetworking.Shared;
 using SocketNetworking.Shared.Attributes;
+using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem.Packets;
 using SocketNetworking.Shared.SyncVars;
@@ -15,6 +16,49 @@ namespace SocketNetworking
 {
     public static class NetworkObjectExtensions
     {
+        public static void SendMessage<T>(this INetworkObject source, T message)
+        {
+            SendMessage<T>(source, source, message);
+        }
+
+        public static void SendMessage<T>(this INetworkObject source, INetworkObject destination, T data)
+        {
+            NetworkClient client = null;
+            if (NetworkManager.WhereAmI == ClientLocation.Local)
+            {
+                client = NetworkClient.LocalClient;
+            }
+            else if (NetworkManager.WhereAmI == ClientLocation.Remote)
+            {
+                client = NetworkServer.GetClient(destination.OwnerClientID) ?? throw new InvalidOperationException($"Unable to find a network client with ID {destination.OwnerClientID}");
+            }
+            if (client == null)
+            {
+                throw new InvalidOperationException("Failed to find a client to send messages to.");
+            }
+            NetworkManager.SendMessage(client, source, destination, data);
+        }
+
+        public static void BroadcastMessage<T>(this INetworkObject obj, T data)
+        {
+            NetworkManager.BroadcastMessage<T>(obj, obj, data);
+        }
+
+        public static void BroadcastMessage<T>(this INetworkObject obj, INetworkObject destination, T data)
+        {
+            NetworkManager.BroadcastMessage<T>(obj, destination, data);
+        }
+
+        public static void Listen<T>(this INetworkObject obj, Action<INetworkMessage> func)
+        {
+            NetworkManager.Listen<T>(obj, func);
+        }
+
+        public static void Unlisten<T>(this INetworkObject obj, Action<INetworkMessage> func)
+        {
+            NetworkManager.Unlisten<T>(obj, func);
+        }
+
         /// <summary>
         /// Requires all <see cref="INetworkObject"/>s specified by <see cref="INetworkObject.RequiredObjects"/> to be spawned.
         /// </summary>

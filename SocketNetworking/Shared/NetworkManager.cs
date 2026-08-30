@@ -11,6 +11,7 @@ using SocketNetworking.Misc;
 using SocketNetworking.Server;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.Exceptions;
+using SocketNetworking.Shared.Messages;
 using SocketNetworking.Shared.NetworkObjects;
 using SocketNetworking.Shared.PacketSystem;
 using SocketNetworking.Shared.PacketSystem.Packets;
@@ -37,6 +38,8 @@ namespace SocketNetworking.Shared
             typeof(CustomPacket),
             typeof(NetworkHandle),
         };
+
+
 
         public static readonly Dictionary<int, Type> AdditionalPacketTypes = new Dictionary<int, Type>();
 
@@ -343,6 +346,128 @@ namespace SocketNetworking.Shared
         private static readonly ConcurrentDictionary<INetworkObject, NetworkObjectData> _networkObjects = new ConcurrentDictionary<INetworkObject, NetworkObjectData>();
 
         private static readonly List<NetworkObjectData> _preCache = new List<NetworkObjectData>();
+
+        internal static void OnMessageRecieved(NetworkHandle handle, MessagePacket packet)
+        {
+            if (WhereAmI == ClientLocation.Remote)
+            {
+                packet.Message.SenderIsAuthority = false;
+                if (packet.Message.Source.OwnerClientID != handle.ClientID)
+                {
+                    throw new SecurityException("Tried to send message from object client does not own.");
+                }
+                if (!packet.Message.Destination.CheckVisibility(handle.Client))
+                {
+                    throw new SecurityException("Tried to send message to object client cannot see.");
+                }
+            }
+            if (!_networkObjects.TryGetValue(packet.Message.Destination, out NetworkObjectData data))
+            {
+                Log.Error("Network object not found!");
+                return;
+            }
+            Type targetType = packet.Message.DataObject.GetType();
+            if (!data.MessageListeners.ContainsKey(targetType))
+            {
+                Log.Error("No message listener found.");
+                return;
+            }
+            foreach (Action<INetworkMessage> item in data.MessageListeners[targetType])
+            {
+                item(packet.Message);
+            }
+        }
+
+        public static void SendMessage<T>(NetworkClient client, INetworkObject from, INetworkObject to, T data)
+        {
+            if (from.OwnerClientID != client.ClientID)
+            {
+                throw new SecurityException("You cannot send messages from objects you do not own.");
+            }
+            NetworkMessage<T> msg = new NetworkMessage<T>(from, to, WhereAmI == ClientLocation.Remote, data);
+            MessagePacket packet = new MessagePacket()
+            {
+                Message = msg
+            };
+            client.Send(packet);
+        }
+
+        public static void BroadcastMessage<T>(INetworkObject from, INetworkObject to, T data)
+        {
+            if (WhereAmI != ClientLocation.Remote)
+            {
+                throw new InvalidOperationException("Can only broadcast as the server!");
+            }
+            NetworkMessage<T> msg = new NetworkMessage<T>(from, to, WhereAmI == ClientLocation.Remote, data);
+            MessagePacket packet = new MessagePacket()
+            {
+                Message = msg
+            };
+            NetworkServer.SendToAll(packet);
+        }
+
+        public static void Listen<T>(INetworkObject obj, Action<INetworkMessage> func)
+        {
+            if (!ReferenceEquals(obj, func.Target))
+            {
+                throw new ArgumentException($"{nameof(obj)} is not the same as {nameof(func)}s target.");
+            }
+            if (func.GetType().GetGenericArguments()[0].GetGenericArguments()[0].GetType() != typeof(T))
+            {
+                throw new ArgumentException("Invalid type!");
+            }
+            bool result = _networkObjects.TryGetValue(obj, out NetworkObjectData value);
+            if (!result)
+            {
+                Log.Error("Tried to get a NetworkObject that was not registered.");
+                return;
+            }
+            if (value.MessageListeners.ContainsKey(typeof(T)))
+            {
+                if (value.MessageListeners[typeof(T)].Contains(func))
+                {
+                    Log.Error($"Function on {func.Target?.GetType().Name ?? "NULL"} with name {func.GetMethodInfo().Name} is already registered.");
+                    return;
+                }
+                value.MessageListeners[typeof(T)].Add(func);
+            }
+            else
+            {
+                value.MessageListeners.Add(typeof(T), new List<Action<INetworkMessage>>() { func });
+            }
+        }
+
+        public static void Unlisten<T>(INetworkObject obj, Action<INetworkMessage> func)
+        {
+            if (!ReferenceEquals(obj, func.Target))
+            {
+                throw new ArgumentException($"{nameof(obj)} is not the same as {nameof(func)}s target.");
+            }
+            if (func.GetType().GetGenericArguments()[0].GetGenericArguments()[0].GetType() != typeof(T))
+            {
+                throw new ArgumentException("Invalid type!");
+            }
+            bool result = _networkObjects.TryGetValue(obj, out NetworkObjectData value);
+            if (!result)
+            {
+                Log.Error("Tried to get a NetworkObject that was not registered.");
+                return;
+            }
+            if (value.MessageListeners.ContainsKey(typeof(T)))
+            {
+                if (!value.MessageListeners[typeof(T)].Contains(func))
+                {
+                    Log.Error($"Function on {func.Target?.GetType().Name ?? "NULL"} with name {func.GetMethodInfo().Name} is not registered.");
+                    return;
+                }
+                value.MessageListeners[typeof(T)].Remove(func);
+            }
+            else
+            {
+                Log.Error("Unable to unregister function which is not registered.");
+                return;
+            }
+        }
 
         /// <summary>
         /// Tries to find a <see cref="INetworkObject"/> given a type <paramref name="filter"/>. If <paramref name="filter"/> is <see langword="null"/>, will find the first object with that <paramref name="id"/> of any <see cref="Type"/>. If not found, will return a <see langword="default"/> tuple. (Aka a tuple where element 1 and 2 are both <see langword="null"/>).
@@ -1992,6 +2117,8 @@ namespace SocketNetworking.Shared
         public Dictionary<int, MethodInfo> IndexToMethod;
 
         public Dictionary<MethodInfo, int> MethodToIndex;
+
+        public Dictionary<Type, List<Action<INetworkMessage>>> MessageListeners;
 
         public Type TargetObject;
 

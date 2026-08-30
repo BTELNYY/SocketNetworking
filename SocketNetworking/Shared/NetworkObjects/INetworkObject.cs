@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System;
 using SocketNetworking.Client;
 using SocketNetworking.Shared.Attributes;
 using SocketNetworking.Shared.PacketSystem.Packets;
