@@ -42,12 +42,11 @@ namespace Basic.SharedData
         {
             base.OnNetworkSpawned(spawner);
             Log.GlobalInfo("Just got spawned by client " + spawner.ClientID);
+            this.SendMessage(1984);
             Name.Value = "Bobo";
             IsAlive.Value = false;
             HP.Value = 0f;
             Armor.Value = 0f;
-            Log.GlobalInfo(NetworkManager.WhereAmI.ToString());
-            this.SendMessage(1984);
         }
 
         public override void OnSyncVarChanged(NetworkClient client, INetworkSyncVar what)
