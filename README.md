@@ -179,6 +179,18 @@
 
 >Although you do not have to instantiate sync vars in that specific method, you may want to as you can specify a default value and avoid a log message. 
 
+#### INetworkMessage
+ * An `INetworkMessage<T>` allows you to quickly transmit data without caring about responses, what methods to use, etc.
+ * Messages provide a cheap and quick way to send data between `INetworkObjects` given that the delegate is registered.
+ * You must listen for a message on an object manually as for performance, reflection is not used to find listeners for you.
+ * Messages can only be sent from objects which you own (or anywhere if you are on the server)
+ * Messages can be broadcast by the server using the `BroadcastMessage<T>(INetworkObject destination, T data)` extension on `INetworkObject`.
+ * Unlike other communication methods, messages are not secured past checking that the sender owns the source and the destination is visible to the sender. This is intended as to increase speed and reduce reflection checking of attributes.
+
+#### Network Message Usage
+<img width="1533" height="892" alt="image" src="https://github.com/user-attachments/assets/e549f1bd-6d43-4eea-a674-ce59b6bee8cd" />
+
+
 #### PacketListener
  * A Packet Listener is a method which allows the capture of packets addressed to the `INetworkObject` or `NetworkClient` its on.
  * To create one, create a method of any security level and have the arguments as the Packet you want to capture and a `NetworkHandle`.
