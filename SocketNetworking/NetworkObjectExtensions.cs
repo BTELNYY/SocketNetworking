@@ -16,11 +16,25 @@ namespace SocketNetworking
 {
     public static class NetworkObjectExtensions
     {
+        /// <summary>
+        /// Sends a <see cref="INetworkMessage{T}"/> to the remote version of this <see cref="INetworkObject"/>. Note that you must own the object which is sending this message.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="message"></param>
         public static void SendMessage<T>(this INetworkObject source, T message)
         {
             SendMessage<T>(source, source, message);
         }
 
+        /// <summary>
+        /// Sends a <see cref="INetworkMessage{T}"/> to nother object. Note that you must own the object which is sending this message.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="destination"></param>
+        /// <param name="data"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public static void SendMessage<T>(this INetworkObject source, INetworkObject destination, T data)
         {
             NetworkClient client = null;
@@ -43,22 +57,47 @@ namespace SocketNetworking
             NetworkManager.SendMessage(client, source, destination, data);
         }
 
+        /// <summary>
+        /// Broadcasts a <see cref="INetworkMessage{T}"/> to all clients on this <see cref="INetworkObject"/>. Must be called on the server.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="data"></param>
         public static void BroadcastMessage<T>(this INetworkObject obj, T data)
         {
             NetworkManager.BroadcastMessage<T>(obj, obj, data);
         }
 
+        /// <summary>
+        /// Broadcasts a <see cref="INetworkMessage{T}"/> from this <see cref="INetworkObject"/> to some <paramref name="destination"/>. Must be called on the server.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="destination"></param>
+        /// <param name="data"></param>
         public static void BroadcastMessage<T>(this INetworkObject obj, INetworkObject destination, T data)
         {
             NetworkManager.BroadcastMessage<T>(obj, destination, data);
         }
 
-        public static void Listen<T>(this INetworkObject obj, Action<INetworkMessage> func)
+        /// <summary>
+        /// Register a <see cref="NetworkMessageHandler{T}"/> to listen for a <see cref="INetworkMessage{T}"/> on this <see cref="INetworkObject"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="func"></param>
+        public static void Listen<T>(this INetworkObject obj, NetworkMessageHandler<T> func)
         {
             NetworkManager.Listen<T>(obj, func);
         }
 
-        public static void Unlisten<T>(this INetworkObject obj, Action<INetworkMessage> func)
+        /// <summary>
+        /// Unregisters a <see cref="NetworkMessageHandler{T}"/> from listening to a <see cref="INetworkMessage{T}"/> on this <see cref="INetworkObject"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="func"></param>
+        public static void Unlisten<T>(this INetworkObject obj, NetworkMessageHandler<T> func)
         {
             NetworkManager.Unlisten<T>(obj, func);
         }

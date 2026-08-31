@@ -29,10 +29,11 @@ namespace Basic.SharedData
         public override void OnAfterRegister()
         {
             base.OnAfterRegister();
+            //Alternatively, use this: NetworkManager.Listen<int>(this, OnIntRecieved);
             this.Listen<int>(OnIntRecieved);
         }
 
-        private void OnIntRecieved(INetworkMessage message)
+        private void OnIntRecieved(INetworkMessage<int> message)
         {
             Log.GlobalInfo(message.DataObject.ToString());
         }

@@ -4,6 +4,13 @@ using SocketNetworking.Shared.Serialization;
 namespace SocketNetworking.Shared.Messages
 {
     /// <summary>
+    /// Specifies the generic delegate which handles <see cref="INetworkMessage{T}"/>s sent and recieved by <see cref="INetworkObject"/>s.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="message"></param>
+    public delegate void NetworkMessageHandler<T>(INetworkMessage<T> message);
+
+    /// <summary>
     /// Represents a generic message which can be sent and recieved. Messages are sent between <see cref="INetworkObject"/>s, and are sent remotely. Peers may send messages to any <see cref="INetworkObject"/> they have access to. RPCs, messages do not have an option to return a value. Instead, send a message back.
     /// </summary>
     /// <typeparam name="T"></typeparam>

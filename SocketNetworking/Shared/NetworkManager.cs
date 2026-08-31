@@ -372,9 +372,9 @@ namespace SocketNetworking.Shared
                 Log.Error("No message listener found.");
                 return;
             }
-            foreach (Action<INetworkMessage> item in data.MessageListeners[targetType])
+            foreach (Delegate item in data.MessageListeners[targetType])
             {
-                item(packet.Message);
+                item.DynamicInvoke(packet.Message);
             }
         }
 
@@ -406,7 +406,7 @@ namespace SocketNetworking.Shared
             NetworkServer.SendToAll(packet);
         }
 
-        public static void Listen<T>(INetworkObject obj, Action<INetworkMessage> func)
+        public static void Listen<T>(INetworkObject obj, NetworkMessageHandler<T> func)
         {
             if (!ReferenceEquals(obj, func.Target))
             {
@@ -429,11 +429,11 @@ namespace SocketNetworking.Shared
             }
             else
             {
-                value.MessageListeners.Add(typeof(T), new List<Action<INetworkMessage>>() { func });
+                value.MessageListeners.Add(typeof(T), new List<Delegate>() { func });
             }
         }
 
-        public static void Unlisten<T>(INetworkObject obj, Action<INetworkMessage> func)
+        public static void Unlisten<T>(INetworkObject obj, NetworkMessageHandler<T> func)
         {
             if (!ReferenceEquals(obj, func.Target))
             {
@@ -1059,7 +1059,7 @@ namespace SocketNetworking.Shared
             networkObjectCache.Invocables = new Dictionary<MethodInfo, NetworkInvokable>();
             networkObjectCache.MethodToIndex = new Dictionary<MethodInfo, int>();
             networkObjectCache.IndexToMethod = new Dictionary<int, MethodInfo>();
-            networkObjectCache.MessageListeners = new Dictionary<Type, List<Action<INetworkMessage>>>();
+            networkObjectCache.MessageListeners = new Dictionary<Type, List<Delegate>>();
             int counter = 0;
             networkObjectCache.Listeners = new Dictionary<Type, List<PacketListenerData>>();
             networkObjectCache.SyncVars = new List<FieldInfo>();
@@ -2111,7 +2111,7 @@ namespace SocketNetworking.Shared
 
         public Dictionary<MethodInfo, int> MethodToIndex;
 
-        public Dictionary<Type, List<Action<INetworkMessage>>> MessageListeners;
+        public Dictionary<Type, List<Delegate>> MessageListeners;
 
         public Type TargetObject;
 
